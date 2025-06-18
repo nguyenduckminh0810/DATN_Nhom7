@@ -1,6 +1,7 @@
 package com.nhom7.quiz.quizapp.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -46,9 +47,12 @@ public class UserController {
 		LoginResult result = loginService.checkLogin(user.getUsername(), user.getPassword());
 
 		return switch (result.status()) {
-			case SUCCESS -> ResponseEntity.ok("Đăng nhập thành công");
-			case USER_NOT_FOUND, WRONG_PASSWORD ->
-				ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Tên đăng nhập hoặc mật khẩu không đúng");
+			case SUCCESS -> ResponseEntity.ok(Map.of(
+					"status", "SUCCESS",
+					"message", "Đăng nhập thành công"));
+			case USER_NOT_FOUND, WRONG_PASSWORD -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+					"status", result.status().toString(),
+					"message", "Tên đăng nhập hoặc mật khẩu không đúng"));
 		};
 	}
 }
