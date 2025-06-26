@@ -2,8 +2,10 @@ package com.nhom7.quiz.quizapp.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,6 +15,9 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import org.springframework.lang.NonNull;
+
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
@@ -26,10 +31,10 @@ public class SecurityConfig {
         public WebMvcConfigurer corsConfigurer() {
             return new WebMvcConfigurer() {
                 @Override
-                public void addCorsMappings(CorsRegistry registry) {
+                public void addCorsMappings(@NonNull CorsRegistry registry) {
                     registry.addMapping("/**")
                             .allowedOrigins("http://localhost:5173")
-                            .allowedMethods("*");
+                            .allowedMethods("*").allowedHeaders("*").allowCredentials(true);
                 }
             };
         }
@@ -47,22 +52,28 @@ public class SecurityConfig {
         UserDetails admin = User
                 .withUsername("admin")
                 .password(passwordEncoder().encode("admin"))
-                .roles("USER")
+                .roles("ADMIN")
                 .build();
 
         return new InMemoryUserDetailsManager(admin);
     }
 
     // Cấu hình chuỗi bảo mật
+    // Thay đường dẫn của admin vào stateless
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .cors(withDefaults())
+        return http.cors(withDefaults())
                 .csrf(csrf -> csrf.disable())
+
                 .authorizeHttpRequests(auth -> auth
+                        // Cho phép truy cập không cần login
                         .requestMatchers("/api/login", "/api/register").permitAll()
-                        .anyRequest().authenticated())
-                .httpBasic(withDefaults())
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().denyAll())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .httpBasic(withDefaults()) // có thể bỏ nếu bạn dùng JWT hoàn toàn
                 .build();
     }
 

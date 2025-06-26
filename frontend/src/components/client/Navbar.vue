@@ -1,4 +1,3 @@
-
 <script setup>
 import router from '@/router'
 import { RouterLink } from 'vue-router'
@@ -13,17 +12,10 @@ function login() {
 <template scoped>
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
-      <RouterLink to="/" class="navbar-brand">QuizApp</RouterLink>
+      <RouterLink to="/" class="navbar-brand">QuizMaster</RouterLink>
 
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarSupportedContent"
-        aria-controls="navbarSupportedContent"
-        aria-expanded="false"
-        aria-label="Toggle navigation"
-      >
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 

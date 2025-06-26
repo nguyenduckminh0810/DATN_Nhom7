@@ -1,6 +1,7 @@
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+// import { API_BASE_URL } from '@/config' // nếu tách API URL ra
 
 export function useLogin() {
     const status = ref('loggedOut')
@@ -9,43 +10,58 @@ export function useLogin() {
     const message = ref('')
     const router = useRouter()
 
-    const redirectToServer = async () => {
-        status.value = 'loggingIn'
-
-        const user = {
-            username: username.value,
-            password: password.value
+    onMounted(() => {
+        if (localStorage.getItem('token')) {
+            status.value = 'loggedIn'
         }
+    })
+
+    const isLoading = computed(() => status.value === 'loggingIn')
+
+    const resetForm = () => {
+        username.value = ''
+        password.value = ''
+    }
+
+    const login = async () => {
+        status.value = 'loggingIn'
+        message.value = ''
 
         try {
-            const res = await axios.post('http://localhost:8080/api/login', user)
+            const res = await axios.post('http://localhost:8080/api/login', {
+                username: username.value,
+                password: password.value
+            })
 
-            // Giả sử backend trả về { status: "SUCCESS", message: "...", token: "..." }
             const data = res.data
-
+            const token = res.headers['x-auth-token'] || res.data.token
             if (data.status === 'SUCCESS') {
                 message.value = data.message || 'Đăng nhập thành công!'
-                localStorage.setItem('token', data.token || '')
+                localStorage.setItem('token', data.token)
+
+                console.log('Token:', data.token)
+
 
                 status.value = 'loggedIn'
-                // Chuyển hướng sau khi login
                 // router.push('/')
             } else {
                 message.value = data.message || 'Có lỗi xảy ra!'
                 status.value = 'loggedOut'
+                resetForm()
             }
-
         } catch (err) {
             message.value = err.response?.data?.message || '❌ Đăng nhập thất bại!'
-            console.log(message.value)
             status.value = 'loggedOut'
+            resetForm()
         }
     }
 
     const logout = () => {
         localStorage.removeItem('token')
         status.value = 'loggedOut'
-        // router.push('/login') // hoặc trang khác nếu cần
+        message.value = ''
+        resetForm()
+        router.push('/login')
     }
 
     return {
@@ -53,7 +69,8 @@ export function useLogin() {
         username,
         password,
         message,
-        redirectToServer,
+        isLoading,
+        login,
         logout
     }
 }

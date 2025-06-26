@@ -31,10 +31,27 @@ public class UserController {
 		RegisterResult result = reginService.register(user);
 
 		return switch (result.status()) {
-			case EMAIL_EXISTS -> ResponseEntity.badRequest().body("Email đã tồn tại");
-			case USERNAME_EXISTS -> ResponseEntity.badRequest().body("Username đã tồn tại");
-			case FULL_NAME_REQUIRED -> ResponseEntity.badRequest().body("Chưa điển tên đầy đủ");
-			case SUCCESS -> ResponseEntity.ok("Đăng ký thành công");
+			case EMAIL_EXISTS -> ResponseEntity
+					.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of(
+							"status", "EMAIL_EXISTS",
+							"message", "Email đã tồn tại"));
+			case USERNAME_EXISTS -> ResponseEntity
+					.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of(
+							"status", "USERNAME_EXISTS",
+							"message", "Username đã tồn tại"));
+			case FULL_NAME_REQUIRED -> ResponseEntity
+					.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of(
+							"status", "FULL_NAME_REQUIRED",
+							"message", "Chưa điền tên đầy đủ"));
+			case SUCCESS -> ResponseEntity
+					.ok(Map.of(
+							"status", "SUCCESS",
+							"message", "Đăng ký thành công",
+							"token", "fake-jwt-token" // Bạn có thể generate token thực nếu muốn
+				));
 		};
 	}
 
@@ -55,4 +72,5 @@ public class UserController {
 					"message", "Tên đăng nhập hoặc mật khẩu không đúng"));
 		};
 	}
+
 }
