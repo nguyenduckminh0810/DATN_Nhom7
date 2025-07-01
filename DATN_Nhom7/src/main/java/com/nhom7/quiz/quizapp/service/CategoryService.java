@@ -10,14 +10,10 @@ import java.util.List;
 
 @Service
 public class CategoryService {
-	@Autowired
+    @Autowired
     private CategoryRepo categoryRepo;
 
-    public Category save(Category category) {
-    	return categoryRepo.save(category);
-    }
-
-    public List<Category> getAllCategory() {
+    public List<Category> getAllCategories() {
         return categoryRepo.findAll();
     }
 }

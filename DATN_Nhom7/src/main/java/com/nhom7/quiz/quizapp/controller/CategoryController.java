@@ -11,13 +11,13 @@ import com.nhom7.quiz.quizapp.model.Category;
 import com.nhom7.quiz.quizapp.service.CategoryService;
 
 @RestController
-@RequestMapping("/category")
+@RequestMapping("/api/categories")
 public class CategoryController {
 	@Autowired
 	private CategoryService categoryService;
-	
-	@GetMapping("all-category")
-	public List<Category> getAllCategory() {
-        return categoryService.getAllCategory();
-    }
+
+	@GetMapping
+	public List<Category> getAllCategories() {
+		return categoryService.getAllCategories();
+	}
 }

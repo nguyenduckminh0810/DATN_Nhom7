@@ -69,4 +69,9 @@ public class LoginService {
 
         return new LoginResultForAdmin(LoginStatusForAdmin.SUCCESS, user);
     }
+
+    // Phương thức tìm kiếm người dùng theo tên đăng nhập
+    public User findByUsername(String username) {
+        return userRepo.findByUsername(username).orElse(null);
+    }
 }

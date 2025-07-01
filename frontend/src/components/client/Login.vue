@@ -1,5 +1,6 @@
 <script setup>
 import { useLogin } from './useLogin'
+import { useQuizCRUD } from './useQuizCRUD'
 
 const {
     status,
@@ -10,6 +11,7 @@ const {
     logout
 } = useLogin()
 
+const { toQuizCRUD } = useQuizCRUD()
 </script>
 
 <template>
@@ -37,10 +39,11 @@ const {
     </div>
     <!-- Đoạn này chuyển tab khác  -->
 
-    <div class="alert alert-success" role="alert" v-else>
+    <div class="alert alert-success" role="alert" v-else-if="status === 'loggedIn'">
         Chào mừng bạn <strong>{{ username }}</strong>!
         <br />
         <h1>{{ message }}</h1>
         <button class="btn btn-danger mt-3" @click="logout">Đăng xuất</button>
+        <button class="btn btn-primary mt-3" @click="toQuizCRUD">Quiz CRUD</button>
     </div>
 </template>

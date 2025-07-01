@@ -9,33 +9,32 @@ import java.util.Set;
 @Table(name = "quizzes")
 public class Quiz {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private String title;
+	private String title;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+	@ManyToOne
+	@JoinColumn(name = "user_id")
+	private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    private Category category;
+	@ManyToOne
+	@JoinColumn(name = "category_id")
+	private Category category;
 
-    @Column(name = "is_public")
-    private boolean isPublic;
+	@Column(name = "is_public")
+	private boolean isPublic;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
-    
-    @OneToMany(mappedBy = "quiz")
-    private Set<QuizTag> quizTags;
-    //Sau này dùng
-    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
-    private Set<QuizReview> reviews = new HashSet<>();
+	@Column(name = "created_at")
+	private LocalDateTime createdAt = LocalDateTime.now();
 
-    
+	@OneToMany(mappedBy = "quiz")
+	private Set<QuizTag> quizTags;
+	// Sau này dùng
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
+	private Set<QuizReview> reviews = new HashSet<>();
+
 	public Long getId() {
 		return id;
 	}
@@ -108,4 +107,3 @@ public class Quiz {
 		super();
 	}
 }
-

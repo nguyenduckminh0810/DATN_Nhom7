@@ -67,7 +67,9 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         // Cho phép truy cập không cần login
-                        .requestMatchers("/api/login", "/api/register").permitAll()
+                        .requestMatchers("/api/login", "/api/register", "api/categories", "api/user", "api/quiz/**",
+                                "/api/questions")
+                        .permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll())

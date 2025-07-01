@@ -15,6 +15,18 @@ const router = createRouter({
       name: 'register',
       component: () => import('../components/client/Register.vue'),
     },
+    // Route về trang đăng nhập admin
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../components/admin/LoginAdmin.vue'),
+    },
+    // Route về trang quản lý quiz
+    {
+      path: '/quiz-crud',
+      name: 'quizcrud',
+      component: () => import('../components/client/QuizCRUD.vue')
+    },
   ],
 })
 
