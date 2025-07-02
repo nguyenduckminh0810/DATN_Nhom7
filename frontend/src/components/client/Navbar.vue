@@ -1,16 +1,27 @@
 <script setup>
 import { useRouter, RouterLink } from 'vue-router'
+import { useLogin } from './useLogin'
+import { computed, watch } from 'vue'
 
+const { logout, username, message } = useLogin()
 const router = useRouter()
+
+const isLoggedIn = computed(() => !!message.value)
 
 function login() {
   router.push('/login')
 }
 
-function logout() {
-  console.log('Đăng xuất')
-  // TODO: thêm xóa token nếu cần
-}
+// Khi nhận được message === "SUCCESS", đảm bảo trạng thái đồng bộ
+watch(message, (newVal) => {
+  if (newVal === 'SUCCESS') {
+    // Đồng bộ lại username từ localStorage nếu cần
+    if (!username.value) {
+      username.value = localStorage.getItem('username')
+    }
+  }
+})
+
 </script>
 
 <template>
@@ -22,7 +33,8 @@ function logout() {
         <h1 class="sitename">Bootslander</h1>
       </RouterLink>
 
-      <nav id="navmenu" class="navmenu">
+      <!-- Menu -->
+      <nav :class="['navmenu', { 'mobile-open': isMobileMenuOpen }]">
         <ul>
           <li><a href="#hero" class="active">Home</a></li>
           <li><a href="#about">About</a></li>
@@ -35,8 +47,8 @@ function logout() {
             <a href="#"><span>Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
             <ul>
               <li><a href="#">Dropdown 1</a></li>
-              <li class="dropdown"><a href="#"><span>Deep Dropdown</span> <i
-                    class="bi bi-chevron-down toggle-dropdown"></i></a>
+              <li class="dropdown">
+                <a href="#"><span>Deep Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
                 <ul>
                   <li><a href="#">Deep Dropdown 1</a></li>
                   <li><a href="#">Deep Dropdown 2</a></li>
@@ -54,30 +66,30 @@ function logout() {
           <li><a href="#contact">Contact</a></li>
 
           <!-- Login/Logout -->
-          <li>
+          <!-- Login/Logout -->
+          <li v-if="!isLoggedIn">
             <a href="#" @click.prevent="login" class="btn btn-outline-primary px-4 py-2">Đăng nhập</a>
           </li>
-          <li class="ms-2">
+          <li v-else>
             <a href="#" @click.prevent="logout" class="btn btn-primary px-4 py-2">Đăng xuất</a>
           </li>
 
         </ul>
-        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list" @click="toggleMobileMenu"></i>
       </nav>
 
     </div>
   </header>
 </template>
 
+
 <style scoped>
-/* Header: tăng padding để header cao hơn */
 .header {
   background: linear-gradient(90deg, #007cf0, #00dfd8);
   color: white;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   padding: 20px 0;
-  /* Tăng độ cao */
 }
 
 /* Logo màu trắng */
@@ -100,7 +112,6 @@ function logout() {
 /* Dropdown menu - gradient background */
 .navmenu ul li ul {
   background: linear-gradient(135deg, #667eea, #764ba2);
-  /* tím xanh */
   border-radius: 8px;
   padding: 10px 0;
   transition: background 0.3s ease;
@@ -117,7 +128,6 @@ function logout() {
 /* Hover submenu items */
 .navmenu ul li ul li a:hover {
   background-color: rgba(255, 255, 255, 0.15);
-  /* semi-transparent white */
   color: #ffd700;
   border-radius: 5px;
 }
@@ -133,10 +143,25 @@ function logout() {
   border-radius: 30px;
 }
 
+/* Xoá gạch chân cho các liên kết */
+.navmenu a,
+.logo a,
+.navmenu ul li a {
+  text-decoration: none;
+}
+
 /* Responsive spacing fix */
 @media (max-width: 991px) {
   .header {
     padding: 15px;
   }
+}
+
+.logo,
+.logo:hover,
+.logo:visited,
+.logo:focus,
+.logo:active {
+  text-decoration: none;
 }
 </style>

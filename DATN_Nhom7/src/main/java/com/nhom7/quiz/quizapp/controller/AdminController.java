@@ -1,5 +1,6 @@
 package com.nhom7.quiz.quizapp.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,10 +9,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nhom7.quiz.quizapp.model.User;
+import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -45,6 +50,15 @@ public class AdminController {
                                                         "status", "NOT_ADMIN",
                                                         "message", "Không phải người dùng quản trị"));
                 };
+        }
+
+        // Lấy danh sách tất cả người dùng
+        @Autowired
+        private adminservice adminService;
+
+        @GetMapping("/all-users")
+        public List<User> getAllUsers() {
+                return adminService.getAllUsers();
         }
 
 }

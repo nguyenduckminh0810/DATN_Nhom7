@@ -70,7 +70,10 @@ const login = async () => {
 }
 
 const logout = () => {
+    const router = useRouter()
     localStorage.removeItem('token')
+    localStorage.removeItem('username')
+    username.value = null
     status.value = 'loggedOut'
     message.value = ''
     resetForm()
