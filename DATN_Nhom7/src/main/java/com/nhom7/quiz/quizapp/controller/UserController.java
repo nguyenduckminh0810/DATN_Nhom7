@@ -1,6 +1,5 @@
 package com.nhom7.quiz.quizapp.controller;
 
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -20,7 +19,6 @@ import com.nhom7.quiz.quizapp.service.userService.ReginService.RegisterResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api")

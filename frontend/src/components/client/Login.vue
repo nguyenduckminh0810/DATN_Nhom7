@@ -1,4 +1,5 @@
 <script setup>
+import { RouterLink } from 'vue-router'
 import { useLogin } from './useLogin'
 import { useQuizCRUD } from './useQuizCRUD'
 
@@ -32,7 +33,7 @@ const { toQuizCRUD } = useQuizCRUD()
                     <button type="submit" class="btn btn-primary w-100">Login</button>
                 </form>
                 <p class="mt-3 text-center">
-                    Don't have an account? <a href="/register">Register here</a>
+                    Don't have an account? <RouterLink to="/register">Register here</RouterLink>
                 </p>
             </div>
         </div>

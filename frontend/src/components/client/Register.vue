@@ -6,6 +6,7 @@ const { status, username, email, password, confirmPassword, fullName, avatarUrl,
 </script>
 <template>
     <div class="container" v-if="status === 'loggedOut'">
+        <h1>Đăng ký</h1>
         <form id="registerForm" class="container mt-4" method="post" @submit.prevent="register">
             <!-- Tên đăng nhập -->
             <div class="mb-3">
