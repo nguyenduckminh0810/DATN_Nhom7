@@ -15,6 +15,10 @@ const router = createRouter({
       name: 'register',
       component: () => import('../components/client/Register.vue'),
     },
+    // làm thử cắt layout
+    // Cắt layout thành admin layout và client layout
+    // Gán admin layout.vue cho các route liên quan đến quản trị viên
+    // Gán client layout.vue cho các route liên quan đến người dùng
     // Route về trang đăng nhập admin
     {
       path: '/admin',
@@ -27,6 +31,29 @@ const router = createRouter({
       name: 'quizcrud',
       component: () => import('../components/client/QuizCRUD.vue')
     },
+    {
+      path: '/quiz/:quizId/:userId/play',
+      name: 'PlayQuiz',
+      component: () => import('../components/client/PlayQuiz.vue')
+    },
+
+    {
+      path: '/quiz-crud/edit/:userId/:quizId',
+      name: 'EditQuiz',
+      component: () => import('../components/client/editQuiz.vue')
+    },
+    {
+      path: '/quiz/:quizId/:userId/result',
+      name: 'QuizResult',
+      component: () => import('../components/client/QuizResult.vue')
+    },
+    {
+      path: '/history/:userId',
+      name: 'quizHistory',
+      component: () => import('../components/client/QuizHistory.vue')
+    }
+
+
   ],
 })
 

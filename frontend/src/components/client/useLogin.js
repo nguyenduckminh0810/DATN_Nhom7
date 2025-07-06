@@ -9,7 +9,6 @@ const password = ref('')
 const userId = ref('')
 const token = ref('')
 const message = ref('')
-const router = useRouter()
 
 onMounted(() => {
     const savedToken = localStorage.getItem('token')
@@ -57,6 +56,7 @@ const login = async () => {
             localStorage.setItem('token', data.token)
             token.value = data.token
             status.value = 'loggedIn'
+            await getUserId()
         } else {
             message.value = data.message || 'Có lỗi xảy ra!'
             status.value = 'loggedOut'
@@ -70,14 +70,14 @@ const login = async () => {
 }
 
 const logout = () => {
-    const router = useRouter()
+    const router = useRouter() // ✅ dùng đúng router
     localStorage.removeItem('token')
     localStorage.removeItem('username')
     username.value = null
     status.value = 'loggedOut'
     message.value = ''
     resetForm()
-    router.push('/login')
+    router.push({ name: 'login' }) // ✅ chuyển hướng
 }
 
 export function useLogin() {
