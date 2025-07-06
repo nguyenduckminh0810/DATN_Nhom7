@@ -1,17 +1,30 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 
 const route = useRoute()
-const router = useRouter() // ✅ Thêm dòng này
+const router = useRouter()
 
 const quizId = route.params.quizId
 const userId = route.params.userId
 const questions = ref([])
 const currentQuestionIndex = ref(0)
-const token = localStorage.getItem('token')
 const selectedAnswers = ref({})
+const countdown = ref(30)
+let timer = null
+
+function startTimer() {
+    clearInterval(timer)
+    countdown.value = 30
+    timer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) {
+            clearInterval(timer)
+            nextQuestion()
+        }
+    }, 1000)
+}
 
 onMounted(async () => {
     try {
@@ -33,10 +46,14 @@ onMounted(async () => {
         )
 
         questions.value = enrichedQuestions
-        console.log('Questions sau khi thêm answers:', questions.value)
+        startTimer() // Bắt đầu đếm thời gian khi có câu hỏi
     } catch (err) {
         console.error('Lỗi khi tải câu hỏi:', err)
     }
+})
+
+onBeforeUnmount(() => {
+    clearInterval(timer)
 })
 
 function selectAnswer(questionId, answerId) {
@@ -46,18 +63,24 @@ function selectAnswer(questionId, answerId) {
 function nextQuestion() {
     if (currentQuestionIndex.value < questions.value.length - 1) {
         currentQuestionIndex.value++
+        startTimer()
+    } else {
+        clearInterval(timer)
+        submitQuiz()
     }
 }
 
 function prevQuestion() {
     if (currentQuestionIndex.value > 0) {
         currentQuestionIndex.value--
+        startTimer()
     }
 }
 
 async function submitQuiz() {
-    const token = localStorage.getItem('token')
+    clearInterval(timer)
 
+    const token = localStorage.getItem('token')
     const answerList = Object.entries(selectedAnswers.value).map(
         ([questionId, answerId]) => ({
             questionId: parseInt(questionId),
@@ -85,7 +108,6 @@ async function submitQuiz() {
         const score = res.data.score
         alert('Nộp bài thành công! Điểm của bạn: ' + score)
 
-        // ✅ Redirect sang trang kết quả
         router.push({
             name: 'QuizResult',
             params: {
@@ -106,85 +128,111 @@ async function submitQuiz() {
     }
 }
 </script>
-
-
 <template>
-    <div class="container mt-4">
-        <h1>Chơi Quiz</h1>
-        <p class="text-muted">Quiz ID: {{ quizId }}</p>
+    <div class="container my-5">
+        <div class="text-center mb-4">
+            <h1 class="fw-bold text-primary">🧠 Chơi Quiz</h1>
+            <p class="text-muted">Mã Quiz: <strong>{{ quizId }}</strong></p>
+        </div>
 
         <div v-if="questions.length > 0">
-            <div class="card p-4 shadow-sm">
-                <h4 class="text-center question-title">
+            <div class="card shadow-sm p-4">
+                <!-- Thời gian -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">⏳ Thời gian còn lại:</small>
+                        <small class="fw-bold text-dark">{{ countdown }} giây</small>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" :class="{
+                            'bg-success': countdown > 20,
+                            'bg-warning': countdown <= 20 && countdown > 10,
+                            'bg-danger': countdown <= 10
+                        }" role="progressbar" :style="{ width: (countdown / 30 * 100) + '%' }"
+                            :aria-valuenow="countdown" aria-valuemin="0" aria-valuemax="30">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Câu hỏi -->
+                <h4 class="question-title text-center mb-4">
                     Câu {{ currentQuestionIndex + 1 }}: {{ questions[currentQuestionIndex].content }}
                 </h4>
-                <div class="d-flex flex-wrap justify-content-center gap-3 mt-3" role="group" aria-label="Answer choices"
-                    v-if="questions[currentQuestionIndex].answers && questions[currentQuestionIndex].answers.length > 0">
-                    <template v-for="answer in questions[currentQuestionIndex].answers" :key="answer.id">
+
+                <!-- Đáp án -->
+                <div class="row row-cols-2 g-3 justify-content-center"
+                    v-if="questions[currentQuestionIndex].answers?.length">
+                    <div class="col-auto" v-for="answer in questions[currentQuestionIndex].answers" :key="answer.id">
                         <input type="radio" class="btn-check" :id="'answer-' + answer.id"
                             :name="'question-' + questions[currentQuestionIndex].id" :value="answer.id"
                             autocomplete="off"
                             :checked="selectedAnswers[questions[currentQuestionIndex].id] === answer.id"
                             @change="selectAnswer(questions[currentQuestionIndex].id, answer.id)" />
-                        <label class="btn btn-gradient" :for="'answer-' + answer.id">
+                        <label class="btn btn-gradient w-100 text-wrap" :for="'answer-' + answer.id">
                             {{ answer.content }}
                         </label>
-                    </template>
+                    </div>
                 </div>
 
-                <div v-else class="text-danger text-center mt-2">
-                    <p>Không có đáp án cho câu hỏi này.</p>
+                <!-- Không có đáp án -->
+                <div v-else class="text-danger text-center mt-3">
+                    <p>❗ Không có đáp án cho câu hỏi này.</p>
                 </div>
 
-
-                <div class="mt-4 d-flex justify-content-between">
+                <!-- Điều hướng -->
+                <div class="mt-5 d-flex justify-content-between">
                     <button class="btn btn-outline-secondary" :disabled="currentQuestionIndex === 0"
-                        @click="prevQuestion">Quay
-                        lại</button>
+                        @click="prevQuestion">
+                        ⬅️ Quay lại
+                    </button>
                     <button class="btn btn-outline-primary" v-if="currentQuestionIndex < questions.length - 1"
                         @click="nextQuestion">
-                        Câu tiếp
+                        Câu tiếp ➡️
                     </button>
-                    <button class="btn btn-success" v-else @click="submitQuiz">Nộp bài</button>
+                    <button class="btn btn-success" v-else @click="submitQuiz">
+                        ✅ Nộp bài
+                    </button>
                 </div>
             </div>
         </div>
 
         <div v-else class="text-center">
-            <p>Đang tải câu hỏi...</p>
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+            <p class="mt-3">Đang tải câu hỏi...</p>
         </div>
     </div>
 </template>
+
 <style scoped>
+.question-title {
+    font-weight: 600;
+    font-size: 1.5rem;
+}
+
 .btn-gradient {
     background: linear-gradient(to right, #6a11cb, #2575fc);
     color: white;
     border: none;
-    width: 120px;
-    height: 120px;
+    min-width: 140px;
+    min-height: 100px;
     border-radius: 12px;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 10px;
     text-align: center;
     white-space: normal;
-    padding: 10px;
     word-break: break-word;
-    text-wrap: wrap;
+    font-weight: 500;
 }
-
 
 .btn-gradient:hover {
     color: white;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    transform: translateY(-1px);
-}
-
-.question-title {
-    text-align: center;
-    font-weight: 600;
-    font-size: 1.5rem;
+    transform: translateY(-2px);
 }
 
 .btn-check:checked+.btn-gradient {
