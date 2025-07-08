@@ -2,6 +2,8 @@ package com.nhom7.quiz.quizapp.repository;
 
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.nhom7.quiz.quizapp.model.User;
@@ -14,6 +16,12 @@ public interface UserRepo extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 
     Optional<User> findByEmail(String email);
+
+    // Tìm kiếm người dùng theo tên đăng nhập hoặc email chứa từ khóa, không phân
+    // biệt hoa thường, có phân
+    // trang (dạng search)
+    Page<User> findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+            String username, String email, Pageable pageable);
 
     boolean existsByUsername(String username);
 

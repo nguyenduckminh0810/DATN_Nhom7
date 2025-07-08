@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nhom7.quiz.quizapp.model.Question;
-import com.nhom7.quiz.quizapp.repository.AnswerRepo;
 import com.nhom7.quiz.quizapp.service.AnswerService;
 import com.nhom7.quiz.quizapp.service.QuestionService;
 
