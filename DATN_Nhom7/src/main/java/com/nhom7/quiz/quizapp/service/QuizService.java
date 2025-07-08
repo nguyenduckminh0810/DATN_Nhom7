@@ -65,4 +65,10 @@ public class QuizService {
 		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 		return quizRepo.findByUserId(userId, pageable);
 	}
+
+	public Page<Quiz> getPublicQuizzes(boolean isPublic, int page, int size) {
+		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+		return quizRepo.findByIsPublic(isPublic, pageable);
+	}
+
 }
