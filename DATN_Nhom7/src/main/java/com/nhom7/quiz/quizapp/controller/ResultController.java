@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nhom7.quiz.quizapp.model.Result;
+import com.nhom7.quiz.quizapp.model.dto.EvaluationResult;
 import com.nhom7.quiz.quizapp.model.dto.QuizSubmissionDTO;
 import com.nhom7.quiz.quizapp.model.dto.ResultDTO;
 import com.nhom7.quiz.quizapp.service.ResultService;
@@ -25,9 +26,9 @@ public class ResultController {
     private ResultService resultService;
 
     @PostMapping("/submit")
-    public ResponseEntity<?> submitResult(@RequestBody QuizSubmissionDTO submission) {
-        int score = resultService.evaluateAndSave(submission);
-        return ResponseEntity.ok(Map.of("score", score));
+    public ResponseEntity<EvaluationResult> submitResult(@RequestBody QuizSubmissionDTO submission) {
+        EvaluationResult result = resultService.evaluateAndSave(submission);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/user/{userId}")

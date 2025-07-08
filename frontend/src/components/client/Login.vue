@@ -2,6 +2,7 @@
 import { RouterLink, useRouter } from 'vue-router'
 import { useLogin } from './useLogin'
 import { useQuizCRUD } from './useQuizCRUD'
+import { watch } from 'vue'
 
 const router = useRouter() // ✅ Lấy router
 const {
@@ -10,9 +11,11 @@ const {
     message,
     password,
     userId,
+    getUserId,
     login,
     logout
 } = useLogin()
+//cho sang client dashboard
 const { toQuizCRUD } = useQuizCRUD()
 
 function toQuizHistory() {
@@ -26,11 +29,19 @@ function toQuizHistory() {
         router.push({ name: 'quizHistory', params: { userId: userId.value } })
     }
 }
+watch(status, (message) => {
+    if (message === 'loggedIn') {
+        getUserId().then(id => {
+            if (id) router.push({ name: 'ClientDashboard', params: { userId: id } })
+            else alert("Không thể lấy thông tin người dùng.")
+        })
+    }
+})
 
 </script>
 
 <template>
-    <div class="container" v-if="status === 'loggedOut'">
+    <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <h1 class="text-center mb-4">Login</h1>
@@ -51,15 +62,5 @@ function toQuizHistory() {
                 </p>
             </div>
         </div>
-    </div>
-
-    <!-- Logged in view -->
-    <div class="alert alert-success" role="alert" v-else-if="status === 'loggedIn'">
-        Chào mừng bạn <strong>{{ username }}</strong>!
-        <br />
-        <h1>{{ message }}</h1>
-        <button class="btn btn-danger mt-3 me-3" @click="logout">Đăng xuất</button>
-        <button class="btn btn-primary mt-3 me-3" @click="toQuizCRUD">Quiz CRUD</button>
-        <button class="btn btn-secondary mt-3 me-3" @click="toQuizHistory">Lịch sử làm</button>
     </div>
 </template>

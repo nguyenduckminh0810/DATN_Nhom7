@@ -1,6 +1,7 @@
 package com.nhom7.quiz.quizapp.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,6 +12,8 @@ import com.nhom7.quiz.quizapp.model.Answer;
 import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.Result;
 import com.nhom7.quiz.quizapp.model.User;
+import com.nhom7.quiz.quizapp.model.dto.CorrectAnswerDTO;
+import com.nhom7.quiz.quizapp.model.dto.EvaluationResult;
 import com.nhom7.quiz.quizapp.model.dto.QuizSubmissionDTO;
 import com.nhom7.quiz.quizapp.repository.AnswerRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
@@ -32,13 +35,30 @@ public class ResultService {
     @Autowired
     private QuizRepo quizRepo;
 
-    public int evaluateAndSave(QuizSubmissionDTO submission) {
+    public List<Result> getResultsByUserId(Long userId) {
+        return resultRepo.findByUser_Id(userId);
+    }
+
+    public EvaluationResult evaluateAndSave(QuizSubmissionDTO submission) {
         int correctCount = 0;
+        List<CorrectAnswerDTO> correctAnswers = new ArrayList<>();
 
         for (QuizSubmissionDTO.AnswerSubmission ans : submission.getAnswers()) {
-            Optional<Answer> answerOpt = answerRepo.findById(ans.getAnswerId());
-            if (answerOpt.isPresent() && answerOpt.get().isCorrect()) {
-                correctCount++;
+            Long questionId = ans.getQuestionId();
+
+            // Lấy đáp án đúng nhất cho câu hỏi
+            Optional<Answer> correctAnswerOpt = answerRepo.findByQuestion_IdAndIsCorrectTrue(questionId);
+
+            if (correctAnswerOpt.isPresent()) {
+                Long correctAnswerId = correctAnswerOpt.get().getId();
+                correctAnswers.add(new CorrectAnswerDTO(questionId, correctAnswerId));
+
+                if (correctAnswerId.equals(ans.getAnswerId())) {
+                    correctCount++;
+                }
+            } else {
+                // Nếu không tìm thấy đáp án đúng thì vẫn thêm vào để client biết
+                correctAnswers.add(new CorrectAnswerDTO(questionId, null));
             }
         }
 
@@ -61,11 +81,6 @@ public class ResultService {
 
         resultRepo.save(result);
 
-        return score;
+        return new EvaluationResult(score, correctAnswers);
     }
-
-    public List<Result> getResultsByUserId(Long userId) {
-        return resultRepo.findAllByUser_Id(userId); // hoặc tương tự
-    }
-
 }

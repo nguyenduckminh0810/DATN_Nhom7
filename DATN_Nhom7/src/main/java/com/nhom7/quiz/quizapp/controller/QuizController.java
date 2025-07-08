@@ -1,11 +1,15 @@
 package com.nhom7.quiz.quizapp.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nhom7.quiz.quizapp.model.Quiz;
@@ -55,6 +59,25 @@ public class QuizController {
 		} else {
 			return ResponseEntity.notFound().build();
 		}
+	}
+
+	@GetMapping("/user/{userId}/paginated")
+	public ResponseEntity<Map<String, Object>> getPaginatedQuizzesByUser(
+			@PathVariable Long userId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "6") int size) {
+
+		Page<Quiz> quizPage = quizService.getQuizzesByUserPaginated(userId, page, size);
+		List<Quiz> quizzes = quizPage.getContent();
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("quizzes", quizzes);
+		response.put("currentPage", quizPage.getNumber());
+		response.put("totalPages", quizPage.getTotalPages());
+		response.put("totalItems", quizPage.getTotalElements());
+		response.put("pageSize", quizPage.getSize());
+
+		return ResponseEntity.ok(response);
 	}
 
 }

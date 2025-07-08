@@ -110,14 +110,14 @@ async function submitQuiz() {
 
         router.push({
             name: 'QuizResult',
-            params: {
-                quizId,
-                userId
-            },
+            params: { quizId, userId },
             query: {
-                score
+                score: res.data.score,
+                correctAnswers: JSON.stringify(res.data.correctAnswers),
+                selectedAnswers: JSON.stringify(answerList)
             }
         })
+
     } catch (err) {
         console.error('Lỗi khi gửi kết quả:', err)
         if (err.response) {

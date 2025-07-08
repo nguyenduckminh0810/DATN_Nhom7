@@ -9,4 +9,6 @@ import com.nhom7.quiz.quizapp.model.Result;
 public interface ResultRepo extends JpaRepository<Result, Long> {
     // Các phương thức truy vấn tùy chỉnh nếu cần
     List<Result> findAllByUser_Id(Long userId);
+
+    List<Result> findByUser_Id(Long userId);
 }
