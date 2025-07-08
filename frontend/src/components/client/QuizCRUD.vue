@@ -14,8 +14,8 @@ const router = useRouter()
 const title = ref('')
 const selectedCategoryId = ref('')
 const userId = ref('')
-const isPublic = ref("true")
-const userName = ref('') // Default to 'unknown' if username is not set
+const isPublic = ref(true) // Use boolean instead of string
+const userName = ref('')
 const quizzes = ref([])
 const message = ref('')
 
@@ -51,14 +51,14 @@ async function createQuiz() {
     try {
         await axios.post('http://localhost:8080/api/quiz/create-quiz', {
             title: title.value,
-            isPublic: isPublic.value === "true",
+            public: isPublic.value,
             user: { id: userId.value },
             category: { id: selectedCategoryId.value }
         })
         message.value = 'Tạo quiz thành công!'
         title.value = ''
         selectedCategoryId.value = ''
-        isPublic.value = "true"
+        isPublic.value = true
         await fetchQuizzes()
     } catch (error) {
         console.error('Error creating quiz:', error)
@@ -66,8 +66,6 @@ async function createQuiz() {
     }
 }
 
-// Chỉnh sửa quiz
-// Chuyển hướng đến trang chỉnh sửa quiz
 function editQuiz(quizId) {
     const quiz = quizzes.value.find(q => q.id === quizId)
     if (quiz && quiz.user) {
@@ -83,7 +81,6 @@ function editQuiz(quizId) {
     }
 }
 
-// Xóa quiz
 async function deleteQuiz(quizId) {
     if (confirm('Bạn có chắc chắn muốn xóa quiz này?')) {
         try {
@@ -106,8 +103,8 @@ async function deleteQuiz(quizId) {
         }
     }
 }
+
 function playQuiz(quizId) {
-    console.log(userId.value)
     router.push({ name: 'PlayQuiz', params: { quizId, userId: userId.value } })
 }
 </script>
@@ -140,12 +137,12 @@ function playQuiz(quizId) {
                                 <label class="form-label">Công khai quiz?</label>
                                 <div>
                                     <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" value="true" v-model="isPublic"
+                                        <input class="form-check-input" type="radio" :value="true" v-model="isPublic"
                                             id="publicYes" />
                                         <label class="form-check-label" for="publicYes">Có</label>
                                     </div>
                                     <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" value="false" v-model="isPublic"
+                                        <input class="form-check-input" type="radio" :value="false" v-model="isPublic"
                                             id="publicNo" />
                                         <label class="form-check-label" for="publicNo">Không</label>
                                     </div>

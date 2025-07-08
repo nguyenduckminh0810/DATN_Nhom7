@@ -12,4 +12,6 @@ import com.nhom7.quiz.quizapp.model.Quiz;
 @Repository
 public interface QuizRepo extends JpaRepository<Quiz, Long> {
     Page<Quiz> findByUserId(Long userId, Pageable pageable);
+
+    Page<Quiz> findByIsPublic(boolean isPublic, Pageable pageable);
 }
