@@ -52,7 +52,6 @@ public class AdminController {
                 };
         }
 
-        // Lấy danh sách tất cả người dùng
         @Autowired
         private adminservice adminService;
 
@@ -60,10 +59,11 @@ public class AdminController {
         public ResponseEntity<Page<UserDTO>> getAllUsers(
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "10") int size,
-                        @RequestParam(required = false) String search
+                        @RequestParam(required = false) String search,
+                        @RequestParam(required = false) String role
 
         ) {
-                return ResponseEntity.ok(adminService.getAllUsers(page, size, search));
+                return ResponseEntity.ok(adminService.getAllUsers(page, size, search, role));
         }
 
 }
