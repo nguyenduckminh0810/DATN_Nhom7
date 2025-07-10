@@ -21,6 +21,10 @@ watch(message, (newVal) => {
     }
   }
 })
+function logoutForNavbar() {
+  logout()
+  router.push('/login')
+}
 
 </script>
 
@@ -34,7 +38,7 @@ watch(message, (newVal) => {
       </RouterLink>
 
       <!-- Menu -->
-      <nav :class="['navmenu', { 'mobile-open': isMobileMenuOpen }]">
+      <nav class="navmenu d-flex align-items-center">
         <ul>
           <li><a href="#hero" class="active">Home</a></li>
           <li><a href="#about">About</a></li>
@@ -71,11 +75,10 @@ watch(message, (newVal) => {
             <a href="#" @click.prevent="login" class="btn btn-outline-primary px-4 py-2">Đăng nhập</a>
           </li>
           <li v-else>
-            <a href="#" @click.prevent="logout" class="btn btn-primary px-4 py-2">Đăng xuất</a>
+            <a href="#" @click.prevent="logoutForNavbar" class="btn btn-primary px-4 py-2">Đăng xuất</a>
           </li>
 
         </ul>
-        <i class="mobile-nav-toggle d-xl-none bi bi-list" @click="toggleMobileMenu"></i>
       </nav>
 
     </div>

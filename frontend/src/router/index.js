@@ -1,60 +1,56 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+// Layouts
+// import AdminLayout from '@/layouts/AdminLayout.vue'
+import ClientLayout from '@/layouts/ClientLayout.vue'
+
+// Admin views
+// import LoginAdmin from '@/components/admin/LoginAdmin.vue'
+// import AdminDashboard from '@/views/admin/Dashboard.vue'
+// import ManageQuizzes from '@/views/admin/ManageQuizzes.vue'
+
+// Client views
+import Login from '@/components/client/Login.vue'
+import Register from '@/components/client/Register.vue'
+import QuizCRUD from '@/components/client/QuizCRUD.vue'
+import PlayQuiz from '@/components/client/PlayQuiz.vue'
+import EditQuiz from '@/components/client/editQuiz.vue'
+import QuizResult from '@/components/client/QuizResult.vue'
+import QuizHistory from '@/components/client/QuizHistory.vue'
+import ClientDashboard from '@/components/client/ClientDashboard.vue'
+
+const routes = [
+  // Client layout và các route người dùng
+  {
+    path: '/',
+    component: ClientLayout,
+    children: [
+      { path: 'login', name: 'Login', component: Login },
+      { path: 'register', name: 'Register', component: Register },
+      { path: 'client-dashboard/:userId', name: 'ClientDashboard', component: ClientDashboard },
+      { path: 'quiz-crud', name: 'QuizCRUD', component: QuizCRUD },
+      { path: 'quiz/:quizId/:userId/play', name: 'PlayQuiz', component: PlayQuiz },
+      { path: 'quiz-crud/edit/:userId/:quizId', name: 'EditQuiz', component: EditQuiz },
+      { path: 'quiz/:quizId/:userId/result', name: 'QuizResult', component: QuizResult },
+      { path: 'history/:userId', name: 'QuizHistory', component: QuizHistory },
+    ]
+  },
+
+  // Admin layout và các route quản trị
+  // {
+  //   path: '/admin',
+  //   component: AdminLayout,
+  //   children: [
+  //     { path: '', name: 'AdminLogin', component: LoginAdmin },
+  //     { path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard },
+  //     { path: 'quizzes', name: 'ManageQuizzes', component: ManageQuizzes },
+  //   ]
+  // },
+]
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    // Route về trang đăng nhập
-    {
-      path: '/login',
-      name: 'login',
-      component: () => import('../components/client/Login.vue'),
-    },
-    // Route về trang đăng ký
-    {
-      path: '/register',
-      name: 'register',
-      component: () => import('../components/client/Register.vue'),
-    },
-    // làm thử cắt layout
-    // Cắt layout thành admin layout và client layout
-    // Gán admin layout.vue cho các route liên quan đến quản trị viên
-    // Gán client layout.vue cho các route liên quan đến người dùng
-    // Route về trang đăng nhập admin
-    {
-      path: '/admin',
-      name: 'admin',
-      component: () => import('../components/admin/LoginAdmin.vue'),
-    },
-    // Route về trang quản lý quiz
-    {
-      path: '/quiz-crud',
-      name: 'quizcrud',
-      component: () => import('../components/client/QuizCRUD.vue')
-    },
-    {
-      path: '/quiz/:quizId/:userId/play',
-      name: 'PlayQuiz',
-      component: () => import('../components/client/PlayQuiz.vue')
-    },
-
-    {
-      path: '/quiz-crud/edit/:userId/:quizId',
-      name: 'EditQuiz',
-      component: () => import('../components/client/editQuiz.vue')
-    },
-    {
-      path: '/quiz/:quizId/:userId/result',
-      name: 'QuizResult',
-      component: () => import('../components/client/QuizResult.vue')
-    },
-    {
-      path: '/history/:userId',
-      name: 'quizHistory',
-      component: () => import('../components/client/QuizHistory.vue')
-    }
-
-
-  ],
+  routes,
 })
 
 export default router

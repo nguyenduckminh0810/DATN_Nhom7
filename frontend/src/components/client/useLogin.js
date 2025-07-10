@@ -24,7 +24,8 @@ const resetForm = () => {
     username.value = ''
     password.value = ''
 }
-//Gửi lên server để lấy thông tin người dùng
+
+// Gửi lên server để lấy thông tin người dùng
 const getUserId = async () => {
     try {
         const res = await axios.get('http://localhost:8080/api/user', {
@@ -70,14 +71,13 @@ const login = async () => {
 }
 
 const logout = () => {
-    const router = useRouter() // ✅ dùng đúng router
+    const router = useRouter() // ❌ SAI chỗ này: useRouter() không nên dùng trong hàm bình thường
     localStorage.removeItem('token')
     localStorage.removeItem('username')
     username.value = null
     status.value = 'loggedOut'
     message.value = ''
     resetForm()
-    router.push({ name: 'login' }) // ✅ chuyển hướng
 }
 
 export function useLogin() {
