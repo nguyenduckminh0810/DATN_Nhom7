@@ -1,22 +1,23 @@
 package com.nhom7.quiz.quizapp.controller;
 
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nhom7.quiz.quizapp.model.User;
+import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
+import com.nhom7.quiz.quizapp.model.dto.UserDTO;
 import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -52,13 +53,27 @@ public class AdminController {
                 };
         }
 
-        // Lấy danh sách tất cả người dùng
         @Autowired
         private adminservice adminService;
 
         @GetMapping("/all-users")
-        public List<User> getAllUsers() {
-                return adminService.getAllUsers();
+        public ResponseEntity<Page<UserDTO>> getAllUsers(
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(required = false) String search,
+                        @RequestParam(required = false) String role
+
+        ) {
+                return ResponseEntity.ok(adminService.getAllUsers(page, size, search, role));
         }
 
+        @GetMapping("/all-quizzes/filter")
+        public ResponseEntity<Page<QuizDTO>> searchAndFilter(
+                        @RequestParam(required = false) String keyword,
+                        @RequestParam(required = false) Long tagId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
+                Page<QuizDTO> result = adminService.searchAndFilterQuizzes(keyword, tagId, page, size);
+                return ResponseEntity.ok(result);
+        }
 }

@@ -9,4 +9,6 @@ public interface ImageRepo extends JpaRepository<Image, Long> {
     Image findByQuestionId(Long id);
 
     Image findByQuizId(Long id);
+
+    void deleteByQuiz_Id(Long quizId);
 }
