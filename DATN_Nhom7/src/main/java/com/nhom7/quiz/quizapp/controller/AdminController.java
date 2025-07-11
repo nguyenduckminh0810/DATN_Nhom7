@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
 import com.nhom7.quiz.quizapp.model.dto.UserDTO;
 import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
@@ -66,4 +67,13 @@ public class AdminController {
                 return ResponseEntity.ok(adminService.getAllUsers(page, size, search, role));
         }
 
+        @GetMapping("/all-quizzes/filter")
+        public ResponseEntity<Page<QuizDTO>> searchAndFilter(
+                        @RequestParam(required = false) String keyword,
+                        @RequestParam(required = false) Long tagId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
+                Page<QuizDTO> result = adminService.searchAndFilterQuizzes(keyword, tagId, page, size);
+                return ResponseEntity.ok(result);
+        }
 }
