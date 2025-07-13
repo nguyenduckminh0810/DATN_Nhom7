@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nhom7.quiz.quizapp.model.dto.LoginRequest;
 import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
 import com.nhom7.quiz.quizapp.model.dto.UserDTO;
 import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
@@ -27,9 +28,10 @@ public class AdminController {
 
         // Tạo đăng nhập cho admin
         @PostMapping("/login")
-        public ResponseEntity<?> adminLogin(@RequestBody String username, @RequestBody String password) {
+        public ResponseEntity<?> adminLogin(@RequestBody LoginRequest loginRequest) {
                 // Phương thức để xác thực người dùng
-                LoginService.LoginResultForAdmin result = loginService.authenticateAdmin(username, password);
+                LoginService.LoginResultForAdmin result = loginService.authenticateAdmin(loginRequest.getUsername(),
+                                loginRequest.getPassword());
                 return switch (result.status()) {
                         case SUCCESS -> ResponseEntity.ok(Map.of(
                                         "status", "SUCCESS",
