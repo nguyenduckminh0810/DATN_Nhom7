@@ -1,16 +1,23 @@
 <template>
-  <div class="flex flex-col min-h-screen bg-gray-50">
+  <div class="d-flex flex-column min-vh-100 bg-light">
+    <!-- Header -->
     <HeaderAdmin />
-    <main class="flex-1 p-6">
-      <router-view />
-    </main>
+
+    <!-- Body: Sidebar + Content -->
+    <div class="d-flex flex-grow-1">
+      <SidebarAdmin />
+      <main class="flex-grow-1 p-4 overflow-auto">
+        <router-view />
+      </main>
+    </div>
+
+    <!-- Footer -->
     <FooterAdmin />
   </div>
 </template>
 
 <script setup>
-import FooterAdmin from '@/components/admin/FooterAdmin.vue';
-import HeaderAdmin from '@/components/admin/HeaderAdmin.vue';
-
-console.log("AdminLayout mounted")
+import FooterAdmin from '@/components/admin/FooterAdmin.vue'
+import HeaderAdmin from '@/components/admin/HeaderAdmin.vue'
+import SidebarAdmin from '@/components/admin/SidebarAdmin.vue'
 </script>

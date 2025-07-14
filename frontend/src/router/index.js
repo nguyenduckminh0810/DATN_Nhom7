@@ -35,14 +35,14 @@ const routes = [
     ],
   },
 
+  //Route đăng nhập của admin
+  { path: '/admin/login', name: 'AdminLogin', component: LoginAdmin },
+
   // Admin layout và các route quản trị
   {
     path: '/admin',
     component: AdminLayout,
-    children: [
-      { path: 'login', name: 'AdminLogin', component: LoginAdmin },
-      { path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard },
-    ],
+    children: [{ path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard }],
   },
 ]
 
