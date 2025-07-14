@@ -1,8 +1,5 @@
 <template>
   <nav class="bg-white border-end min-h-screen w-64">
-    <div class="p-4 border-bottom">
-      <h5 class="text-center fw-bold text-primary">Admin Panel</h5>
-    </div>
 
     <ul class="nav flex-column py-2">
       <li
