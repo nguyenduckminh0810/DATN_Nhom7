@@ -1,13 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 // Layouts
-// import AdminLayout from '@/layouts/AdminLayout.vue'
+import AdminLayout from '@/layouts/AdminLayout.vue'
 import ClientLayout from '@/layouts/ClientLayout.vue'
 
 // Admin views
-// import LoginAdmin from '@/components/admin/LoginAdmin.vue'
-// import AdminDashboard from '@/views/admin/Dashboard.vue'
-// import ManageQuizzes from '@/views/admin/ManageQuizzes.vue'
+import LoginAdmin from '@/components/admin/LoginAdmin.vue'
+import AdminDashboard from '@/components/admin/AdminDashboard.vue'
 
 // Client views
 import Login from '@/components/client/Login.vue'
@@ -33,19 +32,18 @@ const routes = [
       { path: 'quiz-crud/edit/:userId/:quizId', name: 'EditQuiz', component: EditQuiz },
       { path: 'quiz/:quizId/:userId/result', name: 'QuizResult', component: QuizResult },
       { path: 'history/:userId', name: 'QuizHistory', component: QuizHistory },
-    ]
+    ],
   },
 
+  //Route đăng nhập của admin
+  { path: '/admin/login', name: 'AdminLogin', component: LoginAdmin },
+
   // Admin layout và các route quản trị
-  // {
-  //   path: '/admin',
-  //   component: AdminLayout,
-  //   children: [
-  //     { path: '', name: 'AdminLogin', component: LoginAdmin },
-  //     { path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard },
-  //     { path: 'quizzes', name: 'ManageQuizzes', component: ManageQuizzes },
-  //   ]
-  // },
+  {
+    path: '/admin',
+    component: AdminLayout,
+    children: [{ path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard }],
+  },
 ]
 
 const router = createRouter({
