@@ -19,93 +19,127 @@ import com.nhom7.quiz.quizapp.repository.UserRepo;
 
 @Service
 public class adminservice {
-    @Autowired
-    private UserRepo userRepo;
+        @Autowired
+        private UserRepo userRepo;
 
-    // Phương thức để lấy danh sách tất cả người dùng
-    public Page<UserDTO> getAllUsers(int page, int size, String search, String role) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        // Phương thức để lấy danh sách tất cả người dùng
+        public Page<UserDTO> getAllUsers(int page, int size, String search, String role) {
+                Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        Page<User> userPage;
+                Page<User> userPage;
 
-        boolean hasSearch = search != null && !search.isBlank();
-        boolean hasRole = role != null && !role.isBlank();
+                boolean hasSearch = search != null && !search.isBlank();
+                boolean hasRole = role != null && !role.isBlank();
 
-        if (hasSearch && hasRole) {
-            // Tìm kiếm người dùng theo vai trò và tên đăng nhập hoặc email
-            userPage = userRepo.findByRoleAndFullNameContainingIgnoreCaseOrRoleAndEmailContainingIgnoreCase(role,
-                    search, role, search, pageable);
-        } else if (hasSearch) {
-            // Chỉ tìm kiếm
-            userPage = userRepo.findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(search, search, pageable);
-        } else if (hasRole) {
-            // Chỉ lọc theo vai trò
-            userPage = userRepo.findByRole(role, pageable);
-        } else {
-            // Không lọc
-            userPage = userRepo.findAll(pageable);
+                if (hasSearch && hasRole) {
+                        // Tìm kiếm người dùng theo vai trò và tên đăng nhập hoặc email
+                        userPage = userRepo.findByRoleAndFullNameContainingIgnoreCaseOrRoleAndEmailContainingIgnoreCase(
+                                        role,
+                                        search, role, search, pageable);
+                } else if (hasSearch) {
+                        // Chỉ tìm kiếm
+                        userPage = userRepo.findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(search,
+                                        search, pageable);
+                } else if (hasRole) {
+                        // Chỉ lọc theo vai trò
+                        userPage = userRepo.findByRole(role, pageable);
+                } else {
+                        // Không lọc
+                        userPage = userRepo.findAll(pageable);
+                }
+                return userPage.map(user -> new UserDTO(
+                                user.getId(),
+                                user.getUsername(),
+                                user.getEmail(),
+                                user.getFullName(),
+                                user.getRole(),
+                                user.getCreatedAt()));
         }
-        return userPage.map(user -> new UserDTO(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getFullName(),
-                user.getRole(),
-                user.getCreatedAt()));
-    }
 
-    @Autowired
-    private QuizRepo quizRepo;
+        // Phương thức dùng để sửa thông tin người dùng
+        public UserDTO updateUser(Long id, UserDTO dto) {
+                User user = userRepo.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-    // Lấy danh sách tất cả quiz (kể cả riêng tư), lọc theo tags, có phân trang
+                user.setFullName(dto.getFullName());
+                user.setEmail(dto.getEmail());
+                user.setUsername(dto.getUsername());
+                user.setRole(dto.getRole());
 
-    public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+                userRepo.save(user);
 
-        Page<Quiz> quizzes = quizRepo.findAll(pageable);
+                return new UserDTO(
+                                user.getId(),
+                                user.getUsername(),
+                                user.getEmail(),
+                                user.getFullName(),
+                                user.getRole(),
+                                user.getCreatedAt());
+        }
 
-        String keywordLower = keyword != null ? keyword.toLowerCase() : "";
+        // Phương thức dùng để xóa người dùng
+        public void deleteUser(Long id) {
+                if (!userRepo.existsById(id)) {
+                        throw new RuntimeException("Người dùng không tồn tại");
+                }
+                userRepo.deleteById(id);
+        }
 
-        List<QuizDTO> filtered = quizzes.getContent().stream()
-                .filter(quiz -> {
-                    // --- Điều kiện tìm kiếm ---
-                    boolean matchTitle = quiz.getTitle() != null
-                            && quiz.getTitle().toLowerCase().contains(keywordLower);
+        @Autowired
+        private QuizRepo quizRepo;
 
-                    boolean matchCategory = quiz.getCategory() != null &&
-                            quiz.getCategory().getName().toLowerCase().contains(keywordLower);
+        // Lấy danh sách tất cả quiz (kể cả riêng tư), lọc theo tags, có phân trang
 
-                    boolean matchTagName = quiz.getQuizTags().stream()
-                            .anyMatch(qt -> qt.getTag().getName().toLowerCase().contains(keywordLower));
+        public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, int page, int size) {
+                Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-                    boolean keywordMatch = keyword == null || keyword.isBlank() || matchTitle || matchCategory
-                            || matchTagName;
+                Page<Quiz> quizzes = quizRepo.findAll(pageable);
 
-                    // --- Điều kiện lọc tagId ---
-                    boolean tagMatch = tagId == null || quiz.getQuizTags().stream()
-                            .anyMatch(qt -> qt.getTag().getId().equals(tagId));
+                String keywordLower = keyword != null ? keyword.toLowerCase() : "";
 
-                    return keywordMatch && tagMatch;
-                })
-                .map(this::convertToDTO)
-                .toList();
+                List<QuizDTO> filtered = quizzes.getContent().stream()
+                                .filter(quiz -> {
+                                        // --- Điều kiện tìm kiếm ---
+                                        boolean matchTitle = quiz.getTitle() != null
+                                                        && quiz.getTitle().toLowerCase().contains(keywordLower);
 
-        return new PageImpl<>(filtered, pageable, quizzes.getTotalElements());
-    }
+                                        boolean matchCategory = quiz.getCategory() != null &&
+                                                        quiz.getCategory().getName().toLowerCase()
+                                                                        .contains(keywordLower);
 
-    // Hàm chuyển đổi Quiz sang QuizDTO
-    private QuizDTO convertToDTO(Quiz quiz) {
-        List<String> tagNames = quiz.getQuizTags().stream()
-                .map(qt -> qt.getTag().getName())
-                .toList();
+                                        boolean matchTagName = quiz.getQuizTags().stream()
+                                                        .anyMatch(qt -> qt.getTag().getName().toLowerCase()
+                                                                        .contains(keywordLower));
 
-        return new QuizDTO(
-                quiz.getId(),
-                quiz.getTitle(),
-                quiz.isPublic(),
-                quiz.getCreatedAt(),
-                tagNames,
-                quiz.getCategory() != null ? quiz.getCategory().getName() : null);
-    }
+                                        boolean keywordMatch = keyword == null || keyword.isBlank() || matchTitle
+                                                        || matchCategory
+                                                        || matchTagName;
+
+                                        // --- Điều kiện lọc tagId ---
+                                        boolean tagMatch = tagId == null || quiz.getQuizTags().stream()
+                                                        .anyMatch(qt -> qt.getTag().getId().equals(tagId));
+
+                                        return keywordMatch && tagMatch;
+                                })
+                                .map(this::convertToDTO)
+                                .toList();
+
+                return new PageImpl<>(filtered, pageable, quizzes.getTotalElements());
+        }
+
+        // Hàm chuyển đổi Quiz sang QuizDTO
+        private QuizDTO convertToDTO(Quiz quiz) {
+                List<String> tagNames = quiz.getQuizTags().stream()
+                                .map(qt -> qt.getTag().getName())
+                                .toList();
+
+                return new QuizDTO(
+                                quiz.getId(),
+                                quiz.getTitle(),
+                                quiz.isPublic(),
+                                quiz.getCreatedAt(),
+                                tagNames,
+                                quiz.getCategory() != null ? quiz.getCategory().getName() : null);
+        }
 
 }

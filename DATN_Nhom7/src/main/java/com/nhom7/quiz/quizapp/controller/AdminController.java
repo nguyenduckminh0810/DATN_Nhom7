@@ -17,8 +17,11 @@ import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -58,6 +61,7 @@ public class AdminController {
         @Autowired
         private adminservice adminService;
 
+        // Lấy danh sách người dùng
         @GetMapping("/all-users")
         public ResponseEntity<Page<UserDTO>> getAllUsers(
                         @RequestParam(defaultValue = "0") int page,
@@ -69,6 +73,21 @@ public class AdminController {
                 return ResponseEntity.ok(adminService.getAllUsers(page, size, search, role));
         }
 
+        // Cập nhật user
+        @PutMapping("/users/{id}")
+        public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDTO dto) {
+                UserDTO updated = adminService.updateUser(id, dto);
+                return ResponseEntity.ok(updated);
+        }
+
+        // Xoá user
+        @DeleteMapping("/users/{id}")
+        public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+                adminService.deleteUser(id);
+                return ResponseEntity.ok("Đã xoá người dùng thành công");
+        }
+
+        // Lấy danh sách quiz
         @GetMapping("/all-quizzes/filter")
         public ResponseEntity<Page<QuizDTO>> searchAndFilter(
                         @RequestParam(required = false) String keyword,

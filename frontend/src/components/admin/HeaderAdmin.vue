@@ -1,7 +1,7 @@
 <template>
   <header class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-4 py-2">
     <!-- Logo / Tên admin panel -->
-    <a class="navbar-brand fw-bold text-dark" href="#">Quiz Master</a>
+    <a class="navbar-brand fw-bold text-dark" href="/admin/dashboard">Quiz Master</a>
 
     <!-- Spacer -->
     <div class="flex-grow-1"></div>
@@ -41,7 +41,7 @@
           aria-expanded="false"
         >
           <img
-            src="C:\Users\PC\Desktop\DATN_Nhom7\frontend\public\img\admin\anh-mo-ta.jpg"
+            src="/img/anh-mo-ta.jpg"
             class="rounded-circle me-2"
             alt="avatar"
             style="width: 32px; height: 32px; object-fit: cover;"
