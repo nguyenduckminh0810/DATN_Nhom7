@@ -54,8 +54,10 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useUserStore } from '@/stores/user'
 
 const openedIndex = ref(null)
+const userStore = useUserStore()
 
 const toggle = (index) => {
   openedIndex.value = openedIndex.value === index ? null : index
@@ -63,6 +65,12 @@ const toggle = (index) => {
 
 const menuItems = [
   { label: 'Dashboard', icon: 'bi bi-speedometer2', link: '/admin/dashboard' },
+  // Quiz Attempts chỉ hiển thị nếu là admin
+  ...(userStore.isAdmin() ? [
+    { label: 'Quiz Attempts', icon: 'bi bi-clock-history', link: '/admin/attempts' },
+  ] : []),
+  { label: 'Quiz History', icon: 'bi bi-clock-history', link: '/my-history' },
+  { label: 'Category Manager', icon: 'bi bi-folder', link: '/admin/categories' },
   {
     label: 'UI Elements',
     icon: 'bi bi-ui-checks-grid',

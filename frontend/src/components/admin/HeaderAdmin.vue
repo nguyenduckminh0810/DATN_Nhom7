@@ -41,7 +41,7 @@
           aria-expanded="false"
         >
           <img
-            src="C:\Users\PC\Desktop\DATN_Nhom7\frontend\public\img\admin\anh-mo-ta.jpg"
+            src="/img/admin/anh-mo-ta.jpg"
             class="rounded-circle me-2"
             alt="avatar"
             style="width: 32px; height: 32px; object-fit: cover;"

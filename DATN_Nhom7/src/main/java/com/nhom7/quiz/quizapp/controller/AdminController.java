@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nhom7.quiz.quizapp.model.dto.LoginRequest;
 import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
 import com.nhom7.quiz.quizapp.model.dto.UserDTO;
+import com.nhom7.quiz.quizapp.model.dto.ResultDTO;
 import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 
@@ -76,6 +77,17 @@ public class AdminController {
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "10") int size) {
                 Page<QuizDTO> result = adminService.searchAndFilterQuizzes(keyword, tagId, page, size);
+                return ResponseEntity.ok(result);
+        }
+
+        // API lấy tất cả quiz attempts (lịch sử làm quiz) cho admin
+        @GetMapping("/all-attempts")
+        public ResponseEntity<Page<ResultDTO>> getAllQuizAttempts(
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(required = false) Long userId,
+                        @RequestParam(required = false) Long quizId) {
+                Page<ResultDTO> result = adminService.getAllQuizAttempts(page, size, userId, quizId);
                 return ResponseEntity.ok(result);
         }
 }

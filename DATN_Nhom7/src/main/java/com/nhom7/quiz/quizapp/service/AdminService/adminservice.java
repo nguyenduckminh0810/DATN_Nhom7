@@ -12,15 +12,24 @@ import org.springframework.stereotype.Service;
 
 import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.User;
+import com.nhom7.quiz.quizapp.model.Result;
 import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
 import com.nhom7.quiz.quizapp.model.dto.UserDTO;
+import com.nhom7.quiz.quizapp.model.dto.ResultDTO;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
+import com.nhom7.quiz.quizapp.repository.ResultRepo;
 
 @Service
 public class adminservice {
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private QuizRepo quizRepo;
+
+    @Autowired
+    private ResultRepo resultRepo;
 
     // Phương thức để lấy danh sách tất cả người dùng
     public Page<UserDTO> getAllUsers(int page, int size, String search, String role) {
@@ -54,11 +63,7 @@ public class adminservice {
                 user.getCreatedAt()));
     }
 
-    @Autowired
-    private QuizRepo quizRepo;
-
     // Lấy danh sách tất cả quiz (kể cả riêng tư), lọc theo tags, có phân trang
-
     public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
@@ -91,6 +96,36 @@ public class adminservice {
                 .toList();
 
         return new PageImpl<>(filtered, pageable, quizzes.getTotalElements());
+    }
+
+    // Lấy danh sách tất cả quiz attempts (lịch sử làm quiz) cho admin
+    public Page<ResultDTO> getAllQuizAttempts(int page, int size, Long userId, Long quizId) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("completedAt").descending());
+
+        Page<Result> resultPage;
+
+        if (userId != null && quizId != null) {
+            // Lọc theo cả user và quiz - cần tạo method này trong ResultRepo
+            List<Result> results = resultRepo.findAll().stream()
+                    .filter(result -> result.getUser().getId().equals(userId) && result.getQuiz().getId().equals(quizId))
+                    .toList();
+            resultPage = new PageImpl<>(results, pageable, results.size());
+        } else if (userId != null) {
+            // Chỉ lọc theo user
+            List<Result> results = resultRepo.findByUser_Id(userId);
+            resultPage = new PageImpl<>(results, pageable, results.size());
+        } else if (quizId != null) {
+            // Chỉ lọc theo quiz - cần tạo method này trong ResultRepo
+            List<Result> results = resultRepo.findAll().stream()
+                    .filter(result -> result.getQuiz().getId().equals(quizId))
+                    .toList();
+            resultPage = new PageImpl<>(results, pageable, results.size());
+        } else {
+            // Lấy tất cả
+            resultPage = resultRepo.findAll(pageable);
+        }
+
+        return resultPage.map(result -> new ResultDTO(result));
     }
 
     // Hàm chuyển đổi Quiz sang QuizDTO
