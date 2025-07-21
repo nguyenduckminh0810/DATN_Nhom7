@@ -1,31 +1,38 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import UserSearchPage from '@/views/UserSearchPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // Route về trang đăng nhập
+    {
+      path: '/',
+      name: 'home',
+      component: () => import('../components/client/Home.vue'),
+    },
     {
       path: '/login',
       name: 'login',
       component: () => import('../components/client/Login.vue'),
     },
-    // Route về trang đăng ký
     {
       path: '/register',
       name: 'register',
       component: () => import('../components/client/Register.vue'),
     },
-    // Route về trang đăng nhập admin
     {
       path: '/admin',
       name: 'admin',
       component: () => import('../components/admin/LoginAdmin.vue'),
     },
-    // Route về trang quản lý quiz
     {
       path: '/quiz-crud',
       name: 'quizcrud',
-      component: () => import('../components/client/QuizCRUD.vue')
+      component: () => import('../components/client/QuizCRUD.vue'),
+    },
+    {
+      path: '/users',
+      name: 'usersearch',
+      component: UserSearchPage,
     },
   ],
 })

@@ -1,5 +1,6 @@
 package com.nhom7.quiz.quizapp.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -7,12 +8,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nhom7.quiz.quizapp.config.JwtUtil;
 import com.nhom7.quiz.quizapp.model.User;
+import com.nhom7.quiz.quizapp.model.dto.UserResponse;
+import com.nhom7.quiz.quizapp.repository.UserRepo;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 import com.nhom7.quiz.quizapp.service.userService.ReginService;
+import com.nhom7.quiz.quizapp.service.userService.UserService;
 import com.nhom7.quiz.quizapp.service.userService.LoginService.LoginResult;
 import com.nhom7.quiz.quizapp.service.userService.ReginService.RegisterResult;
 
@@ -27,6 +32,7 @@ public class UserController {
 	// Form đăng ký người dùng mới
 	@Autowired
 	private ReginService reginService;
+	private UserService userService;
 
 	@PostMapping("/register")
 	public ResponseEntity<?> registerUser(@RequestBody User user) {
@@ -117,4 +123,12 @@ public class UserController {
 		return ResponseEntity.ok(Map.of("user_id", user.getId()));
 	}
 
+	@GetMapping
+	public ResponseEntity<List<UserResponse>> searchUsers(
+			@RequestParam(required = false) String name,
+			@RequestParam(required = false) String email,
+			@RequestParam(required = false) String status) {
+		List<UserResponse> users = userService.searchUsers(name, email, status);
+		return ResponseEntity.ok(users);
+	}
 }
