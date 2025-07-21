@@ -1,77 +1,86 @@
 <template>
-    <footer id="footer" class="footer dark-background">
-
-        <div class="container footer-top">
-            <div class="row gy-4">
-                <div class="col-lg-4 col-md-6 footer-about">
-                    <a href="index.html" class="logo d-flex align-items-center">
-                        <span class="sitename">Bootslander</span>
-                    </a>
-                    <div class="footer-contact pt-3">
-                        <p>A108 Adam Street</p>
-                        <p>New York, NY 535022</p>
-                        <p class="mt-3"><strong>Phone:</strong> <span>+1 5589 55488 55</span></p>
-                        <p><strong>Email:</strong> <span>info@example.com</span></p>
-                    </div>
-                    <div class="social-links d-flex mt-4">
-                        <a href=""><i class="bi bi-twitter-x"></i></a>
-                        <a href=""><i class="bi bi-facebook"></i></a>
-                        <a href=""><i class="bi bi-instagram"></i></a>
-                        <a href=""><i class="bi bi-linkedin"></i></a>
-                    </div>
-                </div>
-
-                <div class="col-lg-2 col-md-3 footer-links">
-                    <h4>Useful Links</h4>
-                    <ul>
-                        <li><a href="#">Home</a></li>
-                        <li><a href="#">About us</a></li>
-                        <li><a href="#">Services</a></li>
-                        <li><a href="#">Terms of service</a></li>
-                        <li><a href="#">Privacy policy</a></li>
-                    </ul>
-                </div>
-
-                <div class="col-lg-2 col-md-3 footer-links">
-                    <h4>Our Services</h4>
-                    <ul>
-                        <li><a href="#">Web Design</a></li>
-                        <li><a href="#">Web Development</a></li>
-                        <li><a href="#">Product Management</a></li>
-                        <li><a href="#">Marketing</a></li>
-                        <li><a href="#">Graphic Design</a></li>
-                    </ul>
-                </div>
-
-                <div class="col-lg-4 col-md-12 footer-newsletter">
-                    <h4>Our Newsletter</h4>
-                    <p>Subscribe to our newsletter and receive the latest news about our products and services!</p>
-                    <form action="forms/newsletter.php" method="post" class="php-email-form">
-                        <div class="newsletter-form"><input type="email" name="email"><input type="submit"
-                                value="Subscribe"></div>
-                        <div class="loading">Loading</div>
-                        <div class="error-message"></div>
-                        <div class="sent-message">Your subscription request has been sent. Thank you!</div>
-                    </form>
-                </div>
-
-            </div>
+  <footer class="footer bg-dark text-light pt-5 pb-3">
+    <div class="container">
+      <div class="row gy-4">
+        <!-- Logo & Contact -->
+        <div class="col-lg-4 col-md-6 mb-4">
+          <div class="d-flex align-items-center mb-2">
+            <img src="/img/logo.png" alt="QuizMaster Logo" style="height: 40px; margin-right: 10px;" />
+            <span class="h4 mb-0 fw-bold">QuizMaster</span>
+          </div>
+          <p class="mb-1"><i class="bi bi-geo-alt-fill me-2"></i>271 Le Thanh Tong, HaiPhong, Vietnam</p>
+          <p class="mb-1"><i class="bi bi-envelope-fill me-2"></i>quizmaster@example.com</p>
+          <p class="mb-3"><i class="bi bi-telephone-fill me-2"></i>+84 123 456 789</p>
+          <div class="d-flex gap-2">
+            <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-linkedin"></i></a>
+          </div>
         </div>
-
-        <div class="container copyright text-center mt-4">
-            <p>© <span>CopyrightAAAAA</span> <strong class="px-1 sitename">Bootslander</strong> <span>All Rights
-                    Reserved</span>
-            </p>
-            <div class="credits">
-                <!-- All the links in the footer should remain intact. -->
-                <!-- You can delete the links only if you've purchased the pro version. -->
-                <!-- Licensing information: https://bootstrapmade.com/license/ -->
-                <!-- Purchase the pro version with working PHP/AJAX contact form: [buy-url] -->
-                Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a> Distributed By <a
-                    href="https://themewagon.com">ThemeWagon</a>
-            </div>
+        <!-- Quick Links -->
+        <div class="col-lg-2 col-md-3 mb-4">
+          <h5 class="fw-bold mb-3">Liên kết nhanh</h5>
+          <ul class="list-unstyled">
+            <li><a href="/" class="text-light text-decoration-none">Trang chủ</a></li>
+            <li><a href="/about" class="text-light text-decoration-none">Về chúng tôi</a></li>
+            <li><a href="/quizzes" class="text-light text-decoration-none">Quiz công khai</a></li>
+            <li><a href="/contact" class="text-light text-decoration-none">Liên hệ</a></li>
+          </ul>
         </div>
-
-    </footer>
+        <!-- About Project -->
+        <div class="col-lg-3 col-md-3 mb-4">
+          <h5 class="fw-bold mb-3">Về QuizMaster</h5>
+          <p>
+            QuizMaster là nền tảng thi trắc nghiệm trực tuyến, giúp bạn tạo, chia sẻ và kiểm tra kiến thức dễ dàng, nhanh chóng và hiệu quả.
+          </p>
+        </div>
+        <!-- Newsletter -->
+        <div class="col-lg-3 col-md-12">
+          <h5 class="fw-bold mb-3">Nhận tin mới</h5>
+          <form @submit.prevent="subscribe">
+            <div class="input-group mb-2">
+              <input v-model="email" type="email" class="form-control" placeholder="Nhập email của bạn" required>
+              <button class="btn btn-primary" type="submit">Đăng ký</button>
+            </div>
+            <div v-if="message" :class="{'text-success': success, 'text-danger': !success}">{{ message }}</div>
+          </form>
+        </div>
+      </div>
+      <hr class="bg-secondary my-4" />
+      <div class="text-center small">
+        © 2024 <strong>QuizMaster</strong>. All Rights Reserved.
+      </div>
+    </div>
+  </footer>
 </template>
-<script setup></script>
+
+<script setup>
+import { ref } from 'vue'
+const email = ref('')
+const message = ref('')
+const success = ref(false)
+
+function subscribe() {
+  // Giả lập gửi email
+  if (email.value) {
+    message.value = 'Đăng ký nhận tin thành công!'
+    success.value = true
+    email.value = ''
+  } else {
+    message.value = 'Vui lòng nhập email hợp lệ.'
+    success.value = false
+  }
+}
+</script>
+
+<style scoped>
+.footer {
+  font-size: 1rem;
+  background: linear-gradient(90deg, #0072ff 0%, #00c6ff 100%);
+  color: #fff;
+}
+.footer a:hover {
+  text-decoration: underline;
+  color: #ffc107 !important;
+}
+</style>

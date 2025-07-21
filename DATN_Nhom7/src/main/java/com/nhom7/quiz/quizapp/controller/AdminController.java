@@ -20,6 +20,7 @@ import com.nhom7.quiz.quizapp.model.dto.LoginRequest;
 import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
 import com.nhom7.quiz.quizapp.model.dto.TagDTO;
 import com.nhom7.quiz.quizapp.model.dto.UserDTO;
+import com.nhom7.quiz.quizapp.model.dto.ResultDTO;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
 import com.nhom7.quiz.quizapp.repository.TagRepo;
@@ -36,6 +37,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
+        @Autowired
+        private CategoryRepo categoryRepo;
         @Autowired
         private LoginService loginService;
 
@@ -109,9 +112,16 @@ public class AdminController {
                 return ResponseEntity.ok(results);
         }
 
-        // Phương thức dùng để cập nhật quiz
-        @Autowired
-        private CategoryRepo categoryRepo;
+        // API lấy tất cả quiz attempts (lịch sử làm quiz) cho admin
+        @GetMapping("/all-attempts")
+        public ResponseEntity<Page<ResultDTO>> getAllQuizAttempts(
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(required = false) Long userId,
+                        @RequestParam(required = false) Long quizId) {
+                Page<ResultDTO> result = adminService.getAllQuizAttempts(page, size, userId, quizId);
+                return ResponseEntity.ok(result);
+        }
 
         @Autowired
         private QuizRepo quizRepo;

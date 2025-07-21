@@ -20,10 +20,4 @@ public class ImageService {
         return imageRepo.findByQuestionId(questionId);
     }
 
-    public void deleteByQuizId(Long quizId) {
-        Image image = imageRepo.findByQuizId(quizId);
-        if (image != null) {
-            imageRepo.deleteByQuiz_Id(quizId);
-        }
-    }
 }
