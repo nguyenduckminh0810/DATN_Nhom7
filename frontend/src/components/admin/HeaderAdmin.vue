@@ -1,7 +1,7 @@
 <template>
   <header class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-4 py-2">
     <!-- Logo / Tên admin panel -->
-    <a class="navbar-brand fw-bold text-dark" href="#">Quiz Master</a>
+    <a class="navbar-brand fw-bold text-dark" href="/admin/dashboard">Quiz Master</a>
 
     <!-- Spacer -->
     <div class="flex-grow-1"></div>
@@ -25,10 +25,12 @@
 
       <!-- Avatar & Dropdown -->
       <li class="nav-item dropdown">
+
         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button"
           data-bs-toggle="dropdown" aria-expanded="false">
-          <img src="https://i.pinimg.com/736x/72/d6/7f/72d67f463cdab865d4dda676ee9f83bf.jpg" class="rounded-circle me-2"
-            alt="avatar" style="width: 32px; height: 32px; object-fit: cover;" />
+          <img src="/img/anh-mo-ta.jpg" class="rounded-circle me-2" alt="avatar"
+            style="width: 32px; height: 32px; object-fit: cover;" />
+
           <span class="fw-medium text-dark">Admin</span>
         </a>
         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
