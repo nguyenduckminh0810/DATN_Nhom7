@@ -11,21 +11,23 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
 @Entity
 @Table(name = "tags")
 public class Tag {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @Column(length = 50, nullable = false, unique = true)
-    private String name;
+	@Column(length = 50, nullable = false, unique = true)
+	private String name;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
-    
-    @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<QuizTag> quizTags = new HashSet<>();
+	@Column(columnDefinition = "TEXT")
+	private String description;
+
+	@OneToMany(mappedBy = "tag", cascade = CascadeType.ALL, orphanRemoval = true)
+	private Set<QuizTag> quizTags = new HashSet<>();
+
 	public Long getId() {
 		return id;
 	}
@@ -69,6 +71,5 @@ public class Tag {
 	public Tag() {
 		super();
 	}
-    
-}
 
+}

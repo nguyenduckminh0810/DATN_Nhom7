@@ -15,6 +15,15 @@
           <option :value="false">Riêng tư</option>
         </select>
       </div>
+      <div class="col-md-3">
+        <select v-model="selectedTagId" @change="fetchQuizzes" class="form-select">
+          <option value="">Tất cả chủ đề</option>
+          <option v-for="tag in tags" :key="tag.id" :value="tag.id">
+            {{ tag.name }}
+          </option>
+        </select>
+      </div>
+
     </div>
 
     <!-- Bảng -->
@@ -129,6 +138,8 @@ const currentPage = ref(0);
 const totalPages = ref(1);
 const pageSize = 5;
 const categories = ref([]);
+const selectedTagId = ref('');
+const tags = ref([]);
 
 const showEditModal = ref(false);
 const selectedQuiz = ref({ id: null, title: '', categoryName: '', creatorName: "", isPublic: true });
@@ -147,12 +158,21 @@ async function fetchCategories() {
   }
 }
 
+async function fetchTags() {
+  try {
+    const response = await axios.get('/api/admin/tags'); // endpoint em viết
+    tags.value = response.data;
+  } catch (error) {
+    console.error('Lỗi khi tải tag:', error);
+  }
+}
+
 async function fetchQuizzes() {
   try {
     const response = await axios.get('/api/admin/all-quizzes/filter', {
       params: {
         keyword: search.value,
-        tagId: null,
+        tagId: selectedTagId.value === '' ? null : selectedTagId.value,
         isPublic: isPublic.value === '' ? null : isPublic.value,
         page: currentPage.value,
         size: pageSize
@@ -253,6 +273,8 @@ async function deleteQuiz(id) {
 onMounted(() => {
   fetchQuizzes();
   fetchCategories();
+  fetchTags();
+
 });
 
 </script>

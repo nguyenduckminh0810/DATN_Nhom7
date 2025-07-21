@@ -15,11 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nhom7.quiz.quizapp.model.Category;
 import com.nhom7.quiz.quizapp.model.Quiz;
+import com.nhom7.quiz.quizapp.model.Tag;
 import com.nhom7.quiz.quizapp.model.dto.LoginRequest;
 import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
+import com.nhom7.quiz.quizapp.model.dto.TagDTO;
 import com.nhom7.quiz.quizapp.model.dto.UserDTO;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
+import com.nhom7.quiz.quizapp.repository.TagRepo;
 import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 
@@ -175,6 +178,19 @@ public class AdminController {
         @GetMapping("/categories")
         public List<Category> getAllCategories() {
                 return categoryRepo.findAll();
+        }
+
+        @Autowired
+        private TagRepo tagRepo;
+
+        // Lấy danh sách tất cả các tag
+        @GetMapping("/tags")
+        public ResponseEntity<List<TagDTO>> getAllTags() {
+                List<Tag> tags = tagRepo.findAll();
+                List<TagDTO> tagDTOs = tags.stream()
+                                .map(tag -> new TagDTO(tag.getId(), tag.getName(), tag.getDescription()))
+                                .toList();
+                return ResponseEntity.ok(tagDTOs);
         }
 
 }
