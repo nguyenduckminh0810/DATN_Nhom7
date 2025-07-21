@@ -3,16 +3,16 @@ package com.nhom7.quiz.quizapp.model.dto;
 public class DashboardDTO {
     private long totalUsers;
     private long totalQuizzes;
-    private long totalQuizAttempts;
+    private long totalAttempts;
     private long totalCategories;
     private long pendingApproval;
     private long totalReports;
 
-    public DashboardDTO(long totalUsers, long totalQuizzes, long totalQuizAttempts, long totalCategories,
+    public DashboardDTO(long totalUsers, long totalQuizzes, long totalAttempts, long totalCategories,
             long pendingApproval, long totalReports) {
         this.totalUsers = totalUsers;
         this.totalQuizzes = totalQuizzes;
-        this.totalQuizAttempts = totalQuizAttempts;
+        this.totalAttempts = totalAttempts;
         this.totalCategories = totalCategories;
         this.pendingApproval = pendingApproval;
         this.totalReports = totalReports;
@@ -34,12 +34,12 @@ public class DashboardDTO {
         this.totalQuizzes = totalQuizzes;
     }
 
-    public long getTotalQuizAttempts() {
-        return totalQuizAttempts;
+    public long getTotalAttempts() {
+        return totalAttempts;
     }
 
-    public void setTotalQuizAttempts(long totalQuizAttempts) {
-        this.totalQuizAttempts = totalQuizAttempts;
+    public void setTotalAttempts(long totalAttempts) {
+        this.totalAttempts = totalAttempts;
     }
 
     public long getTotalCategories() {

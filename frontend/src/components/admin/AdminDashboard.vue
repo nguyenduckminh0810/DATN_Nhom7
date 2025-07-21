@@ -69,23 +69,37 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios';
 
 const pendingQuizzes = ref([]);
+const dashboardStats = ref(null);
+const statsCards = ref([]);
 
 onMounted(async () => {
   try {
-    const res = await axios.get('/api/admin/dashboard/pending-quizzes');
-    pendingQuizzes.value = res.data;
+    const [pendingRes, dashboardRes] = await Promise.all([
+      axios.get('/api/admin/dashboard/pending-quizzes'),
+      axios.get('/api/admin/dashboard')
+    ]);
+
+    pendingQuizzes.value = pendingRes.data;
+    dashboardStats.value = dashboardRes.data;
+
+    updateStatsCards();
   } catch (err) {
-    console.error("Lỗi khi lấy quiz chờ duyệt:", err);
+    console.error("Lỗi khi lấy dữ liệu dashboard:", err);
   }
 });
 
-// Danh sách card ban đầu, giá trị value sẽ cập nhật sau (mới lấy được API của users và quizzes)
-const statsCards = ref([
-  { label: 'Người dùng', value: 1532, subLabel: 'Tổng cộng', borderClass: 'border-primary' },
-  { label: 'Quiz đã tạo', value: 786, subLabel: 'Bao gồm cả public/private', borderClass: 'border-success' },
-  { label: 'Lượt làm Quiz', value: 14230, subLabel: 'Tất cả attempts', borderClass: 'border-warning' },
-  { label: 'Báo cáo vi phạm', value: 12, subLabel: 'Chưa xử lý', borderClass: 'border-danger' },
-  { label: 'Quiz chờ duyệt', value: 28, subLabel: 'Chưa xét duyệt', borderClass: 'border-info' },
-  { label: 'Danh mục', value: 18, subLabel: 'Chủ đề khác nhau', borderClass: 'border-secondary' }
-])
+function updateStatsCards() {
+  if (!dashboardStats.value) return;
+
+  statsCards.value = [
+    { label: 'Người dùng', value: dashboardStats.value.totalUsers, subLabel: 'Tổng cộng', borderClass: 'border-primary' },
+    { label: 'Quiz đã tạo', value: dashboardStats.value.totalQuizzes, subLabel: 'Bao gồm cả public/private', borderClass: 'border-success' },
+    { label: 'Lượt làm Quiz', value: dashboardStats.value.totalAttempts, subLabel: 'Tất cả attempts', borderClass: 'border-warning' },
+    { label: 'Báo cáo vi phạm', value: dashboardStats.value.totalReports, subLabel: 'Chưa xử lý', borderClass: 'border-danger' },
+    { label: 'Quiz chờ duyệt', value: dashboardStats.value.pendingApproval, subLabel: 'Chưa xét duyệt', borderClass: 'border-info' },
+    { label: 'Danh mục', value: dashboardStats.value.totalCategories, subLabel: 'Chủ đề khác nhau', borderClass: 'border-secondary' }
+  ];
+}
+
+
 </script>
