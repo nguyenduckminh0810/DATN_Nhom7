@@ -1,33 +1,60 @@
-HELP.md
+# =========================
+# Maven
+# =========================
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+*.log
+*.class
+*.jar
+*.war
+*.ear
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# Maven Wrapper
+.mvn/
+mvnw
+mvnw.cmd
 
-### IntelliJ IDEA ###
-.idea
-*.iws
+# =========================
+# IDE Files
+# =========================
+
+# IntelliJ IDEA
+.idea/
 *.iml
+*.iws
 *.ipr
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
+# Eclipse / Spring Tool Suite (STS)
+.classpath
+.project
+.settings/
+.apt_generated/
+.factorypath/
+.springBeans/
+.sts4-cache/
 
-### VS Code ###
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+build/
+
+# VSCode
 .vscode/
+
+# =========================
+# Config files (sensitive)
+# =========================
+src/main/resources/application.properties
+
+# =========================
+# Frontend (Vue / Node)
+# =========================
+frontend/node_modules/
+frontend/package-lock.json
+frontend/package.json
+
+# Ignore frontend build (nếu có)
+frontend/dist/
+frontend/.env

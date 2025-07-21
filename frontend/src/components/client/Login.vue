@@ -1,22 +1,47 @@
 <script setup>
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useLogin } from './useLogin'
 import { useQuizCRUD } from './useQuizCRUD'
+import { watch } from 'vue'
 
+const router = useRouter() // ✅ Lấy router
 const {
     status,
     username,
     message,
     password,
+    userId,
+    getUserId,
     login,
     logout
 } = useLogin()
-
+//cho sang client dashboard
 const { toQuizCRUD } = useQuizCRUD()
+
+function toQuizHistory() {
+    if (!userId.value) {
+        console.warn("Chưa có userId. Đang thử gọi getUserId() lại...")
+        getUserId().then(id => {
+            if (id) router.push({ name: 'quizHistory', params: { userId: id } })
+            else alert("Không thể lấy thông tin người dùng.")
+        })
+    } else {
+        router.push({ name: 'quizHistory', params: { userId: userId.value } })
+    }
+}
+watch(status, (message) => {
+    if (message === 'loggedIn') {
+        getUserId().then(id => {
+            if (id) router.push({ name: 'ClientDashboard', params: { userId: id } })
+            else alert("Không thể lấy thông tin người dùng.")
+        })
+    }
+})
+
 </script>
 
 <template>
-    <div class="container" v-if="status === 'loggedOut'">
+    <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <h1 class="text-center mb-4">Login</h1>
@@ -37,14 +62,5 @@ const { toQuizCRUD } = useQuizCRUD()
                 </p>
             </div>
         </div>
-    </div>
-    <!-- Đoạn này chuyển tab khác  -->
-
-    <div class="alert alert-success" role="alert" v-else-if="status === 'loggedIn'">
-        Chào mừng bạn <strong>{{ username }}</strong>!
-        <br />
-        <h1>{{ message }}</h1>
-        <button class="btn btn-danger mt-3" @click="logout">Đăng xuất</button>
-        <button class="btn btn-primary mt-3" @click="toQuizCRUD">Quiz CRUD</button>
     </div>
 </template>

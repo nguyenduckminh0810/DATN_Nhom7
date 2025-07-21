@@ -9,7 +9,6 @@ const password = ref('')
 const userId = ref('')
 const token = ref('')
 const message = ref('')
-const router = useRouter()
 
 onMounted(() => {
     const savedToken = localStorage.getItem('token')
@@ -25,7 +24,8 @@ const resetForm = () => {
     username.value = ''
     password.value = ''
 }
-//Gửi lên server để lấy thông tin người dùng
+
+// Gửi lên server để lấy thông tin người dùng
 const getUserId = async () => {
     try {
         const res = await axios.get('http://localhost:8080/api/user', {
@@ -57,6 +57,7 @@ const login = async () => {
             localStorage.setItem('token', data.token)
             token.value = data.token
             status.value = 'loggedIn'
+            await getUserId()
         } else {
             message.value = data.message || 'Có lỗi xảy ra!'
             status.value = 'loggedOut'
@@ -70,14 +71,13 @@ const login = async () => {
 }
 
 const logout = () => {
-    const router = useRouter()
+    const router = useRouter() // ❌ SAI chỗ này: useRouter() không nên dùng trong hàm bình thường
     localStorage.removeItem('token')
     localStorage.removeItem('username')
     username.value = null
     status.value = 'loggedOut'
     message.value = ''
     resetForm()
-    router.push('/login')
 }
 
 export function useLogin() {

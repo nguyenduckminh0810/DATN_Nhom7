@@ -12,12 +12,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import org.springframework.lang.NonNull;
 
 import static org.springframework.security.config.Customizer.withDefaults;
+
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Configuration
 @EnableWebSecurity
@@ -59,23 +62,20 @@ public class SecurityConfig {
 
     // Cấu hình chuỗi bảo mật
     // Thay đường dẫn của admin vào stateless
+    @Autowired
+    private JwtFilter jwtAuthFilter;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.cors(withDefaults())
+        return http
+                .cors(withDefaults())
                 .csrf(csrf -> csrf.disable())
-
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép truy cập không cần login
-                        .requestMatchers("/api/login", "/api/register", "api/categories", "api/user",
-                                "api/quiz/**",
-                                "/api/questions", "api/admin/all-users")
-                        .permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/**").authenticated()
-                        .anyRequest().denyAll())
+                        .requestMatchers("/**").permitAll() // 👈 Cho phép tất cả
+                        .anyRequest().denyAll()) // 👈 Mọi cái khác cũng bị từ chối (nếu không match "/**")
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(withDefaults()) // có thể bỏ nếu bạn dùng JWT hoàn toàn
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
