@@ -8,8 +8,6 @@ import ClientLayout from '@/layouts/ClientLayout.vue'
 import LoginAdmin from '@/components/admin/LoginAdmin.vue'
 import AdminDashboard from '@/components/admin/AdminDashboard.vue'
 import AdminQuizHistory from '@/components/admin/AdminQuizHistory.vue'
-import AdminCategoryManager from '@/components/admin/AdminCategoryManager.vue'
-import CategoryList from '@/components/CategoryList.vue'
 import AdminQuizAttempts from '@/components/admin/AdminQuizAttempts.vue'
 
 // Client views
