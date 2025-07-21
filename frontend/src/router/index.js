@@ -7,6 +7,10 @@ import ClientLayout from '@/layouts/ClientLayout.vue'
 // Admin views
 import LoginAdmin from '@/components/admin/LoginAdmin.vue'
 import AdminDashboard from '@/components/admin/AdminDashboard.vue'
+import AdminQuizHistory from '@/components/admin/AdminQuizHistory.vue'
+import AdminCategoryManager from '@/components/admin/AdminCategoryManager.vue'
+import CategoryList from '@/components/CategoryList.vue'
+import AdminQuizAttempts from '@/components/admin/AdminQuizAttempts.vue'
 
 // Client views
 import Login from '@/components/client/Login.vue'
@@ -17,8 +21,11 @@ import EditQuiz from '@/components/client/editQuiz.vue'
 import QuizResult from '@/components/client/QuizResult.vue'
 import QuizHistory from '@/components/client/QuizHistory.vue'
 import ClientDashboard from '@/components/client/ClientDashboard.vue'
+
+import UserQuizHistory from '@/components/client/UserQuizHistory.vue'
 import UserManager from '@/components/admin/UserManager.vue'
 import QuizManager from '@/components/admin/QuizManager.vue'
+
 
 const routes = [
   // Client layout và các route người dùng
@@ -34,6 +41,7 @@ const routes = [
       { path: 'quiz-crud/edit/:userId/:quizId', name: 'EditQuiz', component: EditQuiz },
       { path: 'quiz/:quizId/:userId/result', name: 'QuizResult', component: QuizResult },
       { path: 'history/:userId', name: 'QuizHistory', component: QuizHistory },
+      { path: 'my-history', name: 'UserQuizHistory', component: UserQuizHistory },
     ],
   },
 
@@ -46,6 +54,8 @@ const routes = [
     component: AdminLayout,
     children: [
       { path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard },
+
+      { path: 'attempts', name: 'AdminQuizAttempts', component: AdminQuizAttempts },
       { path: 'all-users', name: 'UserManager', component: UserManager },
       { path: 'all-quizzes', name: 'QuizManager', component: QuizManager },
       // { path: 'quiz-attempts', name: 'QuizAttemptManager', component: QuizAttemtpManager },
@@ -54,6 +64,9 @@ const routes = [
       // { path: 'reports', name: 'ReportManager', component: ReportManager },
     ],
   },
+
+  // Route cho lịch sử quiz của user
+  { path: '/my-history', name: 'UserQuizHistory', component: UserQuizHistory },
 ]
 
 const router = createRouter({

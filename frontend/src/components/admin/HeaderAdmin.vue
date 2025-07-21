@@ -41,7 +41,9 @@
           aria-expanded="false"
         >
           <img
+
             src="/img/anh-mo-ta.jpg"
+
             class="rounded-circle me-2"
             alt="avatar"
             style="width: 32px; height: 32px; object-fit: cover;"

@@ -18,8 +18,10 @@ import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.dto.LoginRequest;
 import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
 import com.nhom7.quiz.quizapp.model.dto.UserDTO;
-import com.nhom7.quiz.quizapp.repository.CategoryRepo;
+ Mtung
+import com.nhom7.quiz.quizapp.model.dto.ResultDTO;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
+ master
 import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 
@@ -106,6 +108,18 @@ public class AdminController {
                 return ResponseEntity.ok(results);
         }
 
+Mtung
+        // API lấy tất cả quiz attempts (lịch sử làm quiz) cho admin
+        @GetMapping("/all-attempts")
+        public ResponseEntity<Page<ResultDTO>> getAllQuizAttempts(
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(required = false) Long userId,
+                        @RequestParam(required = false) Long quizId) {
+                Page<ResultDTO> result = adminService.getAllQuizAttempts(page, size, userId, quizId);
+                return ResponseEntity.ok(result);
+        }
+
         // Phương thức dùng để cập nhật quiz
         @Autowired
         private CategoryRepo categoryRepo;
@@ -177,4 +191,5 @@ public class AdminController {
                 return categoryRepo.findAll();
         }
 
+master
 }
