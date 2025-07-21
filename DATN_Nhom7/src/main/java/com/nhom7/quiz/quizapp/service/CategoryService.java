@@ -17,12 +17,8 @@ public class CategoryService {
     @Autowired
     private CategoryRepo categoryRepo;
 
-    public Page<Category> getAll(String search, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        if (search != null && !search.isEmpty()) {
-            return categoryRepo.findByNameContainingIgnoreCase(search, pageable);
-        }
-        return categoryRepo.findAll(pageable);
+    public List<Category> getAll() {
+        return categoryRepo.findAll();
     }
 
     public Category create(Category category) {
