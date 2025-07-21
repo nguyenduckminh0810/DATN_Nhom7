@@ -8,15 +8,21 @@
     <!-- Section 1: Stats cards -->
     <div class="row">
       <div
-        class="col-md-4 mb-3"
+        class="col-lg-4 col-md-6 mb-4"
         v-for="card in statsCards"
         :key="card.label"
       >
-        <div class="card shadow-sm border-start border-4" :class="card.borderClass">
-          <div class="card-body">
-            <h6 class="text-muted">{{ card.label }}</h6>
-            <h3>{{ card.value }}</h3>
-            <small class="text-secondary">{{ card.subLabel }}</small>
+        <div
+          class="card shadow-sm h-100 border-start border-4"
+          :class="[card.borderClass, 'rounded-3', 'hover-card']"
+        >
+          <div class="card-body d-flex flex-column justify-content-center align-items-start">
+            <div class="mb-2">
+              <i :class="card.icon" class="fs-4 me-2 text-muted"></i>
+              <span class="text-muted small">{{ card.label }}</span>
+            </div>
+            <h4 class="fw-bold mb-1">{{ card.value }}</h4>
+            <div class="text-secondary small">{{ card.subLabel }}</div>
           </div>
         </div>
       </div>
@@ -46,19 +52,18 @@
               <td>{{ quiz.createdAt.slice(0, 10) }}</td>
               <td><span class="badge bg-warning text-dark">Chờ duyệt</span></td>
             </tr>
-
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Section 3: Charts (placeholder) -->
+    <!-- Section 3: Charts -->
     <div class="card shadow-sm">
       <div class="card-header bg-light">
-        <strong>Biểu đồ hoạt động (Đang phát triển)</strong>
+        <strong>Biểu đồ hoạt động</strong>
       </div>
-      <div class="card-body text-muted">
-        Biểu đồ thống kê sẽ được hiển thị ở đây. (Có thể dùng Chart.js hoặc ApexCharts sau)
+      <div class="container my-4">
+        <DashboardChart v-if="dashboardStats" :stats="dashboardStats" />
       </div>
     </div>
   </div>
@@ -67,6 +72,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios';
+import DashboardChart from './DashboardChart.vue';
 
 const pendingQuizzes = ref([]);
 const dashboardStats = ref(null);
@@ -76,7 +82,7 @@ onMounted(async () => {
   try {
     const [pendingRes, dashboardRes] = await Promise.all([
       axios.get('/api/admin/dashboard/pending-quizzes'),
-      axios.get('/api/admin/dashboard')
+      axios.get('/api/admin/dashboard'),
     ]);
 
     pendingQuizzes.value = pendingRes.data;
@@ -92,14 +98,58 @@ function updateStatsCards() {
   if (!dashboardStats.value) return;
 
   statsCards.value = [
-    { label: 'Người dùng', value: dashboardStats.value.totalUsers, subLabel: 'Tổng cộng', borderClass: 'border-primary' },
-    { label: 'Quiz đã tạo', value: dashboardStats.value.totalQuizzes, subLabel: 'Bao gồm cả public/private', borderClass: 'border-success' },
-    { label: 'Lượt làm Quiz', value: dashboardStats.value.totalAttempts, subLabel: 'Tất cả attempts', borderClass: 'border-warning' },
-    { label: 'Báo cáo vi phạm', value: dashboardStats.value.totalReports, subLabel: 'Chưa xử lý', borderClass: 'border-danger' },
-    { label: 'Quiz chờ duyệt', value: dashboardStats.value.pendingApproval, subLabel: 'Chưa xét duyệt', borderClass: 'border-info' },
-    { label: 'Danh mục', value: dashboardStats.value.totalCategories, subLabel: 'Chủ đề khác nhau', borderClass: 'border-secondary' }
+    {
+      label: 'Người dùng',
+      value: dashboardStats.value.totalUsers,
+      subLabel: 'Tổng cộng',
+      borderClass: 'border-primary',
+      icon: 'bi bi-people-fill'
+    },
+    {
+      label: 'Quiz đã tạo',
+      value: dashboardStats.value.totalQuizzes,
+      subLabel: 'Bao gồm cả public/private',
+      borderClass: 'border-success',
+      icon: 'bi bi-journal-code'
+    },
+    {
+      label: 'Lượt làm Quiz',
+      value: dashboardStats.value.totalAttempts,
+      subLabel: 'Tất cả attempts',
+      borderClass: 'border-warning',
+      icon: 'bi bi-play-circle'
+    },
+    {
+      label: 'Báo cáo vi phạm',
+      value: dashboardStats.value.totalReports,
+      subLabel: 'Chưa xử lý',
+      borderClass: 'border-danger',
+      icon: 'bi bi-flag-fill'
+    },
+    {
+      label: 'Quiz chờ duyệt',
+      value: dashboardStats.value.pendingApproval,
+      subLabel: 'Chưa xét duyệt',
+      borderClass: 'border-info',
+      icon: 'bi bi-hourglass-split'
+    },
+    {
+      label: 'Danh mục',
+      value: dashboardStats.value.totalCategories,
+      subLabel: 'Chủ đề khác nhau',
+      borderClass: 'border-secondary',
+      icon: 'bi bi-tags-fill'
+    }
   ];
 }
-
-
 </script>
+
+<style scoped>
+.hover-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.75rem 1.25rem rgba(0, 0, 0, 0.08);
+}
+</style>
