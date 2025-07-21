@@ -90,41 +90,20 @@ public class adminservice {
 
         // Lấy danh sách tất cả quiz (kể cả riêng tư), lọc theo tags, có phân trang
 
-        public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, int page, int size) {
+        public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, Boolean isPublic, int page, int size) {
                 Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-                Page<Quiz> quizzes = quizRepo.findAll(pageable);
+                Page<Quiz> quizzes = quizRepo.searchQuizzes(
+                                keyword != null && !keyword.isBlank() ? keyword : null,
+                                tagId,
+                                isPublic,
+                                pageable);
 
-                String keywordLower = keyword != null ? keyword.toLowerCase() : "";
-
-                List<QuizDTO> filtered = quizzes.getContent().stream()
-                                .filter(quiz -> {
-                                        // --- Điều kiện tìm kiếm ---
-                                        boolean matchTitle = quiz.getTitle() != null
-                                                        && quiz.getTitle().toLowerCase().contains(keywordLower);
-
-                                        boolean matchCategory = quiz.getCategory() != null &&
-                                                        quiz.getCategory().getName().toLowerCase()
-                                                                        .contains(keywordLower);
-
-                                        boolean matchTagName = quiz.getQuizTags().stream()
-                                                        .anyMatch(qt -> qt.getTag().getName().toLowerCase()
-                                                                        .contains(keywordLower));
-
-                                        boolean keywordMatch = keyword == null || keyword.isBlank() || matchTitle
-                                                        || matchCategory
-                                                        || matchTagName;
-
-                                        // --- Điều kiện lọc tagId ---
-                                        boolean tagMatch = tagId == null || quiz.getQuizTags().stream()
-                                                        .anyMatch(qt -> qt.getTag().getId().equals(tagId));
-
-                                        return keywordMatch && tagMatch;
-                                })
+                List<QuizDTO> dtoList = quizzes.getContent().stream()
                                 .map(this::convertToDTO)
                                 .toList();
 
-                return new PageImpl<>(filtered, pageable, quizzes.getTotalElements());
+                return new PageImpl<>(dtoList, pageable, quizzes.getTotalElements());
         }
 
         // Hàm chuyển đổi Quiz sang QuizDTO
@@ -139,7 +118,9 @@ public class adminservice {
                                 quiz.isPublic(),
                                 quiz.getCreatedAt(),
                                 tagNames,
-                                quiz.getCategory() != null ? quiz.getCategory().getName() : null);
+                                quiz.getCategory() != null ? quiz.getCategory().getName() : null,
+                                quiz.getCategory() != null ? quiz.getCategory().getId() : null,
+                                quiz.getUser() != null ? quiz.getUser().getFullName() : "Không rõ");
         }
 
 }

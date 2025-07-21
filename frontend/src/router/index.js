@@ -18,6 +18,7 @@ import QuizResult from '@/components/client/QuizResult.vue'
 import QuizHistory from '@/components/client/QuizHistory.vue'
 import ClientDashboard from '@/components/client/ClientDashboard.vue'
 import UserManager from '@/components/admin/UserManager.vue'
+import QuizManager from '@/components/admin/QuizManager.vue'
 
 const routes = [
   // Client layout và các route người dùng
@@ -46,7 +47,7 @@ const routes = [
     children: [
       { path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard },
       { path: 'all-users', name: 'UserManager', component: UserManager },
-      // { path: 'all-quizzes', name: 'QuizManager', component: QuizManager },
+      { path: 'all-quizzes', name: 'QuizManager', component: QuizManager },
       // { path: 'quiz-attempts', name: 'QuizAttemptManager', component: QuizAttemtpManager },
       // { path: 'categories', name: 'CategoryManager', component: CategoryManager },
       // { path: 'quiz-approval', name: 'QuizApprovalManager', component: QuizApprovalManager },
