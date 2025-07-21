@@ -1,6 +1,9 @@
 package com.nhom7.quiz.quizapp.controller;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -10,9 +13,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nhom7.quiz.quizapp.model.Category;
+import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.dto.LoginRequest;
 import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
 import com.nhom7.quiz.quizapp.model.dto.UserDTO;
+import com.nhom7.quiz.quizapp.repository.CategoryRepo;
+import com.nhom7.quiz.quizapp.repository.QuizRepo;
 import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 
@@ -89,12 +96,85 @@ public class AdminController {
 
         // Lấy danh sách quiz
         @GetMapping("/all-quizzes/filter")
-        public ResponseEntity<Page<QuizDTO>> searchAndFilter(
+        public ResponseEntity<Page<QuizDTO>> searchQuizzes(
                         @RequestParam(required = false) String keyword,
                         @RequestParam(required = false) Long tagId,
+                        @RequestParam(required = false) Boolean isPublic,
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "10") int size) {
-                Page<QuizDTO> result = adminService.searchAndFilterQuizzes(keyword, tagId, page, size);
-                return ResponseEntity.ok(result);
+                Page<QuizDTO> results = adminService.searchAndFilterQuizzes(keyword, tagId, isPublic, page, size);
+                return ResponseEntity.ok(results);
         }
+
+        // Phương thức dùng để cập nhật quiz
+        @Autowired
+        private CategoryRepo categoryRepo;
+
+        @Autowired
+        private QuizRepo quizRepo;
+
+        @PutMapping("/quizzes/{id}")
+        public ResponseEntity<?> updateQuiz(@PathVariable Long id, @RequestBody QuizDTO quizDTO) {
+                Optional<Quiz> optionalQuiz = quizRepo.findById(id);
+                if (optionalQuiz.isEmpty()) {
+                        return ResponseEntity.notFound().build();
+                }
+
+                Quiz quiz = optionalQuiz.get();
+                quiz.setTitle(quizDTO.getTitle());
+                quiz.setPublic(quizDTO.isPublic());
+                Category category = categoryRepo.findById(quizDTO.getCategoryId())
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy thể loại"));
+                quiz.setCategory(category);
+
+                quizRepo.save(quiz);
+
+                return ResponseEntity.ok().build();
+        }
+
+        // Phương thúc dùng để tạo quiz mới
+        @PostMapping("/quizzes")
+        public ResponseEntity<?> createQuiz(@RequestBody QuizDTO dto) {
+                try {
+                        // Tìm thể loại
+                        Category category = categoryRepo.findById(dto.getCategoryId())
+                                        .orElseThrow(() -> new RuntimeException("Không tìm thấy thể loại"));
+                        // Tạo quiz mới
+                        Quiz quiz = new Quiz();
+                        quiz.setTitle(dto.getTitle());
+                        quiz.setPublic(dto.isPublic());
+                        quiz.setCategory(category);
+                        quiz.setCreatedAt(LocalDateTime.now());
+
+                        quizRepo.save(quiz);
+
+                        return ResponseEntity.ok("Quiz đã được tạo thành công.");
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body("Lỗi khi tạo quiz: " + e.getMessage());
+                }
+        }
+
+        // Phương thức dùng để xóa quiz
+        @DeleteMapping("/quizzes/{id}")
+        public ResponseEntity<?> deleteQuiz(@PathVariable Long id) {
+                if (!quizRepo.existsById(id)) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Quiz không tồn tại.");
+                }
+
+                try {
+                        quizRepo.deleteById(id);
+                        return ResponseEntity.ok("Đã xoá quiz thành công.");
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body("Lỗi khi xoá quiz: " + e.getMessage());
+                }
+        }
+
+        // Lấy danh sách tất cả danh mục
+        @GetMapping("/categories")
+        public List<Category> getAllCategories() {
+                return categoryRepo.findAll();
+        }
+
 }

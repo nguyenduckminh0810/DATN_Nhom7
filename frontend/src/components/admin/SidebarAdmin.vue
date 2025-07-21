@@ -22,7 +22,7 @@
 const menuItems = [
   { label: 'Dashboard', icon: 'bi bi-speedometer2', link: '/admin/dashboard' },
   { label: 'Users', icon: 'bi bi-person-circle', link: '/admin/all-users' },
-  { label: 'Quizzes', icon: 'bi bi-bar-chart-line', link: '/admin/quizzes' },
+  { label: 'Quizzes', icon: 'bi bi-bar-chart-line', link: '/admin/all-quizzes' },
   { label: 'Quiz Attempts', icon: 'bi bi-table', link: '/admin/quiz-attempts' },
   { label: 'Categories', icon: 'bi bi-stars', link: '/admin/categories' },
   { label: 'Quiz Approval', icon: 'bi bi-ui-checks-grid', link: '/admin/quiz-approval' },
