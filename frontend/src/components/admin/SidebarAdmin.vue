@@ -1,58 +1,25 @@
 <template>
   <nav class="bg-white border-end min-h-screen w-64">
-
     <ul class="nav flex-column py-2">
       <li
         v-for="(item, index) in menuItems"
         :key="index"
         class="nav-item"
       >
-        <!-- Mục không có submenu -->
         <a
-          v-if="!item.children"
           :href="item.link"
           class="d-flex align-items-center px-4 py-2 text-dark sidebar-link"
         >
           <i :class="item.icon + ' me-2'"></i>
           <span>{{ item.label }}</span>
         </a>
-
-        <!-- Mục có submenu -->
-        <div v-else>
-          <a
-            href="#"
-            class="d-flex align-items-center justify-content-between px-4 py-2 text-dark sidebar-link"
-            @click.prevent="toggle(index)"
-          >
-            <div class="d-flex align-items-center">
-              <i :class="item.icon + ' me-2'"></i>
-              <span>{{ item.label }}</span>
-            </div>
-            <i
-              class="bi"
-              :class="openedIndex === index ? 'bi-chevron-down' : 'bi-chevron-right'"
-            ></i>
-          </a>
-
-          <!-- Submenu -->
-          <ul class="nav flex-column ms-4" v-show="openedIndex === index">
-            <li
-              v-for="(child, i) in item.children"
-              :key="i"
-              class="nav-item"
-            >
-              <a :href="child.link" class="sidebar-sublink">
-                {{ child.label }}
-              </a>
-            </li>
-          </ul>
-        </div>
       </li>
     </ul>
   </nav>
 </template>
 
 <script setup>
+
 import { ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 
@@ -116,6 +83,15 @@ const menuItems = [
     icon: 'bi bi-journal-text',
     link: '/admin/documentation',
   },
+
+const menuItems = [
+  { label: 'Dashboard', icon: 'bi bi-speedometer2', link: '/admin/dashboard' },
+  { label: 'Users', icon: 'bi bi-person-circle', link: '/admin/all-users' },
+  { label: 'Quizzes', icon: 'bi bi-bar-chart-line', link: '/admin/all-quizzes' },
+  { label: 'Quiz Attempts', icon: 'bi bi-table', link: '/admin/quiz-attempts' },
+  { label: 'Categories', icon: 'bi bi-stars', link: '/admin/categories' },
+  { label: 'Quiz Approval', icon: 'bi bi-ui-checks-grid', link: '/admin/quiz-approval' },
+  { label: 'Reports', icon: 'bi bi-exclamation-triangle', link: '/admin/reports' },
 ]
 </script>
 
