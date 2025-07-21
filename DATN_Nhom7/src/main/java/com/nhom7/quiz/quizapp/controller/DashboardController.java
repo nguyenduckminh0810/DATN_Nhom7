@@ -1,0 +1,35 @@
+package com.nhom7.quiz.quizapp.controller;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.nhom7.quiz.quizapp.model.dto.DashboardDTO;
+import com.nhom7.quiz.quizapp.model.dto.QuizPendingDTO;
+import com.nhom7.quiz.quizapp.service.AdminService.DashboardService;
+
+@RestController
+@RequestMapping("/api/admin")
+public class DashboardController {
+
+    private final DashboardService dashboardService;
+
+    public DashboardController(DashboardService dashboardService) {
+        this.dashboardService = dashboardService;
+    }
+
+    @GetMapping("/dashboard")
+    public DashboardDTO getStats() {
+        return dashboardService.getDashboardStats();
+    }
+
+    @GetMapping("/dashboard/pending-quizzes")
+    public ResponseEntity<List<QuizPendingDTO>> getPendingQuizzes() {
+        List<QuizPendingDTO> pending = dashboardService.getPendingQuizzes();
+        return ResponseEntity.ok(pending);
+    }
+
+}
