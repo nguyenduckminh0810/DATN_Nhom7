@@ -42,6 +42,7 @@
               <th>Người tạo</th>
               <th>Ngày tạo</th>
               <th>Trạng thái</th>
+              <th>Hành động</th>
             </tr>
           </thead>
           <tbody>
@@ -51,9 +52,36 @@
               <td>{{ quiz.creatorName }}</td>
               <td>{{ quiz.createdAt.slice(0, 10) }}</td>
               <td><span class="badge bg-warning text-dark">Chờ duyệt</span></td>
+              <td>
+                <button class="btn btn-sm btn-info" @click="openModal(quiz)">Xem chi tiết</button>
+              </td>
+
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div v-if="showModal" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Chi tiết Quiz</h5>
+            <button type="button" class="btn-close" @click="closeModal"></button>
+          </div>
+          <div class="modal-body" v-if="selectedQuiz">
+            <p><strong>Tiêu đề:</strong> {{ selectedQuiz.title }}</p>
+            <p><strong>Người tạo:</strong> {{ selectedQuiz.creatorName }}</p>
+            <p><strong>Ngày tạo:</strong> {{ new Date(selectedQuiz.createdAt).toLocaleString() }}</p>
+            <p><strong>Danh mục:</strong> {{ selectedQuiz.categoryName || 'Không rõ' }}</p>
+            <p><strong>Tags:</strong> {{ selectedQuiz.tags?.length ? selectedQuiz.tags.join(', ') : 'Không có' }}</p>            <p><strong>Trạng thái:</strong> {{ selectedQuiz.isPublic ? 'Công khai' : 'Riêng tư' }}</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="closeModal">Đóng</button>
+            <button class="btn btn-success" @click="approveQuiz(selectedQuiz.id)">Duyệt</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -77,6 +105,17 @@ import DashboardChart from './DashboardChart.vue';
 const pendingQuizzes = ref([]);
 const dashboardStats = ref(null);
 const statsCards = ref([]);
+const selectedQuiz = ref(null);
+const showModal = ref(false);
+
+function openModal(quiz) {
+  selectedQuiz.value = quiz;
+  showModal.value = true;
+}
+
+function closeModal() {
+  showModal.value = false;
+}
 
 onMounted(async () => {
   try {
@@ -93,6 +132,28 @@ onMounted(async () => {
     console.error("Lỗi khi lấy dữ liệu dashboard:", err);
   }
 });
+
+async function approveQuiz(quizId) {
+  if (!quizId) return;
+
+  try {
+    await axios.put(`/api/admin/quizzes/${quizId}/approve`);
+
+    // Xóa quiz khỏi danh sách pending
+    pendingQuizzes.value = pendingQuizzes.value.filter(q => q.id !== quizId);
+
+    // Ẩn modal
+    closeModal();
+
+    // Cập nhật lại thống kê
+    dashboardStats.value.pendingApproval--;
+
+    alert('Quiz đã được duyệt thành công!');
+  } catch (error) {
+    console.error('Lỗi khi duyệt quiz:', error);
+    alert('Có lỗi xảy ra khi duyệt quiz!');
+  }
+}
 
 function updateStatsCards() {
   if (!dashboardStats.value) return;
@@ -151,5 +212,8 @@ function updateStatsCards() {
 .hover-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 0.75rem 1.25rem rgba(0, 0, 0, 0.08);
+}
+.modal {
+  z-index: 1055;
 }
 </style>

@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.dto.DashboardDTO;
 import com.nhom7.quiz.quizapp.model.dto.QuizPendingDTO;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo;
@@ -63,4 +64,14 @@ public class DashboardService {
                         quiz.getCreatedAt()))
                 .collect(Collectors.toList());
     }
+
+    // Chức năng duyệt quiz trong modal tại AdminDashboard
+    public void approveQuiz(Long quizId) {
+        Quiz quiz = quizRepo.findById(quizId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy quiz"));
+
+        quiz.setPublic(true); // hoặc trạng thái là "approved"
+        quizRepo.save(quiz);
+    }
+
 }

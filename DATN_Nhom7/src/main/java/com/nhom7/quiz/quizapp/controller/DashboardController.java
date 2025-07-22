@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,6 +32,12 @@ public class DashboardController {
     public ResponseEntity<List<QuizPendingDTO>> getPendingQuizzes() {
         List<QuizPendingDTO> pending = dashboardService.getPendingQuizzes();
         return ResponseEntity.ok(pending);
+    }
+
+    @PutMapping("/quizzes/{id}/approve")
+    public ResponseEntity<?> approveQuiz(@PathVariable Long id) {
+        dashboardService.approveQuiz(id); // Gọi service xử lý
+        return ResponseEntity.ok().build();
     }
 
 }
