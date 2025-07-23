@@ -2,6 +2,8 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import ReportModal from './ReportModal.vue'
+import { Modal } from 'bootstrap'
 
 const publicQuizzes = ref([])
 const currentPage = ref(0)
@@ -11,6 +13,7 @@ const isLoading = ref(true)
 const error = ref('')
 const hoveredQuiz = ref(null)
 const router = useRouter()
+const reportModalRef = ref(null)
 
 async function fetchPublicQuizzes(page = 0) {
     isLoading.value = true
@@ -53,6 +56,30 @@ function playQuiz(quizId) {
 function goToQuizDetail(quizId) {
     router.push({ name: 'QuizDetail', params: { id: quizId } })
 }
+
+function reportQuiz(quiz) {
+  const quizData = {
+    quiz_id: quiz.quiz_id,
+    id: quiz.quiz_id,
+    title: quiz.title,
+    author: quiz.fullName
+  }
+  
+  if (reportModalRef.value) {
+    reportModalRef.value.openModal(quizData)
+    
+    setTimeout(() => {
+      const modalElement = document.getElementById('reportModal')
+      if (modalElement) {
+        const modal = new Modal(modalElement)
+        modal.show()
+      }
+    }, 200)
+  }
+}
+function onQuizReported(quiz) {
+  // Có thể thêm logic refresh data hoặc hiển thị thông báo
+}
 </script>
 
 <template>
@@ -87,6 +114,9 @@ function goToQuizDetail(quizId) {
                                     @click.stop="playQuiz(quiz.quiz_id)">Chơi</button>
                                 <button class="btn btn-sm btn-outline-light"
                                     @click.stop="goToQuizDetail(quiz.quiz_id)">Chi tiết</button>
+                                <button class="btn btn-sm btn-warning" @click.stop="reportQuiz(quiz)">
+                                    <i class="bi bi-flag me-1"></i>Báo cáo
+                                </button>    
                             </div>
                         </div>
                     </transition>
@@ -104,6 +134,7 @@ function goToQuizDetail(quizId) {
                 Sau →
             </button>
         </div>
+        <ReportModal ref="reportModalRef" @reported="onQuizReported" />
     </div>
 </template>
 

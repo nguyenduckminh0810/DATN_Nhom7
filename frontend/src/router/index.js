@@ -9,6 +9,7 @@ import LoginAdmin from '@/components/admin/LoginAdmin.vue'
 import AdminDashboard from '@/components/admin/AdminDashboard.vue'
 import AdminQuizHistory from '@/components/admin/AdminQuizHistory.vue'
 import AdminQuizAttempts from '@/components/admin/AdminQuizAttempts.vue'
+import AdminReport from '@/components/admin/AdminReport.vue'
 
 // Client views
 import Login from '@/components/client/Login.vue'
@@ -59,6 +60,7 @@ const routes = [
       { path: 'attempts', name: 'AdminQuizAttempts', component: AdminQuizAttempts },
       { path: 'all-users', name: 'UserManager', component: UserManager },
       { path: 'all-quizzes', name: 'QuizManager', component: QuizManager },
+      { path: 'reports', name: 'AdminReport', component: AdminReport },
       // { path: 'quiz-attempts', name: 'QuizAttemptManager', component: QuizAttemtpManager },
       // { path: 'categories', name: 'CategoryManager', component: CategoryManager },
       // { path: 'quiz-approval', name: 'QuizApprovalManager', component: QuizApprovalManager },

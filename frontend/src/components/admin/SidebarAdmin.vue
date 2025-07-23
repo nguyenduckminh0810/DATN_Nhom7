@@ -26,11 +26,9 @@ const menuItems = [
   { label: 'Dashboard', icon: 'bi bi-speedometer2', link: '/admin/dashboard' },
   { label: 'Users', icon: 'bi bi-person-circle', link: '/admin/all-users' },
   { label: 'Quizzes', icon: 'bi bi-bar-chart-line', link: '/admin/all-quizzes' },
-  ...(userStore.isAdmin() ? [
-    { label: 'Quiz Attempts', icon: 'bi bi-table', link: '/admin/quiz-attempts' },
-    { label: 'Quiz Approval', icon: 'bi bi-ui-checks-grid', link: '/admin/quiz-approval' },
-    { label: 'Reports', icon: 'bi bi-exclamation-triangle', link: '/admin/reports' },
-  ] : []),
+  // { label: 'Quiz Attempts', icon: 'bi bi-table', link: '/admin/quiz-attempts' },
+  // { label: 'Quiz Approval', icon: 'bi bi-ui-checks-grid', link: '/admin/quiz-approval' },
+  { label: 'Reports', icon: 'bi bi-exclamation-triangle', link: '/admin/reports' },
   { label: 'Categories', icon: 'bi bi-stars', link: '/admin/categories' },
 ]
 </script>

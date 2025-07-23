@@ -3,10 +3,13 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogin } from './useLogin'
 import axios from 'axios'
+import ReportModal from './ReportModal.vue'
+import { Modal } from 'bootstrap'
+
 
 const router = useRouter()
 const { userId, getUserId } = useLogin()
-
+const reportModalRef = ref(null)
 const quizzes = ref([])
 const currentPage = ref(0)
 const totalPages = ref(1)
@@ -56,6 +59,28 @@ function playQuiz(quizId) {
 function goToQuizDetail(quizId) {
     router.push({ name: 'QuizDetail', params: { id: quizId } })
 }
+function reportQuiz(quiz) {
+  const quizData = {
+    quiz_id: quiz.quiz_id,
+    id: quiz.quiz_id,
+    title: quiz.title,
+    author: quiz.fullName
+  }
+  
+  reportModalRef.value?.openModal(quizData)
+  
+  setTimeout(() => {
+    const modal = new Modal(document.getElementById('reportModal'))
+    modal.show()
+  }, 100)
+
+  const modal = new bootstrap.Modal(document.getElementById('reportModal'))
+  modal.show()
+}
+
+function onQuizReported(quiz) {
+  console.log('✅ Quiz reported successfully:', quiz)
+}
 </script>
 
 <template>
@@ -91,6 +116,9 @@ function goToQuizDetail(quizId) {
                                     @click.stop="playQuiz(quiz.quiz_id)">Chơi</button>
                                 <button class="btn btn-sm btn-outline-light"
                                     @click.stop="goToQuizDetail(quiz.quiz_id)">Chi tiết</button>
+                                <button class="btn btn-sm btn-warning" @click.stop="reportQuiz(quiz)">
+                                    <i class="bi bi-flag me-1"></i>Báo cáo
+                                </button>
                             </div>
                         </div>
                     </transition>
@@ -109,6 +137,7 @@ function goToQuizDetail(quizId) {
             </button>
         </div>
     </div>
+    <ReportModal ref="reportModalRef" @reported="onQuizReported" />
 </template>
 
 <style scoped>
