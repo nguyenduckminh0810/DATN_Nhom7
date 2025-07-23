@@ -7,7 +7,6 @@ import ClientLayout from '@/layouts/ClientLayout.vue'
 // Admin views
 import LoginAdmin from '@/components/admin/LoginAdmin.vue'
 import AdminDashboard from '@/components/admin/AdminDashboard.vue'
-import AdminQuizHistory from '@/components/admin/AdminQuizHistory.vue'
 import AdminQuizAttempts from '@/components/admin/AdminQuizAttempts.vue'
 
 // Client views
@@ -23,7 +22,7 @@ import ClientDashboard from '@/components/client/ClientDashboard.vue'
 import UserQuizHistory from '@/components/client/UserQuizHistory.vue'
 import UserManager from '@/components/admin/UserManager.vue'
 import QuizManager from '@/components/admin/QuizManager.vue'
-
+import UserProfilePage from '@/components/client/UserProfilePage.vue'
 
 const routes = [
   // Client layout và các route người dùng
@@ -40,6 +39,7 @@ const routes = [
       { path: 'quiz/:quizId/:userId/result', name: 'QuizResult', component: QuizResult },
       { path: 'history/:userId', name: 'QuizHistory', component: QuizHistory },
       { path: 'my-history', name: 'UserQuizHistory', component: UserQuizHistory },
+      { path: 'profile/:id', name: 'UserProfilePage', component: UserProfilePage },
     ],
   },
 
