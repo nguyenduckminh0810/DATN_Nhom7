@@ -20,7 +20,7 @@ import EditQuiz from '@/components/client/editQuiz.vue'
 import QuizResult from '@/components/client/QuizResult.vue'
 import QuizHistory from '@/components/client/QuizHistory.vue'
 import ClientDashboard from '@/components/client/ClientDashboard.vue'
-
+import CategoryManager from '@/components/client/CategoryManager.vue'
 import UserQuizHistory from '@/components/client/UserQuizHistory.vue'
 import UserManager from '@/components/admin/UserManager.vue'
 import QuizManager from '@/components/admin/QuizManager.vue'
@@ -44,6 +44,8 @@ const routes = [
       { path: 'quiz/:quizId/:userId/result', name: 'QuizResult', component: QuizResult },
       { path: 'history/:userId', name: 'QuizHistory', component: QuizHistory },
       { path: 'my-history', name: 'UserQuizHistory', component: UserQuizHistory },
+      { path: '/categories', name: 'CategoryManager', component: CategoryManager }
+      
     ],
   },
 
@@ -61,8 +63,9 @@ const routes = [
       { path: 'all-users', name: 'UserManager', component: UserManager },
       { path: 'all-quizzes', name: 'QuizManager', component: QuizManager },
       { path: 'reports', name: 'AdminReport', component: AdminReport },
+      
       // { path: 'quiz-attempts', name: 'QuizAttemptManager', component: QuizAttemtpManager },
-      // { path: 'categories', name: 'CategoryManager', component: CategoryManager },
+      { path: 'categories', name: 'CategoryManager', component: CategoryManager },
       // { path: 'quiz-approval', name: 'QuizApprovalManager', component: QuizApprovalManager },
       // { path: 'reports', name: 'ReportManager', component: ReportManager },
     ],

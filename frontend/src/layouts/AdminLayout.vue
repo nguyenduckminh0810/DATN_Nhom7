@@ -2,7 +2,6 @@
   <div class="d-flex flex-column min-vh-100 bg-light">
     <!-- Header -->
     <HeaderAdmin />
-
     <!-- Body: Sidebar + Content -->
     <div class="d-flex flex-grow-1">
       <SidebarAdmin />

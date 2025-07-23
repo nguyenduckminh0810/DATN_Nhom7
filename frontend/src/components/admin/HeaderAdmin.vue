@@ -1,65 +1,52 @@
 <template>
-  <header class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-4 py-2">
-    <!-- Logo / Tên admin panel -->
-    <a class="navbar-brand fw-bold text-dark" href="/admin/dashboard">Quiz Master</a>
-
-    <!-- Spacer -->
-    <div class="flex-grow-1"></div>
-
-    <!-- Thanh chức năng bên phải -->
-    <ul class="navbar-nav ms-auto d-flex align-items-center gap-3">
-      <!-- Nút tìm kiếm -->
-      <li class="nav-item d-none d-md-block">
-        <form class="d-flex">
-          <input class="form-control form-control-sm" type="search" placeholder="Search" aria-label="Search" />
-        </form>
-      </li>
-
-      <!-- Icon thông báo -->
-      <li class="nav-item position-relative">
-        <i class="bi bi-bell fs-5 text-dark" style="cursor: pointer;"></i>
-        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-          3
-        </span>
-      </li>
-
-      <!-- Avatar & Dropdown -->
-      <li class="nav-item dropdown">
-
-        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button"
-          data-bs-toggle="dropdown" aria-expanded="false">
-          <img src="/img/anh-mo-ta.jpg" class="rounded-circle me-2" alt="avatar"
-            style="width: 32px; height: 32px; object-fit: cover;" />
-
-          <span class="fw-medium text-dark">Admin</span>
-        </a>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-          <li><a class="dropdown-item" href="#">Thông tin tài khoản</a></li>
-          <li>
-            <hr class="dropdown-divider" />
-          </li>
-          <li>
-            <a class="dropdown-item text-danger" href="#" @click.prevent="logout">Đăng xuất</a>
-          </li>
-        </ul>
-      </li>
-    </ul>
+  <header class="admin-header d-flex align-items-center justify-content-between px-4 py-3">
+    <div class="d-flex align-items-center">
+      <img src="/img/logo.png" alt="QuizMaster Logo" class="me-2" style="height: 36px;" />
+      <span class="h4 mb-0 fw-bold text-white">QuizMaster</span>
+    </div>
+    <nav>
+      <ul class="nav">
+        <li class="nav-item" v-for="item in menu" :key="item.label">
+          <a :href="item.link" class="nav-link text-white fw-semibold">{{ item.label }}</a>
+        </li>
+      </ul>
+    </nav>
+    <button class="btn btn-outline-light btn-sm" @click="logout">Đăng xuất</button>
   </header>
 </template>
 
 <script setup>
-const logout = () => {
-  localStorage.removeItem('admin_user')
+const menu = [
+  { label: 'Dashboard', link: '/admin/dashboard' },
+  { label: 'Quản lý Quiz', link: '/admin/all-quizzes' },
+  { label: 'Người dùng', link: '/admin/all-users' },
+  { label: 'Thể loại', link: '/admin/categories' },
+]
+
+function logout() {
+  // Xử lý logout
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
   window.location.href = '/admin/login'
 }
 </script>
 
 <style scoped>
-.navbar-brand {
-  font-size: 1.25rem;
+.admin-header {
+  background: linear-gradient(90deg, #0072ff 0%, #00c6ff 100%);
+  color: #fff;
+  min-height: 60px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
-
-.navbar-nav .nav-item i:hover {
-  color: #0d6efd;
+.admin-header .nav-link {
+  color: #fff !important;
+  margin-right: 1rem;
+  transition: color 0.2s;
+}
+.admin-header .nav-link:hover {
+  color: #ffc107 !important;
+  text-decoration: underline;
 }
 </style>
