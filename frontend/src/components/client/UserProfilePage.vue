@@ -1,13 +1,13 @@
 <template>
   <div class="profile-page" style="background: linear-gradient(to bottom right, #e0f0ff, #ffffff); min-height: 100vh; padding: 2rem;">
-    <div class="profile-card mx-auto p-4 rounded shadow" style="max-width: 800px; background-color: #ffffff;">
+    <div class="profile-card mx-auto p-4 rounded shadow" style="max-width: 800px; background-color: lightsalmon;">
       <div class="text-center mb-4">
         <img
-          :src="(baseUrl + user.avatarUrl || defaultAvatar) + '?t=' + Date.now()" alt="Avatar"
+          :src="user.avatarUrl ? baseUrl + user.avatarUrl + '?t=' + Date.now() : defaultAvatar"
           class="rounded-circle shadow border border-white"
           style="width: 120px; height: 120px; object-fit: cover;"
         />
-        <h3 class="mt-3">{{ user.fullName }}</h3>
+        <h3 class="mt-3"><strong>{{ user.fullName }}</strong></h3>
         <p class="text-muted mb-1">{{ user.bio || "Chưa có giới thiệu" }}</p>
         <span class="badge bg-success">USER</span>
       </div>
@@ -101,17 +101,15 @@
             <button class="btn btn-secondary" @click="activeTab = 'view'" type="button">Huỷ</button>
           </div>
         </div>
-    </div>
-      <!-- Xoá tài khoản -->
+        <!-- Xoá tài khoản -->
       <div v-if="activeTab === 'delete'" class="d-flex justify-content-center mt-5">
-      <div class="text-center border p-4 rounded shadow-sm" style="max-width: 500px; width: 100%;">
+      <div class="text-center border p-4 rounded shadow-sm" style="max-width: 500px; width: 100%; background-color: #ffffff;">
         <h5 class="text-danger">Xoá tài khoản</h5>
         <p>Bạn có chắc chắn muốn xoá tài khoản? Thao tác này không thể hoàn tác.</p>
         <button class="btn btn-danger" @click="confirmDelete">Xoá tài khoản</button>
       </div>
     </div>
-
-
+    </div>
     </div>
 </template>
 
