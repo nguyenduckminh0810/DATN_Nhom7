@@ -41,26 +41,34 @@ watch(status, (message) => {
 </script>
 
 <template>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <h1 class="text-center mb-4">Login</h1>
-                <form @submit.prevent="login" class="bg-light p-4 rounded shadow">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" id="username" v-model="username" class="form-control" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" id="password" v-model="password" class="form-control" required />
-                    </div>
-                    <h1>{{ message }}</h1>
-                    <button type="submit" class="btn btn-primary w-100">Login</button>
-                </form>
-                <p class="mt-3 text-center">
-                    Don't have an account? <RouterLink to="/register">Register here</RouterLink>
-                </p>
+    <div class="content-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <h1 class="text-center mb-4">Login</h1>
+                    <form @submit.prevent="login" class="bg-light p-4 rounded shadow">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" id="username" v-model="username" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" id="password" v-model="password" class="form-control" required />
+                        </div>
+                        <h1>{{ message }}</h1>
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                    </form>
+                    <p class="mt-3 text-center">
+                        Don't have an account? <RouterLink to="/register">Register here</RouterLink>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 </template>
+<style scoped>
+.container {
+    margin-top: 50px;
+    padding-bottom: 50px;
+}
+</style>
