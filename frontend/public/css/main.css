@@ -84,6 +84,12 @@ a {
   transition: 0.3s;
 }
 
+.content-container {
+  padding-top: 110px;
+  padding-bottom: 50px;
+  flex: 1;
+}
+
 a:hover {
   color: color-mix(in srgb, var(--accent-color), transparent 25%);
   text-decoration: none;
@@ -1775,8 +1781,4 @@ body {
 /* Nội dung chính sẽ chiếm phần còn lại, đẩy footer xuống dưới */
 main {
   flex: 1;
-}
-
-.starter-section {
-  /* Add your styles here */
 }

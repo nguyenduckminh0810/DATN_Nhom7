@@ -108,15 +108,15 @@ async function submitQuiz() {
         const score = res.data.score
         alert('Nộp bài thành công! Điểm của bạn: ' + score)
 
+        localStorage.setItem('correctAnswers', JSON.stringify(res.data.correctAnswers))
+        localStorage.setItem('selectedAnswers', JSON.stringify(answerList))
+
         router.push({
             name: 'QuizResult',
             params: { quizId, userId },
-            query: {
-                score: res.data.score,
-                correctAnswers: JSON.stringify(res.data.correctAnswers),
-                selectedAnswers: JSON.stringify(answerList)
-            }
+            query: { score: res.data.score }
         })
+
 
     } catch (err) {
         console.error('Lỗi khi gửi kết quả:', err)
@@ -129,78 +129,81 @@ async function submitQuiz() {
 }
 </script>
 <template>
-    <div class="container my-5">
-        <div class="text-center mb-4">
-            <h1 class="fw-bold text-primary">🧠 Chơi Quiz</h1>
-            <p class="text-muted">Mã Quiz: <strong>{{ quizId }}</strong></p>
-        </div>
+    <div class="content-container">
+        <div class="container my-5">
+            <div class="text-center mb-4">
+                <h1 class="fw-bold text-primary">🧠 Chơi Quiz</h1>
+                <p class="text-muted">Mã Quiz: <strong>{{ quizId }}</strong></p>
+            </div>
 
-        <div v-if="questions.length > 0">
-            <div class="card shadow-sm p-4">
-                <!-- Thời gian -->
-                <div class="mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="text-muted">⏳ Thời gian còn lại:</small>
-                        <small class="fw-bold text-dark">{{ countdown }} giây</small>
-                    </div>
-                    <div class="progress" style="height: 20px;">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" :class="{
-                            'bg-success': countdown > 20,
-                            'bg-warning': countdown <= 20 && countdown > 10,
-                            'bg-danger': countdown <= 10
-                        }" role="progressbar" :style="{ width: (countdown / 30 * 100) + '%' }"
-                            :aria-valuenow="countdown" aria-valuemin="0" aria-valuemax="30">
+            <div v-if="questions.length > 0">
+                <div class="card shadow-sm p-4">
+                    <!-- Thời gian -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted">⏳ Thời gian còn lại:</small>
+                            <small class="fw-bold text-dark">{{ countdown }} giây</small>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" :class="{
+                                'bg-success': countdown > 20,
+                                'bg-warning': countdown <= 20 && countdown > 10,
+                                'bg-danger': countdown <= 10
+                            }" role="progressbar" :style="{ width: (countdown / 30 * 100) + '%' }"
+                                :aria-valuenow="countdown" aria-valuemin="0" aria-valuemax="30">
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Câu hỏi -->
-                <h4 class="question-title text-center mb-4">
-                    Câu {{ currentQuestionIndex + 1 }}: {{ questions[currentQuestionIndex].content }}
-                </h4>
+                    <!-- Câu hỏi -->
+                    <h4 class="question-title text-center mb-4">
+                        Câu {{ currentQuestionIndex + 1 }}: {{ questions[currentQuestionIndex].content }}
+                    </h4>
 
-                <!-- Đáp án -->
-                <div class="row row-cols-2 g-3 justify-content-center"
-                    v-if="questions[currentQuestionIndex].answers?.length">
-                    <div class="col-auto" v-for="answer in questions[currentQuestionIndex].answers" :key="answer.id">
-                        <input type="radio" class="btn-check" :id="'answer-' + answer.id"
-                            :name="'question-' + questions[currentQuestionIndex].id" :value="answer.id"
-                            autocomplete="off"
-                            :checked="selectedAnswers[questions[currentQuestionIndex].id] === answer.id"
-                            @change="selectAnswer(questions[currentQuestionIndex].id, answer.id)" />
-                        <label class="btn btn-gradient w-100 text-wrap" :for="'answer-' + answer.id">
-                            {{ answer.content }}
-                        </label>
+                    <!-- Đáp án -->
+                    <div class="row row-cols-2 g-3 justify-content-center"
+                        v-if="questions[currentQuestionIndex].answers?.length">
+                        <div class="col-auto" v-for="answer in questions[currentQuestionIndex].answers"
+                            :key="answer.id">
+                            <input type="radio" class="btn-check" :id="'answer-' + answer.id"
+                                :name="'question-' + questions[currentQuestionIndex].id" :value="answer.id"
+                                autocomplete="off"
+                                :checked="selectedAnswers[questions[currentQuestionIndex].id] === answer.id"
+                                @change="selectAnswer(questions[currentQuestionIndex].id, answer.id)" />
+                            <label class="btn btn-gradient w-100 text-wrap" :for="'answer-' + answer.id">
+                                {{ answer.content }}
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Không có đáp án -->
+                    <div v-else class="text-danger text-center mt-3">
+                        <p>❗ Không có đáp án cho câu hỏi này.</p>
+                    </div>
+
+                    <!-- Điều hướng -->
+                    <div class="mt-5 d-flex justify-content-between">
+                        <button class="btn btn-outline-secondary" :disabled="currentQuestionIndex === 0"
+                            @click="prevQuestion">
+                            ⬅️ Quay lại
+                        </button>
+                        <button class="btn btn-outline-primary" v-if="currentQuestionIndex < questions.length - 1"
+                            @click="nextQuestion">
+                            Câu tiếp ➡️
+                        </button>
+                        <button class="btn btn-success" v-else @click="submitQuiz">
+                            ✅ Nộp bài
+                        </button>
                     </div>
                 </div>
-
-                <!-- Không có đáp án -->
-                <div v-else class="text-danger text-center mt-3">
-                    <p>❗ Không có đáp án cho câu hỏi này.</p>
-                </div>
-
-                <!-- Điều hướng -->
-                <div class="mt-5 d-flex justify-content-between">
-                    <button class="btn btn-outline-secondary" :disabled="currentQuestionIndex === 0"
-                        @click="prevQuestion">
-                        ⬅️ Quay lại
-                    </button>
-                    <button class="btn btn-outline-primary" v-if="currentQuestionIndex < questions.length - 1"
-                        @click="nextQuestion">
-                        Câu tiếp ➡️
-                    </button>
-                    <button class="btn btn-success" v-else @click="submitQuiz">
-                        ✅ Nộp bài
-                    </button>
-                </div>
             </div>
-        </div>
 
-        <div v-else class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Đang tải...</span>
+            <div v-else class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
+                </div>
+                <p class="mt-3">Đang tải câu hỏi...</p>
             </div>
-            <p class="mt-3">Đang tải câu hỏi...</p>
         </div>
     </div>
 </template>

@@ -29,28 +29,30 @@ function logoutForClientDashboard() {
 </script>
 
 <template>
-    <div class="dashboard container py-5">
-        <div class="text-center mb-5">
-            <h1 class="display-4 fw-bold">🎉 Chào mừng, {{ username }}!</h1>
-            <p class="lead text-muted">Chọn một hành động để bắt đầu quản lý và theo dõi quiz của bạn.</p>
+    <div class="content-container">
+        <div class="dashboard container py-5">
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold">🎉 Chào mừng, {{ username }}!</h1>
+                <p class="lead text-muted">Chọn một hành động để bắt đầu quản lý và theo dõi quiz của bạn.</p>
+            </div>
+
+            <div class="d-flex justify-content-center gap-4 flex-wrap mb-4">
+                <button class="btn btn-lg btn-outline-primary shadow" @click="toQuizCRUD">
+                    🛠️ Quản lý Quiz
+                </button>
+                <button class="btn btn-lg btn-outline-secondary shadow" @click="toQuizHistory">
+                    📜 Lịch sử làm Quiz
+                </button>
+                <button class="btn btn-lg btn-outline-danger shadow" @click="logoutForClientDashboard">
+                    🚪 Đăng xuất
+                </button>
+            </div>
         </div>
 
-        <div class="d-flex justify-content-center gap-4 flex-wrap mb-4">
-            <button class="btn btn-lg btn-outline-primary shadow" @click="toQuizCRUD">
-                🛠️ Quản lý Quiz
-            </button>
-            <button class="btn btn-lg btn-outline-secondary shadow" @click="toQuizHistory">
-                📜 Lịch sử làm Quiz
-            </button>
-            <button class="btn btn-lg btn-outline-danger shadow" @click="logoutForClientDashboard">
-                🚪 Đăng xuất
-            </button>
+        <div class="container py-4">
+            <ListUserQuiz />
+            <ListQuizPublic />
         </div>
-    </div>
-
-    <div class="container py-4">
-        <ListUserQuiz />
-        <ListQuizPublic />
     </div>
 </template>
 

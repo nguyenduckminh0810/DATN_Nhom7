@@ -147,108 +147,111 @@ function playQuiz(quizId) {
 </script>
 
 <template>
-    <div class="container py-4">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
+    <div class="content-container">
+        <div class="container py-4">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
 
-                <!-- Tiêu đề -->
-                <h2 class="text-center mb-4 fw-bold text-primary">Quản lý Quiz</h2>
+                    <!-- Tiêu đề -->
+                    <h2 class="text-center mb-4 fw-bold text-primary">Quản lý Quiz</h2>
 
-                <!-- Form tạo quiz -->
-                <div class="card shadow-sm mb-5">
-                    <div class="card-header bg-success text-white">Tạo Quiz mới</div>
-                    <div class="card-body">
-                        <form @submit.prevent="createQuiz">
-                            <!-- Upload ảnh -->
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Ảnh đại diện:</label>
-                                <input type="file" class="form-control" @change="handleImageUpload" accept="image/*" />
-                                <div v-if="previewUrl" class="mt-3 text-center">
-                                    <img :src="previewUrl" alt="Preview" class="img-thumbnail"
-                                        style="max-height: 160px;" />
-                                    <button type="button" class="btn btn-sm btn-outline-danger mt-2"
-                                        @click="clearImage">
-                                        <i class="bi bi-x-circle"></i> Xóa ảnh
+                    <!-- Form tạo quiz -->
+                    <div class="card shadow-sm mb-5">
+                        <div class="card-header bg-success text-white">Tạo Quiz mới</div>
+                        <div class="card-body">
+                            <form @submit.prevent="createQuiz">
+                                <!-- Upload ảnh -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Ảnh đại diện:</label>
+                                    <input type="file" class="form-control" @change="handleImageUpload"
+                                        accept="image/*" />
+                                    <div v-if="previewUrl" class="mt-3 text-center">
+                                        <img :src="previewUrl" alt="Preview" class="img-thumbnail"
+                                            style="max-height: 160px;" />
+                                        <button type="button" class="btn btn-sm btn-outline-danger mt-2"
+                                            @click="clearImage">
+                                            <i class="bi bi-x-circle"></i> Xóa ảnh
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Danh mục -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Chọn danh mục:</label>
+                                    <select v-model="selectedCategoryId" class="form-select" required>
+                                        <option value="" disabled>-- Chọn loại quiz --</option>
+                                        <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                                            {{ cat.name }} - {{ cat.description }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <!-- Tên quiz -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Tên quiz:</label>
+                                    <input type="text" v-model="title" class="form-control"
+                                        placeholder="VD: Lịch sử Việt Nam" required />
+                                </div>
+
+                                <!-- Công khai -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Quiz công khai?</label>
+                                    <div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" :value="true"
+                                                v-model="isPublic" id="publicYes" />
+                                            <label class="form-check-label" for="publicYes">Có</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" :value="false"
+                                                v-model="isPublic" id="publicNo" />
+                                            <label class="form-check-label" for="publicNo">Không</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Nút tạo -->
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-plus-circle me-1"></i> Tạo Quiz
                                     </button>
                                 </div>
-                            </div>
-
-                            <!-- Danh mục -->
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Chọn danh mục:</label>
-                                <select v-model="selectedCategoryId" class="form-select" required>
-                                    <option value="" disabled>-- Chọn loại quiz --</option>
-                                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                                        {{ cat.name }} - {{ cat.description }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <!-- Tên quiz -->
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Tên quiz:</label>
-                                <input type="text" v-model="title" class="form-control"
-                                    placeholder="VD: Lịch sử Việt Nam" required />
-                            </div>
-
-                            <!-- Công khai -->
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Quiz công khai?</label>
-                                <div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" :value="true" v-model="isPublic"
-                                            id="publicYes" />
-                                        <label class="form-check-label" for="publicYes">Có</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" :value="false" v-model="isPublic"
-                                            id="publicNo" />
-                                        <label class="form-check-label" for="publicNo">Không</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Nút tạo -->
-                            <div class="text-end">
-                                <button type="submit" class="btn btn-success">
-                                    <i class="bi bi-plus-circle me-1"></i> Tạo Quiz
-                                </button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Danh sách Quiz -->
-                <div class="card shadow-sm">
-                    <div class="card-header bg-secondary text-white">Danh sách Quiz đã tạo</div>
-                    <ul class="list-group list-group-flush">
-                        <li v-for="quiz in quizzes" :key="quiz.id"
-                            class="list-group-item d-flex align-items-center justify-content-between flex-wrap">
-                            <div class="d-flex align-items-center">
-                                <img :src="getQuizImageUrl(quiz.id)" alt="Quiz Image" class="rounded-circle me-3"
-                                    width="60" height="60" style="object-fit: cover;" />
-                                <strong>{{ quiz.title }}</strong>
-                            </div>
-                            <div class="btn-group mt-2 mt-md-0">
-                                <button class="btn btn-sm btn-outline-primary" @click="editQuiz(quiz.id)">
-                                    <i class="bi bi-pencil-square"></i> Sửa
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" @click="deleteQuiz(quiz.id)">
-                                    <i class="bi bi-trash"></i> Xóa
-                                </button>
-                                <button class="btn btn-sm btn-outline-success" @click="playQuiz(quiz.id)">
-                                    <i class="bi bi-play-circle"></i> Chơi
-                                </button>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
+                    <!-- Danh sách Quiz -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-secondary text-white">Danh sách Quiz đã tạo</div>
+                        <ul class="list-group list-group-flush">
+                            <li v-for="quiz in quizzes" :key="quiz.id"
+                                class="list-group-item d-flex align-items-center justify-content-between flex-wrap">
+                                <div class="d-flex align-items-center">
+                                    <img :src="getQuizImageUrl(quiz.id)" alt="Quiz Image" class="rounded-circle me-3"
+                                        width="60" height="60" style="object-fit: cover;" />
+                                    <strong>{{ quiz.title }}</strong>
+                                </div>
+                                <div class="btn-group mt-2 mt-md-0">
+                                    <button class="btn btn-sm btn-outline-primary" @click="editQuiz(quiz.id)">
+                                        <i class="bi bi-pencil-square"></i> Sửa
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @click="deleteQuiz(quiz.id)">
+                                        <i class="bi bi-trash"></i> Xóa
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success" @click="playQuiz(quiz.id)">
+                                        <i class="bi bi-play-circle"></i> Chơi
+                                    </button>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
 
-                <!-- Thông báo -->
-                <div v-if="message" class="alert alert-info mt-4 text-center">
-                    {{ message }}
-                </div>
+                    <!-- Thông báo -->
+                    <div v-if="message" class="alert alert-info mt-4 text-center">
+                        {{ message }}
+                    </div>
 
+                </div>
             </div>
         </div>
     </div>

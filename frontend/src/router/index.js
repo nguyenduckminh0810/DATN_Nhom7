@@ -23,6 +23,7 @@ import ClientDashboard from '@/components/client/ClientDashboard.vue'
 import UserQuizHistory from '@/components/client/UserQuizHistory.vue'
 import UserManager from '@/components/admin/UserManager.vue'
 import QuizManager from '@/components/admin/QuizManager.vue'
+import Home from '@/components/client/Home.vue'
 
 
 const routes = [
@@ -31,6 +32,8 @@ const routes = [
     path: '/',
     component: ClientLayout,
     children: [
+      { path: '', redirect: { name: 'Home' } },
+      { path: 'home', name: 'Home', component: Home },
       { path: 'login', name: 'Login', component: Login },
       { path: 'register', name: 'Register', component: Register },
       { path: 'client-dashboard/:userId', name: 'ClientDashboard', component: ClientDashboard },
