@@ -74,4 +74,9 @@ public class LoginService {
     public User findByUsername(String username) {
         return userRepo.findByUsername(username).orElse(null);
     }
+
+   
+    public User save(User user) {
+        return userRepo.save(user);
+    }
 }

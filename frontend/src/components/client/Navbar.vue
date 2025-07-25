@@ -1,12 +1,44 @@
 <script setup>
 import { useRouter, RouterLink } from 'vue-router'
 import { useLogin } from './useLogin'
-import { computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed, watch, onMounted, onUnmounted, ref } from 'vue'
+import axios from 'axios'
 
-const { logout, username, message } = useLogin()
+const { logout, username, message, userId, getUserId } = useLogin()
 const router = useRouter()
 
 const isLoggedIn = computed(() => !!message.value)
+const userProfile = ref(null)
+const notificationCount = ref(3) // Có thể lấy từ API sau
+
+// ✅ LẤY THÔNG TIN PROFILE VÀ AVATAR
+async function fetchUserProfile() {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    const response = await axios.get('http://localhost:8080/api/user/profile', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    
+    userProfile.value = response.data
+  } catch (error) {
+    console.error('Error fetching user profile:', error)
+  }
+}
+
+// Avatar URL computed
+const avatarUrl = computed(() => {
+  if (userProfile.value?.avatarUrl) {
+    if (userProfile.value.avatarUrl.startsWith('/api/')) {
+      return `http://localhost:8080${userProfile.value.avatarUrl}`
+    }
+    return userProfile.value.avatarUrl
+  }
+  return null
+})
 
 function login() {
   router.push('/login')
@@ -15,12 +47,39 @@ function login() {
 watch(message, (newVal) => {
   if (newVal === 'SUCCESS' && !username.value) {
     username.value = localStorage.getItem('username')
+    fetchUserProfile() // ✅ Lấy profile khi login thành công
+  }
+})
+
+// ✅ Lấy profile khi component mount nếu đã login
+watch(isLoggedIn, (newVal) => {
+  if (newVal) {
+    fetchUserProfile()
   }
 })
 
 function logoutForNavbar() {
   logout()
   router.push('/login')
+}
+
+async function goToHistory() {
+  try {
+    // Ensure we have userId
+    if (!userId.value) {
+      await getUserId()
+    }
+    
+    if (userId.value) {
+      router.push({ name: 'QuizHistory', params: { userId: userId.value } })
+    } else {
+      console.error('Cannot get user ID for history navigation')
+      router.push('/login')
+    }
+  } catch (error) {
+    console.error('Error navigating to history:', error)
+    router.push('/login')
+  }
 }
 
 let handleScroll
@@ -37,6 +96,11 @@ onMounted(() => {
 
   window.addEventListener('scroll', handleScroll)
   handleScroll()
+  
+  // ✅ Lấy profile nếu đã login
+  if (isLoggedIn.value) {
+    fetchUserProfile()
+  }
 })
 
 onUnmounted(() => {
@@ -44,195 +108,662 @@ onUnmounted(() => {
 })
 </script>
 
-
 <template>
-  <header id="header" class="header d-flex align-items-center fixed-top">
-    <div class="container-fluid container-xl position-relative d-flex align-items-center justify-content-between">
+  <header id="header" class="modern-navbar fixed-top">
+    <div class="navbar-container">
+      
+      <!-- Logo Section -->
+      <div class="brand-section">
+        <RouterLink to="/" class="brand-link">
+          <div class="logo-wrapper">
+            <h1 class="nabla">QuizMaster</h1>
+          </div>
+        </RouterLink>
+      </div>
 
-      <!-- Logo -->
-      <RouterLink to="/" class="logo d-flex align-items-center">
-        <h1 class="nabla">QuizMaster</h1>
-      </RouterLink>
+      <!-- Main Navigation -->
+      <nav class="main-nav">
+        <div class="nav-group">
+          
+          <RouterLink to="/" class="nav-item">
+            <div class="nav-content">
+              <i class="bi bi-house"></i>
+              <span>Trang chủ</span>
+            </div>
+          </RouterLink>
+
+          <div class="nav-item dropdown">
+            <div class="nav-content">
+              <i class="bi bi-puzzle"></i>
+              <span>Quiz</span>
+              <i class="bi bi-chevron-down dropdown-arrow"></i>
+            </div>
+            <div class="dropdown-panel">
+              <RouterLink to="/quiz-crud" class="dropdown-link">
+                <i class="bi bi-plus-circle"></i>
+                <div class="link-content">
+                  <span class="link-title">Tạo Quiz</span>
+                  <small class="link-desc">Tạo quiz mới</small>
+                </div>
+              </RouterLink>
+              <RouterLink to="/my-quizzes" class="dropdown-link">
+                <i class="bi bi-collection"></i>
+                <div class="link-content">
+                  <span class="link-title">Quiz của tôi</span>
+                  <small class="link-desc">Quản lý quiz</small>
+                </div>
+              </RouterLink>
+              <RouterLink to="/public-quizzes" class="dropdown-link">
+                <i class="bi bi-globe"></i>
+                <div class="link-content">
+                  <span class="link-title">Quiz công khai</span>
+                  <small class="link-desc">Khám phá quiz</small>
+                </div>
+              </RouterLink>
+            </div>
+          </div>
+
+          <div class="nav-item dropdown">
+            <div class="nav-content">
+              <i class="bi bi-folder2"></i>
+              <span>Danh mục</span>
+              <i class="bi bi-chevron-down dropdown-arrow"></i>
+            </div>
+            <div class="dropdown-panel">
+              <RouterLink to="/categories" class="dropdown-link">
+                <i class="bi bi-grid"></i>
+                <div class="link-content">
+                  <span class="link-title">Xem danh mục</span>
+                  <small class="link-desc">Duyệt theo chủ đề</small>
+                </div>
+              </RouterLink>
+              <RouterLink to="/categories/manage" class="dropdown-link">
+                <i class="bi bi-gear"></i>
+                <div class="link-content">
+                  <span class="link-title">Quản lý</span>
+                  <small class="link-desc">Tạo & sửa danh mục</small>
+                </div>
+              </RouterLink>
+            </div>
+          </div>
+
+          <a @click="goToHistory" class="nav-item" style="cursor: pointer;">
+            <div class="nav-content">
+              <i class="bi bi-graph-up"></i>
+              <span>Thống kê</span>
+            </div>
+          </a>
 
 
-      <!-- Menu -->
-      <nav class="navmenu d-flex align-items-center">
-        <ul>
-          <li><a href="#hero">Home</a></li>
 
-          <li class="dropdown">
-            <a href="#"><span>Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
-            <ul>
-              <li><a href="#">Dropdown 1</a></li>
-              <li class="dropdown">
-                <a href="#"><span>Deep Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
-                <ul>
-                  <li><a href="#">Deep Dropdown 1</a></li>
-                  <li><a href="#">Deep Dropdown 2</a></li>
-                  <li><a href="#">Deep Dropdown 3</a></li>
-                  <li><a href="#">Deep Dropdown 4</a></li>
-                  <li><a href="#">Deep Dropdown 5</a></li>
-                </ul>
-              </li>
-              <li><a href="#">Dropdown 2</a></li>
-              <li><a href="#">Dropdown 3</a></li>
-              <li><a href="#">Dropdown 4</a></li>
-            </ul>
-          </li>
+          <RouterLink to="/contact" class="nav-item">
+            <div class="nav-content">
+              <i class="bi bi-envelope"></i>
+              <span>Liên hệ</span>
+            </div>
+          </RouterLink>
 
-          <li><a href="#contact">Contact</a></li>
-
-          <!-- Login/Logout -->
-          <!-- Login/Logout -->
-          <li v-if="!isLoggedIn">
-            <a @click.prevent="login" class="btn btn-outline-primary px-4 py-2">Đăng nhập</a>
-          </li>
-          <li v-else>
-            <a @click.prevent="logoutForNavbar" class="btn btn-primary px-4 py-2">Đăng xuất</a>
-          </li>
-
-        </ul>
+        </div>
       </nav>
+
+      <!-- User Section -->
+      <div class="user-section">
+        <div v-if="!isLoggedIn" class="auth-actions">
+          <RouterLink to="/register" class="btn btn-ghost">
+            Đăng ký
+          </RouterLink>
+          <button @click="login" class="btn btn-primary">
+            <i class="bi bi-box-arrow-in-right"></i>
+            Đăng nhập
+          </button>
+        </div>
+
+        <div v-else class="user-menu dropdown">
+          <div class="user-trigger">
+            <div class="user-avatar">
+              <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="avatar-image" />
+              <i v-else class="bi bi-person-circle"></i>
+            </div>
+            <div class="user-info">
+              <div class="user-name-row">
+                <span class="user-name">{{ userProfile?.fullName || username }}</span>
+                <!-- ✅ NOTIFICATION BADGE BÊN NGOÀI -->
+                <span v-if="notificationCount > 0" class="navbar-notification-badge">{{ notificationCount }}</span>
+              </div>
+              <small class="user-status">Online</small>
+            </div>
+            <i class="bi bi-chevron-down user-arrow"></i>
+          </div>
+          
+          <div class="user-dropdown">
+            <div class="user-profile-header">
+              <div class="profile-avatar">
+                <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="profile-avatar-image" />
+                <i v-else class="bi bi-person-circle"></i>
+              </div>
+              <div class="profile-info">
+                <strong>{{ userProfile?.fullName || username }}</strong>
+                <small>{{ userProfile?.role || 'Thành viên' }}</small>
+              </div>
+            </div>
+            
+            <div class="dropdown-divider"></div>
+            
+            <RouterLink to="/profile" class="user-dropdown-link">
+              <i class="bi bi-person"></i>
+              <span>Hồ sơ cá nhân</span>
+            </RouterLink>
+            
+            <RouterLink to="/settings" class="user-dropdown-link">
+              <i class="bi bi-gear"></i>
+              <span>Cài đặt</span>
+            </RouterLink>
+            
+            <RouterLink to="/notifications" class="user-dropdown-link">
+              <i class="bi bi-bell"></i>
+              <span>Thông báo</span>
+              <span v-if="notificationCount > 0" class="notification-badge">{{ notificationCount }}</span>
+            </RouterLink>
+            
+            <div class="dropdown-divider"></div>
+            
+            <button @click="logoutForNavbar" class="user-dropdown-link logout-link">
+              <i class="bi bi-box-arrow-right"></i>
+              <span>Đăng xuất</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
     </div>
   </header>
 </template>
 
-
-<style scope>
-.navmenu a,
-.navmenu a:hover,
-.navmenu a:focus,
-.navmenu a:active,
-.logo a,
-.logo a:hover,
-.logo a:focus,
-.logo a:active {
-  text-decoration: none !important;
-}
-
-
-.logo,
-.logo a {
-  text-decoration: none;
-}
-
+<style scoped>
+/* Logo styles giữ nguyên */
 .nabla {
   font-family: "Nabla", system-ui;
   font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
-  font-variation-settings:
-    "EDPT" 100,
-    "EHLT" 12;
+  font-variation-settings: "EDPT" 100, "EHLT" 12;
+  margin: 0;
+  background: linear-gradient(45deg, #ffd700, #ffed4e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 1.8rem;
 }
-
 
 .nabla:hover {
   animation: glitch 0.5s linear;
-  text-shadow:
-    2px 0 red,
-    -2px 0 rgb(1, 225, 255),
-    0 0 12px rgba(255, 110, 108, 0.6);
+  text-shadow: 2px 0 red, -2px 0 rgb(1, 225, 255), 0 0 12px rgba(255, 110, 108, 0.6);
 }
 
 @keyframes glitch {
-  0% {
-    transform: translate(0);
-  }
-
-  15% {
-    transform: translate(-2px, 1px);
-  }
-
-  30% {
-    transform: translate(2px, -1px);
-  }
-
-  45% {
-    transform: translate(-1px, 2px);
-  }
-
-  60% {
-    transform: translate(1px, -2px);
-  }
-
-  75% {
-    transform: translate(0.5px, 1px);
-  }
-
-  100% {
-    transform: translate(0);
-  }
+  0% { transform: translate(0); }
+  15% { transform: translate(-2px, 1px); }
+  30% { transform: translate(2px, -1px); }
+  45% { transform: translate(-1px, 2px); }
+  60% { transform: translate(1px, -2px); }
+  75% { transform: translate(0.5px, 1px); }
+  100% { transform: translate(0); }
 }
 
-.header {
-  background-color: rgba(255, 255, 255, 0.1);
-  /* hoặc rgba(0, 0, 0, 0.3) nếu muốn tối */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  /* hỗ trợ Safari */
-  color: rgb(0, 0, 0);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+/* MODERN NAVBAR */
+.modern-navbar {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1000;
-  padding: 10px 0;
 }
 
-.header.scrolled {
-  background-color: rgba(0, 124, 240, 0.3);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
+.modern-navbar.scrolled {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95));
+  backdrop-filter: blur(25px);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
 }
 
-
-.navmenu ul li>a {
-  color: rgb(0, 0, 0);
-  transition: color 0.3s ease;
+.navbar-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 80px;
 }
 
-.navmenu ul li>a:hover {
-  color: #000000;
+/* BRAND SECTION */
+.brand-section {
+  flex-shrink: 0;
 }
 
-.navmenu ul li ul {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 8px;
-  padding: 10px 0;
-  transition: background 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+.brand-link {
+  text-decoration: none;
+  transition: transform 0.3s ease;
 }
 
-.navmenu ul li ul li a {
-  color: rgb(2, 2, 2);
-  padding: 10px 20px;
+.brand-link:hover {
+  transform: translateY(-2px);
+}
+
+/* MAIN NAVIGATION */
+.main-nav {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  margin: 0 2rem;
+}
+
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50px;
+  padding: 0.5rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-item {
+  position: relative;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.nav-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.nav-item:hover,
+.nav-item.router-link-active {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.dropdown-arrow {
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.nav-item.dropdown:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* DROPDOWN PANELS */
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 1rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 1rem;
+  min-width: 280px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1001;
+}
+
+.nav-item.dropdown:hover .dropdown-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  color: #2d3748;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  margin-bottom: 0.5rem;
+}
+
+.dropdown-link:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  color: #667eea;
+  transform: translateX(4px);
+}
+
+.dropdown-link i {
+  font-size: 1.2rem;
+  width: 20px;
+  text-align: center;
+  color: #667eea;
+}
+
+.link-content {
+  flex: 1;
+}
+
+.link-title {
   display: block;
-  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
 }
 
-.navmenu ul li ul li a:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  color: #000000;
-  border-radius: 5px;
+.link-desc {
+  display: block;
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+/* USER SECTION */
+.user-section {
+  flex-shrink: 0;
+}
+
+.auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .btn {
-  font-weight: 500;
-  border-radius: 30px;
-}
-
-.navmenu a {
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   text-decoration: none;
 }
 
-@media (max-width: 991px) {
-  .header {
-    padding: 15px;
+.btn-ghost {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8, #6a4190);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* USER MENU */
+.user-menu {
+  position: relative;
+}
+
+.user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.user-trigger:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.user-avatar i {
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.avatar-image {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* ✅ USER NAME ROW TRONG NAVBAR */
+.user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-name {
+  font-weight: 600;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.user-status {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ✅ NAVBAR NOTIFICATION BADGE */
+.navbar-notification-badge {
+  background: linear-gradient(135deg, #ff4757, #ff3742);
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 8px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(255, 71, 87, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  animation: pulse 2s infinite;
+  flex-shrink: 0;
+}
+
+.user-arrow {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  transition: transform 0.3s ease;
+}
+
+.user-menu:hover .user-arrow {
+  transform: rotate(180deg);
+}
+
+/* USER DROPDOWN */
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 1rem);
+  right: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  min-width: 280px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1001;
+}
+
+.user-menu:hover .user-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.user-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.profile-avatar i {
+  font-size: 3rem;
+  color: #667eea;
+}
+
+.profile-avatar-image {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #667eea;
+}
+
+.profile-info strong {
+  display: block;
+  color: #2d3748;
+  font-size: 1.1rem;
+}
+
+.profile-info small {
+  color: #718096;
+  font-size: 0.85rem;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
+  margin: 1rem 0;
+}
+
+.user-dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  color: #2d3748;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  margin-bottom: 0.5rem;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.user-dropdown-link:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  transform: translateX(4px);
+}
+
+.user-dropdown-link i {
+  width: 20px;
+  text-align: center;
+  color: #667eea;
+}
+
+.logout-link {
+  color: #e53e3e !important;
+}
+
+.logout-link:hover {
+  background: rgba(229, 62, 62, 0.1) !important;
+  color: #c53030 !important;
+}
+
+.logout-link i {
+  color: #e53e3e !important;
+}
+
+.notification-badge {
+  background: linear-gradient(135deg, #ff4757, #ff3742);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  margin-left: auto;
+  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+  animation: pulse 2s infinite;
+  min-width: 18px;
+  text-align: center;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(255, 71, 87, 0.6);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
   }
 }
 
-/* Loại bỏ gạch chân khi hover ở menu */
-.navmenu ul li:hover {
-  text-decoration: none;
+
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .navbar-container {
+    padding: 0 1rem;
+  }
+  
+  .nav-group {
+    gap: 0.25rem;
+  }
+  
+  .nav-item {
+    padding: 0.6rem 1rem;
+  }
+}
+
+@media (max-width: 991px) {
+  .main-nav {
+    display: none;
+  }
+  
+  .navbar-container {
+    height: 70px;
+  }
 }
 </style>

@@ -19,14 +19,29 @@
 
 <style scoped>
 .admin-footer {
-  background: linear-gradient(90deg, #0072ff 0%, #00c6ff 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
-  box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
+  box-shadow: 0 -4px 20px rgba(102, 126, 234, 0.2);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 .admin-footer a:hover {
   color: #ffc107 !important;
   text-decoration: underline;
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+/* Enhanced styling for admin footer */
+.admin-footer .btn-outline-light {
+  border-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.admin-footer .btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
 }
 </style>

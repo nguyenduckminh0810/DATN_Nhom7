@@ -1,6 +1,12 @@
 package com.nhom7.quiz.quizapp.controller;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,7 +24,10 @@ import com.nhom7.quiz.quizapp.service.userService.ReginService.RegisterResult;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api")
@@ -90,15 +99,29 @@ public class UserController {
 		};
 	}
 
-	// Phần lấy thông tin người dùng đã đăng nhập
+	// Phần lấy thông tin người dùng đã đăng nhập (DEPRECATED - sử dụng /user/profile thay thế)
 	@GetMapping("/profile")
-	public ResponseEntity<?> getProfile(@RequestBody User user) {
-		String token = jwtUtil.generateToken(user.getUsername());
-		String username = jwtUtil.extractUsername(token); // Lấy tên người dùng từ token
-		if (username == null || username.isEmpty()) {
+	public ResponseEntity<?> getProfile(Authentication authentication) {
+		if (authentication == null || authentication.getName() == null) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bạn chưa đăng nhập");
 		}
-		return ResponseEntity.ok(token);
+		
+		String username = authentication.getName();
+		User user = loginService.findByUsername(username);
+		
+		if (user == null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy người dùng");
+		}
+		
+		// Trả về thông tin user thay vì chỉ token
+		Map<String, Object> response = new HashMap<>();
+		response.put("id", user.getId());
+		response.put("username", user.getUsername());
+		response.put("email", user.getEmail());
+		response.put("fullName", user.getFullName());
+		response.put("role", user.getRole());
+		
+		return ResponseEntity.ok(response);
 	}
 
 	@GetMapping("/user")
@@ -115,6 +138,112 @@ public class UserController {
 		}
 
 		return ResponseEntity.ok(Map.of("user_id", user.getId()));
+	}
+
+	@GetMapping("/user/profile")
+	public ResponseEntity<?> getUserProfile(Authentication authentication) {
+		if (authentication == null || authentication.getName() == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token không hợp lệ hoặc đã hết hạn");
+		}
+
+		try {
+			String username = authentication.getName();
+			User user = loginService.findByUsername(username);
+
+			if (user == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy người dùng");
+			}
+
+			// Trả về thông tin profile
+			Map<String, Object> response = new HashMap<>();
+			response.put("id", user.getId());
+			response.put("username", user.getUsername());
+			response.put("email", user.getEmail());
+			response.put("fullName", user.getFullName());
+			response.put("bio", user.getBio());
+			response.put("avatarUrl", user.getAvatarUrl());
+			response.put("role", user.getRole());
+			response.put("createdAt", user.getCreatedAt());
+
+			return ResponseEntity.ok(response);
+
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Lỗi khi lấy thông tin profile: " + e.getMessage());
+		}
+	}
+
+	
+	@PutMapping("/user/profile")
+	public ResponseEntity<?> updateProfile(
+			@RequestParam(required = false) String fullName,
+			@RequestParam(required = false) String bio,
+			@RequestParam(required = false) String avatarUrl,
+			@RequestParam(required = false) MultipartFile avatar,
+			Authentication authentication) {
+		
+		if (authentication == null || authentication.getName() == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token không hợp lệ hoặc đã hết hạn");
+		}
+
+		try {
+			String username = authentication.getName();
+			User user = loginService.findByUsername(username);
+
+			if (user == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy người dùng");
+			}
+
+			// Cập nhật thông tin cơ bản
+			if (fullName != null && !fullName.trim().isEmpty()) {
+				user.setFullName(fullName.trim());
+			}
+			
+			if (bio != null) {
+				user.setBio(bio.trim());
+			}
+
+			// Xử lý avatar
+			if (avatar != null && !avatar.isEmpty()) {
+				// Upload file avatar
+				String uploadDir = "uploads/avatars";
+				Files.createDirectories(Paths.get(uploadDir));
+
+				String originalFilename = avatar.getOriginalFilename();
+				String extension = "";
+				if (originalFilename != null && originalFilename.contains(".")) {
+					extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+				}
+				String filename = UUID.randomUUID().toString() + extension;
+
+				Path filePath = Paths.get(uploadDir, filename);
+				Files.write(filePath, avatar.getBytes());
+
+				user.setAvatarUrl("/api/upload/avatars/" + filename);
+			} else if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
+				// Sử dụng URL avatar
+				user.setAvatarUrl(avatarUrl.trim());
+			}
+
+			// Lưu vào database
+			loginService.save(user);
+
+			// Trả về thông tin đã cập nhật
+			Map<String, Object> response = new HashMap<>();
+			response.put("id", user.getId());
+			response.put("username", user.getUsername());
+			response.put("email", user.getEmail());
+			response.put("fullName", user.getFullName());
+			response.put("bio", user.getBio());
+			response.put("avatarUrl", user.getAvatarUrl());
+			response.put("role", user.getRole());
+
+			return ResponseEntity.ok(response);
+
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Lỗi khi cập nhật profile: " + e.getMessage());
+		}
 	}
 
 }

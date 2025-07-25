@@ -22,9 +22,12 @@ import QuizHistory from '@/components/client/QuizHistory.vue'
 import ClientDashboard from '@/components/client/ClientDashboard.vue'
 import CategoryManager from '@/components/client/CategoryManager.vue'
 import UserQuizHistory from '@/components/client/UserQuizHistory.vue'
+import UserProfile from '@/components/client/UserProfile.vue'
 import UserManager from '@/components/admin/UserManager.vue'
 import QuizManager from '@/components/admin/QuizManager.vue'
 import Home from '@/components/client/Home.vue'
+import ListUserQuiz from '@/components/client/ListUserQuiz.vue'
+import ListQuizPublic from '@/components/client/ListQuizPublic.vue'
 
 
 const routes = [
@@ -44,8 +47,11 @@ const routes = [
       { path: 'quiz/:quizId/:userId/result', name: 'QuizResult', component: QuizResult },
       { path: 'history/:userId', name: 'QuizHistory', component: QuizHistory },
       { path: 'my-history', name: 'UserQuizHistory', component: UserQuizHistory },
-      { path: '/categories', name: 'CategoryManager', component: CategoryManager }
-      
+      { path: 'profile', name: 'UserProfile', component: UserProfile },
+      { path: '/categories', name: 'CategoryManager', component: CategoryManager },
+      { path: 'my-quizzes', name: 'ListUserQuiz', component: ListUserQuiz },
+      { path: 'public-quizzes', name: 'ListQuizPublic', component: ListQuizPublic }
+
     ],
   },
 
@@ -71,8 +77,7 @@ const routes = [
     ],
   },
 
-  // Route cho lịch sử quiz của user
-  { path: '/my-history', name: 'UserQuizHistory', component: UserQuizHistory },
+  // Route cho lịch sử quiz của user (duplicate removed - already exists in ClientLayout)
 ]
 
 const router = createRouter({

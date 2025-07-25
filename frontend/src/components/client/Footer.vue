@@ -76,11 +76,34 @@ function subscribe() {
 <style scoped>
 .footer {
   font-size: 0.9rem;
-  background: linear-gradient(90deg, #0072ff 0%, #00c6ff 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
+  box-shadow: 0 -4px 20px rgba(102, 126, 234, 0.2);
+  margin: 0; 
+  width: 100%;
 }
 .footer a:hover {
   text-decoration: underline;
   color: #ffc107 !important;
 }
+
+/* Enhanced styling to match modern theme */
+.footer .btn-outline-light {
+  border-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.footer .btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+.footer hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
 </style>
