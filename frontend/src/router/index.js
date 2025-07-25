@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import UserSearchPage from '@/views/UserSearchPage.vue'
 
 // Layouts
 import AdminLayout from '@/layouts/AdminLayout.vue'
@@ -24,7 +23,7 @@ import ClientDashboard from '@/components/client/ClientDashboard.vue'
 import UserQuizHistory from '@/components/client/UserQuizHistory.vue'
 import UserManager from '@/components/admin/UserManager.vue'
 import QuizManager from '@/components/admin/QuizManager.vue'
-
+import Home from '@/components/client/Home.vue'
 
 const routes = [
   // Client layout và các route người dùng
@@ -32,6 +31,7 @@ const routes = [
     path: '/',
     component: ClientLayout,
     children: [
+      { path: 'home', name: 'Home', component: Home },
       { path: 'login', name: 'Login', component: Login },
       { path: 'register', name: 'Register', component: Register },
       { path: 'client-dashboard/:userId', name: 'ClientDashboard', component: ClientDashboard },
@@ -70,42 +70,7 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-<<<<<<< HEAD
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: () => import('../components/client/Home.vue'),
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: () => import('../components/client/Login.vue'),
-    },
-    {
-      path: '/register',
-      name: 'register',
-      component: () => import('../components/client/Register.vue'),
-    },
-    {
-      path: '/admin',
-      name: 'admin',
-      component: () => import('../components/admin/LoginAdmin.vue'),
-    },
-    {
-      path: '/quiz-crud',
-      name: 'quizcrud',
-      component: () => import('../components/client/QuizCRUD.vue'),
-    },
-    {
-      path: '/users',
-      name: 'usersearch',
-      component: UserSearchPage,
-    },
-  ],
-=======
   routes,
->>>>>>> 49598303905d5152a96eeba8beaad1a5b8511c4c
 })
 
 export default router
