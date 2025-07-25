@@ -176,17 +176,20 @@ public class UserController {
 		// Nếu có avatar mới thì xử lý lưu ảnh
 		if (avatarFile != null && !avatarFile.isEmpty()) {
 			try {
-				String uploadDir = "C:/Users/PC/Desktop/DATN_Nhom7/uploads/images";
-				String fileName = UUID.randomUUID() + "_" + avatarFile.getOriginalFilename();
-				Path uploadPath = Paths.get(uploadDir);
-				if (!Files.exists(uploadPath)) {
-					Files.createDirectories(uploadPath);
-				}
+				// Dùng ../ để đi từ DATN-Nhom7 sang DATN/uploads/images
+				Path uploadPath = Paths.get("../uploads/images").toAbsolutePath().normalize();
+				Files.createDirectories(uploadPath); // đảm bảo thư mục tồn tại
 
+				String fileName = UUID.randomUUID() + "_" + avatarFile.getOriginalFilename();
 				Path filePath = uploadPath.resolve(fileName);
+
+				// Ghi file vào đúng nơi
 				avatarFile.transferTo(filePath.toFile());
 
-				user.setAvatarUrl("/uploads/images/" + fileName);
+				// Đường dẫn lưu trong DB hoặc trả về client
+				String imageUrl = "/uploads/images/" + fileName;
+				user.setAvatarUrl(imageUrl);
+
 			} catch (IOException e) {
 				e.printStackTrace();
 				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Không thể lưu ảnh đại diện.");
