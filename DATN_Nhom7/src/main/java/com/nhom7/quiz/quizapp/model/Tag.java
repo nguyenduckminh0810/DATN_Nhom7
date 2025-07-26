@@ -3,6 +3,7 @@ package com.nhom7.quiz.quizapp.model;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,6 +26,7 @@ public class Tag {
 	@Column(columnDefinition = "TEXT")
 	private String description;
 
+	@JsonIgnore
 	@OneToMany(mappedBy = "tag", cascade = CascadeType.ALL, orphanRemoval = true)
 	private Set<QuizTag> quizTags = new HashSet<>();
 

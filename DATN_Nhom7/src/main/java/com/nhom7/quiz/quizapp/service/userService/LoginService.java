@@ -74,7 +74,10 @@ public class LoginService {
     public User findByUsername(String username) {
         return userRepo.findByUsername(username).orElse(null);
     }
-
+   
+    public User save(User user) {
+        return userRepo.save(user);
+    }
     // Lưu người dùng
     public void saveUser(User user) {
         userRepo.save(user);

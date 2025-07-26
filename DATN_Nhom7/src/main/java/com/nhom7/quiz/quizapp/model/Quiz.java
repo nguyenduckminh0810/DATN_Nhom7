@@ -1,5 +1,6 @@
 package com.nhom7.quiz.quizapp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -29,9 +30,14 @@ public class Quiz {
 	@Column(name = "created_at")
 	private LocalDateTime createdAt = LocalDateTime.now();
 
+	// ✅ THÊM FIELD IMAGE
+	private String image;
+
+	@JsonIgnore
 	@OneToMany(mappedBy = "quiz")
 	private Set<QuizTag> quizTags;
 	// Sau này dùng
+	@JsonIgnore
 	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
 	private Set<QuizReview> reviews = new HashSet<>();
 
@@ -91,8 +97,17 @@ public class Quiz {
 		this.quizTags = quizTags;
 	}
 
+	// ✅ GETTER/SETTER CHO IMAGE
+	public String getImage() {
+		return image;
+	}
+
+	public void setImage(String image) {
+		this.image = image;
+	}
+
 	public Quiz(Long id, String title, User user, Category category, boolean isPublic, LocalDateTime createdAt,
-			Set<QuizTag> quizTags) {
+			Set<QuizTag> quizTags, String image) {
 		super();
 		this.id = id;
 		this.title = title;
@@ -101,6 +116,7 @@ public class Quiz {
 		this.isPublic = isPublic;
 		this.createdAt = createdAt;
 		this.quizTags = quizTags;
+		this.image = image;
 	}
 
 	public Quiz() {

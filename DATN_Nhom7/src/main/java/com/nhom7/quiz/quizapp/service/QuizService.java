@@ -50,6 +50,25 @@ public class QuizService {
 			quiz.setTitle(updatedQuiz.getTitle());
 			quiz.setPublic(updatedQuiz.isPublic());
 			quiz.setCategory(updatedQuiz.getCategory());
+			
+			// ✅ CẬP NHẬT IMAGE NẾU CÓ
+			if (updatedQuiz.getImage() != null && !updatedQuiz.getImage().trim().isEmpty()) {
+				// Tìm image record hiện tại
+				Image existingImage = imageRepo.findByQuizId(id);
+				
+				if (existingImage != null) {
+					// Cập nhật image hiện tại
+					existingImage.setUrl(updatedQuiz.getImage());
+					imageRepo.save(existingImage);
+				} else {
+					// Tạo image record mới
+					Image newImage = new Image();
+					newImage.setUrl(updatedQuiz.getImage());
+					newImage.setQuiz(quiz);
+					imageRepo.save(newImage);
+				}
+			}
+			
 			return quizRepo.save(quiz);
 		});
 	}
