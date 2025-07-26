@@ -7,7 +7,6 @@ import ClientLayout from '@/layouts/ClientLayout.vue'
 // Admin views
 import LoginAdmin from '@/components/admin/LoginAdmin.vue'
 import AdminDashboard from '@/components/admin/AdminDashboard.vue'
-import AdminQuizHistory from '@/components/admin/AdminQuizHistory.vue'
 import AdminQuizAttempts from '@/components/admin/AdminQuizAttempts.vue'
 import AdminReport from '@/components/admin/AdminReport.vue'
 
@@ -25,6 +24,9 @@ import UserQuizHistory from '@/components/client/UserQuizHistory.vue'
 import UserProfile from '@/components/client/UserProfile.vue'
 import UserManager from '@/components/admin/UserManager.vue'
 import QuizManager from '@/components/admin/QuizManager.vue'
+ 
+import UserProfilePage from '@/components/client/UserProfilePage.vue'
+
 import Home from '@/components/client/Home.vue'
 import ListUserQuiz from '@/components/client/ListUserQuiz.vue'
 import ListQuizPublic from '@/components/client/ListQuizPublic.vue'
@@ -51,7 +53,7 @@ const routes = [
       { path: '/categories', name: 'CategoryManager', component: CategoryManager },
       { path: 'my-quizzes', name: 'ListUserQuiz', component: ListUserQuiz },
       { path: 'public-quizzes', name: 'ListQuizPublic', component: ListQuizPublic }
-
+      { path: 'profile/:id', name: 'UserProfilePage', component: UserProfilePage },
     ],
   },
 
