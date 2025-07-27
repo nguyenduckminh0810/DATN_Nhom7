@@ -4,13 +4,11 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogin } from './useLogin'
 import axios from 'axios'
-import ReportModal from './ReportModal.vue'
-import { Modal } from 'bootstrap'
 
 // State & Hooks
 const router = useRouter()
 const { userId, getUserId } = useLogin()
-const reportModalRef = ref(null)
+
 
 // Data
 const quizzes = ref([])
@@ -90,19 +88,6 @@ const goToPage = (page) => {
 const playQuiz = (quizId) => router.push({ name: 'PlayQuiz', params: { quizId, userId: userId.value } })
 const goToQuizDetail = (quizId) => router.push({ name: 'QuizDetail', params: { id: quizId } })
 const editQuiz = (quizId) => router.push(`/quiz-crud/edit/${userId.value}/${quizId}`)
-
-const reportQuiz = (quiz) => {
-    const quizData = { quiz_id: quiz.quiz_id, id: quiz.quiz_id, title: quiz.title, author: quiz.fullName }
-    reportModalRef.value?.openModal(quizData)
-    setTimeout(() => new Modal(document.getElementById('reportModal')).show(), 100)
-}
-
-const onQuizReported = () => showToast('success', 'Báo cáo quiz thành công!')
-
-const showToast = (type, message) => {
-    toast.value = { show: true, type, message }
-    setTimeout(() => (toast.value.show = false), 3500)
-}
 
 const formatDate = (str) => str ? new Date(str).toLocaleDateString('vi-VN') : ''
 
@@ -250,10 +235,6 @@ onMounted(async () => {
                                 <i class="bi bi-info-circle"></i>
                                 <span>Chi tiết</span>
                             </button>
-                            <button class="action-btn danger" @click.stop="reportQuiz(quiz)">
-                                <i class="bi bi-flag"></i>
-                                <span>Báo cáo</span>
-                            </button>
                         </div>
                     </div>
                 </transition>
@@ -282,7 +263,7 @@ onMounted(async () => {
             </div>
         </div>
 
-        <ReportModal ref="reportModalRef" @reported="onQuizReported" />
+
 
         <!-- Toast Notification -->
         <transition name="slide-up">

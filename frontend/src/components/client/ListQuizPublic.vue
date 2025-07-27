@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import debounce from 'lodash.debounce'
+import ReportModal from './ReportModal.vue'
+import { Modal } from 'bootstrap'
 
 const publicQuizzes = ref([])
 const currentPage = ref(0)
@@ -14,6 +16,10 @@ const router = useRouter()
 
 const quizCache = new Map()
 let hoveredQuizId = null
+function onQuizReported(quiz) {
+  console.log('Đã báo cáo quiz:', quiz)
+  // Hoặc xử lý gì đó như: xóa quiz, reload list...
+}
 
 async function fetchPublicQuizzes(page = 0) {
   if (quizCache.has(page)) {
@@ -77,10 +83,13 @@ function goToQuizDetail(quizId) {
     router.push({ name: 'QuizDetail', params: { id: quizId } })
   }
 }
-
-function reportQuiz(quiz) {
-  alert('Tính năng báo cáo đang được phát triển')
+const reportModalRef = ref(null)
+const reportQuiz = (quiz) => {
+  const quizData = { quiz_id: quiz.quiz_id, id: quiz.quiz_id, title: quiz.title, author: quiz.fullName }
+  reportModalRef.value?.openModal(quizData)
+  setTimeout(() => new Modal(document.getElementById('reportModal')).show(), 100)
 }
+
 
 function handleImageError(event) {
   const canvas = document.createElement('canvas')
@@ -246,6 +255,7 @@ function handleImageError(event) {
             </ul>
           </nav>
         </div>
+        <ReportModal ref="reportModalRef" @reported="onQuizReported" />
       </div>
     </div>
 
