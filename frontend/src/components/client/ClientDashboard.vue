@@ -29,85 +29,149 @@ function logoutForClientDashboard() {
 </script>
 
 <template>
-    <div class="dashboard-container">
-        <!-- Hero Dashboard Section -->
-        <div class="dashboard-hero">
-            <div class="hero-background">
-                <div class="floating-element element-1"></div>
-                <div class="floating-element element-2"></div>
-                <div class="floating-element element-3"></div>
-            </div>
-            
-            <div class="hero-content">
-                <!-- Welcome Section -->
-                <div class="welcome-section">
-                    <div class="welcome-icon">
-                        <i class="bi bi-person-hearts"></i>
-                    </div>
-                    <div class="welcome-text">
-                        <h1 class="welcome-title">
-                            <span class="greeting">Chào mừng,</span>
-                            <span class="username">{{ username }}!</span>
-                        </h1>
-                        <p class="welcome-subtitle">
-                            Chọn một hành động để bắt đầu quản lý và theo dõi quiz của bạn.
-                        </p>
-                    </div>
+    <div class="gradient-bg-with-floating">
+        <div class="dashboard-container">
+            <!-- Hero Dashboard Section -->
+            <div class="dashboard-hero">
+                <div class="hero-background">
+                    <div class="floating-element element-1"></div>
+                    <div class="floating-element element-2"></div>
+                    <div class="floating-element element-3"></div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="action-buttons">
-                    <button class="action-btn primary" @click="toQuizCRUD">
-                        <div class="btn-icon">
-                            <i class="bi bi-puzzle"></i>
+                <div class="hero-content">
+                    <!-- Welcome Section -->
+                    <div class="welcome-section">
+                        <div class="welcome-icon">
+                            <i class="bi bi-person-hearts"></i>
                         </div>
-                        <div class="btn-content">
-                            <span class="btn-title">Quản lý Quiz</span>
-                            <span class="btn-desc">Tạo và chỉnh sửa quiz</span>
+                        <div class="welcome-text">
+                            <h1 class="welcome-title">
+                                <span class="greeting">Chào mừng,</span>
+                                <span class="username">{{ username }}!</span>
+                            </h1>
+                            <p class="welcome-subtitle">
+                                Chọn một hành động để bắt đầu quản lý và theo dõi quiz của bạn.
+                            </p>
                         </div>
-                        <div class="btn-arrow">
-                            <i class="bi bi-arrow-right"></i>
-                        </div>
-                    </button>
+                    </div>
 
-                    <button class="action-btn secondary" @click="toQuizHistory">
-                        <div class="btn-icon">
-                            <i class="bi bi-clock-history"></i>
-                        </div>
-                        <div class="btn-content">
-                            <span class="btn-title">Lịch sử làm Quiz</span>
-                            <span class="btn-desc">Xem kết quả các bài đã làm</span>
-                        </div>
-                        <div class="btn-arrow">
-                            <i class="bi bi-arrow-right"></i>
-                        </div>
-                    </button>
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button class="action-btn primary" @click="toQuizCRUD">
+                            <div class="btn-icon">
+                                <i class="bi bi-puzzle"></i>
+                            </div>
+                            <div class="btn-content">
+                                <span class="btn-title">Quản lý Quiz</span>
+                                <span class="btn-desc">Tạo và chỉnh sửa quiz</span>
+                            </div>
+                            <div class="btn-arrow">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </button>
 
-                    <button class="action-btn danger" @click="logoutForClientDashboard">
-                        <div class="btn-icon">
-                            <i class="bi bi-box-arrow-right"></i>
-                        </div>
-                        <div class="btn-content">
-                            <span class="btn-title">Đăng xuất</span>
-                            <span class="btn-desc">Thoát khỏi tài khoản</span>
-                        </div>
-                        <div class="btn-arrow">
-                            <i class="bi bi-arrow-right"></i>
-                        </div>
-                    </button>
+                        <button class="action-btn secondary" @click="toQuizHistory">
+                            <div class="btn-icon">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="btn-content">
+                                <span class="btn-title">Lịch sử làm Quiz</span>
+                                <span class="btn-desc">Xem kết quả các bài đã làm</span>
+                            </div>
+                            <div class="btn-arrow">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </button>
+
+                        <button class="action-btn danger" @click="logoutForClientDashboard">
+                            <div class="btn-icon">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </div>
+                            <div class="btn-content">
+                                <span class="btn-title">Đăng xuất</span>
+                                <span class="btn-desc">Thoát khỏi tài khoản</span>
+                            </div>
+                            <div class="btn-arrow">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+                <div class="content-wrapper" style="position: relative; z-index: 3;">
+
+                    <ListUserQuiz />
+                    <ListQuizPublic />
+
                 </div>
             </div>
-        </div>
 
-        <!-- Quiz Lists Section -->
-        <div class="quiz-lists-container">
-            <ListUserQuiz />
-            <ListQuizPublic />
         </div>
     </div>
+
 </template>
 
 <style scoped>
+.gradient-bg-with-floating {
+    position: relative;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+.gradient-bg-with-floating::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.floating-icon {
+    position: absolute;
+    font-size: 2rem;
+    opacity: 0.1;
+    animation: float 6s ease-in-out infinite;
+    z-index: 2;
+}
+
+.floating-icon:nth-child(1) {
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.floating-icon:nth-child(2) {
+    top: 60%;
+    right: 15%;
+    animation-delay: 2s;
+}
+
+.floating-icon:nth-child(3) {
+    bottom: 20%;
+    left: 20%;
+    animation-delay: 4s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
 /* === DASHBOARD CONTAINER === */
 .dashboard-container {
     min-height: 100vh;
@@ -121,7 +185,7 @@ function logoutForClientDashboard() {
     overflow: hidden;
 }
 
-.hero-background {
+/* .hero-background {
     position: absolute;
     top: 0;
     left: 0;
@@ -133,7 +197,7 @@ function logoutForClientDashboard() {
     border: 3px solid rgba(255, 255, 255, 0.8);
     border-top: none;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-}
+} */
 
 /* Floating Elements Animation */
 .floating-element {
@@ -174,20 +238,47 @@ function logoutForClientDashboard() {
 }
 
 @keyframes float1 {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    33% { transform: translate(30px, -30px) rotate(120deg); }
-    66% { transform: translate(-20px, 20px) rotate(240deg); }
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    33% {
+        transform: translate(30px, -30px) rotate(120deg);
+    }
+
+    66% {
+        transform: translate(-20px, 20px) rotate(240deg);
+    }
 }
 
 @keyframes float2 {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    50% { transform: translate(-25px, 25px) rotate(180deg); }
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    50% {
+        transform: translate(-25px, 25px) rotate(180deg);
+    }
 }
 
 @keyframes float3 {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    25% { transform: translate(20px, -40px) rotate(90deg); }
-    75% { transform: translate(-30px, -10px) rotate(270deg); }
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    25% {
+        transform: translate(20px, -40px) rotate(90deg);
+    }
+
+    75% {
+        transform: translate(-30px, -10px) rotate(270deg);
+    }
 }
 
 /* === HERO CONTENT === */
@@ -224,8 +315,15 @@ function logoutForClientDashboard() {
 }
 
 @keyframes welcomeIconPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
 }
 
 .welcome-text {
@@ -398,17 +496,13 @@ function logoutForClientDashboard() {
     transform: translateX(5px);
 }
 
-/* === QUIZ LISTS CONTAINER === */
-.quiz-lists-container {
-    padding: 0 20px;
-}
-
 /* === ANIMATIONS === */
 @keyframes slideInLeft {
     from {
         opacity: 0;
         transform: translateX(-50px);
     }
+
     to {
         opacity: 1;
         transform: translateX(0);
@@ -420,6 +514,7 @@ function logoutForClientDashboard() {
         opacity: 0;
         transform: translateX(50px);
     }
+
     to {
         opacity: 1;
         transform: translateX(0);
@@ -431,6 +526,7 @@ function logoutForClientDashboard() {
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -442,6 +538,7 @@ function logoutForClientDashboard() {
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -453,39 +550,39 @@ function logoutForClientDashboard() {
     .dashboard-hero {
         padding: 40px 15px 60px;
     }
-    
+
     .hero-background {
         border-radius: 0 0 30px 30px;
     }
-    
+
     .welcome-title {
         font-size: 2.5rem;
         text-align: center;
     }
-    
+
     .welcome-subtitle {
         font-size: 1.1rem;
     }
-    
+
     .action-btn {
         padding: 20px;
         gap: 20px;
         flex-direction: column;
         text-align: center;
     }
-    
+
     .btn-content {
         align-items: center;
     }
-    
+
     .btn-arrow {
         display: none;
     }
-    
+
     .floating-element {
         display: none;
     }
-    
+
     .quiz-lists-container {
         padding: 0 15px;
     }
@@ -495,22 +592,22 @@ function logoutForClientDashboard() {
     .welcome-title {
         font-size: 2rem;
     }
-    
+
     .action-btn {
         padding: 15px;
         gap: 15px;
     }
-    
+
     .btn-icon {
         width: 50px;
         height: 50px;
         font-size: 1.5rem;
     }
-    
+
     .btn-title {
         font-size: 1.2rem;
     }
-    
+
     .btn-desc {
         font-size: 0.9rem;
     }

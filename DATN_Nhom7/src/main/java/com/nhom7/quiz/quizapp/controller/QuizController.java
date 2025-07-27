@@ -107,7 +107,7 @@ public class QuizController {
 	@GetMapping("/public")
 	public Page<Quiz> getPublicQuizzes(
 			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "6") int size) {
+			@RequestParam(defaultValue = "8") int size) {
 		return quizService.getPublicQuizzes(true, page, size);
 	}
 

@@ -107,20 +107,21 @@ public class UserController {
 		};
 	}
 
-	// Phần lấy thông tin người dùng đã đăng nhập (DEPRECATED - sử dụng /user/profile thay thế)
+	// Phần lấy thông tin người dùng đã đăng nhập (DEPRECATED - sử dụng
+	// /user/profile thay thế)
 	@GetMapping("/profile")
 	public ResponseEntity<?> getProfile(Authentication authentication) {
 		if (authentication == null || authentication.getName() == null) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bạn chưa đăng nhập");
 		}
-		
+
 		String username = authentication.getName();
 		User user = loginService.findByUsername(username);
-		
+
 		if (user == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy người dùng");
 		}
-		
+
 		// Trả về thông tin user thay vì chỉ token
 		Map<String, Object> response = new HashMap<>();
 		response.put("id", user.getId());
@@ -128,7 +129,7 @@ public class UserController {
 		response.put("email", user.getEmail());
 		response.put("fullName", user.getFullName());
 		response.put("role", user.getRole());
-		
+
 		return ResponseEntity.ok(response);
 	}
 
@@ -181,7 +182,6 @@ public class UserController {
 		}
 	}
 
-	
 	@PutMapping("/user/profile")
 	public ResponseEntity<?> updateProfile(
 			@RequestParam(required = false) String fullName,
@@ -189,7 +189,7 @@ public class UserController {
 			@RequestParam(required = false) String avatarUrl,
 			@RequestParam(required = false) MultipartFile avatar,
 			Authentication authentication) {
-		
+
 		if (authentication == null || authentication.getName() == null) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token không hợp lệ hoặc đã hết hạn");
 		}
@@ -206,7 +206,7 @@ public class UserController {
 			if (fullName != null && !fullName.trim().isEmpty()) {
 				user.setFullName(fullName.trim());
 			}
-			
+
 			if (bio != null) {
 				user.setBio(bio.trim());
 			}
@@ -252,7 +252,8 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body("Lỗi khi cập nhật profile: " + e.getMessage());
 		}
-=======
+	}
+
 	// Lấy user theo id
 	@GetMapping("/user/{id}")
 	public ResponseEntity<?> getUserById(@PathVariable Long id) {

@@ -40,7 +40,7 @@ function getQuizImageUrl(quizId) {
 onMounted(async () => {
     isLoading.value = true
     try {
-    userId.value = await getUserId()
+        userId.value = await getUserId()
         await Promise.all([fetchCategories(), fetchQuizzes()])
     } finally {
         isLoading.value = false
@@ -76,7 +76,7 @@ async function fetchQuizzes() {
 // Tạo quiz
 async function createQuiz() {
     if (isCreating.value) return
-    
+
     isCreating.value = true
     try {
         const formData = new FormData()
@@ -108,7 +108,7 @@ async function createQuiz() {
         previewUrl.value = null
 
         await fetchQuizzes()
-        
+
         // Clear message after 3 seconds
         setTimeout(() => {
             message.value = ''
@@ -151,7 +151,7 @@ async function deleteQuiz(quizId) {
             }
 
             await fetchQuizzes()
-            
+
             setTimeout(() => {
                 message.value = ''
             }, 3000)
@@ -187,7 +187,7 @@ function playQuiz(quizId) {
         <!-- Enhanced Hero Section -->
         <div class="hero-section">
             <div class="container">
-            <div class="row justify-content-center">
+                <div class="row justify-content-center">
                     <div class="col-lg-8 text-center">
                         <div class="hero-content">
                             <div class="hero-icon">
@@ -196,7 +196,8 @@ function playQuiz(quizId) {
                             <h1 class="hero-title">
                                 Quản lý Quiz của bạn
                             </h1>
-                            <p class="hero-subtitle">Tạo, chỉnh sửa và quản lý bộ sưu tập quiz một cách dễ dàng với giao diện hiện đại</p>
+                            <p class="hero-subtitle">Tạo, chỉnh sửa và quản lý bộ sưu tập quiz một cách dễ dàng với giao
+                                diện hiện đại</p>
                             <div class="hero-stats">
                                 <div class="stat-item">
                                     <span class="stat-number">{{ quizzes.length }}</span>
@@ -246,9 +247,9 @@ function playQuiz(quizId) {
                                 <h3 class="header-title">Tạo Quiz Mới</h3>
                                 <p class="header-subtitle">Điền thông tin để tạo quiz mới của bạn</p>
                             </div>
-                            
+
                             <div class="card-body-custom">
-                            <form @submit.prevent="createQuiz">
+                                <form @submit.prevent="createQuiz">
                                     <div class="row">
                                         <!-- Enhanced Image Upload Section -->
                                         <div class="col-md-12 mb-4">
@@ -257,13 +258,8 @@ function playQuiz(quizId) {
                                                 <span class="label-optional">(Tùy chọn)</span>
                                             </label>
                                             <div class="image-upload-area-enhanced">
-                                                <input 
-                                                    type="file" 
-                                                    class="form-control d-none" 
-                                                    id="imageInput"
-                                                    @change="handleImageUpload"
-                                                    accept="image/*" 
-                                                />
+                                                <input type="file" class="form-control d-none" id="imageInput"
+                                                    @change="handleImageUpload" accept="image/*" />
                                                 <label for="imageInput" class="image-upload-label-enhanced">
                                                     <div v-if="!previewUrl" class="upload-placeholder-enhanced">
                                                         <div class="upload-icon-container">
@@ -278,23 +274,20 @@ function playQuiz(quizId) {
                                                         </div>
                                                     </div>
                                                     <div v-else class="preview-container-enhanced">
-                                                        <img :src="previewUrl" alt="Preview" class="preview-image-enhanced" />
+                                                        <img :src="previewUrl" alt="Preview"
+                                                            class="preview-image-enhanced" />
                                                         <div class="preview-overlay-enhanced">
                                                             <i class="bi bi-pencil-square"></i>
                                                             <span>Thay đổi ảnh</span>
                                                         </div>
                                                     </div>
                                                 </label>
-                                                <button 
-                                                    v-if="previewUrl" 
-                                                    type="button" 
-                                                    class="btn-remove-image-enhanced"
-                                                    @click="clearImage"
-                                                >
+                                                <button v-if="previewUrl" type="button"
+                                                    class="btn-remove-image-enhanced" @click="clearImage">
                                                     <i class="bi bi-x-lg"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                                                </button>
+                                            </div>
+                                        </div>
 
                                         <!-- Enhanced Quiz Info -->
                                         <div class="col-md-6 mb-4">
@@ -302,31 +295,27 @@ function playQuiz(quizId) {
                                                 <i class="bi bi-bookmark-fill me-2"></i>Danh mục quiz
                                             </label>
                                             <div class="input-container">
-                                                <select v-model="selectedCategoryId" class="form-select-enhanced" required>
+                                                <select v-model="selectedCategoryId" class="form-select-enhanced"
+                                                    required>
                                                     <option value="" disabled>🎯 Chọn danh mục...</option>
-                                        <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                                            {{ cat.name }} - {{ cat.description }}
-                                        </option>
-                                    </select>
+                                                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                                                        {{ cat.name }} - {{ cat.description }}
+                                                    </option>
+                                                </select>
                                                 <div class="input-border"></div>
                                             </div>
-                                </div>
+                                        </div>
 
                                         <div class="col-md-6 mb-4">
                                             <label class="form-label-custom">
                                                 <i class="bi bi-type me-2"></i>Tên quiz
                                             </label>
                                             <div class="input-container">
-                                                <input 
-                                                    type="text" 
-                                                    v-model="title" 
-                                                    class="form-control-enhanced"
-                                                    placeholder="💡 Nhập tên quiz thú vị..." 
-                                                    required 
-                                                />
+                                                <input type="text" v-model="title" class="form-control-enhanced"
+                                                    placeholder="💡 Nhập tên quiz thú vị..." required />
                                                 <div class="input-border"></div>
                                             </div>
-                                </div>
+                                        </div>
 
                                         <!-- Enhanced Privacy Setting -->
                                         <div class="col-12 mb-4">
@@ -335,34 +324,24 @@ function playQuiz(quizId) {
                                             </label>
                                             <div class="privacy-options-enhanced">
                                                 <div class="privacy-option-enhanced">
-                                                    <input 
-                                                        class="privacy-radio" 
-                                                        type="radio" 
-                                                        :value="true"
-                                                        v-model="isPublic" 
-                                                        id="publicYes" 
-                                                    />
+                                                    <input class="privacy-radio" type="radio" :value="true"
+                                                        v-model="isPublic" id="publicYes" />
                                                     <label class="privacy-label-enhanced" for="publicYes">
                                                         <div class="privacy-icon public-icon">
                                                             <i class="bi bi-globe2"></i>
-                                        </div>
+                                                        </div>
                                                         <div class="privacy-content">
                                                             <strong>Công khai</strong>
                                                             <small>Mọi người có thể xem và chơi</small>
-                                        </div>
+                                                        </div>
                                                         <div class="privacy-checkmark">
                                                             <i class="bi bi-check-lg"></i>
                                                         </div>
                                                     </label>
                                                 </div>
                                                 <div class="privacy-option-enhanced">
-                                                    <input 
-                                                        class="privacy-radio" 
-                                                        type="radio" 
-                                                        :value="false"
-                                                        v-model="isPublic" 
-                                                        id="publicNo" 
-                                                    />
+                                                    <input class="privacy-radio" type="radio" :value="false"
+                                                        v-model="isPublic" id="publicNo" />
                                                     <label class="privacy-label-enhanced" for="publicNo">
                                                         <div class="privacy-icon private-icon">
                                                             <i class="bi bi-lock"></i>
@@ -376,16 +355,13 @@ function playQuiz(quizId) {
                                                         </div>
                                                     </label>
                                                 </div>
-                                    </div>
-                                </div>
+                                            </div>
+                                        </div>
 
                                         <!-- Enhanced Submit Button -->
                                         <div class="col-12 text-center">
-                                            <button 
-                                                type="submit" 
-                                                class="btn-create-quiz-enhanced"
-                                                :disabled="isCreating"
-                                            >
+                                            <button type="submit" class="btn-create-quiz-enhanced"
+                                                :disabled="isCreating">
                                                 <div class="btn-content">
                                                     <div v-if="isCreating" class="btn-spinner">
                                                         <div class="spinner-dots">
@@ -402,14 +378,14 @@ function playQuiz(quizId) {
                                                     </div>
                                                 </div>
                                                 <div class="btn-ripple"></div>
-                                    </button>
+                                            </button>
                                         </div>
-                                </div>
-                            </form>
+                                    </div>
+                                </form>
                             </div>
                         </div>
-                        </div>
                     </div>
+                </div>
 
                 <!-- Enhanced Quiz List Section -->
                 <div class="row justify-content-center">
@@ -454,62 +430,46 @@ function playQuiz(quizId) {
 
                             <!-- Enhanced Quiz Grid -->
                             <div v-else class="quiz-grid-enhanced">
-                                <div 
-                                    v-for="quiz in quizzes" 
-                                    :key="quiz.id"
-                                    class="quiz-card-enhanced"
-                                >
+                                <div v-for="quiz in quizzes" :key="quiz.id" class="quiz-card-enhanced">
                                     <div class="card-inner">
                                         <div class="quiz-image-container-enhanced">
-                                            <img 
-                                                :src="getQuizImageUrl(quiz.id)" 
-                                                alt="Quiz Image" 
-                                                class="quiz-image-enhanced"
-                                                loading="lazy"
-                                            />
+                                            <img :src="getQuizImageUrl(quiz.id)" alt="Quiz Image"
+                                                class="quiz-image-enhanced" loading="lazy" />
                                             <div class="image-overlay"></div>
                                             <div class="quiz-status-enhanced">
-                                                <span :class="['status-badge-enhanced', quiz.public ? 'public' : 'private']">
+                                                <span
+                                                    :class="['status-badge-enhanced', quiz.public ? 'public' : 'private']">
                                                     <i :class="quiz.public ? 'bi bi-globe2' : 'bi bi-lock'"></i>
                                                     {{ quiz.public ? 'Công khai' : 'Riêng tư' }}
                                                 </span>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="quiz-content-enhanced">
                                             <h5 class="quiz-title-enhanced">{{ quiz.title }}</h5>
                                             <p class="quiz-category-enhanced" v-if="quiz.category">
                                                 <i class="bi bi-tag-fill me-1"></i>
                                                 {{ quiz.category.name }}
                                             </p>
-                                            
+
                                             <div class="quiz-actions-enhanced">
-                                                <button 
-                                                    class="action-btn-enhanced play-btn-enhanced" 
-                                                    @click="playQuiz(quiz.id)"
-                                                    title="Chơi quiz"
-                                                >
+                                                <button class="action-btn-enhanced play-btn-enhanced"
+                                                    @click="playQuiz(quiz.id)" title="Chơi quiz">
                                                     <i class="bi bi-play-fill"></i>
                                                     <span>Chơi</span>
-                                    </button>
-                                                <button 
-                                                    class="action-btn-enhanced edit-btn-enhanced" 
-                                                    @click="editQuiz(quiz.id)"
-                                                    title="Chỉnh sửa"
-                                                >
+                                                </button>
+                                                <button class="action-btn-enhanced edit-btn-enhanced"
+                                                    @click="editQuiz(quiz.id)" title="Chỉnh sửa">
                                                     <i class="bi bi-pencil-square"></i>
                                                     <span>Sửa</span>
-                                    </button>
-                                                <button 
-                                                    class="action-btn-enhanced delete-btn-enhanced" 
-                                                    @click="deleteQuiz(quiz.id)"
-                                                    title="Xóa quiz"
-                                                >
+                                                </button>
+                                                <button class="action-btn-enhanced delete-btn-enhanced"
+                                                    @click="deleteQuiz(quiz.id)" title="Xóa quiz">
                                                     <i class="bi bi-trash3"></i>
                                                     <span>Xóa</span>
-                                    </button>
-                                </div>
-                    </div>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -517,16 +477,15 @@ function playQuiz(quizId) {
                     </div>
                 </div>
             </div>
-                    </div>
+        </div>
 
         <!-- Enhanced Toast Notification -->
-        <div 
-            v-if="message" 
-            :class="['toast-notification-enhanced', message.includes('thành công') ? 'success' : 'error']"
-        >
+        <div v-if="message"
+            :class="['toast-notification-enhanced', message.includes('thành công') ? 'success' : 'error']">
             <div class="toast-icon">
-                <i :class="message.includes('thành công') ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-triangle-fill'"></i>
-                </div>
+                <i
+                    :class="message.includes('thành công') ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-triangle-fill'"></i>
+            </div>
             <div class="toast-content">
                 <strong class="toast-title">
                     {{ message.includes('thành công') ? 'Thành công!' : 'Lỗi!' }}
@@ -543,6 +502,7 @@ function playQuiz(quizId) {
 <style scoped>
 /* === ENHANCED BASE STYLES === */
 .quiz-crud-container {
+
     min-height: 100vh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     position: relative;
@@ -601,9 +561,19 @@ function playQuiz(quizId) {
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    33% { transform: translateY(-20px) rotate(5deg); }
-    66% { transform: translateY(20px) rotate(-5deg); }
+
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+
+    33% {
+        transform: translateY(-20px) rotate(5deg);
+    }
+
+    66% {
+        transform: translateY(20px) rotate(-5deg);
+    }
 }
 
 /* === ENHANCED HERO SECTION === */
@@ -752,8 +722,13 @@ function playQuiz(quizId) {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* === ENHANCED CREATE QUIZ CARD === */
@@ -909,8 +884,8 @@ function playQuiz(quizId) {
     border-radius: 2px;
 }
 
-.form-control-enhanced:focus + .input-border,
-.form-select-enhanced:focus + .input-border {
+.form-control-enhanced:focus+.input-border,
+.form-select-enhanced:focus+.input-border {
     width: 100%;
 }
 
@@ -1102,7 +1077,7 @@ function playQuiz(quizId) {
     box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
 }
 
-.privacy-radio:checked + .privacy-label-enhanced {
+.privacy-radio:checked+.privacy-label-enhanced {
     border-color: #00d4ff;
     background: rgba(0, 212, 255, 0.1);
     box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
@@ -1160,7 +1135,7 @@ function playQuiz(quizId) {
     transition: all 0.3s ease;
 }
 
-.privacy-radio:checked + .privacy-label-enhanced .privacy-checkmark {
+.privacy-radio:checked+.privacy-label-enhanced .privacy-checkmark {
     opacity: 1;
     transform: scale(1);
 }
@@ -1229,12 +1204,25 @@ function playQuiz(quizId) {
     animation: bounce 1.4s ease-in-out infinite both;
 }
 
-.dot2 { animation-delay: 0.16s; }
-.dot3 { animation-delay: 0.32s; }
+.dot2 {
+    animation-delay: 0.16s;
+}
+
+.dot3 {
+    animation-delay: 0.32s;
+}
 
 @keyframes bounce {
-    0%, 80%, 100% { transform: scale(0); }
-    40% { transform: scale(1); }
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0);
+    }
+
+    40% {
+        transform: scale(1);
+    }
 }
 
 .btn-ripple {
@@ -1345,13 +1333,26 @@ function playQuiz(quizId) {
     margin-bottom: 1rem;
 }
 
-.skeleton-line.large { width: 80%; }
-.skeleton-line.medium { width: 60%; }
-.skeleton-line.small { width: 40%; }
+.skeleton-line.large {
+    width: 80%;
+}
+
+.skeleton-line.medium {
+    width: 60%;
+}
+
+.skeleton-line.small {
+    width: 40%;
+}
 
 @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
 }
 
 /* === ENHANCED EMPTY STATE === */
@@ -1408,12 +1409,26 @@ function playQuiz(quizId) {
     animation: pulse 2s infinite;
 }
 
-.dot-2 { animation-delay: 0.5s; }
-.dot-3 { animation-delay: 1s; }
+.dot-2 {
+    animation-delay: 0.5s;
+}
+
+.dot-3 {
+    animation-delay: 1s;
+}
 
 @keyframes pulse {
-    0%, 100% { opacity: 0.3; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.2); }
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
 }
 
 /* === ENHANCED QUIZ GRID === */
@@ -1702,6 +1717,7 @@ function playQuiz(quizId) {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -1713,11 +1729,11 @@ function playQuiz(quizId) {
     .hero-title {
         font-size: 2.5rem;
     }
-    
+
     .hero-stats {
         gap: 1rem;
     }
-    
+
     .quiz-grid-enhanced {
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 2rem;
@@ -1728,48 +1744,48 @@ function playQuiz(quizId) {
     .hero-title {
         font-size: 2rem;
     }
-    
+
     .hero-subtitle {
         font-size: 1.1rem;
     }
-    
+
     .hero-stats {
         flex-direction: column;
         gap: 1rem;
     }
-    
+
     .stat-divider {
         width: 40px;
         height: 2px;
     }
-    
+
     .card-header-custom,
     .card-body-custom {
         padding: 2rem 1.5rem;
     }
-    
+
     .privacy-options-enhanced {
         grid-template-columns: 1fr;
     }
-    
+
     .quiz-grid-enhanced {
         grid-template-columns: 1fr;
         gap: 1.5rem;
     }
-    
+
     .loading-quiz-section {
         grid-template-columns: 1fr;
     }
-    
+
     .quiz-actions-enhanced {
         flex-direction: column;
     }
-    
+
     .action-btn-enhanced {
         flex: none;
         width: 100%;
     }
-    
+
     .toast-notification-enhanced {
         top: 1rem;
         right: 1rem;
@@ -1782,24 +1798,24 @@ function playQuiz(quizId) {
     .hero-section {
         padding: 3rem 0 2rem;
     }
-    
+
     .hero-icon {
         width: 70px;
         height: 70px;
     }
-    
+
     .hero-icon i {
         font-size: 2rem;
     }
-    
+
     .container {
         padding: 0 1rem;
     }
-    
+
     .card-body-custom {
         padding: 1.5rem;
     }
-    
+
     .btn-create-quiz-enhanced {
         padding: 1rem 2rem;
         font-size: 1rem;
@@ -1821,7 +1837,7 @@ function playQuiz(quizId) {
         background: white !important;
         color: black !important;
     }
-    
+
     .floating-orb,
     .background-decorations {
         display: none !important;

@@ -24,7 +24,7 @@ import UserQuizHistory from '@/components/client/UserQuizHistory.vue'
 import UserProfile from '@/components/client/UserProfile.vue'
 import UserManager from '@/components/admin/UserManager.vue'
 import QuizManager from '@/components/admin/QuizManager.vue'
- 
+
 import UserProfilePage from '@/components/client/UserProfilePage.vue'
 
 import Home from '@/components/client/Home.vue'
@@ -52,7 +52,7 @@ const routes = [
       { path: 'profile', name: 'UserProfile', component: UserProfile },
       { path: '/categories', name: 'CategoryManager', component: CategoryManager },
       { path: 'my-quizzes', name: 'ListUserQuiz', component: ListUserQuiz },
-      { path: 'public-quizzes', name: 'ListQuizPublic', component: ListQuizPublic }
+      { path: 'public-quizzes', name: 'ListQuizPublic', component: ListQuizPublic },
       { path: 'profile/:id', name: 'UserProfilePage', component: UserProfilePage },
     ],
   },
@@ -71,7 +71,7 @@ const routes = [
       { path: 'all-users', name: 'UserManager', component: UserManager },
       { path: 'all-quizzes', name: 'QuizManager', component: QuizManager },
       { path: 'reports', name: 'AdminReport', component: AdminReport },
-      
+
       // { path: 'quiz-attempts', name: 'QuizAttemptManager', component: QuizAttemtpManager },
       { path: 'categories', name: 'CategoryManager', component: CategoryManager },
       // { path: 'quiz-approval', name: 'QuizApprovalManager', component: QuizApprovalManager },

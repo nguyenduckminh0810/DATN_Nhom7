@@ -16,18 +16,16 @@ import Footer from '@/components/client/Footer.vue';
 
 <style scoped>
 .app-layout {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  flex-direction: column;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    flex-direction: column;
 }
 
 
 .content-container {
-    padding-top: 110px;
-    padding-bottom: 50px;
+    padding-top: 80px;
     flex: 1;
-    background: transparent; 
 }
 
 

@@ -1,45 +1,48 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+// Imports
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogin } from './useLogin'
 import axios from 'axios'
 import ReportModal from './ReportModal.vue'
 import { Modal } from 'bootstrap'
 
+// State & Hooks
 const router = useRouter()
 const { userId, getUserId } = useLogin()
 const reportModalRef = ref(null)
+
+// Data
 const quizzes = ref([])
 const allQuizzes = ref([])
+const categories = ref([])
 const currentPage = ref(0)
 const totalPages = ref(1)
-const pageSize = 6
 const isLoading = ref(true)
 const error = ref('')
-const hoveredQuiz = ref(null)
 const search = ref('')
 const filterPublic = ref('all')
 const filterCategory = ref('all')
-const categories = ref([])
+const hoveredQuiz = ref(null)
 const toast = ref({ show: false, type: 'success', message: '' })
 
-// Fetch categories for filter
-async function fetchCategories() {
+const pageSize = 6
+
+// Methods
+const fetchCategories = async () => {
     try {
-        const res = await axios.get('http://localhost:8080/api/categories')
-        categories.value = res.data
-    } catch (e) {
-        // ignore
-    }
+        const { data } = await axios.get('http://localhost:8080/api/categories')
+        categories.value = data
+    } catch (_) { }
 }
 
-async function fetchQuizzes(page = 0) {
+const fetchQuizzes = async (page = 0) => {
     isLoading.value = true
     try {
-        const res = await axios.get(`http://localhost:8080/api/quiz/user/${userId.value}/paginated`, {
+        const { data } = await axios.get(`http://localhost:8080/api/quiz/user/${userId.value}/paginated`, {
             params: { page, size: pageSize }
         })
-        allQuizzes.value = res.data.quizzes.map(q => ({
+        allQuizzes.value = data.quizzes.map(q => ({
             quiz_id: q.id,
             title: q.title,
             user_id: q.user.id,
@@ -51,8 +54,8 @@ async function fetchQuizzes(page = 0) {
             createdAt: q.createdAt,
             imageUrl: q.imageUrl || null
         }))
-        currentPage.value = res.data.currentPage
-        totalPages.value = res.data.totalPages
+        currentPage.value = data.currentPage
+        totalPages.value = data.totalPages
         applyFilters()
     } catch (err) {
         error.value = 'Không thể tải quiz.'
@@ -62,17 +65,17 @@ async function fetchQuizzes(page = 0) {
     }
 }
 
-function getQuizImageUrl(quizId) {
-    return `http://localhost:8080/api/image/quiz/${quizId}`
-}
+const getQuizImageUrl = (quizId) => `http://localhost:8080/api/image/quiz/${quizId}`
 
-function applyFilters() {
+const applyFilters = () => {
     let filtered = allQuizzes.value
     if (search.value.trim()) {
-        filtered = filtered.filter(q => q.title.toLowerCase().includes(search.value.trim().toLowerCase()))
+        const term = search.value.trim().toLowerCase()
+        filtered = filtered.filter(q => q.title.toLowerCase().includes(term))
     }
     if (filterPublic.value !== 'all') {
-        filtered = filtered.filter(q => q.publicQuiz === (filterPublic.value === 'public'))
+        const isPublic = filterPublic.value === 'public'
+        filtered = filtered.filter(q => q.publicQuiz === isPublic)
     }
     if (filterCategory.value !== 'all') {
         filtered = filtered.filter(q => q.categoryName === filterCategory.value)
@@ -80,57 +83,38 @@ function applyFilters() {
     quizzes.value = filtered
 }
 
+const goToPage = (page) => {
+    if (page >= 0 && page < totalPages.value) fetchQuizzes(page)
+}
+
+const playQuiz = (quizId) => router.push({ name: 'PlayQuiz', params: { quizId, userId: userId.value } })
+const goToQuizDetail = (quizId) => router.push({ name: 'QuizDetail', params: { id: quizId } })
+const editQuiz = (quizId) => router.push(`/quiz-crud/edit/${userId.value}/${quizId}`)
+
+const reportQuiz = (quiz) => {
+    const quizData = { quiz_id: quiz.quiz_id, id: quiz.quiz_id, title: quiz.title, author: quiz.fullName }
+    reportModalRef.value?.openModal(quizData)
+    setTimeout(() => new Modal(document.getElementById('reportModal')).show(), 100)
+}
+
+const onQuizReported = () => showToast('success', 'Báo cáo quiz thành công!')
+
+const showToast = (type, message) => {
+    toast.value = { show: true, type, message }
+    setTimeout(() => (toast.value.show = false), 3500)
+}
+
+const formatDate = (str) => str ? new Date(str).toLocaleDateString('vi-VN') : ''
+
 onMounted(async () => {
     if (!userId.value) await getUserId()
     await fetchCategories()
     if (userId.value) fetchQuizzes()
 })
-
-function goToPage(page) {
-    if (page >= 0 && page < totalPages.value) fetchQuizzes(page)
-}
-
-function playQuiz(quizId) {
-    router.push({ name: 'PlayQuiz', params: { quizId, userId: userId.value } })
-}
-
-function goToQuizDetail(quizId) {
-    router.push({ name: 'QuizDetail', params: { id: quizId } })
-}
-
-function editQuiz(quizId) {
-    router.push(`/quiz-crud/edit/${userId.value}/${quizId}`)
-}
-
-function reportQuiz(quiz) {
-    const quizData = {
-        quiz_id: quiz.quiz_id,
-        id: quiz.quiz_id,
-        title: quiz.title,
-        author: quiz.fullName
-    }
-    reportModalRef.value?.openModal(quizData)
-    setTimeout(() => {
-        const modal = new Modal(document.getElementById('reportModal'))
-        modal.show()
-    }, 100)
-}
-
-function onQuizReported(quiz) {
-    showToast('success', 'Báo cáo quiz thành công!')
-}
-
-function showToast(type, message) {
-    toast.value = { show: true, type, message }
-    setTimeout(() => (toast.value.show = false), 3500)
-}
-
-function formatDate(dateStr) {
-    if (!dateStr) return ''
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('vi-VN')
-}
 </script>
+
+<!-- Template and styles are already optimized visually and functionally -->
+
 
 <template>
     <div class="user-quiz-container">
@@ -155,7 +139,8 @@ function formatDate(dateStr) {
 
         <!-- Filter & Search -->
         <div class="filter-bar">
-            <input v-model="search" @input="applyFilters" class="search-input" placeholder="Tìm kiếm quiz theo tiêu đề..." />
+            <input v-model="search" @input="applyFilters" class="search-input"
+                placeholder="Tìm kiếm quiz theo tiêu đề..." />
             <select v-model="filterPublic" @change="applyFilters" class="filter-select">
                 <option value="all">Tất cả</option>
                 <option value="public">Công khai</option>
@@ -207,12 +192,12 @@ function formatDate(dateStr) {
 
         <!-- Quiz Grid -->
         <div v-else class="quiz-grid">
-            <div class="quiz-card" 
-                 v-for="quiz in quizzes" 
-                 :key="quiz.quiz_id"
-                 @mouseenter="hoveredQuiz = quiz.quiz_id"
-                 @mouseleave="hoveredQuiz = null">
-                
+            <div class="quiz-card" v-for="quiz in quizzes" :key="quiz.quiz_id" @mouseenter="hoveredQuiz = quiz.quiz_id"
+                @mouseleave="hoveredQuiz = null">
+                <!-- Card Image -->
+                <div class="quiz-image">
+                    <img :src="getQuizImageUrl(quiz.quiz_id)" alt="Quiz Image" />
+                </div>
                 <!-- Card Header -->
                 <div class="card-header">
                     <div class="category-badge">
@@ -225,16 +210,13 @@ function formatDate(dateStr) {
                     </div>
                 </div>
 
-                <!-- Card Image -->
-                <div class="quiz-image">
-  <img :src="getQuizImageUrl(quiz.quiz_id)" alt="Quiz Image" />
-</div>
+
 
                 <!-- Card Body -->
                 <div class="card-body">
                     <h3 class="quiz-title">{{ quiz.title }}</h3>
                     <p class="quiz-description">{{ quiz.categoryDescription }}</p>
-                    
+
                     <div class="quiz-meta">
                         <div class="author-info">
                             <i class="bi bi-person-circle"></i>
@@ -245,8 +227,10 @@ function formatDate(dateStr) {
                         </div>
                     </div>
                     <div class="quiz-extra">
-                        <span class="badge play-count"><i class="bi bi-controller"></i> {{ quiz.playCount }} lượt chơi</span>
-                        <span class="badge created-at"><i class="bi bi-calendar"></i> {{ formatDate(quiz.createdAt) }}</span>
+                        <span class="badge play-count"><i class="bi bi-controller"></i> {{ quiz.playCount }} lượt
+                            chơi</span>
+                        <span class="badge created-at"><i class="bi bi-calendar"></i> {{ formatDate(quiz.createdAt)
+                            }}</span>
                     </div>
                 </div>
 
@@ -279,22 +263,19 @@ function formatDate(dateStr) {
         <!-- Pagination -->
         <div v-if="totalPages > 1" class="pagination-container">
             <div class="pagination-wrapper">
-                <button class="page-btn prev" 
-                        :disabled="currentPage === 0"
-                        @click="goToPage(currentPage - 1)">
+                <button class="page-btn prev" :disabled="currentPage === 0" @click="goToPage(currentPage - 1)">
                     <i class="bi bi-chevron-left"></i>
                     <span>Trước</span>
                 </button>
-                
+
                 <div class="page-info">
                     <span class="current-page">{{ currentPage + 1 }}</span>
                     <span class="divider">/</span>
                     <span class="total-pages">{{ totalPages }}</span>
                 </div>
-                
-                <button class="page-btn next" 
-                        :disabled="currentPage === totalPages - 1"
-                        @click="goToPage(currentPage + 1)">
+
+                <button class="page-btn next" :disabled="currentPage === totalPages - 1"
+                    @click="goToPage(currentPage + 1)">
                     <span>Sau</span>
                     <i class="bi bi-chevron-right"></i>
                 </button>
@@ -323,6 +304,7 @@ function formatDate(dateStr) {
     margin: 60px 0;
     padding: 0 20px;
 }
+
 .section-header {
     max-width: 1200px;
     margin: 0 auto 50px;
@@ -338,12 +320,14 @@ function formatDate(dateStr) {
     position: relative;
     overflow: hidden;
 }
+
 .header-content {
     display: flex;
     align-items: center;
     gap: 20px;
     z-index: 2;
 }
+
 .header-icon {
     width: 60px;
     height: 60px;
@@ -357,6 +341,7 @@ function formatDate(dateStr) {
     box-shadow: 0 8px 25px rgba(255, 107, 157, 0.4);
     border: 2px solid rgba(255, 255, 255, 0.9);
 }
+
 .section-title {
     font-size: 2rem;
     font-weight: 700;
@@ -364,17 +349,20 @@ function formatDate(dateStr) {
     margin: 0;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
+
 .section-subtitle {
     color: rgba(255, 255, 255, 0.9);
     margin: 5px 0 0;
     font-size: 1.1rem;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
+
 .header-actions {
     display: flex;
     align-items: center;
     gap: 16px;
 }
+
 .create-btn {
     background: linear-gradient(45deg, #00d4ff, #00b8d4);
     color: white;
@@ -390,23 +378,26 @@ function formatDate(dateStr) {
     cursor: pointer;
     box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
 }
+
 .create-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 35px rgba(0, 212, 255, 0.5);
     background: linear-gradient(45deg, #00b8d4, #0288d1);
     border-color: white;
 }
+
 .filter-bar {
     max-width: 1200px;
     margin: 0 auto 30px;
     display: flex;
     gap: 18px;
     align-items: center;
-    background: rgba(255,255,255,0.12);
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 18px;
     padding: 18px 24px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
 }
+
 .search-input {
     flex: 2;
     padding: 12px 18px;
@@ -416,9 +407,11 @@ function formatDate(dateStr) {
     outline: none;
     transition: border 0.2s;
 }
+
 .search-input:focus {
     border-color: #00d4ff;
 }
+
 .filter-select {
     flex: 1;
     padding: 12px 18px;
@@ -429,6 +422,7 @@ function formatDate(dateStr) {
     background: white;
     margin-left: 8px;
 }
+
 .quiz-grid {
     max-width: 1200px;
     margin: 0 auto;
@@ -436,6 +430,7 @@ function formatDate(dateStr) {
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 30px;
 }
+
 .quiz-card {
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(20px);
@@ -448,19 +443,23 @@ function formatDate(dateStr) {
     cursor: pointer;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
 }
+
 .quiz-card:hover {
     transform: translateY(-10px);
     border: 3px solid #ff6b9d;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
     background: rgba(255, 255, 255, 0.2);
 }
+
 .card-header {
     padding: 20px 25px 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
-.category-badge, .visibility-badge {
+
+.category-badge,
+.visibility-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -471,40 +470,48 @@ function formatDate(dateStr) {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     border: 2px solid rgba(255, 255, 255, 0.8);
 }
+
 .category-badge {
     background: linear-gradient(45deg, #ff6b9d, #ff3d71);
     color: white;
 }
+
 .visibility-badge.public {
     background: linear-gradient(45deg, #4ecdc4, #26d0ce);
     color: white;
 }
+
 .visibility-badge.private {
     background: linear-gradient(45deg, #a0aec0, #718096);
     color: white;
 }
+
 .quiz-image {
     width: 100%;
     height: 160px;
-    background: rgba(0,0,0,0.08);
+    background: rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 2px solid rgba(255,255,255,0.2);
+
 }
+
 .quiz-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 0 0 18px 18px;
+
 }
+
 .quiz-image.default {
     color: #a0aec0;
     font-size: 3rem;
 }
+
 .card-body {
     padding: 0 25px 25px;
 }
+
 .quiz-title {
     font-size: 1.4rem;
     font-weight: 700;
@@ -512,7 +519,13 @@ function formatDate(dateStr) {
     margin-bottom: 12px;
     line-height: 1.3;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+
+    /* Giới hạn chữ */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
+
 .quiz-description {
     color: rgba(255, 255, 255, 0.9);
     font-size: 0.95rem;
@@ -524,11 +537,13 @@ function formatDate(dateStr) {
     overflow: hidden;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
+
 .quiz-meta {
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
+
 .author-info {
     display: flex;
     align-items: center;
@@ -538,11 +553,13 @@ function formatDate(dateStr) {
     font-weight: 600;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
+
 .author-info i {
     font-size: 1.2rem;
     color: #ff6b9d;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
+
 .quiz-status {
     background: rgba(255, 107, 157, 0.3);
     backdrop-filter: blur(10px);
@@ -550,56 +567,80 @@ function formatDate(dateStr) {
     border-radius: 12px;
     border: 1px solid rgba(255, 107, 157, 0.5);
 }
+
 .status-text {
     color: #ff6b9d;
     font-size: 0.8rem;
     font-weight: 600;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
+
 .quiz-extra {
     margin-top: 12px;
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
 }
+
 .badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(255,255,255,0.18);
+    background: rgba(255, 255, 255, 0.18);
     color: #1a202c;
     font-size: 0.92rem;
     font-weight: 600;
     border-radius: 12px;
     padding: 4px 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
 }
-.badge.play-count i { color: #00b8d4; }
-.badge.created-at i { color: #ff6b9d; }
+
+.badge.play-count i {
+    color: #00b8d4;
+}
+
+.badge.created-at i {
+    color: #ff6b9d;
+}
+
 .card-overlay {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, 
-        rgba(0, 0, 0, 0.85) 0%, 
-        rgba(255, 107, 157, 0.9) 50%,
-        rgba(255, 61, 113, 0.9) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(0, 0, 0, 0.85) 0%,
+            rgba(255, 107, 157, 0.9) 50%,
+            rgba(255, 61, 113, 0.9) 100%);
     backdrop-filter: blur(15px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10;
     border: 2px solid rgba(255, 255, 255, 0.8);
+
+    /* Animation */
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease-in-out;
+    pointer-events: none;
 }
+
+.quiz-card:hover .card-overlay {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+
 .overlay-content {
     display: flex;
     flex-direction: column;
     gap: 12px;
     align-items: center;
 }
+
 .action-btn {
     display: inline-flex;
     align-items: center;
@@ -614,55 +655,65 @@ function formatDate(dateStr) {
     justify-content: center;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
+
 .action-btn.primary {
     background: linear-gradient(45deg, #00d4ff, #00b8d4);
     color: white;
     border: 2px solid rgba(255, 255, 255, 0.8);
 }
+
 .action-btn.primary:hover {
     background: linear-gradient(45deg, #00b8d4, #0288d1);
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
     border-color: white;
 }
+
 .action-btn.secondary {
     background: linear-gradient(45deg, #ffd700, #ffed4e);
     color: #1a202c;
     border: 2px solid rgba(255, 255, 255, 0.8);
 }
+
 .action-btn.secondary:hover {
     background: linear-gradient(45deg, #ffed4e, #ffd700);
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
     border-color: white;
 }
+
 .action-btn.info {
     background: rgba(255, 255, 255, 0.9);
     color: #1a202c;
     border: 2px solid rgba(255, 255, 255, 1);
 }
+
 .action-btn.info:hover {
     background: white;
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
 }
+
 .action-btn.danger {
     background: linear-gradient(45deg, #ff4757, #ff3742);
     color: white;
     border: 2px solid rgba(255, 255, 255, 0.8);
 }
+
 .action-btn.danger:hover {
     background: linear-gradient(45deg, #ff3742, #ff2d55);
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
     border-color: white;
 }
+
 .pagination-container {
     max-width: 1200px;
     margin: 50px auto 0;
     display: flex;
     justify-content: center;
 }
+
 .pagination-wrapper {
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(20px);
@@ -674,6 +725,7 @@ function formatDate(dateStr) {
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
     border: 3px solid rgba(255, 255, 255, 0.8);
 }
+
 .page-btn {
     display: flex;
     align-items: center;
@@ -688,12 +740,14 @@ function formatDate(dateStr) {
     box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
     border: 2px solid rgba(255, 255, 255, 0.8);
 }
+
 .page-btn:hover:not(:disabled) {
     background: linear-gradient(45deg, #ff3d71, #ff6b9d);
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(255, 107, 157, 0.4);
     border-color: white;
 }
+
 .page-btn:disabled {
     background: rgba(255, 255, 255, 0.2);
     color: rgba(255, 255, 255, 0.5);
@@ -702,6 +756,7 @@ function formatDate(dateStr) {
     box-shadow: none;
     border: 2px solid rgba(255, 255, 255, 0.3);
 }
+
 .page-info {
     display: flex;
     align-items: center;
@@ -710,53 +765,84 @@ function formatDate(dateStr) {
     color: white;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
+
 .current-page {
     color: #ff6b9d;
     font-size: 1.2rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
+
 .divider {
     color: rgba(255, 255, 255, 0.7);
 }
+
 .total-pages {
     color: rgba(255, 255, 255, 0.9);
 }
+
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
 }
+
 .slide-up-enter-active,
 .slide-up-leave-active {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .slide-up-enter-from {
     opacity: 0;
     transform: translateY(20px);
 }
+
 .slide-up-leave-to {
     opacity: 0;
     transform: translateY(-20px);
 }
+
 .toast {
     position: fixed;
     top: 2rem;
     right: 2rem;
-    background: rgba(255,255,255,0.98);
+    background: rgba(255, 255, 255, 0.98);
     border-radius: 15px;
     padding: 1rem 1.5rem;
     display: flex;
     align-items: center;
     gap: 1rem;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-    border: 2px solid rgba(255,255,255,0.3);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     z-index: 1000;
     min-width: 300px;
     font-weight: 600;
     font-size: 1rem;
 }
-.toast.success { border-left: 4px solid #2ed573; color: #2ed573; }
-.toast.error { border-left: 4px solid #ff4757; color: #ff4757; }
-.toast.info { border-left: 4px solid #00d4ff; color: #00d4ff; }
-.toast i { font-size: 1.5rem; }
+
+.toast.success {
+    border-left: 4px solid #2ed573;
+    color: #2ed573;
+}
+
+.toast.error {
+    border-left: 4px solid #ff4757;
+    color: #ff4757;
+}
+
+.toast.info {
+    border-left: 4px solid #00d4ff;
+    color: #00d4ff;
+}
+
+.toast i {
+    font-size: 1.5rem;
+}
+
 /* --- KẾT THÚC STYLE ĐẦY ĐỦ --- */
 </style>

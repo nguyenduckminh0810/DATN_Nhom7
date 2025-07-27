@@ -2,96 +2,106 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-// import ReportModal from './ReportModal.vue'
-// import { Modal } from 'bootstrap'
+import debounce from 'lodash.debounce'
 
 const publicQuizzes = ref([])
 const currentPage = ref(0)
 const totalPages = ref(1)
-const pageSize = 6
+const pageSize = 8
 const isLoading = ref(true)
 const error = ref('')
-const hoveredQuiz = ref(null)
 const router = useRouter()
-const reportModalRef = ref(null)
+
+const quizCache = new Map()
+let hoveredQuizId = null
 
 async function fetchPublicQuizzes(page = 0) {
-    isLoading.value = true
-    try {
-        const res = await axios.get(`http://localhost:8080/api/quiz/public`, {
-            params: { page, size: pageSize }
-        })
+  if (quizCache.has(page)) {
+    const cached = quizCache.get(page)
+    publicQuizzes.value = cached.content
+    currentPage.value = cached.page
+    totalPages.value = cached.totalPages
+    return
+  }
 
-        publicQuizzes.value = res.data.content.map(q => ({
-            quiz_id: q.id,
-            title: q.title,
-            fullName: q.user.fullName,
-            categoryName: q.category.name,
-            categoryDescription: q.category.description,
-            publicQuiz: q.public
-        }))
+  isLoading.value = true
+  try {
+    const res = await axios.get(`http://localhost:8080/api/quiz/public`, {
+      params: { page, size: pageSize }
+    })
 
-        currentPage.value = res.data.number
-        totalPages.value = res.data.totalPages
-    } catch (err) {
-        error.value = 'Không thể tải quiz công khai.'
-        console.error(err)
-    } finally {
-        isLoading.value = false
-    }
+    const transformed = res.data.content.map(q => ({
+      quiz_id: q.id,
+      title: q.title,
+      fullName: q.user.fullName,
+      categoryName: q.category.name,
+      categoryDescription: q.category.description,
+      publicQuiz: q.public
+    }))
+
+    quizCache.set(page, {
+      content: transformed,
+      page: res.data.number,
+      totalPages: res.data.totalPages
+    })
+
+    publicQuizzes.value = transformed
+    currentPage.value = res.data.number
+    totalPages.value = res.data.totalPages
+  } catch (err) {
+    error.value = 'Không thể tải quiz công khai.'
+    console.error(err)
+  } finally {
+    isLoading.value = false
+  }
 }
 
+const fetchPublicQuizzesDebounced = debounce(fetchPublicQuizzes, 300)
+
 onMounted(() => {
-    fetchPublicQuizzes()
+  fetchPublicQuizzes()
 })
 
 function goToPage(page) {
-    if (page >= 0 && page < totalPages.value) fetchPublicQuizzes(page)
+  if (page >= 0 && page < totalPages.value) {
+    fetchPublicQuizzesDebounced(page)
+  }
 }
 
 function playQuiz(quizId) {
-    router.push({ name: 'PlayQuiz', params: { quizId } })
+  router.push({ name: 'PlayQuiz', params: { quizId } })
 }
 
 function goToQuizDetail(quizId) {
+  if (router.currentRoute.value.params.id !== quizId.toString()) {
     router.push({ name: 'QuizDetail', params: { id: quizId } })
+  }
 }
 
 function reportQuiz(quiz) {
-  // Tạm thời disable report function
   alert('Tính năng báo cáo đang được phát triển')
 }
 
-function onQuizReported(quiz) {
-  // Có thể thêm logic refresh data hoặc hiển thị thông báo
-}
-
 function handleImageError(event) {
-  // Tạo ảnh placeholder bằng canvas thay vì URL external
   const canvas = document.createElement('canvas')
   canvas.width = 300
   canvas.height = 200
   const ctx = canvas.getContext('2d')
-  
-  // Vẽ background gradient
   const gradient = ctx.createLinearGradient(0, 0, 300, 200)
   gradient.addColorStop(0, '#667eea')
   gradient.addColorStop(1, '#764ba2')
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, 300, 200)
-  
-  // Vẽ text
   ctx.fillStyle = 'white'
   ctx.font = 'bold 18px Arial'
   ctx.textAlign = 'center'
   ctx.fillText('Quiz Image', 150, 100)
   ctx.font = '14px Arial'
   ctx.fillText('Không có ảnh', 150, 125)
-  
-  // Set ảnh canvas làm src
   event.target.src = canvas.toDataURL()
 }
 </script>
+
 
 <template>
   <div class="quiz-public-container">
@@ -117,10 +127,11 @@ function handleImageError(event) {
     <div class="container-fluid px-4">
       <!-- Loading State -->
       <div v-if="isLoading" class="loading-container">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Đang tải...</span>
+        <!-- Loading State (Skeleton) -->
+        <div v-if="isLoading" class="quiz-skeleton-grid">
+          <div v-for="i in 4" :key="i" class="quiz-skeleton-card"></div>
         </div>
-        <p class="loading-text">Đang tải quiz...</p>
+
       </div>
 
       <!-- Error State -->
@@ -149,27 +160,16 @@ function handleImageError(event) {
 
         <!-- Quiz Cards -->
         <div v-else class="quiz-grid">
-          <div 
-            v-for="quiz in publicQuizzes" 
-            :key="quiz.quiz_id"
-            class="quiz-card"
-            @mouseenter="hoveredQuiz = quiz.quiz_id"
-            @mouseleave="hoveredQuiz = null"
-          >
+          <div v-for="quiz in publicQuizzes" :key="quiz.quiz_id" class="quiz-card"
+            @mouseenter="hoveredQuizId = quiz.quiz_id" @mouseleave="hoveredQuizId = null">
             <!-- Quiz Image -->
             <div class="quiz-image-container">
-              <img 
-                :src="`http://localhost:8080/api/image/quiz/${quiz.quiz_id}`"
-                :alt="quiz.title"
-                class="quiz-image"
-                @error="handleImageError"
-              >
+              <img :src="`http://localhost:8080/api/image/quiz/${quiz.quiz_id}`" :alt="quiz.title" class="quiz-image"
+                @error="handleImageError" loading="lazy" />
+
               <div class="quiz-overlay">
-                <button 
-                  @click="playQuiz(quiz.quiz_id)"
-                  class="play-btn"
-                  :class="{ 'hovered': hoveredQuiz === quiz.quiz_id }"
-                >
+                <button @click="playQuiz(quiz.quiz_id)" class="play-btn"
+                  :class="{ 'hovered': hoveredQuizId === quiz.quiz_id }">
                   <i class="bi bi-play-fill"></i>
                   Chơi ngay
                 </button>
@@ -183,11 +183,7 @@ function handleImageError(event) {
                   {{ quiz.title }}
                 </h3>
                 <div class="quiz-actions">
-                  <button 
-                    @click="reportQuiz(quiz)"
-                    class="action-btn report-btn"
-                    title="Báo cáo quiz"
-                  >
+                  <button @click="reportQuiz(quiz)" class="action-btn report-btn" title="Báo cáo quiz">
                     <i class="bi bi-flag"></i>
                   </button>
                 </div>
@@ -213,10 +209,7 @@ function handleImageError(event) {
                   <i class="bi bi-globe2"></i>
                   Công khai
                 </span>
-                <button 
-                  @click="goToQuizDetail(quiz.quiz_id)"
-                  class="detail-btn"
-                >
+                <button @click="goToQuizDetail(quiz.quiz_id)" class="detail-btn">
                   <i class="bi bi-eye"></i>
                   Chi tiết
                 </button>
@@ -231,37 +224,22 @@ function handleImageError(event) {
             <ul class="pagination">
               <!-- Previous Button -->
               <li class="page-item" :class="{ disabled: currentPage === 0 }">
-                <button 
-                  class="page-link"
-                  @click="goToPage(currentPage - 1)"
-                  :disabled="currentPage === 0"
-                >
+                <button class="page-link" @click="goToPage(currentPage - 1)" :disabled="currentPage === 0">
                   <i class="bi bi-chevron-left"></i>
                 </button>
               </li>
 
               <!-- Page Numbers -->
-              <li 
-                v-for="page in Math.min(5, totalPages)" 
-                :key="page"
-                class="page-item"
-                :class="{ active: currentPage === page - 1 }"
-              >
-                <button 
-                  class="page-link"
-                  @click="goToPage(page - 1)"
-                >
+              <li v-for="page in Math.min(5, totalPages)" :key="page" class="page-item"
+                :class="{ active: currentPage === page - 1 }">
+                <button class="page-link" @click="goToPage(page - 1)">
                   {{ page }}
                 </button>
               </li>
 
               <!-- Next Button -->
               <li class="page-item" :class="{ disabled: currentPage >= totalPages - 1 }">
-                <button 
-                  class="page-link"
-                  @click="goToPage(currentPage + 1)"
-                  :disabled="currentPage >= totalPages - 1"
-                >
+                <button class="page-link" @click="goToPage(currentPage + 1)" :disabled="currentPage >= totalPages - 1">
                   <i class="bi bi-chevron-right"></i>
                 </button>
               </li>
@@ -280,25 +258,30 @@ function handleImageError(event) {
 </template>
 
 <style scoped>
-.quiz-public-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
-  overflow-x: hidden;
+/* Skeleton Loading */
+.quiz-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 30px;
+  padding: 20px 0;
 }
 
-.quiz-public-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
-  pointer-events: none;
+.quiz-skeleton-card {
+  height: 320px;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* Hero Section */
@@ -575,6 +558,10 @@ function handleImageError(event) {
   flex: 1;
   margin-right: 15px;
   line-height: 1.4;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .quiz-title:hover {
@@ -744,6 +731,7 @@ function handleImageError(event) {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -751,9 +739,12 @@ function handleImageError(event) {
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-20px);
   }
@@ -764,27 +755,27 @@ function handleImageError(event) {
   .hero-title {
     font-size: 2.5rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1.1rem;
   }
-  
+
   .quiz-grid {
     grid-template-columns: 1fr;
     gap: 20px;
     padding: 20px 10px;
   }
-  
+
   .quiz-card {
     margin: 0 10px;
   }
-  
+
   .quiz-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-  
+
   .quiz-actions {
     align-self: flex-end;
   }
@@ -794,11 +785,11 @@ function handleImageError(event) {
   .hero-section {
     padding: 40px 0;
   }
-  
+
   .hero-title {
     font-size: 2rem;
   }
-  
+
   .container-fluid {
     padding-left: 15px;
     padding-right: 15px;
