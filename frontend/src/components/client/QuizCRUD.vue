@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useQuizCRUD } from './useQuizCRUD'
 import { useLogin } from './useLogin'
@@ -10,7 +10,7 @@ const { toQuizCRUD, categories } = useQuizCRUD()
 const { getUserId, username } = useLogin()
 const router = useRouter()
 
-// State
+// State - Existing
 const title = ref('')
 const selectedCategoryId = ref('')
 const userId = ref('')
@@ -23,6 +23,16 @@ const previewUrl = ref(null)
 const isLoading = ref(false)
 const isCreating = ref(false)
 const loadingQuizzes = ref(true)
+
+// State - Import Excel
+const activeTab = ref('create')
+const importQuizTitle = ref('')
+const importQuizDescription = ref('')
+const importCategoryId = ref('')
+const selectedExcelFile = ref(null)
+const isDragOver = ref(false)
+const isImporting = ref(false)
+const importResult = ref(null)
 
 function handleImageUpload(event) {
     const file = event.target.files[0]
@@ -40,7 +50,7 @@ function getQuizImageUrl(quizId) {
 onMounted(async () => {
     isLoading.value = true
     try {
-        userId.value = await getUserId()
+    userId.value = await getUserId()
         await Promise.all([fetchCategories(), fetchQuizzes()])
     } finally {
         isLoading.value = false
@@ -172,6 +182,108 @@ async function deleteQuiz(quizId) {
 function playQuiz(quizId) {
     router.push({ name: 'PlayQuiz', params: { quizId, userId: userId.value } })
 }
+
+// ✅ COMPUTED CHO IMPORT EXCEL
+const canImport = computed(() => {
+    return importQuizTitle.value.trim() && 
+           importCategoryId.value && 
+           selectedExcelFile.value
+})
+
+// ✅ METHODS CHO IMPORT EXCEL
+const downloadTemplate = () => {
+    // Tạo và download file Excel template
+    const link = document.createElement('a')
+    link.href = '/templates/quiz-template.xlsx'
+    link.download = 'quiz-template.xlsx'
+    link.click()
+}
+
+const handleFileSelect = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+        selectedExcelFile.value = file
+        importResult.value = null
+    }
+}
+
+const handleDrop = (event) => {
+    event.preventDefault()
+    isDragOver.value = false
+    
+    const files = event.dataTransfer.files
+    if (files.length > 0) {
+        selectedExcelFile.value = files[0]
+        importResult.value = null
+    }
+}
+
+const removeExcelFile = () => {
+    selectedExcelFile.value = null
+    importResult.value = null
+}
+
+const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+const importQuiz = async () => {
+    if (!canImport.value) return
+    
+    isImporting.value = true
+    importResult.value = null
+    
+    try {
+        const formData = new FormData()
+        formData.append('file', selectedExcelFile.value)
+        formData.append('title', importQuizTitle.value.trim())
+        formData.append('description', importQuizDescription.value.trim())
+        formData.append('categoryId', importCategoryId.value)
+        formData.append('username', username.value)
+        
+        const response = await axios.post(
+            'http://localhost:8080/api/quiz/import-excel',
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            }
+        )
+        
+        importResult.value = response.data
+        
+        if (response.data.success) {
+            // Reset form và refresh quiz list
+            setTimeout(() => {
+                resetImportForm()
+                fetchQuizzes()
+                activeTab.value = 'create' // Chuyển về tab tạo mới
+            }, 3000)
+        }
+        
+    } catch (error) {
+        importResult.value = {
+            success: false,
+            message: error.response?.data?.message || 'Có lỗi xảy ra khi import'
+        }
+    } finally {
+        isImporting.value = false
+    }
+}
+
+const resetImportForm = () => {
+    importQuizTitle.value = ''
+    importQuizDescription.value = ''
+    importCategoryId.value = ''
+    selectedExcelFile.value = null
+    importResult.value = null
+}
 </script>
 
 <template>
@@ -187,7 +299,7 @@ function playQuiz(quizId) {
         <!-- Enhanced Hero Section -->
         <div class="hero-section">
             <div class="container">
-                <div class="row justify-content-center">
+            <div class="row justify-content-center">
                     <div class="col-lg-8 text-center">
                         <div class="hero-content">
                             <div class="hero-icon">
@@ -241,15 +353,41 @@ function playQuiz(quizId) {
                         <div class="create-quiz-card">
                             <div class="card-glow"></div>
                             <div class="card-header-custom">
-                                <div class="header-icon">
-                                    <i class="bi bi-plus-circle-fill"></i>
+                                <!-- ✅ TAB NAVIGATION -->
+                                <div class="tab-navigation">
+                                    <button 
+                                        @click="activeTab = 'create'" 
+                                        :class="['tab-btn', { active: activeTab === 'create' }]"
+                                    >
+                                        <i class="bi bi-plus-circle-fill"></i>
+                                        <span>Tạo mới</span>
+                                    </button>
+                                    <button 
+                                        @click="activeTab = 'import'" 
+                                        :class="['tab-btn', { active: activeTab === 'import' }]"
+                                    >
+                                        <i class="bi bi-file-earmark-excel"></i>
+                                        <span>Import Excel</span>
+                                    </button>
                                 </div>
-                                <h3 class="header-title">Tạo Quiz Mới</h3>
-                                <p class="header-subtitle">Điền thông tin để tạo quiz mới của bạn</p>
+                                
+                                <!-- ✅ TAB CONTENT HEADER -->
+                                <div class="tab-content-header">
+                                    <div v-if="activeTab === 'create'" class="header-info">
+                                        <h3 class="header-title">Tạo Quiz Mới</h3>
+                                        <p class="header-subtitle">Điền thông tin để tạo quiz mới của bạn</p>
+                                    </div>
+                                    <div v-else class="header-info">
+                                        <h3 class="header-title">Import Quiz từ Excel</h3>
+                                        <p class="header-subtitle">Tải lên file Excel để tạo quiz nhanh chóng</p>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="card-body-custom">
-                                <form @submit.prevent="createQuiz">
+                                <!-- ✅ TAB 1: TẠO MỚI -->
+                                <div v-if="activeTab === 'create'" class="tab-content-panel">
+                            <form @submit.prevent="createQuiz">
                                     <div class="row">
                                         <!-- Enhanced Image Upload Section -->
                                         <div class="col-md-12 mb-4">
@@ -285,9 +423,9 @@ function playQuiz(quizId) {
                                                 <button v-if="previewUrl" type="button"
                                                     class="btn-remove-image-enhanced" @click="clearImage">
                                                     <i class="bi bi-x-lg"></i>
-                                                </button>
-                                            </div>
-                                        </div>
+                                        </button>
+                                    </div>
+                                </div>
 
                                         <!-- Enhanced Quiz Info -->
                                         <div class="col-md-6 mb-4">
@@ -298,13 +436,13 @@ function playQuiz(quizId) {
                                                 <select v-model="selectedCategoryId" class="form-select-enhanced"
                                                     required>
                                                     <option value="" disabled>🎯 Chọn danh mục...</option>
-                                                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                                                        {{ cat.name }} - {{ cat.description }}
-                                                    </option>
-                                                </select>
+                                        <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                                            {{ cat.name }} - {{ cat.description }}
+                                        </option>
+                                    </select>
                                                 <div class="input-border"></div>
                                             </div>
-                                        </div>
+                                </div>
 
                                         <div class="col-md-6 mb-4">
                                             <label class="form-label-custom">
@@ -315,7 +453,7 @@ function playQuiz(quizId) {
                                                     placeholder="💡 Nhập tên quiz thú vị..." required />
                                                 <div class="input-border"></div>
                                             </div>
-                                        </div>
+                                </div>
 
                                         <!-- Enhanced Privacy Setting -->
                                         <div class="col-12 mb-4">
@@ -325,11 +463,11 @@ function playQuiz(quizId) {
                                             <div class="privacy-options-enhanced">
                                                 <div class="privacy-option-enhanced">
                                                     <input class="privacy-radio" type="radio" :value="true"
-                                                        v-model="isPublic" id="publicYes" />
+                                                v-model="isPublic" id="publicYes" />
                                                     <label class="privacy-label-enhanced" for="publicYes">
                                                         <div class="privacy-icon public-icon">
                                                             <i class="bi bi-globe2"></i>
-                                                        </div>
+                                        </div>
                                                         <div class="privacy-content">
                                                             <strong>Công khai</strong>
                                                             <small>Mọi người có thể xem và chơi</small>
@@ -341,11 +479,11 @@ function playQuiz(quizId) {
                                                 </div>
                                                 <div class="privacy-option-enhanced">
                                                     <input class="privacy-radio" type="radio" :value="false"
-                                                        v-model="isPublic" id="publicNo" />
+                                                v-model="isPublic" id="publicNo" />
                                                     <label class="privacy-label-enhanced" for="publicNo">
                                                         <div class="privacy-icon private-icon">
                                                             <i class="bi bi-lock"></i>
-                                                        </div>
+                                        </div>
                                                         <div class="privacy-content">
                                                             <strong>Riêng tư</strong>
                                                             <small>Chỉ bạn có thể xem</small>
@@ -355,8 +493,8 @@ function playQuiz(quizId) {
                                                         </div>
                                                     </label>
                                                 </div>
-                                            </div>
-                                        </div>
+                                    </div>
+                                </div>
 
                                         <!-- Enhanced Submit Button -->
                                         <div class="col-12 text-center">
@@ -378,14 +516,174 @@ function playQuiz(quizId) {
                                                     </div>
                                                 </div>
                                                 <div class="btn-ripple"></div>
+                                    </button>
+                                        </div>
+                                </div>
+                            </form>
+                        </div>
+
+                                <!-- ✅ TAB 2: IMPORT EXCEL -->
+                                <div v-if="activeTab === 'import'" class="tab-content-panel">
+                                    <div class="import-excel-section">
+                                        <!-- Template Download -->
+                                        <div class="template-section-enhanced">
+                                            <div class="template-header">
+                                                <div class="template-icon">
+                                                    <i class="bi bi-download"></i>
+                                                </div>
+                                                <div class="template-info">
+                                                    <h4>📋 Tải file mẫu</h4>
+                                                    <p>Tải xuống file Excel mẫu để hiểu cấu trúc dữ liệu</p>
+                                                </div>
+                                            </div>
+                                            <button @click="downloadTemplate" class="template-btn-enhanced">
+                                                <i class="bi bi-file-earmark-excel"></i>
+                                                <span>Tải file mẫu</span>
                                             </button>
+                    </div>
+
+                                        <!-- Import Form -->
+                                        <form @submit.prevent="importQuiz" class="import-form-enhanced">
+                                            <div class="row">
+                                                <!-- Quiz Info -->
+                                                <div class="col-md-6 mb-4">
+                                                    <label class="form-label-custom">
+                                                        <i class="bi bi-bookmark-fill me-2"></i>Tên Quiz
+                                                    </label>
+                                                    <div class="input-container">
+                                                        <input 
+                                                            v-model="importQuizTitle" 
+                                                            type="text" 
+                                                            class="form-control-enhanced"
+                                                            placeholder="Nhập tên quiz..."
+                                                            required
+                                                        />
+                                                        <div class="input-glow"></div>
+                                </div>
+                                                </div>
+
+                                                <div class="col-md-6 mb-4">
+                                                    <label class="form-label-custom">
+                                                        <i class="bi bi-folder me-2"></i>Danh mục
+                                                    </label>
+                                                    <div class="input-container">
+                                                        <select v-model="importCategoryId" class="form-select-enhanced" required>
+                                                            <option value="" disabled>🎯 Chọn danh mục...</option>
+                                                            <option v-for="category in categories" :key="category.id" :value="category.id">
+                                                                {{ category.name }}
+                                                            </option>
+                                                        </select>
+                                                        <div class="input-glow"></div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Description -->
+                                                <div class="col-md-12 mb-4">
+                                                    <label class="form-label-custom">
+                                                        <i class="bi bi-text-paragraph me-2"></i>Mô tả
+                                                        <span class="label-optional">(Tùy chọn)</span>
+                                                    </label>
+                                                    <div class="input-container">
+                                                        <textarea 
+                                                            v-model="importQuizDescription" 
+                                                            class="form-control-enhanced"
+                                                            placeholder="Mô tả ngắn về quiz..."
+                                                            rows="3"
+                                                        ></textarea>
+                                                        <div class="input-glow"></div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- File Upload -->
+                                                <div class="col-md-12 mb-4">
+                                                    <label class="form-label-custom">
+                                                        <i class="bi bi-file-earmark-excel me-2"></i>File Excel
+                                                    </label>
+                                                    <div class="file-upload-area-enhanced" 
+                                                         :class="{ 'drag-over': isDragOver }" 
+                                                         @drop="handleDrop" 
+                                                         @dragover.prevent="isDragOver = true"
+                                                         @dragleave="isDragOver = false">
+                                                        
+                                                        <input 
+                                                            ref="fileInput"
+                                                            type="file" 
+                                                            @change="handleFileSelect" 
+                                                            accept=".xlsx,.xls"
+                                                            class="d-none"
+                                                        />
+                                                        
+                                                        <div v-if="!selectedExcelFile" class="upload-placeholder-excel">
+                                                            <div class="upload-icon-excel">
+                                                                <i class="bi bi-cloud-arrow-up"></i>
+                                                            </div>
+                                                            <h4 class="upload-title-excel">Chọn file Excel</h4>
+                                                            <p class="upload-text-excel">Kéo thả hoặc nhấp để chọn file</p>
+                                                            <button type="button" @click="$refs.fileInput.click()" class="select-file-btn-enhanced">
+                                                                <i class="bi bi-folder2-open"></i>
+                                                                Chọn file
+                                    </button>
+                                                            <div class="upload-formats-excel">
+                                                                <span class="format-tag-excel">.XLSX</span>
+                                                                <span class="format-tag-excel">.XLS</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div v-else class="file-selected-enhanced">
+                                                            <div class="file-icon-enhanced">
+                                                                <i class="bi bi-file-earmark-excel"></i>
+                                                            </div>
+                                                            <div class="file-info-enhanced">
+                                                                <h5 class="file-name-enhanced">{{ selectedExcelFile.name }}</h5>
+                                                                <p class="file-size-enhanced">{{ formatFileSize(selectedExcelFile.size) }}</p>
+                                                            </div>
+                                                            <button @click="removeExcelFile" type="button" class="remove-file-enhanced">
+                                                                <i class="bi bi-x-circle"></i>
+                                    </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Submit Button -->
+                                            <div class="form-actions-enhanced">
+                                                <button 
+                                                    type="submit" 
+                                                    :disabled="!canImport || isImporting"
+                                                    class="btn-import-enhanced"
+                                                >
+                                                    <span v-if="isImporting" class="btn-loading">
+                                                        <div class="btn-spinner"></div>
+                                                        Đang import...
+                                                    </span>
+                                                    <span v-else class="btn-content">
+                                                        <i class="bi bi-upload"></i>
+                                                        Import Quiz
+                                                    </span>
+                                    </button>
+                                </div>
+                                        </form>
+
+                                        <!-- Import Result -->
+                                        <div v-if="importResult" 
+                                             :class="['import-result-enhanced', importResult.success ? 'success' : 'error']">
+                                            <div class="result-icon-enhanced">
+                                                <i :class="importResult.success ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i>
+                                            </div>
+                                            <div class="result-content-enhanced">
+                                                <h4>{{ importResult.success ? 'Import thành công!' : 'Import thất bại!' }}</h4>
+                                                <p>{{ importResult.message }}</p>
+                                                <div v-if="importResult.success && importResult.questionsCount" class="result-stats">
+                                                    <span class="stat-badge">📊 {{ importResult.questionsCount }} câu hỏi</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </form>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div>
 
                 <!-- Enhanced Quiz List Section -->
                 <div class="row justify-content-center">
@@ -400,7 +698,7 @@ function playQuiz(quizId) {
                                     <span class="quiz-count-enhanced">{{ quizzes.length }}</span>
                                 </h3>
                                 <p class="section-subtitle">Quản lý và chỉnh sửa các quiz đã tạo</p>
-                            </div>
+                    </div>
 
                             <!-- Loading Quiz List -->
                             <div v-if="loadingQuizzes" class="loading-quiz-section">
@@ -410,15 +708,15 @@ function playQuiz(quizId) {
                                         <div class="skeleton-line large"></div>
                                         <div class="skeleton-line medium"></div>
                                         <div class="skeleton-line small"></div>
-                                    </div>
-                                </div>
-                            </div>
+                </div>
+            </div>
+        </div>
 
                             <!-- Enhanced Empty State -->
                             <div v-else-if="quizzes.length === 0" class="empty-state-enhanced">
                                 <div class="empty-icon">
                                     <i class="bi bi-inbox"></i>
-                                </div>
+    </div>
                                 <h4 class="empty-title">Chưa có quiz nào</h4>
                                 <p class="empty-text">Hãy tạo quiz đầu tiên để bắt đầu hành trình của bạn!</p>
                                 <div class="empty-decoration">
@@ -497,6 +795,7 @@ function playQuiz(quizId) {
             </button>
         </div>
     </div>
+
 </template>
 
 <style scoped>
@@ -1711,6 +2010,8 @@ function playQuiz(quizId) {
     transform: scale(1.1);
 }
 
+
+
 /* === ANIMATIONS === */
 @keyframes slideInRight {
     from {
@@ -1828,6 +2129,441 @@ function playQuiz(quizId) {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+    }
+}
+
+/* ✅ TAB SYSTEM STYLES */
+.tab-navigation {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 4px;
+    backdrop-filter: blur(10px);
+}
+
+.tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.tab-btn:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.tab-btn i {
+    font-size: 16px;
+}
+
+.tab-content-header {
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.header-info {
+    animation: fadeInUp 0.5s ease;
+}
+
+.tab-content-panel {
+    animation: fadeInUp 0.5s ease;
+}
+
+/* ✅ IMPORT EXCEL STYLES */
+.import-excel-section {
+    max-width: 100%;
+}
+
+.template-section-enhanced {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%);
+    border: 2px dashed rgba(40, 167, 69, 0.3);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.template-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.template-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.template-info h4 {
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.template-info p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.template-btn-enhanced {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.template-btn-enhanced:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+}
+
+.import-form-enhanced {
+    margin-top: 32px;
+}
+
+.file-upload-area-enhanced {
+    border: 2px dashed rgba(102, 126, 234, 0.3);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.file-upload-area-enhanced.drag-over {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    transform: scale(1.02);
+}
+
+.upload-placeholder-excel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.upload-icon-excel {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.upload-title-excel {
+    margin: 0;
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.upload-text-excel {
+    margin: 0;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.select-file-btn-enhanced {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.select-file-btn-enhanced:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.upload-formats-excel {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.format-tag-excel {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.file-selected-enhanced {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 12px;
+    position: relative;
+}
+
+.file-icon-enhanced {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.file-info-enhanced {
+    flex: 1;
+    text-align: left;
+}
+
+.file-name-enhanced {
+    margin: 0 0 4px 0;
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.file-size-enhanced {
+    margin: 0;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.remove-file-enhanced {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.remove-file-enhanced:hover {
+    background: rgba(220, 53, 69, 0.2);
+    transform: scale(1.1);
+}
+
+.form-actions-enhanced {
+    text-align: center;
+    margin-top: 32px;
+}
+
+.btn-import-enhanced {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    min-width: 180px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-import-enhanced:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+}
+
+.btn-import-enhanced:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.btn-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.btn-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.import-result-enhanced {
+    margin-top: 24px;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    animation: slideInUp 0.5s ease;
+}
+
+.import-result-enhanced.success {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(32, 201, 151, 0.1) 100%);
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.import-result-enhanced.error {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(253, 126, 20, 0.1) 100%);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.result-icon-enhanced {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.import-result-enhanced.success .result-icon-enhanced {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.import-result-enhanced.error .result-icon-enhanced {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+    color: white;
+}
+
+.result-content-enhanced {
+    flex: 1;
+}
+
+.result-content-enhanced h4 {
+    margin: 0 0 8px 0;
+    font-weight: 600;
+}
+
+.result-content-enhanced p {
+    margin: 0 0 12px 0;
+    color: #6c757d;
+}
+
+.result-stats {
+    display: flex;
+    gap: 8px;
+}
+
+.stat-badge {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ✅ RESPONSIVE FOR TABS */
+@media (max-width: 768px) {
+    .tab-navigation {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .template-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .file-selected-enhanced {
+        flex-direction: column;
+        text-align: center;
     }
 }
 

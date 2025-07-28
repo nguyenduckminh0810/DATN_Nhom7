@@ -36,6 +36,12 @@ public class Quiz {
 	@JsonIgnore
 	@OneToMany(mappedBy = "quiz")
 	private Set<QuizTag> quizTags;
+	
+	// ✅ THÊM RELATIONSHIP VỚI QUESTIONS
+	@JsonIgnore
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	private Set<Question> questions = new HashSet<>();
+	
 	// Sau này dùng
 	@JsonIgnore
 	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
@@ -106,6 +112,15 @@ public class Quiz {
 		this.image = image;
 	}
 
+	// ✅ GETTER/SETTER CHO QUESTIONS
+	public Set<Question> getQuestions() {
+		return questions;
+	}
+
+	public void setQuestions(Set<Question> questions) {
+		this.questions = questions;
+	}
+
 	public Quiz(Long id, String title, User user, Category category, boolean isPublic, LocalDateTime createdAt,
 			Set<QuizTag> quizTags, String image) {
 		super();
@@ -117,6 +132,7 @@ public class Quiz {
 		this.createdAt = createdAt;
 		this.quizTags = quizTags;
 		this.image = image;
+		this.questions = new HashSet<>();
 	}
 
 	public Quiz() {

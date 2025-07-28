@@ -111,4 +111,57 @@ public class QuizController {
 		return quizService.getPublicQuizzes(true, page, size);
 	}
 
+	@PostMapping(value = "/import-excel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<Map<String, Object>> importQuizFromExcel(
+			@RequestParam("file") MultipartFile file,
+			@RequestParam("title") String title,
+			@RequestParam("description") String description,
+			@RequestParam("categoryId") Long categoryId,
+			@RequestParam("username") String username) {
+		
+		Map<String, Object> response = new HashMap<>();
+		
+		try {
+			// Validate file
+			if (file.isEmpty()) {
+				response.put("success", false);
+				response.put("message", "File không được để trống");
+				return ResponseEntity.badRequest().body(response);
+			}
+			
+			String fileName = file.getOriginalFilename();
+			if (fileName == null || (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls"))) {
+				response.put("success", false);
+				response.put("message", "File phải có định dạng .xlsx hoặc .xls");
+				return ResponseEntity.badRequest().body(response);
+			}
+			
+			// Import quiz from Excel
+			Quiz importedQuiz = quizService.importQuizFromExcel(file, title, description, categoryId, username);
+			
+			response.put("success", true);
+			response.put("message", "Import quiz thành công!");
+			response.put("quiz", importedQuiz);
+			response.put("questionsCount", importedQuiz.getQuestions() != null ? importedQuiz.getQuestions().size() : 0);
+			
+			return ResponseEntity.ok(response);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.put("success", false);
+			response.put("message", "Lỗi khi import: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
+
+	@GetMapping("/excel-template")
+	public ResponseEntity<Map<String, Object>> getExcelTemplateInfo() {
+		Map<String, Object> response = new HashMap<>();
+		response.put("success", true);
+		response.put("message", "Hướng dẫn sử dụng template Excel");
+		response.put("columns", new String[]{"STT", "Câu hỏi", "Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D", "Đáp án đúng", "Điểm"});
+		response.put("notes", "Đáp án đúng phải là A, B, C, hoặc D. Điểm phải là số nguyên dương.");
+		return ResponseEntity.ok(response);
+	}
+
 }

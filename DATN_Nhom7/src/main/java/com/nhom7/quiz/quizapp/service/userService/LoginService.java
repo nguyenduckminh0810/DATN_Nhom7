@@ -3,6 +3,7 @@ package com.nhom7.quiz.quizapp.service.userService;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.nhom7.quiz.quizapp.model.User;
@@ -16,6 +17,7 @@ public class LoginService {
     private UserRepo userRepo;
 
     @Autowired
+    @Lazy
     private PasswordEncoder passwordEncoder;
 
     // Enum để xác định trạng thái đăng nhập
