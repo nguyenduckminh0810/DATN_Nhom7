@@ -22,9 +22,8 @@
   <h6 class="fw-bold mb-2">Liên kết nhanh</h6>
   <ul class="list-unstyled">
     <li><a href="/" class="text-light text-decoration-none small">Trang chủ</a></li> <!-- Chuyển về text-light -->
-    <li><a href="/about" class="text-light text-decoration-none small">Về chúng tôi</a></li>
-    <li><a href="/quizzes" class="text-light text-decoration-none small">Quiz công khai</a></li>
-    <li><a href="/contact" class="text-light text-decoration-none small">Liên hệ</a></li>
+    <li><a href="/public-quizzes" class="text-light text-decoration-none small">Quiz công khai</a></li>
+    <li><a href="mailto:contact@quizmaster.com" class="text-light text-decoration-none small">Liên hệ</a></li>
   </ul>
 </div>
         <!-- About Project -->

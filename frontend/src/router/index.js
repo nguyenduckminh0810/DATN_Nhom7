@@ -30,7 +30,7 @@ import UserProfilePage from '@/components/client/UserProfilePage.vue'
 import Home from '@/components/client/Home.vue'
 import ListUserQuiz from '@/components/client/ListUserQuiz.vue'
 import ListQuizPublic from '@/components/client/ListQuizPublic.vue'
-
+import ImportExcel from '@/components/client/ImportExcel.vue'
 
 const routes = [
   // Client layout và các route người dùng
@@ -38,48 +38,137 @@ const routes = [
     path: '/',
     component: ClientLayout,
     children: [
-      { path: '', redirect: { name: 'Home' } },
-      { path: 'home', name: 'Home', component: Home },
-      { path: 'login', name: 'Login', component: Login },
-      { path: 'register', name: 'Register', component: Register },
-      { path: 'client-dashboard/:userId', name: 'ClientDashboard', component: ClientDashboard },
-      { path: 'quiz-crud', name: 'QuizCRUD', component: QuizCRUD },
-      { path: 'quiz/:quizId/:userId/play', name: 'PlayQuiz', component: PlayQuiz },
-      { path: 'quiz-crud/edit/:userId/:quizId', name: 'EditQuiz', component: EditQuiz },
-      { path: 'quiz/:quizId/:userId/result', name: 'QuizResult', component: QuizResult },
-      { path: 'history/:userId', name: 'QuizHistory', component: QuizHistory },
-      { path: 'my-history', name: 'UserQuizHistory', component: UserQuizHistory },
-      { path: 'profile', name: 'UserProfile', component: UserProfile },
-      { path: '/categories', name: 'CategoryManager', component: CategoryManager },
-      { path: 'my-quizzes', name: 'ListUserQuiz', component: ListUserQuiz },
-      { path: 'public-quizzes', name: 'ListQuizPublic', component: ListQuizPublic },
-      { path: 'profile/:id', name: 'UserProfilePage', component: UserProfilePage },
+      { 
+        path: '', 
+        redirect: { name: 'Home' } 
+      },
+      { 
+        path: 'home', 
+        name: 'Home', 
+        component: Home
+      },
+      { 
+        path: 'login', 
+        name: 'Login', 
+        component: Login
+      },
+      { 
+        path: 'register', 
+        name: 'Register', 
+        component: Register
+      },
+      { 
+        path: 'client-dashboard/:userId', 
+        name: 'ClientDashboard', 
+        component: ClientDashboard
+      },
+      { 
+        path: 'quiz-crud', 
+        name: 'QuizCRUD', 
+        component: QuizCRUD
+      },
+      { 
+        path: 'quiz/:quizId/:userId/play', 
+        name: 'PlayQuiz', 
+        component: PlayQuiz
+      },
+      { 
+        path: 'quiz-crud/edit/:userId/:quizId', 
+        name: 'EditQuiz', 
+        component: EditQuiz
+      },
+      { 
+        path: 'quiz/:quizId/:userId/result', 
+        name: 'QuizResult', 
+        component: QuizResult
+      },
+      { 
+        path: 'history/:userId', 
+        name: 'QuizHistory', 
+        component: QuizHistory
+      },
+      { 
+        path: 'my-history', 
+        name: 'UserQuizHistory', 
+        component: UserQuizHistory
+      },
+      { 
+        path: 'profile', 
+        name: 'UserProfile', 
+        component: UserProfile
+      },
+      { 
+        path: 'categories', 
+        name: 'CategoryManager', 
+        component: CategoryManager
+      },
+      { 
+        path: 'my-quizzes', 
+        name: 'ListUserQuiz', 
+        component: ListUserQuiz
+      },
+      { 
+        path: 'public-quizzes', 
+        name: 'ListQuizPublic', 
+        component: ListQuizPublic
+      },
+      { 
+        path: 'profile/:id', 
+        name: 'UserProfilePage', 
+        component: UserProfilePage
+      },
+      { 
+        path: 'import-excel', 
+        name: 'ImportExcel', 
+        component: ImportExcel
+      },
     ],
   },
 
   //Route đăng nhập của admin
-  { path: '/admin/login', name: 'AdminLogin', component: LoginAdmin },
+  { 
+    path: '/admin/login', 
+    name: 'AdminLogin', 
+    component: LoginAdmin
+  },
 
   // Admin layout và các route quản trị
   {
     path: '/admin',
     component: AdminLayout,
     children: [
-      { path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard },
-
-      { path: 'attempts', name: 'AdminQuizAttempts', component: AdminQuizAttempts },
-      { path: 'all-users', name: 'UserManager', component: UserManager },
-      { path: 'all-quizzes', name: 'QuizManager', component: QuizManager },
-      { path: 'reports', name: 'AdminReport', component: AdminReport },
-
-      // { path: 'quiz-attempts', name: 'QuizAttemptManager', component: QuizAttemtpManager },
-      { path: 'categories', name: 'CategoryManager', component: CategoryManager },
-      // { path: 'quiz-approval', name: 'QuizApprovalManager', component: QuizApprovalManager },
-      // { path: 'reports', name: 'ReportManager', component: ReportManager },
+      { 
+        path: 'dashboard', 
+        name: 'AdminDashboard', 
+        component: AdminDashboard
+      },
+      { 
+        path: 'attempts', 
+        name: 'AdminQuizAttempts', 
+        component: AdminQuizAttempts
+      },
+      { 
+        path: 'all-users', 
+        name: 'UserManager', 
+        component: UserManager
+      },
+      { 
+        path: 'all-quizzes', 
+        name: 'QuizManager', 
+        component: QuizManager
+      },
+      { 
+        path: 'reports', 
+        name: 'AdminReport', 
+        component: AdminReport
+      },
+      { 
+        path: 'categories', 
+        name: 'CategoryManager', 
+        component: CategoryManager
+      },
     ],
   },
-
-  // Route cho lịch sử quiz của user (duplicate removed - already exists in ClientLayout)
 ]
 
 const router = createRouter({

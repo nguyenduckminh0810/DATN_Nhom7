@@ -24,7 +24,7 @@ import Footer from '@/components/client/Footer.vue';
 
 
 .content-container {
-    padding-top: 80px;
+    padding-top: 0;
     flex: 1;
 }
 
