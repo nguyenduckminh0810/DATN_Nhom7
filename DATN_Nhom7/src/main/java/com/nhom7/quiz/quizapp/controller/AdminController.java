@@ -6,9 +6,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nhom7.quiz.quizapp.model.Category;
 import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.Tag;
+import com.nhom7.quiz.quizapp.model.User;
 import com.nhom7.quiz.quizapp.model.dto.LoginRequest;
 import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
 import com.nhom7.quiz.quizapp.model.dto.TagDTO;
@@ -24,6 +28,7 @@ import com.nhom7.quiz.quizapp.model.dto.ResultDTO;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
 import com.nhom7.quiz.quizapp.repository.TagRepo;
+import com.nhom7.quiz.quizapp.repository.UserRepo;
 import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 
@@ -93,11 +98,49 @@ public class AdminController {
                 return ResponseEntity.ok(updated);
         }
 
+        // Thêm user
+        @Autowired
+        private PasswordEncoder passwordEncoder;
+
+        @PostMapping("/users")
+        public ResponseEntity<?> createUser(@RequestBody User user) {
+                if (userRepo.existsByEmail(user.getEmail()) || userRepo.existsByUsername(user.getUsername())) {
+                        return ResponseEntity.badRequest().body("Email hoặc Username đã tồn tại.");
+                }
+
+                // Hash password nếu cần
+                user.setPassword(passwordEncoder.encode(user.getPassword()));
+                user.setCreatedAt(LocalDateTime.now());
+                User saved = userRepo.save(user);
+                return ResponseEntity.ok(saved);
+        }
+
         // Xoá user
         @DeleteMapping("/users/{id}")
         public ResponseEntity<?> deleteUser(@PathVariable Long id) {
                 adminService.deleteUser(id);
                 return ResponseEntity.ok("Đã xoá người dùng thành công");
+        }
+
+        // Ban user vi phạm
+        @Autowired
+        private UserRepo userRepo;
+
+        @PutMapping("/users/{id}/ban")
+        public ResponseEntity<?> banUser(@PathVariable Long id) {
+                User user = userRepo.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+                user.setRole("BANNED");
+                userRepo.save(user);
+                return ResponseEntity.ok("Người dùng đã bị ban.");
+        }
+
+        // Test ban user
+        @PostMapping("/test-ban/{id}")
+        public ResponseEntity<String> testBan(@PathVariable Long id) {
+                adminService.checkAndBanUser(id);
+                return ResponseEntity.ok("Đã kiểm tra và xử lý ban nếu đủ report");
         }
 
         // Lấy danh sách quiz

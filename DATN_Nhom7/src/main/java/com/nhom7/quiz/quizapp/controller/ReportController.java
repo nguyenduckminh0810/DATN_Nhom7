@@ -22,12 +22,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nhom7.quiz.quizapp.model.Report;
 import com.nhom7.quiz.quizapp.model.dto.ReportDTO;
+import com.nhom7.quiz.quizapp.repository.ReportRepo;
 import com.nhom7.quiz.quizapp.service.ReportService;
+import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 
 @RestController
 @RequestMapping("/api/reports")
 public class ReportController {
-    
+
     @Autowired
     private ReportService reportService;
 
@@ -36,16 +38,15 @@ public class ReportController {
     public ResponseEntity<?> createReport(@RequestBody ReportDTO reportDTO) {
         try {
             Report report = reportService.createQuizReport(
-                reportDTO.getUserId(), 
-                reportDTO.getQuizId(), 
-                reportDTO.getReason()
-            );
-            
+                    reportDTO.getUserId(),
+                    reportDTO.getQuizId(),
+                    reportDTO.getReason());
+
             Map<String, Object> response = new HashMap<>();
             response.put("status", "SUCCESS");
             response.put("message", "Báo cáo đã được gửi thành công");
             response.put("reportId", report.getId());
-            
+
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             Map<String, String> errorResponse = new HashMap<>();
@@ -65,21 +66,20 @@ public class ReportController {
     public ResponseEntity<Map<String, Object>> getAllReports(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        
+
         Page<Report> reportPage = reportService.getAllReports(page, size);
-        
-        
+
         List<ReportDTO> reportDTOs = reportPage.getContent().stream()
                 .map(ReportDTO::new)
                 .collect(Collectors.toList());
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("reports", reportDTOs);
         response.put("currentPage", reportPage.getNumber());
         response.put("totalPages", reportPage.getTotalPages());
         response.put("totalItems", reportPage.getTotalElements());
         response.put("pageSize", reportPage.getSize());
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -89,14 +89,13 @@ public class ReportController {
             @PathVariable String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        
+
         Page<Report> reportPage = reportService.getReportsByStatus(status, page, size);
-        
-       
+
         List<ReportDTO> reportDTOs = reportPage.getContent().stream()
                 .map(ReportDTO::new)
                 .collect(Collectors.toList());
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("reports", reportDTOs);
         response.put("currentPage", reportPage.getNumber());
@@ -104,7 +103,7 @@ public class ReportController {
         response.put("totalItems", reportPage.getTotalElements());
         response.put("pageSize", reportPage.getSize());
         response.put("status", status);
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -112,14 +111,14 @@ public class ReportController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getReportById(@PathVariable Long id) {
         Optional<Report> reportOpt = reportService.getReportById(id);
-        
+
         if (reportOpt.isEmpty()) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("status", "ERROR");
             errorResponse.put("message", "Không tìm thấy báo cáo");
             return ResponseEntity.notFound().build();
         }
-        
+
         ReportDTO reportDTO = new ReportDTO(reportOpt.get());
         return ResponseEntity.ok(reportDTO);
     }
@@ -127,17 +126,17 @@ public class ReportController {
     // Cập nhật trạng thái báo cáo
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateReportStatus(
-            @PathVariable Long id, 
+            @PathVariable Long id,
             @RequestBody ReportDTO reportDTO) {
-        
+
         try {
             Report updatedReport = reportService.updateReportStatus(id, reportDTO.getStatus());
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("status", "SUCCESS");
             response.put("message", "Cập nhật trạng thái báo cáo thành công");
             response.put("report", new ReportDTO(updatedReport));
-            
+
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             Map<String, String> errorResponse = new HashMap<>();
@@ -177,15 +176,15 @@ public class ReportController {
     // Kiểm tra user đã báo cáo quiz chưa
     @GetMapping("/check")
     public ResponseEntity<Map<String, Object>> checkUserReported(
-            @RequestParam Long userId, 
+            @RequestParam Long userId,
             @RequestParam Long quizId) {
-        
+
         boolean hasReported = reportService.hasUserReportedQuiz(userId, quizId);
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("hasReported", hasReported);
         response.put("message", hasReported ? "Bạn đã báo cáo quiz này rồi" : "Chưa báo cáo quiz này");
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -193,7 +192,7 @@ public class ReportController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteReport(@PathVariable Long id) {
         boolean deleted = reportService.deleteReport(id);
-        
+
         if (deleted) {
             Map<String, String> response = new HashMap<>();
             response.put("status", "SUCCESS");
@@ -206,4 +205,23 @@ public class ReportController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    // Xử lí user bị report
+    @Autowired
+    private ReportRepo reportRepo;
+    private adminservice adminService;
+
+    @PutMapping("/reports/{id}/resolve")
+    public ResponseEntity<?> resolveReport(@PathVariable Long id) {
+        Report report = reportRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy report"));
+
+        report.setStatus("RESOLVED");
+        reportRepo.save(report);
+
+        adminService.checkAndBanUser(report.getReportedUser().getId());
+
+        return ResponseEntity.ok("Đã xử lý report và kiểm tra user bị report");
+    }
+
 }

@@ -10,33 +10,38 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+
 @Entity
 @Table(name = "reports")
 public class Report {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id")
-    private User user;
+	@ManyToOne(optional = false)
+	@JoinColumn(name = "user_id")
+	private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "quiz_id")
-    private Quiz quiz;
+	@ManyToOne
+	@JoinColumn(name = "quiz_id")
+	private Quiz quiz;
 
-    @ManyToOne
-    @JoinColumn(name = "comment_id")
-    private Comment comment;
+	@ManyToOne
+	@JoinColumn(name = "comment_id")
+	private Comment comment;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String reason;
+	@Column(nullable = false, columnDefinition = "TEXT")
+	private String reason;
 
-    @Column(length = 20, nullable = false)
-    private String status; // PENDING, RESOLVED, REJECTED
+	@Column(length = 20, nullable = false)
+	private String status; // PENDING, RESOLVED, REJECTED
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+	@ManyToOne(optional = false)
+	@JoinColumn(name = "reported_user_id")
+	private User reportedUser;
+
+	@Column(name = "created_at", nullable = false)
+	private LocalDateTime createdAt;
 
 	public Report(Long id, User user, Quiz quiz, Comment comment, String reason, String status,
 			LocalDateTime createdAt) {
@@ -109,6 +114,13 @@ public class Report {
 	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
-    
-}
 
+	public User getReportedUser() {
+		return reportedUser;
+	}
+
+	public void setReportedUser(User reportedUser) {
+		this.reportedUser = reportedUser;
+	}
+
+}

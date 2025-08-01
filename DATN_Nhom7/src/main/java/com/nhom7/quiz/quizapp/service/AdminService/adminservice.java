@@ -17,82 +17,84 @@ import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
 import com.nhom7.quiz.quizapp.model.dto.UserDTO;
 import com.nhom7.quiz.quizapp.model.dto.ResultDTO;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
+import com.nhom7.quiz.quizapp.repository.ReportRepo;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
 import com.nhom7.quiz.quizapp.repository.ResultRepo;
 
 @Service
 public class adminservice {
 
+        @Autowired
+        private ResultRepo resultRepo;
 
-    @Autowired
-    private ResultRepo resultRepo;
+        // Lấy danh sách tất cả quiz (kể cả riêng tư), lọc theo tags, có phân trang
+        public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, int page, int size) {
+                Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-    // Lấy danh sách tất cả quiz (kể cả riêng tư), lọc theo tags, có phân trang
-    public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+                Page<Quiz> quizzes = quizRepo.findAll(pageable);
 
-        Page<Quiz> quizzes = quizRepo.findAll(pageable);
+                String keywordLower = keyword != null ? keyword.toLowerCase() : "";
 
-        String keywordLower = keyword != null ? keyword.toLowerCase() : "";
+                List<QuizDTO> filtered = quizzes.getContent().stream()
+                                .filter(quiz -> {
+                                        // --- Điều kiện tìm kiếm ---
+                                        boolean matchTitle = quiz.getTitle() != null
+                                                        && quiz.getTitle().toLowerCase().contains(keywordLower);
 
-        List<QuizDTO> filtered = quizzes.getContent().stream()
-                .filter(quiz -> {
-                    // --- Điều kiện tìm kiếm ---
-                    boolean matchTitle = quiz.getTitle() != null
-                            && quiz.getTitle().toLowerCase().contains(keywordLower);
+                                        boolean matchCategory = quiz.getCategory() != null &&
+                                                        quiz.getCategory().getName().toLowerCase()
+                                                                        .contains(keywordLower);
 
-                    boolean matchCategory = quiz.getCategory() != null &&
-                            quiz.getCategory().getName().toLowerCase().contains(keywordLower);
+                                        boolean matchTagName = quiz.getQuizTags().stream()
+                                                        .anyMatch(qt -> qt.getTag().getName().toLowerCase()
+                                                                        .contains(keywordLower));
 
-                    boolean matchTagName = quiz.getQuizTags().stream()
-                            .anyMatch(qt -> qt.getTag().getName().toLowerCase().contains(keywordLower));
+                                        boolean keywordMatch = keyword == null || keyword.isBlank() || matchTitle
+                                                        || matchCategory
+                                                        || matchTagName;
 
-                    boolean keywordMatch = keyword == null || keyword.isBlank() || matchTitle || matchCategory
-                            || matchTagName;
+                                        // --- Điều kiện lọc tagId ---
+                                        boolean tagMatch = tagId == null || quiz.getQuizTags().stream()
+                                                        .anyMatch(qt -> qt.getTag().getId().equals(tagId));
 
-                    // --- Điều kiện lọc tagId ---
-                    boolean tagMatch = tagId == null || quiz.getQuizTags().stream()
-                            .anyMatch(qt -> qt.getTag().getId().equals(tagId));
+                                        return keywordMatch && tagMatch;
+                                })
+                                .map(this::convertToDTO)
+                                .toList();
 
-                    return keywordMatch && tagMatch;
-                })
-                .map(this::convertToDTO)
-                .toList();
-
-        return new PageImpl<>(filtered, pageable, quizzes.getTotalElements());
-    }
-
-    // Lấy danh sách tất cả quiz attempts (lịch sử làm quiz) cho admin
-    public Page<ResultDTO> getAllQuizAttempts(int page, int size, Long userId, Long quizId) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("completedAt").descending());
-
-        Page<Result> resultPage;
-
-        if (userId != null && quizId != null) {
-            // Lọc theo cả user và quiz - cần tạo method này trong ResultRepo
-            List<Result> results = resultRepo.findAll().stream()
-                    .filter(result -> result.getUser().getId().equals(userId) && result.getQuiz().getId().equals(quizId))
-                    .toList();
-            resultPage = new PageImpl<>(results, pageable, results.size());
-        } else if (userId != null) {
-            // Chỉ lọc theo user
-            List<Result> results = resultRepo.findByUser_Id(userId);
-            resultPage = new PageImpl<>(results, pageable, results.size());
-        } else if (quizId != null) {
-            // Chỉ lọc theo quiz - cần tạo method này trong ResultRepo
-            List<Result> results = resultRepo.findAll().stream()
-                    .filter(result -> result.getQuiz().getId().equals(quizId))
-                    .toList();
-            resultPage = new PageImpl<>(results, pageable, results.size());
-        } else {
-            // Lấy tất cả
-            resultPage = resultRepo.findAll(pageable);
+                return new PageImpl<>(filtered, pageable, quizzes.getTotalElements());
         }
 
-        return resultPage.map(result -> new ResultDTO(result));
-    }
+        // Lấy danh sách tất cả quiz attempts (lịch sử làm quiz) cho admin
+        public Page<ResultDTO> getAllQuizAttempts(int page, int size, Long userId, Long quizId) {
+                Pageable pageable = PageRequest.of(page, size, Sort.by("completedAt").descending());
 
+                Page<Result> resultPage;
 
+                if (userId != null && quizId != null) {
+                        // Lọc theo cả user và quiz - cần tạo method này trong ResultRepo
+                        List<Result> results = resultRepo.findAll().stream()
+                                        .filter(result -> result.getUser().getId().equals(userId)
+                                                        && result.getQuiz().getId().equals(quizId))
+                                        .toList();
+                        resultPage = new PageImpl<>(results, pageable, results.size());
+                } else if (userId != null) {
+                        // Chỉ lọc theo user
+                        List<Result> results = resultRepo.findByUser_Id(userId);
+                        resultPage = new PageImpl<>(results, pageable, results.size());
+                } else if (quizId != null) {
+                        // Chỉ lọc theo quiz - cần tạo method này trong ResultRepo
+                        List<Result> results = resultRepo.findAll().stream()
+                                        .filter(result -> result.getQuiz().getId().equals(quizId))
+                                        .toList();
+                        resultPage = new PageImpl<>(results, pageable, results.size());
+                } else {
+                        // Lấy tất cả
+                        resultPage = resultRepo.findAll(pageable);
+                }
+
+                return resultPage.map(result -> new ResultDTO(result));
+        }
 
         @Autowired
         private UserRepo userRepo;
@@ -198,5 +200,22 @@ public class adminservice {
                                 quiz.getUser() != null ? quiz.getUser().getFullName() : "Không rõ");
         }
 
+        // Hàm ban user nếu bị báo cáo quá 5 lần
+        @Autowired
+        private ReportRepo reportRepo;
 
+        private static final int REPORT_THRESHOLD = 5;
+
+        public void checkAndBanUser(Long userId) {
+                int reportCount = reportRepo.countByReportedUserIdAndStatus(userId, "RESOLVED");
+
+                if (reportCount >= REPORT_THRESHOLD) {
+                        User user = userRepo.findById(userId)
+                                        .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+                        user.setBanned(true);
+                        user.setRole("BANNED");
+                        userRepo.save(user);
+                }
+        }
 }

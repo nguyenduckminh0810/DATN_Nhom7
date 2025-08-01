@@ -22,7 +22,7 @@ import com.nhom7.quiz.quizapp.repository.UserRepo;
 
 @Service
 public class ReportService {
-    
+
     @Autowired
     private ReportRepo reportRepo;
 
@@ -58,7 +58,7 @@ public class ReportService {
         report.setQuiz(quizOpt.get());
         report.setComment(null);
         report.setReason(reason);
-        report.setStatus("PENDING"); 
+        report.setStatus("PENDING");
         report.setCreatedAt(LocalDateTime.now());
 
         return reportRepo.save(report);
@@ -70,7 +70,6 @@ public class ReportService {
         return reportRepo.findAll(pageable);
     }
 
-   
     public Page<Report> getReportsByStatus(String status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return reportRepo.findByStatus(status, pageable);
@@ -91,18 +90,18 @@ public class ReportService {
         Report report = reportOpt.get();
         String oldStatus = report.getStatus();
         report.setStatus(newStatus);
-        
+
         // Xử lý quiz khi báo cáo được phê duyệt
         if ("RESOLVED".equals(newStatus) && !"RESOLVED".equals(oldStatus)) {
             Quiz reportedQuiz = report.getQuiz();
             if (reportedQuiz != null) {
                 reportedQuiz.setPublic(false);
                 quizRepo.save(reportedQuiz);
-                
+
                 System.out.println("🔒 Quiz ID " + reportedQuiz.getId() + " đã được ẩn do báo cáo được phê duyệt");
             }
         }
-        
+
         return reportRepo.save(report);
     }
 
@@ -111,7 +110,6 @@ public class ReportService {
         return reportRepo.findById(id);
     }
 
- 
     public List<Report> getReportsByUserId(Long userId) {
         return reportRepo.findByUser_Id(userId);
     }
@@ -124,20 +122,20 @@ public class ReportService {
     // Thống kê báo cáo
     public Map<String, Object> getReportStats() {
         Map<String, Object> stats = new HashMap<>();
-        
+
         // Tổng số báo cáo
         long totalReports = reportRepo.count();
         stats.put("totalReports", totalReports);
-        
+
         // Số báo cáo theo trạng thái
         long pendingReports = reportRepo.countByStatus("PENDING");
         long resolvedReports = reportRepo.countByStatus("RESOLVED");
         long rejectedReports = reportRepo.countByStatus("REJECTED");
-        
+
         stats.put("pendingReports", pendingReports);
         stats.put("resolvedReports", resolvedReports);
         stats.put("rejectedReports", rejectedReports);
-        
+
         // Phần trăm
         if (totalReports > 0) {
             stats.put("pendingPercentage", Math.round((pendingReports * 100.0) / totalReports * 10.0) / 10.0);
@@ -148,7 +146,7 @@ public class ReportService {
             stats.put("resolvedPercentage", 0.0);
             stats.put("rejectedPercentage", 0.0);
         }
-        
+
         return stats;
     }
 
@@ -167,7 +165,6 @@ public class ReportService {
         return !reports.isEmpty();
     }
 
-  
     private boolean isValidStatus(String status) {
         return status.equals("PENDING") || status.equals("RESOLVED") || status.equals("REJECTED");
     }
