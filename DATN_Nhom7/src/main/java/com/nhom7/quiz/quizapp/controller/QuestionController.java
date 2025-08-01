@@ -28,11 +28,26 @@ public class QuestionController {
 
     @GetMapping("/{quizId}")
     public ResponseEntity<List<Question>> getQuestionsByQuizId(@PathVariable Long quizId) {
-        List<Question> questions = questionService.getQuestionsByQuizId(quizId);
-        if (questions.isEmpty()) {
-            return ResponseEntity.noContent().build();
+        try {
+            List<Question> questions = questionService.getQuestionsByQuizId(quizId);
+            if (questions.isEmpty()) {
+                System.out.println("Không tìm thấy questions cho quiz ID: " + quizId);
+                // ✅ LUÔN TRẢ VỀ ARRAY RỖNG THAY VÌ NO_CONTENT
+                return ResponseEntity.ok(questions);
+            }
+            System.out.println("Tìm thấy " + questions.size() + " questions cho quiz ID: " + quizId);
+
+            // ✅ DEBUG: In ra timeLimit của từng question
+            for (Question q : questions) {
+                System.out.println("Question ID: " + q.getId() + ", TimeLimit: " + q.getTimeLimit());
+            }
+
+            return ResponseEntity.ok(questions);
+        } catch (Exception e) {
+            System.err.println("Lỗi khi lấy questions cho quiz ID " + quizId + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
         }
-        return ResponseEntity.ok(questions);
     }
 
     @Autowired

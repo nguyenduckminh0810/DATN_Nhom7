@@ -25,10 +25,18 @@ public class QuestionService {
         }
 
         Question existing = optional.get();
+        System.out.println("Cập nhật question ID: " + id);
+        System.out.println("TimeLimit cũ: " + existing.getTimeLimit());
+        System.out.println("TimeLimit mới: " + updatedQuestion.getTimeLimit());
+
         existing.setContent(updatedQuestion.getContent());
         existing.setPoint(updatedQuestion.getPoint());
+        // ✅ THÊM CẬP NHẬT TIMELIMIT
+        existing.setTimeLimit(updatedQuestion.getTimeLimit());
 
-        return questionRepo.save(existing);
+        Question saved = questionRepo.save(existing);
+        System.out.println("TimeLimit sau khi lưu: " + saved.getTimeLimit());
+        return saved;
     }
 
     public Question createQuestion(Question question) {
