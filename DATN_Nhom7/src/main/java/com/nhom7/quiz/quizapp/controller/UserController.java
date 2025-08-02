@@ -89,11 +89,20 @@ public class UserController {
 
 		return switch (result.status()) {
 			case SUCCESS -> {
-				String token = jwtUtil.generateToken(user.getUsername());
-				Map<String, String> response = new java.util.HashMap<>();
+				// ✅ LẤY THÔNG TIN USER ĐẦY ĐỦ TỪ DATABASE
+				User fullUser = result.user();
+				String token = jwtUtil.generateToken(fullUser.getUsername());
+
+				Map<String, Object> response = new java.util.HashMap<>();
 				response.put("status", "SUCCESS");
 				response.put("token", token);
 				response.put("message", "Đăng nhập thành công");
+				response.put("user", Map.of(
+						"id", fullUser.getId(),
+						"username", fullUser.getUsername(),
+						"email", fullUser.getEmail(),
+						"fullName", fullUser.getFullName(),
+						"role", fullUser.getRole()));
 				yield ResponseEntity.ok(response);
 			}
 			case USER_NOT_FOUND, WRONG_PASSWORD -> {
@@ -367,6 +376,28 @@ public class UserController {
 
 		userRepo.deleteById(id);
 		return ResponseEntity.ok("Tài khoản đã được xoá.");
+	}
+
+	// ✅ ENDPOINT TEST ĐỂ KIỂM TRA DATABASE
+	@GetMapping("/test/users")
+	public ResponseEntity<?> testUsers() {
+		try {
+			// Lấy tất cả users để test
+			java.util.List<User> users = ((java.util.List<User>) userRepo.findAll());
+
+			Map<String, Object> response = new HashMap<>();
+			response.put("totalUsers", users.size());
+			response.put("users", users.stream().map(user -> Map.of(
+					"id", user.getId(),
+					"username", user.getUsername(),
+					"email", user.getEmail(),
+					"role", user.getRole() != null ? user.getRole() : "NULL")).toList());
+
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Error: " + e.getMessage());
+		}
 	}
 
 }

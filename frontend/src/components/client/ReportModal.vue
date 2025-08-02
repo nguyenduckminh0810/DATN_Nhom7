@@ -1,74 +1,99 @@
-  <template>
-    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true"
-      data-bs-backdrop="false">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header bg-warning text-dark">
-            <h5 class="modal-title" id="reportModalLabel">
-              <i class="bi bi-exclamation-triangle me-2"></i>Báo cáo Quiz
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<template>
+  <div
+    class="modal fade"
+    id="reportModal"
+    tabindex="-1"
+    aria-labelledby="reportModalLabel"
+    aria-hidden="true"
+    data-bs-backdrop="false"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title" id="reportModalLabel">
+            <i class="bi bi-exclamation-triangle me-2"></i>Báo cáo Quiz
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+
+        <div class="modal-body">
+          <div v-if="quizState.currentQuizData" class="mb-3">
+            <h6 class="text-muted">Quiz được báo cáo:</h6>
+            <div class="card bg-light">
+              <div class="card-body py-2">
+                <strong>{{ quizState.currentQuizData.title }}</strong>
+                <br />
+                <small class="text-muted">Tác giả: {{ quizState.currentQuizData.author }}</small>
+              </div>
+            </div>
           </div>
 
-          <div class="modal-body">
-            <div v-if="quizState.currentQuizData" class="mb-3">
-              <h6 class="text-muted">Quiz được báo cáo:</h6>
-              <div class="card bg-light">
-                <div class="card-body py-2">
-                  <strong>{{ quizState.currentQuizData.title }}</strong>
-                  <br>
-                  <small class="text-muted">Tác giả: {{ quizState.currentQuizData.author }}</small>
-                </div>
+          <form @submit.prevent="submitReport">
+            <div class="mb-3">
+              <label for="reportReason" class="form-label">
+                <strong>Lý do báo cáo <span class="text-danger">*</span></strong>
+              </label>
+              <textarea
+                id="reportReason"
+                v-model="reportReason"
+                class="form-control"
+                rows="4"
+                placeholder="Vui lòng mô tả lý do báo cáo quiz này (ví dụ: nội dung không phù hợp, câu hỏi sai, vi phạm bản quyền...)"
+                required
+                maxlength="500"
+              ></textarea>
+              <div class="form-text">{{ reportReason.length }}/500 ký tự</div>
+            </div>
+
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="confirmReport"
+                  v-model="confirmReport"
+                  required
+                />
+                <label class="form-check-label" for="confirmReport">
+                  Tôi xác nhận thông tin báo cáo là chính xác và không có ý định spam
+                </label>
               </div>
             </div>
 
-            <form @submit.prevent="submitReport">
-              <div class="mb-3">
-                <label for="reportReason" class="form-label">
-                  <strong>Lý do báo cáo <span class="text-danger">*</span></strong>
-                </label>
-                <textarea id="reportReason" v-model="reportReason" class="form-control" rows="4"
-                  placeholder="Vui lòng mô tả lý do báo cáo quiz này (ví dụ: nội dung không phù hợp, câu hỏi sai, vi phạm bản quyền...)"
-                  required maxlength="500"></textarea>
-                <div class="form-text">
-                  {{ reportReason.length }}/500 ký tự
-                </div>
-              </div>
+            <div v-if="error" class="alert alert-danger">
+              <i class="bi bi-exclamation-circle me-2"></i>{{ error }}
+            </div>
 
-              <div class="mb-3">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="confirmReport" v-model="confirmReport" required>
-                  <label class="form-check-label" for="confirmReport">
-                    Tôi xác nhận thông tin báo cáo là chính xác và không có ý định spam
-                  </label>
-                </div>
-              </div>
+            <div v-if="success" class="alert alert-success">
+              <i class="bi bi-check-circle me-2"></i>{{ success }}
+            </div>
+          </form>
+        </div>
 
-              <div v-if="error" class="alert alert-danger">
-                <i class="bi bi-exclamation-circle me-2"></i>{{ error }}
-              </div>
-
-              <div v-if="success" class="alert alert-success">
-                <i class="bi bi-check-circle me-2"></i>{{ success }}
-              </div>
-            </form>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              <i class="bi bi-x-circle me-1"></i>Hủy
-            </button>
-            <button type="button" class="btn btn-warning" @click="submitReport"
-              :disabled="loading || !reportReason.trim() || !confirmReport">
-              <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
-              <i v-else class="bi bi-flag me-1"></i>
-              {{ loading ? 'Đang gửi...' : 'Gửi báo cáo' }}
-            </button>
-          </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i>Hủy
+          </button>
+          <button
+            type="button"
+            class="btn btn-warning"
+            @click="submitReport"
+            :disabled="loading || !reportReason.trim() || !confirmReport"
+          >
+            <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+            <i v-else class="bi bi-flag me-1"></i>
+            {{ loading ? 'Đang gửi...' : 'Gửi báo cáo' }}
+          </button>
         </div>
       </div>
     </div>
-  </template>
+  </div>
+</template>
 
 <script setup>
 import { ref, reactive, nextTick } from 'vue' // ✅ THÊM reactive
@@ -80,7 +105,7 @@ const emit = defineEmits(['reported'])
 
 // ✅ SỬA: Dùng reactive object thay vì biến thường
 const quizState = reactive({
-  currentQuizData: null
+  currentQuizData: null,
 })
 
 const reportReason = ref('')
@@ -89,18 +114,23 @@ const loading = ref(false)
 const error = ref('')
 const success = ref('')
 
-async function openModal(quiz) {
-  quizState.currentQuizData = quiz
-  localStorage.setItem('reportQuizData', JSON.stringify(quiz))
+async function openModal(quizData) {
+  quizState.currentQuizData = quizData
+  localStorage.setItem('reportQuizData', JSON.stringify(quizData))
   reportReason.value = ''
   confirmReport.value = false
   error.value = ''
   success.value = ''
 
+  // ✅ KIỂM TRA USER ĐÃ ĐĂNG NHẬP CHƯA
   if (!userId.value) {
     try {
       await getUserId()
-    } catch (error) { }
+    } catch (error) {
+      console.warn('User chưa đăng nhập, không thể báo cáo')
+      error.value = 'Bạn cần đăng nhập để báo cáo quiz'
+      return
+    }
   }
 
   const modal = document.getElementById('reportModal')
@@ -110,95 +140,93 @@ async function openModal(quiz) {
   }
 }
 
-
 async function submitReport() {
-  let quizData = quizState.currentQuizData;
+  let quizData = quizState.currentQuizData
 
   if (!quizData) {
-    const stored = localStorage.getItem('reportQuizData');
-    quizData = stored ? JSON.parse(stored) : null;
+    const stored = localStorage.getItem('reportQuizData')
+    quizData = stored ? JSON.parse(stored) : null
   }
 
   if (!quizData) {
-    error.value = 'Không có thông tin quiz';
-    success.value = '';
-    return;
+    error.value = 'Không có thông tin quiz'
+    success.value = ''
+    return
   }
 
   if (!reportReason.value.trim()) {
-    error.value = 'Vui lòng nhập lý do báo cáo';
-    success.value = '';
-    return;
+    error.value = 'Vui lòng nhập lý do báo cáo'
+    success.value = ''
+    return
   }
 
   if (!confirmReport.value) {
-    error.value = 'Vui lòng xác nhận thông tin báo cáo';
-    success.value = '';
-    return;
+    error.value = 'Vui lòng xác nhận thông tin báo cáo'
+    success.value = ''
+    return
   }
 
   if (!userId.value) {
-    error.value = 'Bạn cần đăng nhập để báo cáo quiz';
-    success.value = '';
-    return;
+    error.value = 'Bạn cần đăng nhập để báo cáo quiz'
+    success.value = ''
+    return
   }
 
-  loading.value = true;
-  error.value = '';
-  success.value = '';
+  loading.value = true
+  error.value = ''
+  success.value = ''
 
   try {
     const reportData = {
       userId: userId.value,
       quizId: quizData.quiz_id || quizData.id,
-      reason: reportReason.value.trim()
-    };
+      reason: reportReason.value.trim(),
+    }
 
-    await axios.post('http://localhost:8080/api/reports', reportData);
+    await axios.post('http://localhost:8080/api/reports', reportData)
 
-    success.value = 'Báo cáo đã được gửi thành công! Cảm ơn bạn đã góp ý.';
-    error.value = ''; // ✅ Clear mọi lỗi nếu gửi thành công
+    success.value = 'Báo cáo đã được gửi thành công! Cảm ơn bạn đã góp ý.'
+    error.value = '' // ✅ Clear mọi lỗi nếu gửi thành công
 
-    emit('reported', quizData);
+    emit('reported', quizData)
 
     // Chờ modal hiện success rồi mới đóng và reset
     setTimeout(() => {
-      const modal = document.getElementById('reportModal');
+      const modal = document.getElementById('reportModal')
       if (typeof bootstrap !== 'undefined' && modal) {
-        const modalInstance = bootstrap.Modal.getOrCreateInstance(modal);
-        modalInstance.hide();
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modal)
+        modalInstance.hide()
 
         // Sau khi đóng modal mới reset state
         setTimeout(() => {
-          quizState.currentQuizData = null;
-          localStorage.removeItem('reportQuizData');
-          reportReason.value = '';
-          confirmReport.value = false;
-          success.value = '';
-          error.value = '';
-        }, 300); // nhỏ hơn thời gian đóng modal
+          quizState.currentQuizData = null
+          localStorage.removeItem('reportQuizData')
+          reportReason.value = ''
+          confirmReport.value = false
+          success.value = ''
+          error.value = ''
+        }, 300) // nhỏ hơn thời gian đóng modal
       }
-    }, 1500); // Cho user thấy success ít nhất 1.5s
-
+    }, 1500) // Cho user thấy success ít nhất 1.5s
   } catch (err) {
-    success.value = ''; // ✅ Nếu lỗi, clear success
+    success.value = '' // ✅ Nếu lỗi, clear success
     if (err.response?.status === 409) {
-      error.value = 'Bạn đã báo cáo quiz này rồi!';
+      error.value = 'Bạn đã báo cáo quiz này rồi!'
     }
     if (err.response?.status === 404) {
-      error.value = 'Quiz không tồn tại!';
+      error.value = 'Quiz không tồn tại!'
     }
     if (err.response?.data?.message) {
-      error.value = err.response?.data?.message || 'Có lỗi xảy ra khi gửi báo cáo. Vui lòng thử lại!';
+      error.value =
+        err.response?.data?.message || 'Có lỗi xảy ra khi gửi báo cáo. Vui lòng thử lại!'
     }
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
-
 defineExpose({
-  openModal
+  openModal,
 })
 </script>
 

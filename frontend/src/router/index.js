@@ -38,98 +38,104 @@ const routes = [
     path: '/',
     component: ClientLayout,
     children: [
-      { 
-        path: '', 
-        redirect: { name: 'Home' } 
+      {
+        path: '',
+        redirect: { name: 'Home' },
       },
-      { 
-        path: 'home', 
-        name: 'Home', 
-        component: Home
+      {
+        path: 'home',
+        name: 'Home',
+        component: Home,
       },
-      { 
-        path: 'login', 
-        name: 'Login', 
-        component: Login
+      {
+        path: 'login',
+        name: 'Login',
+        component: Login,
       },
-      { 
-        path: 'register', 
-        name: 'Register', 
-        component: Register
+      {
+        path: 'register',
+        name: 'Register',
+        component: Register,
       },
-      { 
-        path: 'client-dashboard/:userId', 
-        name: 'ClientDashboard', 
-        component: ClientDashboard
+      {
+        path: 'client-dashboard/:userId',
+        name: 'ClientDashboard',
+        component: ClientDashboard,
       },
-      { 
-        path: 'quiz-crud', 
-        name: 'QuizCRUD', 
-        component: QuizCRUD
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: ClientDashboard,
+        props: (route) => ({ userId: localStorage.getItem('userId') }),
       },
-      { 
-        path: 'quiz/:quizId/:userId/play', 
-        name: 'PlayQuiz', 
-        component: PlayQuiz
+      {
+        path: 'quiz-crud',
+        name: 'QuizCRUD',
+        component: QuizCRUD,
       },
-      { 
-        path: 'quiz-crud/edit/:userId/:quizId', 
-        name: 'EditQuiz', 
-        component: EditQuiz
+      {
+        path: 'quiz/:quizId/:userId/play',
+        name: 'PlayQuiz',
+        component: PlayQuiz,
       },
-      { 
-        path: 'quiz/:quizId/:userId/result', 
-        name: 'QuizResult', 
-        component: QuizResult
+      {
+        path: 'quiz-crud/edit/:userId/:quizId',
+        name: 'EditQuiz',
+        component: EditQuiz,
       },
-      { 
-        path: 'history/:userId', 
-        name: 'QuizHistory', 
-        component: QuizHistory
+      {
+        path: 'quiz/:quizId/:userId/result',
+        name: 'QuizResult',
+        component: QuizResult,
       },
-      { 
-        path: 'my-history', 
-        name: 'UserQuizHistory', 
-        component: UserQuizHistory
+      {
+        path: 'history/:userId',
+        name: 'QuizHistory',
+        component: QuizHistory,
       },
-      { 
-        path: 'profile', 
-        name: 'UserProfile', 
-        component: UserProfile
+      {
+        path: 'my-history',
+        name: 'UserQuizHistory',
+        component: UserQuizHistory,
       },
-      { 
-        path: 'categories', 
-        name: 'CategoryManager', 
-        component: CategoryManager
+      {
+        path: 'profile',
+        name: 'UserProfile',
+        component: UserProfile,
       },
-      { 
-        path: 'my-quizzes', 
-        name: 'ListUserQuiz', 
-        component: ListUserQuiz
+      {
+        path: 'categories',
+        name: 'CategoryManager',
+        component: CategoryManager,
       },
-      { 
-        path: 'public-quizzes', 
-        name: 'ListQuizPublic', 
-        component: ListQuizPublic
+      {
+        path: 'my-quizzes',
+        name: 'ListUserQuiz',
+        component: ListUserQuiz,
       },
-      { 
-        path: 'profile/:id', 
-        name: 'UserProfilePage', 
-        component: UserProfilePage
+      {
+        path: 'public-quizzes',
+        name: 'ListQuizPublic',
+        component: ListQuizPublic,
       },
-      { 
-        path: 'import-excel', 
-        name: 'ImportExcel', 
-        component: ImportExcel
+      {
+        path: 'profile/:id',
+        name: 'UserProfilePage',
+        component: UserProfilePage,
+      },
+      {
+        path: 'import-excel',
+        name: 'ImportExcel',
+        component: ImportExcel,
       },
     ],
   },
 
   //Route đăng nhập của admin
-  { 
-    path: '/admin/login', 
-    name: 'AdminLogin', 
-    component: LoginAdmin
+  {
+    path: '/admin/login',
+    name: 'AdminLogin',
+    component: LoginAdmin,
   },
 
   // Admin layout và các route quản trị
@@ -137,35 +143,35 @@ const routes = [
     path: '/admin',
     component: AdminLayout,
     children: [
-      { 
-        path: 'dashboard', 
-        name: 'AdminDashboard', 
-        component: AdminDashboard
+      {
+        path: 'dashboard',
+        name: 'AdminDashboard',
+        component: AdminDashboard,
       },
-      { 
-        path: 'attempts', 
-        name: 'AdminQuizAttempts', 
-        component: AdminQuizAttempts
+      {
+        path: 'attempts',
+        name: 'AdminQuizAttempts',
+        component: AdminQuizAttempts,
       },
-      { 
-        path: 'all-users', 
-        name: 'UserManager', 
-        component: UserManager
+      {
+        path: 'all-users',
+        name: 'UserManager',
+        component: UserManager,
       },
-      { 
-        path: 'all-quizzes', 
-        name: 'QuizManager', 
-        component: QuizManager
+      {
+        path: 'all-quizzes',
+        name: 'QuizManager',
+        component: QuizManager,
       },
-      { 
-        path: 'reports', 
-        name: 'AdminReport', 
-        component: AdminReport
+      {
+        path: 'reports',
+        name: 'AdminReport',
+        component: AdminReport,
       },
-      { 
-        path: 'categories', 
-        name: 'CategoryManager', 
-        component: CategoryManager
+      {
+        path: 'categories',
+        name: 'CategoryManager',
+        component: CategoryManager,
       },
     ],
   },
