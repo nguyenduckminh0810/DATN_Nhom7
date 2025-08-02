@@ -1,7 +1,51 @@
 <template>
   <div class="container my-4">
     <h4 class="mb-4">Danh sách người dùng</h4>
-    
+    <div class="mb-4">
+      <button class="btn btn-primary" @click="openAddUserModal">+ Thêm người dùng</button>
+    </div>
+    <!-- Modal Thêm người dùng -->
+    <div class="modal fade show" tabindex="-1" style="display: block;" v-if="showAddModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Thêm người dùng</h5>
+            <button type="button" class="btn-close" @click="showAddModal = false"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Họ tên</label>
+              <input v-model="newUser.fullName" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input v-model="newUser.email" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Username</label>
+              <input v-model="newUser.username" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Mật khẩu</label>
+              <input type="password" v-model="newUser.password" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Vai trò</label>
+              <select v-model="newUser.role" class="form-select">
+                <option value="ADMIN">Admin</option>
+                <option value="USER">Người dùng</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="showAddModal = false">Huỷ</button>
+            <button class="btn btn-primary" @click="createUser">Tạo mới</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop fade show" v-if="showAddModal"></div>
+
     <div class="row mb-3">
       <div class="col-md-4">
         <input v-model="search" @keyup.enter="fetchUsers" class="form-control" placeholder="Tìm kiếm tên hoặc email..." />
@@ -43,6 +87,13 @@
             <td>
               <button class="btn btn-sm btn-outline-primary" @click="editUser(user)">Sửa</button>
               <button class="btn btn-sm btn-outline-danger ms-1" @click="deleteUser(user.id)">Xoá</button>
+              <button
+                class="btn btn-sm btn-outline-warning ms-1"
+                @click="banUser(user)"
+                v-if="user.role !== 'BANNED'"
+              >
+                Ban
+              </button>
             </td>
           </tr>
         </tbody>
@@ -121,6 +172,14 @@ const pageSize = 5
 const totalPages = ref(1)
 const selectedUser = ref(null)
 const showEditModal = ref(false)
+const showAddModal = ref(false)
+const newUser = ref({
+  fullName: '',
+  email: '',
+  username: '',
+  password: '',
+  role: 'USER'
+})
 
 
 // Fetch users
@@ -160,6 +219,29 @@ const nextPage = () => {
     fetchUsers()
   }
 }
+const openAddUserModal = () => {
+  // Reset lại form
+  newUser.value = {
+    fullName: '',
+    email: '',
+    username: '',
+    password: '',
+    role: 'USER'
+  }
+  showAddModal.value = true
+}
+
+const createUser = async () => {
+  try {
+    await axios.post('/api/admin/users', newUser.value)
+    alert('Tạo người dùng thành công!')
+    showAddModal.value = false
+    await fetchUsers()
+  } catch (err) {
+    console.error('Lỗi khi tạo user:', err)
+    alert('Không thể tạo người dùng. Vui lòng kiểm tra lại.')
+  }
+}
 
 const editUser = (user) => {
   selectedUser.value = { ...user } // Tạo bản sao để tránh sửa trực tiếp trong table
@@ -188,6 +270,20 @@ const deleteUser = async (userId) => {
     }
   }
 }
+
+const banUser = async (user) => {
+  if (confirm(`Bạn có chắc chắn muốn BAN người dùng: ${user.username}?`)) {
+    try {
+      await axios.put(`/api/admin/users/${user.id}/ban`)
+      alert('Người dùng đã bị ban.')
+      await fetchUsers()
+    } catch (err) {
+      console.error('Lỗi khi ban người dùng:', err)
+      alert('Không thể ban người dùng này.')
+    }
+  }
+}
+
 
 // Helpers
 const formatDate = (dateStr) => {

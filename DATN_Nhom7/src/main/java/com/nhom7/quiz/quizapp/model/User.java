@@ -17,41 +17,44 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "users")
 public class User {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
-    private String username;
+	@Column(nullable = false, unique = true, length = 50)
+	private String username;
 
-    @Column(nullable = false, unique = true, length = 100)
-    private String email;
+	@Column(nullable = false, unique = true, length = 100)
+	private String email;
 
-    @Column(nullable = false, length = 255)
-    private String password;
+	@Column(nullable = false, length = 255)
+	private String password;
 
-    @Column(name = "full_name", length = 100)
-    private String fullName;
+	@Column(name = "full_name", length = 100)
+	private String fullName;
 
-    @Column(name = "avatar_url", length = 255)
-    private String avatarUrl;
+	@Column(name = "avatar_url", length = 255)
+	private String avatarUrl;
 
-    @Column(columnDefinition = "TEXT")
-    private String bio;
+	@Column(columnDefinition = "TEXT")
+	private String bio;
 
-    @Column(length = 20)
-    private String role = "USER";
+	@Column(length = 20)
+	private String role = "USER";
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
-    //Sau này dùng
-    @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private Set<Notification> notifications = new HashSet<>();
-    
-    @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private Set<QuizReview> reviews = new HashSet<>();
+	@Column(name = "is_banned", nullable = false)
+	private boolean isBanned = false;
 
+	@Column(name = "created_at")
+	private LocalDateTime createdAt = LocalDateTime.now();
+	// Sau này dùng
+	@JsonIgnore
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+	private Set<Notification> notifications = new HashSet<>();
+
+	@JsonIgnore
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+	private Set<QuizReview> reviews = new HashSet<>();
 
 	public User() {
 		super();
@@ -135,6 +138,14 @@ public class User {
 		this.role = role;
 	}
 
+	public boolean isBanned() {
+		return isBanned;
+	}
+
+	public void setBanned(boolean isBanned) {
+		this.isBanned = isBanned;
+	}
+
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
 	}
@@ -143,4 +154,3 @@ public class User {
 		this.createdAt = createdAt;
 	}
 }
-

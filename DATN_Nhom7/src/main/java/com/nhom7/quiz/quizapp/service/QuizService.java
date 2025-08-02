@@ -26,7 +26,7 @@ import com.nhom7.quiz.quizapp.model.User;
 import com.nhom7.quiz.quizapp.model.dto.AnswerImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuestionImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuizImportDto;
-import com.nhom7.quiz.quizapp.repository.CategoryRepo;  // ✅ THÊM IMPORT
+import com.nhom7.quiz.quizapp.repository.CategoryRepo; // ✅ THÊM IMPORT
 import com.nhom7.quiz.quizapp.repository.ImageRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
@@ -45,7 +45,7 @@ public class QuizService {
 	private LoginService loginService;
 
 	@Autowired
-	private CategoryRepo categoryRepo;  // ✅ SỬA: Dùng Repository thay vì Service
+	private CategoryRepo categoryRepo; // ✅ SỬA: Dùng Repository thay vì Service
 
 	@Autowired
 	private ExcelImportService excelImportService;
@@ -63,8 +63,26 @@ public class QuizService {
 
 	// Tạo quiz mới
 	public Quiz createQuiz(Quiz quiz) {
-		quiz.setCreatedAt(LocalDateTime.now());
-		return quizRepo.save(quiz);
+		try {
+			// ✅ DEBUG: In ra thông tin quiz trước khi lưu
+			System.out.println("📝 Creating quiz - Title: " + quiz.getTitle());
+			System.out.println("📝 Quiz User: " + (quiz.getUser() != null ? quiz.getUser().getId() : "NULL"));
+			System.out
+					.println("📝 Quiz Category: " + (quiz.getCategory() != null ? quiz.getCategory().getId() : "NULL"));
+			System.out.println("📝 Quiz IsPublic: " + quiz.isPublic());
+
+			quiz.setCreatedAt(LocalDateTime.now());
+			Quiz savedQuiz = quizRepo.save(quiz);
+
+			// ✅ DEBUG: In ra quiz sau khi lưu
+			System.out.println("📝 Quiz created successfully with ID: " + savedQuiz.getId());
+
+			return savedQuiz;
+		} catch (Exception e) {
+			System.err.println("❌ Error creating quiz: " + e.getMessage());
+			e.printStackTrace();
+			throw e;
+		}
 	}
 
 	// Lấy quiz theo ID
@@ -78,12 +96,12 @@ public class QuizService {
 			quiz.setTitle(updatedQuiz.getTitle());
 			quiz.setPublic(updatedQuiz.isPublic());
 			quiz.setCategory(updatedQuiz.getCategory());
-			
+
 			// ✅ CẬP NHẬT IMAGE NẾU CÓ
 			if (updatedQuiz.getImage() != null && !updatedQuiz.getImage().trim().isEmpty()) {
 				// Tìm image record hiện tại
 				Image existingImage = imageRepo.findByQuizId(id);
-				
+
 				if (existingImage != null) {
 					// Cập nhật image hiện tại
 					existingImage.setUrl(updatedQuiz.getImage());
@@ -96,10 +114,10 @@ public class QuizService {
 					imageRepo.save(newImage);
 				}
 			}
-			
+
 			// ✅ CẬP NHẬT QUIZ.IMAGE FIELD
 			quiz.setImage(updatedQuiz.getImage());
-			
+
 			return quizRepo.save(quiz);
 		});
 	}
@@ -151,65 +169,68 @@ public class QuizService {
 	}
 
 	// ✅ PHƯƠNG THỨC IMPORT TỪ EXCEL - ĐÃ SỬA HOÀN CHỈNH
-	public Quiz createQuizFromImport(QuizImportDto quizData, String username) {
+	public Quiz createQuizFromImport(QuizImportDto quizData, String username, boolean isPublic) {
 		// Validate dữ liệu
 		excelImportService.validateQuizData(quizData);
-		
+
 		// Tìm user
 		User user = loginService.findByUsername(username);
 		if (user == null) {
 			throw new RuntimeException("Không tìm thấy user");
 		}
-		
+
 		// ✅ SỬA: Tìm category qua Repository
 		Category category = categoryRepo.findById(quizData.getCategoryId()).orElse(null);
 		if (category == null) {
 			throw new RuntimeException("Không tìm thấy category");
 		}
-		
+
 		// Tạo quiz
 		Quiz quiz = new Quiz();
 		quiz.setTitle(quizData.getTitle());
 		quiz.setUser(user);
 		quiz.setCategory(category);
-		quiz.setPublic(false); // Mặc định là private
+		quiz.setPublic(isPublic); // ✅ SỬ DỤNG ISPUBLIC TỪ PARAMETER
 		quiz.setCreatedAt(LocalDateTime.now());
-		
+
 		Quiz savedQuiz = quizRepo.save(quiz);
-		
+
 		// Tạo questions và answers
 		for (QuestionImportDto questionDto : quizData.getQuestions()) {
 			Question question = new Question();
 			question.setContent(questionDto.getContent());
 			question.setPoint(questionDto.getPoint());
-			question.setQuiz(savedQuiz);  // ✅ SỬA: setQuiz thay vì setQuizId
-			
-			Question savedQuestion = questionService.createQuestion(question);  // ✅ SỬA: createQuestion thay vì saveQuestion
-			
+			question.setTimeLimit(questionDto.getTimeLimit()); // ✅ SỬ DỤNG TIMELIMIT TỪ EXCEL
+			question.setQuiz(savedQuiz); // ✅ SỬA: setQuiz thay vì setQuizId
+
+			Question savedQuestion = questionService.createQuestion(question); // ✅ SỬA: createQuestion thay vì
+																				// saveQuestion
+
 			// Tạo answers
 			for (AnswerImportDto answerDto : questionDto.getAnswers()) {
 				Answer answer = new Answer();
 				answer.setContent(answerDto.getContent());
 				answer.setCorrect(answerDto.isCorrect());
-				answer.setQuestion(savedQuestion);  // ✅ SỬA: setQuestion thay vì setQuestionId
-				
+				answer.setQuestion(savedQuestion); // ✅ SỬA: setQuestion thay vì setQuestionId
+
 				// ✅ SỬA: Tạo Answer thông qua createMultipleAnswers hoặc trực tiếp save
 				answerService.createMultipleAnswers(List.of(answer));
 			}
 		}
-		
+
 		return savedQuiz;
 	}
 
 	// ✅ PHƯƠNG THỨC IMPORT QUIZ TỪ FILE EXCEL
-	public Quiz importQuizFromExcel(MultipartFile file, String title, String description, Long categoryId, String username) {
+	public Quiz importQuizFromExcel(MultipartFile file, String title, String description, Long categoryId,
+			String username, boolean isPublic) {
 		try {
 			// Parse Excel file with all parameters
 			QuizImportDto quizData = excelImportService.parseExcelFile(file, title, description, categoryId);
-			
-			// Create quiz
-			return createQuizFromImport(quizData, username);
-			
+
+			// Create quiz with isPublic parameter
+			return createQuizFromImport(quizData, username, isPublic);
+
 		} catch (Exception e) {
 			throw new RuntimeException("Lỗi khi import file Excel: " + e.getMessage(), e);
 		}

@@ -12,22 +12,25 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "questions")
 public class Question {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "quiz_id", nullable = false)
-    private Quiz quiz;
+	@ManyToOne
+	@JoinColumn(name = "quiz_id", nullable = false)
+	private Quiz quiz;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String content;
+	@Column(columnDefinition = "TEXT", nullable = false)
+	private String content;
 
-    @ManyToOne
-    @JoinColumn(name = "image_id")
-    private Image image;
+	@ManyToOne
+	@JoinColumn(name = "image_id")
+	private Image image;
 
-    private int point = 1;
+	private int point = 1;
+
+	@Column(name = "time_limit", nullable = false, columnDefinition = "INT DEFAULT 30")
+	private int timeLimit = 30; // ✅ THÊM FIELD THỜI GIAN (MẶC ĐỊNH 30 GIÂY)
 
 	public Long getId() {
 		return id;
@@ -69,18 +72,25 @@ public class Question {
 		this.point = point;
 	}
 
-	public Question(Long id, Quiz quiz, String content, Image image, int point) {
+	public int getTimeLimit() {
+		return timeLimit;
+	}
+
+	public void setTimeLimit(int timeLimit) {
+		this.timeLimit = timeLimit;
+	}
+
+	public Question(Long id, Quiz quiz, String content, Image image, int point, int timeLimit) {
 		super();
 		this.id = id;
 		this.quiz = quiz;
 		this.content = content;
 		this.image = image;
 		this.point = point;
+		this.timeLimit = timeLimit;
 	}
 
 	public Question() {
 		super();
 	}
-
 }
-

@@ -19,11 +19,13 @@ async function fetchUserProfile() {
 
     const response = await axios.get('http://localhost:8080/api/user/profile', {
       headers: {
-        'Authorization': `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     })
-    
+
     userProfile.value = response.data
+    console.log('🔍 User Profile loaded:', response.data)
+    console.log('🔍 Avatar URL:', response.data.avatarUrl)
   } catch (error) {
     console.error('Error fetching user profile:', error)
   }
@@ -32,16 +34,36 @@ async function fetchUserProfile() {
 // Avatar URL computed
 const avatarUrl = computed(() => {
   if (userProfile.value?.avatarUrl) {
-    if (userProfile.value.avatarUrl.startsWith('/api/')) {
+    // Nếu avatarUrl bắt đầu bằng /api/ hoặc /uploads/
+    if (
+      userProfile.value.avatarUrl.startsWith('/api/') ||
+      userProfile.value.avatarUrl.startsWith('/uploads/')
+    ) {
       return `http://localhost:8080${userProfile.value.avatarUrl}`
     }
-    return userProfile.value.avatarUrl
+    // Nếu là URL đầy đủ
+    if (userProfile.value.avatarUrl.startsWith('http')) {
+      return userProfile.value.avatarUrl
+    }
+    // Nếu là đường dẫn tương đối
+    return `http://localhost:8080${userProfile.value.avatarUrl}`
   }
   return null
 })
 
 function login() {
   router.push('/login')
+}
+
+// ✅ FUNCTION XỬ LÝ NAVIGATION THÔNG MINH
+function handleLogoClick() {
+  if (isLoggedIn.value) {
+    // Nếu đã login -> dashboard
+    router.push('/dashboard')
+  } else {
+    // Nếu chưa login -> home
+    router.push('/')
+  }
 }
 
 watch(message, (newVal) => {
@@ -58,9 +80,19 @@ watch(isLoggedIn, (newVal) => {
   }
 })
 
+// ✅ REFRESH PROFILE KHI ROUTE THAY ĐỔI (để load avatar mới)
+watch(
+  () => router.currentRoute.value.path,
+  () => {
+    if (isLoggedIn.value) {
+      fetchUserProfile()
+    }
+  },
+)
+
 function logoutForNavbar() {
   console.log('🔴 LOGOUT BUTTON CLICKED')
-  
+
   if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
     logout()
     router.push('/login')
@@ -73,7 +105,7 @@ async function goToHistory() {
     if (!userId.value) {
       await getUserId()
     }
-    
+
     if (userId.value) {
       router.push({ name: 'QuizHistory', params: { userId: userId.value } })
     } else {
@@ -90,6 +122,25 @@ function showNotifications() {
   alert('🔔 Tính năng thông báo sẽ được phát triển trong tương lai!')
 }
 
+// ✅ XỬ LÝ LỖI AVATAR
+function handleAvatarError(event) {
+  console.log('❌ Avatar load error, showing default icon')
+  event.target.style.display = 'none'
+  // Icon sẽ hiển thị tự động vì v-else
+}
+
+// ✅ FORCE REFRESH AVATAR (có thể gọi từ bên ngoài)
+function refreshAvatar() {
+  if (isLoggedIn.value) {
+    fetchUserProfile()
+  }
+}
+
+// ✅ EXPOSE FUNCTION CHO COMPONENT KHÁC
+defineExpose({
+  refreshAvatar,
+})
+
 let handleScroll
 
 onMounted(() => {
@@ -104,7 +155,7 @@ onMounted(() => {
 
   window.addEventListener('scroll', handleScroll)
   handleScroll()
-  
+
   // ✅ Lấy profile nếu đã login
   if (isLoggedIn.value) {
     fetchUserProfile()
@@ -119,26 +170,24 @@ onUnmounted(() => {
 <template>
   <header id="header" class="modern-navbar fixed-top">
     <div class="navbar-container">
-      
       <!-- Logo Section -->
       <div class="brand-section">
-        <RouterLink to="/" class="brand-link">
+        <div @click="handleLogoClick" class="brand-link" style="cursor: pointer">
           <div class="logo-wrapper">
             <h1 class="nabla">QuizMaster</h1>
           </div>
-        </RouterLink>
+        </div>
       </div>
 
       <!-- Main Navigation -->
       <nav class="main-nav">
         <div class="nav-group">
-          
-          <RouterLink to="/" class="nav-item">
+          <div @click="handleLogoClick" class="nav-item" style="cursor: pointer">
             <div class="nav-content">
               <i class="bi bi-house"></i>
               <span>Trang chủ</span>
             </div>
-          </RouterLink>
+          </div>
 
           <div class="nav-item dropdown">
             <div class="nav-content">
@@ -195,14 +244,12 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <a @click="goToHistory" class="nav-item" style="cursor: pointer;">
+          <a @click="goToHistory" class="nav-item" style="cursor: pointer">
             <div class="nav-content">
               <i class="bi bi-graph-up"></i>
               <span>Thống kê</span>
             </div>
           </a>
-
-
 
           <RouterLink to="/contact" class="nav-item">
             <div class="nav-content">
@@ -210,16 +257,13 @@ onUnmounted(() => {
               <span>Liên hệ</span>
             </div>
           </RouterLink>
-
         </div>
       </nav>
 
       <!-- User Section -->
       <div class="user-section">
         <div v-if="!isLoggedIn" class="auth-actions">
-          <RouterLink to="/register" class="btn btn-ghost">
-            Đăng ký
-          </RouterLink>
+          <RouterLink to="/register" class="btn btn-ghost"> Đăng ký </RouterLink>
           <button @click="login" class="btn btn-primary">
             <i class="bi bi-box-arrow-in-right"></i>
             Đăng nhập
@@ -229,24 +273,38 @@ onUnmounted(() => {
         <div v-else class="user-menu dropdown">
           <div class="user-trigger">
             <div class="user-avatar">
-              <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="avatar-image" />
+              <img
+                v-if="avatarUrl"
+                :src="avatarUrl"
+                alt="Avatar"
+                class="avatar-image"
+                @error="handleAvatarError"
+              />
               <i v-else class="bi bi-person-circle"></i>
             </div>
             <div class="user-info">
               <div class="user-name-row">
                 <span class="user-name">{{ userProfile?.fullName || username }}</span>
                 <!-- ✅ NOTIFICATION BADGE BÊN NGOÀI -->
-                <span v-if="notificationCount > 0" class="navbar-notification-badge">{{ notificationCount }}</span>
+                <span v-if="notificationCount > 0" class="navbar-notification-badge">{{
+                  notificationCount
+                }}</span>
               </div>
               <small class="user-status">Online</small>
             </div>
             <i class="bi bi-chevron-down user-arrow"></i>
           </div>
-          
+
           <div class="user-dropdown">
             <div class="user-profile-header">
               <div class="profile-avatar">
-                <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="profile-avatar-image" />
+                <img
+                  v-if="avatarUrl"
+                  :src="avatarUrl"
+                  alt="Avatar"
+                  class="profile-avatar-image"
+                  @error="handleAvatarError"
+                />
                 <i v-else class="bi bi-person-circle"></i>
               </div>
               <div class="profile-info">
@@ -254,27 +312,29 @@ onUnmounted(() => {
                 <small>{{ userProfile?.role || 'Thành viên' }}</small>
               </div>
             </div>
-            
+
             <div class="dropdown-divider"></div>
-            
+
             <RouterLink to="/profile" class="user-dropdown-link">
               <i class="bi bi-person"></i>
               <span>Hồ sơ cá nhân</span>
             </RouterLink>
-            
+
             <RouterLink to="/profile" class="user-dropdown-link">
               <i class="bi bi-gear"></i>
               <span>Cài đặt</span>
             </RouterLink>
-            
+
             <a href="#" class="user-dropdown-link" @click.prevent="showNotifications">
               <i class="bi bi-bell"></i>
               <span>Thông báo</span>
-              <span v-if="notificationCount > 0" class="notification-badge">{{ notificationCount }}</span>
+              <span v-if="notificationCount > 0" class="notification-badge">{{
+                notificationCount
+              }}</span>
             </a>
-            
+
             <div class="dropdown-divider"></div>
-            
+
             <button @click="logoutForNavbar" class="user-dropdown-link logout-link">
               <i class="bi bi-box-arrow-right"></i>
               <span>Đăng xuất</span>
@@ -282,7 +342,6 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
-
     </div>
   </header>
 </template>
@@ -290,11 +349,13 @@ onUnmounted(() => {
 <style scoped>
 /* Logo styles giữ nguyên */
 .nabla {
-  font-family: "Nabla", system-ui;
+  font-family: 'Nabla', system-ui;
   font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
-  font-variation-settings: "EDPT" 100, "EHLT" 12;
+  font-variation-settings:
+    'EDPT' 100,
+    'EHLT' 12;
   margin: 0;
   background: linear-gradient(45deg, #ffd700, #ffed4e);
   -webkit-background-clip: text;
@@ -305,17 +366,34 @@ onUnmounted(() => {
 
 .nabla:hover {
   animation: glitch 0.5s linear;
-  text-shadow: 2px 0 red, -2px 0 rgb(1, 225, 255), 0 0 12px rgba(255, 110, 108, 0.6);
+  text-shadow:
+    2px 0 red,
+    -2px 0 rgb(1, 225, 255),
+    0 0 12px rgba(255, 110, 108, 0.6);
 }
 
 @keyframes glitch {
-  0% { transform: translate(0); }
-  15% { transform: translate(-2px, 1px); }
-  30% { transform: translate(2px, -1px); }
-  45% { transform: translate(-1px, 2px); }
-  60% { transform: translate(1px, -2px); }
-  75% { transform: translate(0.5px, 1px); }
-  100% { transform: translate(0); }
+  0% {
+    transform: translate(0);
+  }
+  15% {
+    transform: translate(-2px, 1px);
+  }
+  30% {
+    transform: translate(2px, -1px);
+  }
+  45% {
+    transform: translate(-1px, 2px);
+  }
+  60% {
+    transform: translate(1px, -2px);
+  }
+  75% {
+    transform: translate(0.5px, 1px);
+  }
+  100% {
+    transform: translate(0);
+  }
 }
 
 /* MODERN NAVBAR */
@@ -561,6 +639,13 @@ onUnmounted(() => {
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.avatar-image:hover {
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .user-info {
@@ -748,29 +833,26 @@ onUnmounted(() => {
   }
 }
 
-
-
 /* RESPONSIVE */
 @media (max-width: 1200px) {
   .navbar-container {
     padding: 0 1rem;
   }
-  
+
   .nav-group {
     gap: 0.25rem;
   }
-  
+
   .nav-item {
     padding: 0.6rem 1rem;
   }
-
 }
 
 @media (max-width: 991px) {
   .main-nav {
     display: none;
   }
-  
+
   .navbar-container {
     height: 70px;
   }
