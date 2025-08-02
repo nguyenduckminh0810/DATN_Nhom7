@@ -37,8 +37,9 @@ function toQuizHistory() {
 watch(status, (newStatus) => {
     if (newStatus === 'loggedIn') {
         getUserId().then(id => {
-            if (id) router.push({ name: 'ClientDashboard', params: { userId: id } })
-            else alert("Không thể lấy thông tin người dùng.")
+            if (id) {
+                router.push({ name: 'ClientDashboard', params: { userId: id } })
+            } else alert("Không thể lấy thông tin người dùng.")
         })
     }
 })
@@ -47,10 +48,19 @@ function togglePassword() {
     showPassword.value = !showPassword.value
 }
 
-function handleSubmit() {
+function handleSubmit(e) {
+    e.preventDefault() // ✅ PREVENT DEFAULT FORM SUBMISSION
+    console.log('🔐 Login attempt:', { username: username.value, password: password.value ? '***' : 'empty' })
+    console.log('📍 Current URL:', window.location.href)
+    console.log('🔄 Preventing form submission...')
+    
     if (!username.value.trim() || !password.value.trim()) {
+        message.value = '❌ Vui lòng nhập đầy đủ thông tin!'
+        console.log('❌ Form validation failed')
         return
     }
+    
+    console.log('✅ Form validation passed, calling login()')
     login()
 }
 </script>
@@ -148,9 +158,12 @@ function handleSubmit() {
 
                 <!-- Error/Success Message -->
                 <div class="message-container" v-if="message">
-                    <div class="message" :class="{ 'error': hasError, 'success': isSuccess }">
-                        <i :class="hasError ? 'bi bi-exclamation-triangle' : 'bi bi-check-circle'"></i>
+                    <div class="message" :class="{ 'error': hasError, 'success': isSuccess, 'warning': message.includes('🚫') }">
+                        <i :class="hasError ? 'bi bi-exclamation-triangle' : message.includes('🚫') ? 'bi bi-shield-exclamation' : 'bi bi-check-circle'"></i>
                         <span>{{ message }}</span>
+                        <button v-if="hasError" @click="message = ''" class="close-error">
+                            <i class="bi bi-x"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -586,12 +599,39 @@ function handleSubmit() {
     background: rgba(255, 71, 87, 0.2);
     border-color: #ff4757;
     color: #ff4757;
+    position: relative;
 }
 
 .message.success {
     background: rgba(78, 205, 196, 0.2);
     border-color: #4ecdc4;
     color: #4ecdc4;
+}
+
+.message.warning {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+
+.close-error {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.close-error:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
 }
 
 /* === LOGIN BUTTON === */

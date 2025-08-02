@@ -167,9 +167,9 @@ function viewQuizzes() {
                       class="score-unit"
                     >
                       điểm
-                    </text>
-                  </svg>
-                </div>
+                            </text>
+                        </svg>
+                    </div>
 
                 <!-- Performance Badge -->
                 <div class="performance-badge" :class="performanceLevel.class">
@@ -224,7 +224,7 @@ function viewQuizzes() {
                   <div class="stat-item">
                     <div class="stat-icon accuracy">
                       <i class="bi bi-percent"></i>
-                    </div>
+                                </div>
                     <div class="stat-content">
                       <div class="stat-number">{{ stats.accuracy }}%</div>
                       <div class="stat-label">Độ chính xác</div>
@@ -234,7 +234,7 @@ function viewQuizzes() {
               </div>
             </div>
           </div>
-        </div>
+                    </div>
 
         <!-- Detailed Results -->
         <div class="result-card details-card" :class="{ 'loaded': isLoaded }">
@@ -298,10 +298,10 @@ function viewQuizzes() {
               <span>Về trang chủ</span>
             </button>
           </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </template>
 
 <style scoped>
@@ -387,7 +387,7 @@ function viewQuizzes() {
 
 .hero-content {
   max-width: 600px;
-  margin: 0 auto;
+    margin: 0 auto;
 }
 
 .celebration-icon {

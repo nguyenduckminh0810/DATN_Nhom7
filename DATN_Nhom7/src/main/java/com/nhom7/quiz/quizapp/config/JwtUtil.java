@@ -3,6 +3,7 @@ package com.nhom7.quiz.quizapp.config;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -10,11 +11,17 @@ import java.util.Date;
 
 @Component
 public class JwtUtil {
-    // Thời gian hết hạn của token (1 ngày)
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 1 ngày
-    // Khóa bí mật để ký token, cần đủ dài (ít nhất 256 bit cho HS256)
-    private static final SecretKey SECRET_KEY = Keys
-            .hmacShaKeyFor("my_super_secret_key_which_should_be_long_enough!".getBytes());
+    // Thời gian hết hạn của token (configurable)
+    @Value("${jwt.expiration:86400000}") // Default 24 hours
+    private long EXPIRATION_TIME;
+    
+    // Khóa bí mật từ environment hoặc application.properties
+    @Value("${jwt.secret:my_super_secret_key_which_should_be_long_enough_for_production_use!}")
+    private String jwtSecret;
+    
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    }
 
     // Phương thức này sẽ tạo token JWT cho người dùng
     public String generateToken(String username) {
@@ -22,7 +29,7 @@ public class JwtUtil {
                 .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -44,9 +51,23 @@ public class JwtUtil {
 
     private Claims getClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY)
+                .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+    
+    // ✅ THÊM METHOD ĐỂ KIỂM TRA TOKEN HẾT HẠN
+    public boolean isTokenExpired(String token) {
+        try {
+            return getClaims(token).getExpiration().before(new Date());
+        } catch (JwtException e) {
+            return true;
+        }
+    }
+    
+    // ✅ THÊM METHOD ĐỂ LẤY THỜI GIAN HẾT HẠN
+    public Date getExpirationDateFromToken(String token) {
+        return getClaims(token).getExpiration();
     }
 }

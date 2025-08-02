@@ -59,8 +59,12 @@ watch(isLoggedIn, (newVal) => {
 })
 
 function logoutForNavbar() {
-  logout()
-  router.push('/login')
+  console.log('🔴 LOGOUT BUTTON CLICKED')
+  
+  if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+    logout()
+    router.push('/login')
+  }
 }
 
 async function goToHistory() {
@@ -80,6 +84,10 @@ async function goToHistory() {
     console.error('Error navigating to history:', error)
     router.push('/login')
   }
+}
+
+function showNotifications() {
+  alert('🔔 Tính năng thông báo sẽ được phát triển trong tương lai!')
 }
 
 let handleScroll
@@ -170,14 +178,14 @@ onUnmounted(() => {
               <i class="bi bi-chevron-down dropdown-arrow"></i>
             </div>
             <div class="dropdown-panel">
-              <RouterLink to="/categories" class="dropdown-link">
+              <RouterLink :to="{ name: 'CategoryManager' }" class="dropdown-link">
                 <i class="bi bi-grid"></i>
                 <div class="link-content">
                   <span class="link-title">Xem danh mục</span>
                   <small class="link-desc">Duyệt theo chủ đề</small>
                 </div>
               </RouterLink>
-              <RouterLink to="/categories/manage" class="dropdown-link">
+              <RouterLink :to="{ name: 'CategoryManager' }" class="dropdown-link">
                 <i class="bi bi-gear"></i>
                 <div class="link-content">
                   <span class="link-title">Quản lý</span>
@@ -254,16 +262,16 @@ onUnmounted(() => {
               <span>Hồ sơ cá nhân</span>
             </RouterLink>
             
-            <RouterLink to="/settings" class="user-dropdown-link">
+            <RouterLink to="/profile" class="user-dropdown-link">
               <i class="bi bi-gear"></i>
               <span>Cài đặt</span>
             </RouterLink>
             
-            <RouterLink to="/notifications" class="user-dropdown-link">
+            <a href="#" class="user-dropdown-link" @click.prevent="showNotifications">
               <i class="bi bi-bell"></i>
               <span>Thông báo</span>
               <span v-if="notificationCount > 0" class="notification-badge">{{ notificationCount }}</span>
-            </RouterLink>
+            </a>
             
             <div class="dropdown-divider"></div>
             
@@ -755,6 +763,7 @@ onUnmounted(() => {
   .nav-item {
     padding: 0.6rem 1rem;
   }
+
 }
 
 @media (max-width: 991px) {

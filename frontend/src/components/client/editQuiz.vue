@@ -28,9 +28,9 @@ const isUploadingImage = ref(false)
 
 // Form states
 const newQuestion = ref({
-  content: '',
-  point: 1,
-  answers: Array(4).fill().map((_, i) => ({ content: '', correct: i === 0 }))
+    content: '',
+    point: 1,
+    answers: Array(4).fill().map((_, i) => ({ content: '', correct: i === 0 }))
 })
 
 const editingQuestion = ref(null)
@@ -160,10 +160,10 @@ function clearImage() {
 
 // API functions
 async function fetchQuizInfo() {
-  try {
-    const res = await axios.get(`http://localhost:8080/api/quiz/${quizId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    try {
+        const res = await axios.get(`http://localhost:8080/api/quiz/${quizId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
     quizInfo.value = { ...quizInfo.value, ...res.data }
     // Set image preview if image exists
     if (quizInfo.value.image) {
@@ -172,34 +172,34 @@ async function fetchQuizInfo() {
       imageUploadType.value = 'url'
     }
     console.log('Quiz info loaded:', quizInfo.value)
-  } catch (err) {
-    console.error('Lỗi khi lấy thông tin quiz:', err)
+    } catch (err) {
+        console.error('Lỗi khi lấy thông tin quiz:', err)
     showNotification('Không thể tải thông tin quiz', 'error')
-  }
+    }
 }
 
 async function fetchAnswersForQuestion(questionId) {
-  try {
-    const res = await axios.get(`http://localhost:8080/api/answer/${questionId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    answersMap.value[questionId] = res.data
-  } catch (error) {
-    console.error('Lỗi khi lấy câu trả lời:', error)
-  }
+    try {
+        const res = await axios.get(`http://localhost:8080/api/answer/${questionId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        answersMap.value[questionId] = res.data
+    } catch (error) {
+        console.error('Lỗi khi lấy câu trả lời:', error)
+    }
 }
 
 async function fetchQuestionsByQuizId() {
   isLoading.value = true
-  try {
-    const res = await axios.get(`http://localhost:8080/api/question/${quizId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    questions.value = res.data
-    await Promise.all(res.data.map(q => fetchAnswersForQuestion(q.id)))
+    try {
+        const res = await axios.get(`http://localhost:8080/api/question/${quizId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        questions.value = res.data
+        await Promise.all(res.data.map(q => fetchAnswersForQuestion(q.id)))
     console.log('Questions loaded:', questions.value.length)
-  } catch (error) {
-    console.error('Lỗi khi lấy câu hỏi:', error)
+    } catch (error) {
+        console.error('Lỗi khi lấy câu hỏi:', error)
     showNotification('Không thể tải danh sách câu hỏi', 'error')
   } finally {
     isLoading.value = false
@@ -252,18 +252,18 @@ async function updateQuizInfo() {
       }
     }
 
-    const payload = {
-      ...quizInfo.value,
+        const payload = {
+            ...quizInfo.value,
       image: imageUrl || null,
       category: quizInfo.value.category || null
-    }
+        }
 
-    await axios.put(`http://localhost:8080/api/quiz/${quizId}`, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
+        await axios.put(`http://localhost:8080/api/quiz/${quizId}`, payload, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
 
     // Update local state
     quizInfo.value.image = imageUrl
@@ -277,7 +277,7 @@ async function updateQuizInfo() {
 
     showNotification('Cập nhật thông tin quiz thành công!', 'success')
     validationErrors.value = {}
-  } catch (err) {
+    } catch (err) {
     console.error('Lỗi khi cập nhật quiz:', err)
     showNotification('Cập nhật thất bại!', 'error')
   } finally {
@@ -295,50 +295,50 @@ async function createQuestion() {
   }
 
   isSaving.value = true
-  try {
-    const questionPayload = {
-      content: newQuestion.value.content.trim(),
-      point: newQuestion.value.point,
-      quiz: { id: quizId },
-      image: null
+    try {
+        const questionPayload = {
+            content: newQuestion.value.content.trim(),
+            point: newQuestion.value.point,
+            quiz: { id: quizId },
+            image: null
     }
 
-    const questionRes = await axios.post(`http://localhost:8080/api/question/create`, questionPayload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        const questionRes = await axios.post(`http://localhost:8080/api/question/create`, questionPayload, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
     })
 
     const createdQuestion = questionRes.data
 
     const answersPayload = newQuestion.value.answers.map(a => ({
-      content: a.content.trim(),
-      correct: a.correct,
-      question: { id: createdQuestion.id }
+            content: a.content.trim(),
+            correct: a.correct,
+            question: { id: createdQuestion.id }
     }))
 
-    const answerRes = await axios.post(`http://localhost:8080/api/answer/create-multiple`, answersPayload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        const answerRes = await axios.post(`http://localhost:8080/api/answer/create-multiple`, answersPayload, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
     })
 
-    questions.value.push(createdQuestion)
+        questions.value.push(createdQuestion)
     answersMap.value[createdQuestion.id] = answerRes.data
 
-    // Reset form
-    newQuestion.value = {
-      content: '',
-      point: 1,
-      answers: Array(4).fill().map((_, i) => ({ content: '', correct: i === 0 }))
+        // Reset form
+        newQuestion.value = {
+            content: '',
+            point: 1,
+            answers: Array(4).fill().map((_, i) => ({ content: '', correct: i === 0 }))
     }
 
     validationErrors.value = {}
     showNotification('Thêm câu hỏi thành công!', 'success')
     activeTab.value = 'questions'
-  } catch (err) {
+    } catch (err) {
     console.error('Lỗi khi tạo câu hỏi:', err)
     showNotification('Tạo câu hỏi thất bại!', 'error')
   } finally {
@@ -354,76 +354,76 @@ async function updateQuestion(question) {
   }
 
   isSaving.value = true
-  try {
-    const payload = {
-      id: question.id,
-      content: question.content,
-      point: question.point,
-      quiz: { id: quizId },
-      image: null
-    }
+    try {
+        const payload = {
+            id: question.id,
+            content: question.content,
+            point: question.point,
+            quiz: { id: quizId },
+            image: null
+        }
 
-    await axios.put(`http://localhost:8080/api/question/update/${question.id}`, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
+        await axios.put(`http://localhost:8080/api/question/update/${question.id}`, payload, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
 
     showNotification('Cập nhật câu hỏi thành công!', 'success')
     editingQuestion.value = null
     validationErrors.value = {}
-  } catch (err) {
-    console.error('Lỗi khi cập nhật câu hỏi:', err)
+    } catch (err) {
+        console.error('Lỗi khi cập nhật câu hỏi:', err)
     showNotification('Cập nhật thất bại!', 'error')
   } finally {
     isSaving.value = false
-  }
+    }
 }
 
 async function updateAnswers(questionId) {
   isSaving.value = true
-  try {
-    const answers = answersMap.value[questionId]
-    const payload = answers.map((a) => ({
-      id: a.id,
-      content: a.content,
-      correct: a.correct,
-      question: { id: questionId }
-    }))
+    try {
+        const answers = answersMap.value[questionId]
+        const payload = answers.map((a) => ({
+            id: a.id,
+            content: a.content,
+            correct: a.correct,
+            question: { id: questionId }
+        }))
 
-    await axios.put(`http://localhost:8080/api/answer/update`, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
+        await axios.put(`http://localhost:8080/api/answer/update`, payload, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
 
     showNotification('Cập nhật câu trả lời thành công!', 'success')
-  } catch (error) {
-    console.error('Lỗi khi cập nhật câu trả lời:', error)
+    } catch (error) {
+        console.error('Lỗi khi cập nhật câu trả lời:', error)
     showNotification('Cập nhật câu trả lời thất bại!', 'error')
   } finally {
     isSaving.value = false
-  }
+    }
 }
 
 async function deleteQuestion(questionId) {
-  if (!confirm('Bạn có chắc chắn muốn xoá câu hỏi này?')) return
+    if (!confirm('Bạn có chắc chắn muốn xoá câu hỏi này?')) return
 
   isSaving.value = true
-  try {
-    await axios.delete(`http://localhost:8080/api/question/delete/${questionId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    try {
+        await axios.delete(`http://localhost:8080/api/question/delete/${questionId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
 
-    questions.value = questions.value.filter(q => q.id !== questionId)
-    delete answersMap.value[questionId]
+        questions.value = questions.value.filter(q => q.id !== questionId)
+        delete answersMap.value[questionId]
     selectedQuestions.value = selectedQuestions.value.filter(id => id !== questionId)
 
     showNotification('Xoá câu hỏi thành công!', 'success')
-  } catch (err) {
-    console.error('Lỗi khi xoá câu hỏi:', err)
+    } catch (err) {
+        console.error('Lỗi khi xoá câu hỏi:', err)
     showNotification('Xoá câu hỏi thất bại!', 'error')
   } finally {
     isSaving.value = false
@@ -582,16 +582,16 @@ watch(() => quizInfo.value.image, (newUrl) => {
                   <i :class="quizStats.hasAnswers ? 'bi bi-check-circle' : 'bi bi-exclamation-triangle'"></i>
                   {{ quizStats.hasAnswers ? 'Hoàn tất' : 'Chưa hoàn tất' }}
                 </span>
-              </div>
+                    </div>
             </div>
-          </div>
+        </div>
           <div class="header-actions">
             <button @click="previewQuiz"
               class="btn btn-primary d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm custom-preview-btn">
               <i class="bi bi-eye-fill fs-5"></i>
               <span class="fw-semibold">Xem trước</span>
             </button>
-          </div>
+        </div>
 
         </div>
       </div>
@@ -631,7 +631,7 @@ watch(() => quizInfo.value.image, (newUrl) => {
                     Cài đặt Quiz
                   </h3>
                 </div>
-                <div class="card-body">
+            <div class="card-body">
                   <form @submit.prevent="updateQuizInfo" class="quiz-form">
                     <div class="form-group">
                       <label class="form-label">Tiêu đề Quiz *</label>
@@ -639,14 +639,14 @@ watch(() => quizInfo.value.image, (newUrl) => {
                         v-model="quizInfo.title" placeholder="Nhập tiêu đề quiz..." />
                       <div v-if="validationErrors.title" class="invalid-feedback">
                         {{ validationErrors.title }}
-                      </div>
                     </div>
+                            </div>
 
                     <div class="form-group">
                       <label class="form-label">Mô tả</label>
                       <textarea class="form-control" v-model="quizInfo.description" rows="3"
                         placeholder="Mô tả ngắn về quiz này..."></textarea>
-                    </div>
+                        </div>
 
                     <div class="row">
                       <div class="col-md-6">
@@ -660,7 +660,7 @@ watch(() => quizInfo.value.image, (newUrl) => {
                             <option value="history">Lịch sử</option>
                             <option value="technology">Công nghệ</option>
                           </select>
-                        </div>
+                    </div>
                       </div>
                       <div class="col-md-6">
                         <div class="form-group">
@@ -682,7 +682,7 @@ watch(() => quizInfo.value.image, (newUrl) => {
                                 Upload
                               </button>
                             </div>
-                          </div>
+                    </div>
 
                           <!-- URL Input -->
                           <div v-if="imageUploadType === 'url'" class="image-url-input">
@@ -719,10 +719,10 @@ watch(() => quizInfo.value.image, (newUrl) => {
                         </span>
                       </button>
                     </div>
-                  </form>
+                </form>
                 </div>
-              </div>
             </div>
+        </div>
 
             <!-- Questions List Tab -->
             <div v-if="activeTab === 'questions'" class="tab-pane active">
@@ -832,7 +832,7 @@ watch(() => quizInfo.value.image, (newUrl) => {
                             <div v-if="validationErrors.content" class="invalid-feedback">
                               {{ validationErrors.content }}
                             </div>
-                          </div>
+                        </div>
 
                           <div class="form-group">
                             <label class="form-label">Câu trả lời</label>
@@ -844,7 +844,7 @@ watch(() => quizInfo.value.image, (newUrl) => {
                                     :checked="answer.correct" @change="setCorrectAnswer(question.id, answer.id)" />
                                 </div>
                                 <input type="text" class="form-control" v-model="answer.content" />
-                              </div>
+                            </div>
                             </div>
                             <div v-if="validationErrors.answers" class="invalid-feedback d-block">
                               {{ validationErrors.answers }}
@@ -868,20 +868,20 @@ watch(() => quizInfo.value.image, (newUrl) => {
                             <button type="button" @click="updateAnswers(question.id)" class="btn btn-secondary"
                               :disabled="isSaving">
                               <i class="bi bi-check-lg"></i>
-                              Lưu câu trả lời
-                            </button>
+                                    Lưu câu trả lời
+                                </button>
                             <button type="button" @click="cancelEdit" class="btn btn-outline-secondary">
                               <i class="bi bi-x-lg"></i>
                               Huỷ
-                            </button>
+                                </button>
                           </div>
                         </form>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
+                            </div>
+                        </div>
 
             <!-- Add Question Tab -->
             <div v-if="activeTab === 'add-question'" class="tab-pane active">
@@ -921,7 +921,7 @@ watch(() => quizInfo.value.image, (newUrl) => {
                         </div>
                         <small class="form-text">Chọn một câu trả lời đúng bằng cách click vào radio button</small>
                       </div>
-                    </div>
+                        </div>
 
                     <div class="form-group">
                       <label class="form-label">Điểm *</label>
@@ -944,11 +944,11 @@ watch(() => quizInfo.value.image, (newUrl) => {
                         Xem danh sách
                       </button>
                     </div>
-                  </form>
+                    </form>
                 </div>
               </div>
+                </div>
             </div>
-          </div>
         </div>
 
         <!-- Sidebar -->
@@ -1029,8 +1029,8 @@ watch(() => quizInfo.value.image, (newUrl) => {
           </div>
         </div>
       </div>
+        </div>
     </div>
-  </div>
 </template>
 
 <style scoped>
