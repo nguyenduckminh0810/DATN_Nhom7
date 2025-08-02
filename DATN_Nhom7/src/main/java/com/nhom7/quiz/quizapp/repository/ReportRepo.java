@@ -20,11 +20,13 @@ public interface ReportRepo extends JpaRepository<Report, Long> {
 
         long countByStatus(String status);
 
+        int countByReportedUserIdAndStatus(Long userId, String status);
 
         @Query("SELECT r FROM Report r WHERE r.quiz.id = :quizId AND r.user.id = :userId")
         List<Report> findByQuizIdAndUserId(@Param("quizId") Long quizId,
-                                           @Param("userId") Long userId);
+                        @Param("userId") Long userId);
 
         @Query("Select r.status, count(r) from Report r group by r.status")
         List<Object[]> getReportStatusCount();
+
 }
