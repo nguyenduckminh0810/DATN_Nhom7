@@ -42,7 +42,7 @@ public class User {
 	@Column(length = 20)
 	private String role = "USER";
 
-	@Column(name = "is_banned", nullable = false)
+	@Column(name = "is_banned", nullable = false, columnDefinition = "bit default 0")
 	private boolean isBanned = false;
 
 	@Column(name = "created_at")

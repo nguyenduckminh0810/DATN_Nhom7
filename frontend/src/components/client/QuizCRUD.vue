@@ -13,7 +13,7 @@ const router = useRouter()
 // State - Existing
 const title = ref('')
 const selectedCategoryId = ref('')
-const userId = ref('')
+const userId = getUserId()
 const isPublic = ref(true)
 const userName = ref('')
 const quizzes = ref([])
@@ -88,6 +88,7 @@ async function fetchQuizzes() {
 }
 
 // Tạo quiz
+
 async function createQuiz() {
   if (isCreating.value) return
 
@@ -95,7 +96,6 @@ async function createQuiz() {
   try {
     const formData = new FormData()
 
-    // ✅ GỬI TỪNG FIELD RIÊNG BIỆT THAY VÌ JSON
     formData.append('title', title.value.trim())
     formData.append('description', description.value.trim())
     formData.append('isPublic', isPublic.value)
@@ -106,13 +106,23 @@ async function createQuiz() {
       formData.append('image', selectedImage.value)
     }
 
-    await axios.post('http://localhost:8080/api/quiz/create-quiz-with-image', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
+    // ✅ THỰC HIỆN POST VÀ LẤY RESPONSE
+    const response = await axios.post(
+      'http://localhost:8080/api/quiz/create-quiz-with-image',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+
+    // ✅ LẤY quizId từ response
+    const quizId = response.data.id
 
     message.value = 'Tạo quiz thành công!'
+
+    // Reset form
     title.value = ''
     description.value = ''
     selectedCategoryId.value = ''
@@ -122,10 +132,8 @@ async function createQuiz() {
 
     await fetchQuizzes()
 
-    // Clear message after 3 seconds
-    setTimeout(() => {
-      message.value = ''
-    }, 3000)
+    // ✅ Điều hướng đến trang chỉnh sửa
+    router.push(`/quiz-crud/edit/${userId.value}/${quizId}`)
   } catch (error) {
     console.error('Lỗi khi tạo quiz:', error)
     message.value = 'Tạo quiz thất bại!'
@@ -136,6 +144,7 @@ async function createQuiz() {
     isCreating.value = false
   }
 }
+
 
 function editQuiz(quizId) {
   const quiz = quizzes.value.find((q) => q.id === quizId)
@@ -390,17 +399,11 @@ function removeImportImage() {
               <div class="card-header-custom">
                 <!-- ✅ TAB NAVIGATION -->
                 <div class="tab-navigation">
-                  <button
-                    @click="activeTab = 'create'"
-                    :class="['tab-btn', { active: activeTab === 'create' }]"
-                  >
+                  <button @click="activeTab = 'create'" :class="['tab-btn', { active: activeTab === 'create' }]">
                     <i class="bi bi-plus-circle-fill"></i>
                     <span>Tạo mới</span>
                   </button>
-                  <button
-                    @click="activeTab = 'import'"
-                    :class="['tab-btn', { active: activeTab === 'import' }]"
-                  >
+                  <button @click="activeTab = 'import'" :class="['tab-btn', { active: activeTab === 'import' }]">
                     <i class="bi bi-file-earmark-excel"></i>
                     <span>Import Excel</span>
                   </button>
@@ -431,13 +434,8 @@ function removeImportImage() {
                           <label class="form-label-compact">
                             <i class="bi bi-type me-2"></i>Tên quiz
                           </label>
-                          <input
-                            type="text"
-                            v-model="title"
-                            class="form-control-compact"
-                            placeholder="Nhập tên quiz thú vị..."
-                            required
-                          />
+                          <input type="text" v-model="title" class="form-control-compact"
+                            placeholder="Nhập tên quiz thú vị..." required />
                         </div>
 
                         <!-- Category -->
@@ -445,11 +443,7 @@ function removeImportImage() {
                           <label class="form-label-compact">
                             <i class="bi bi-bookmark-fill me-2"></i>Danh mục quiz
                           </label>
-                          <select
-                            v-model="selectedCategoryId"
-                            class="form-control-compact"
-                            required
-                          >
+                          <select v-model="selectedCategoryId" class="form-control-compact" required>
                             <option value="" disabled>Chọn danh mục...</option>
                             <option v-for="cat in categories" :key="cat.id" :value="cat.id">
                               {{ cat.name }}
@@ -463,12 +457,8 @@ function removeImportImage() {
                             <i class="bi bi-text-paragraph me-2"></i>Mô tả
                             <span class="text-muted">(Tùy chọn)</span>
                           </label>
-                          <textarea
-                            v-model="description"
-                            class="form-control-compact"
-                            placeholder="Mô tả ngắn..."
-                            rows="2"
-                          ></textarea>
+                          <textarea v-model="description" class="form-control-compact" placeholder="Mô tả ngắn..."
+                            rows="2"></textarea>
                         </div>
                       </div>
 
@@ -481,22 +471,13 @@ function removeImportImage() {
                             <span class="text-muted">(Tùy chọn)</span>
                           </label>
                           <div class="image-upload-compact">
-                            <input
-                              type="file"
-                              class="d-none"
-                              ref="imageInput"
-                              @change="handleImageUpload"
-                              accept="image/*"
-                            />
+                            <input type="file" class="d-none" ref="imageInput" @change="handleImageUpload"
+                              accept="image/*" />
 
                             <div v-if="!selectedImage" class="image-placeholder-compact">
                               <i class="bi bi-image"></i>
                               <p>Chọn ảnh</p>
-                              <button
-                                type="button"
-                                @click="$refs.imageInput.click()"
-                                class="btn-select-image-compact"
-                              >
+                              <button type="button" @click="$refs.imageInput.click()" class="btn-select-image-compact">
                                 <i class="bi bi-camera"></i>
                                 Chọn
                               </button>
@@ -519,13 +500,8 @@ function removeImportImage() {
                           </label>
                           <div class="privacy-options-compact">
                             <div class="privacy-option-compact">
-                              <input
-                                class="privacy-radio-compact"
-                                type="radio"
-                                :value="true"
-                                v-model="isPublic"
-                                id="publicYesCompact"
-                              />
+                              <input class="privacy-radio-compact" type="radio" :value="true" v-model="isPublic"
+                                id="publicYesCompact" />
                               <label class="privacy-label-compact" for="publicYesCompact">
                                 <div class="privacy-icon-compact public-icon-compact">
                                   <i class="bi bi-globe2"></i>
@@ -540,13 +516,8 @@ function removeImportImage() {
                               </label>
                             </div>
                             <div class="privacy-option-compact">
-                              <input
-                                class="privacy-radio-compact"
-                                type="radio"
-                                :value="false"
-                                v-model="isPublic"
-                                id="publicNoCompact"
-                              />
+                              <input class="privacy-radio-compact" type="radio" :value="false" v-model="isPublic"
+                                id="publicNoCompact" />
                               <label class="privacy-label-compact" for="publicNoCompact">
                                 <div class="privacy-icon-compact private-icon-compact">
                                   <i class="bi bi-lock"></i>
@@ -612,13 +583,8 @@ function removeImportImage() {
                             <label class="form-label-compact">
                               <i class="bi bi-bookmark-fill me-2"></i>Tên Quiz
                             </label>
-                            <input
-                              v-model="importQuizTitle"
-                              type="text"
-                              class="form-control-compact"
-                              placeholder="Nhập tên quiz..."
-                              required
-                            />
+                            <input v-model="importQuizTitle" type="text" class="form-control-compact"
+                              placeholder="Nhập tên quiz..." required />
                           </div>
 
                           <!-- Category -->
@@ -626,17 +592,9 @@ function removeImportImage() {
                             <label class="form-label-compact">
                               <i class="bi bi-folder me-2"></i>Danh mục
                             </label>
-                            <select
-                              v-model="importCategoryId"
-                              class="form-control-compact"
-                              required
-                            >
+                            <select v-model="importCategoryId" class="form-control-compact" required>
                               <option value="" disabled>Chọn danh mục...</option>
-                              <option
-                                v-for="category in categories"
-                                :key="category.id"
-                                :value="category.id"
-                              >
+                              <option v-for="category in categories" :key="category.id" :value="category.id">
                                 {{ category.name }}
                               </option>
                             </select>
@@ -648,12 +606,8 @@ function removeImportImage() {
                               <i class="bi bi-text-paragraph me-2"></i>Mô tả
                               <span class="text-muted">(Tùy chọn)</span>
                             </label>
-                            <textarea
-                              v-model="importQuizDescription"
-                              class="form-control-compact"
-                              placeholder="Mô tả ngắn..."
-                              rows="2"
-                            ></textarea>
+                            <textarea v-model="importQuizDescription" class="form-control-compact"
+                              placeholder="Mô tả ngắn..." rows="2"></textarea>
                           </div>
                         </div>
 
@@ -666,45 +620,27 @@ function removeImportImage() {
                               <span class="text-muted">(Tùy chọn)</span>
                             </label>
                             <div class="image-upload-compact">
-                              <input
-                                type="file"
-                                class="d-none"
-                                ref="importImageInput"
-                                @change="handleImportImageUpload"
-                                accept="image/*"
-                              />
+                              <input type="file" class="d-none" ref="importImageInput" @change="handleImportImageUpload"
+                                accept="image/*" />
 
                               <div v-if="!importSelectedImage" class="image-placeholder-compact">
                                 <i class="bi bi-image"></i>
                                 <p>Chọn ảnh</p>
-                                <button
-                                  type="button"
-                                  @click="$refs.importImageInput.click()"
-                                  class="btn-select-image-compact"
-                                >
+                                <button type="button" @click="$refs.importImageInput.click()"
+                                  class="btn-select-image-compact">
                                   <i class="bi bi-camera"></i>
                                   Chọn
                                 </button>
                               </div>
 
                               <div v-else class="image-selected-compact">
-                                <img
-                                  :src="importPreviewUrl"
-                                  alt="Preview"
-                                  class="image-preview-compact"
-                                />
-                                <button
-                                  @click="removeImportImage"
-                                  type="button"
-                                  class="btn-remove-compact"
-                                >
+                                <img :src="importPreviewUrl" alt="Preview" class="image-preview-compact" />
+                                <button @click="removeImportImage" type="button" class="btn-remove-compact">
                                   <i class="bi bi-x"></i>
                                 </button>
                               </div>
                             </div>
-                            <small class="form-text text-muted"
-                              >JPG, PNG, GIF, WebP (max 5MB)</small
-                            >
+                            <small class="form-text text-muted">JPG, PNG, GIF, WebP (max 5MB)</small>
                           </div>
 
                           <!-- File Upload - Compact -->
@@ -712,29 +648,15 @@ function removeImportImage() {
                             <label class="form-label-compact">
                               <i class="bi bi-file-earmark-excel me-2"></i>File Excel
                             </label>
-                            <div
-                              class="file-upload-compact"
-                              :class="{ 'drag-over': isDragOver }"
-                              @drop="handleDrop"
-                              @dragover.prevent="isDragOver = true"
-                              @dragleave="isDragOver = false"
-                            >
-                              <input
-                                ref="fileInput"
-                                type="file"
-                                @change="handleFileSelect"
-                                accept=".xlsx,.xls"
-                                class="d-none"
-                              />
+                            <div class="file-upload-compact" :class="{ 'drag-over': isDragOver }" @drop="handleDrop"
+                              @dragover.prevent="isDragOver = true" @dragleave="isDragOver = false">
+                              <input ref="fileInput" type="file" @change="handleFileSelect" accept=".xlsx,.xls"
+                                class="d-none" />
 
                               <div v-if="!selectedExcelFile" class="file-placeholder-compact">
                                 <i class="bi bi-file-earmark-excel"></i>
                                 <p>Chọn file Excel</p>
-                                <button
-                                  type="button"
-                                  @click="$refs.fileInput.click()"
-                                  class="btn-select-file-compact"
-                                >
+                                <button type="button" @click="$refs.fileInput.click()" class="btn-select-file-compact">
                                   <i class="bi bi-folder2-open"></i>
                                   Chọn file
                                 </button>
@@ -745,16 +667,12 @@ function removeImportImage() {
                                 <div class="file-info-compact">
                                   <span class="file-name-compact">{{
                                     selectedExcelFile.name
-                                  }}</span>
+                                    }}</span>
                                   <small class="file-size-compact">{{
                                     formatFileSize(selectedExcelFile.size)
-                                  }}</small>
+                                    }}</small>
                                 </div>
-                                <button
-                                  @click="removeExcelFile"
-                                  type="button"
-                                  class="btn-remove-compact"
-                                >
+                                <button @click="removeExcelFile" type="button" class="btn-remove-compact">
                                   <i class="bi bi-x"></i>
                                 </button>
                               </div>
@@ -768,13 +686,8 @@ function removeImportImage() {
                             </label>
                             <div class="privacy-options-compact">
                               <div class="privacy-option-compact">
-                                <input
-                                  class="privacy-radio-compact"
-                                  type="radio"
-                                  :value="true"
-                                  v-model="importIsPublic"
-                                  id="importPublicYes"
-                                />
+                                <input class="privacy-radio-compact" type="radio" :value="true" v-model="importIsPublic"
+                                  id="importPublicYes" />
                                 <label class="privacy-label-compact" for="importPublicYes">
                                   <div class="privacy-icon-compact public-icon-compact">
                                     <i class="bi bi-globe2"></i>
@@ -789,13 +702,8 @@ function removeImportImage() {
                                 </label>
                               </div>
                               <div class="privacy-option-compact">
-                                <input
-                                  class="privacy-radio-compact"
-                                  type="radio"
-                                  :value="false"
-                                  v-model="importIsPublic"
-                                  id="importPublicNo"
-                                />
+                                <input class="privacy-radio-compact" type="radio" :value="false"
+                                  v-model="importIsPublic" id="importPublicNo" />
                                 <label class="privacy-label-compact" for="importPublicNo">
                                   <div class="privacy-icon-compact private-icon-compact">
                                     <i class="bi bi-lock"></i>
@@ -816,15 +724,8 @@ function removeImportImage() {
 
                       <!-- Submit Button - Compact -->
                       <div class="form-actions-compact">
-                        <button
-                          type="submit"
-                          class="btn-import-compact"
-                          :disabled="!canImport || isImporting"
-                        >
-                          <div
-                            v-if="isImporting"
-                            class="spinner-border spinner-border-sm me-2"
-                          ></div>
+                        <button type="submit" class="btn-import-compact" :disabled="!canImport || isImporting">
+                          <div v-if="isImporting" class="spinner-border spinner-border-sm me-2"></div>
                           <i class="bi bi-upload me-2"></i>
                           {{ isImporting ? 'Đang import...' : 'Import Quiz' }}
                         </button>
@@ -832,15 +733,10 @@ function removeImportImage() {
                     </form>
 
                     <!-- Import Result - Compact -->
-                    <div
-                      v-if="importResult"
-                      :class="['import-result-compact', importResult.success ? 'success' : 'error']"
-                    >
-                      <i
-                        :class="
-                          importResult.success ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'
-                        "
-                      ></i>
+                    <div v-if="importResult"
+                      :class="['import-result-compact', importResult.success ? 'success' : 'error']">
+                      <i :class="importResult.success ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'
+                        "></i>
                       <div>
                         <strong>{{ importResult.success ? 'Thành công!' : 'Thất bại!' }}</strong>
                         <p class="mb-0">{{ importResult.message }}</p>
@@ -899,17 +795,11 @@ function removeImportImage() {
                 <div v-for="quiz in quizzes" :key="quiz.id" class="quiz-card-enhanced">
                   <div class="card-inner">
                     <div class="quiz-image-container-enhanced">
-                      <img
-                        :src="getQuizImageUrl(quiz.id)"
-                        alt="Quiz Image"
-                        class="quiz-image-enhanced"
-                        loading="lazy"
-                      />
+                      <img :src="getQuizImageUrl(quiz.id)" alt="Quiz Image" class="quiz-image-enhanced"
+                        loading="lazy" />
                       <div class="image-overlay"></div>
                       <div class="quiz-status-enhanced">
-                        <span
-                          :class="['status-badge-enhanced', quiz.public ? 'public' : 'private']"
-                        >
+                        <span :class="['status-badge-enhanced', quiz.public ? 'public' : 'private']">
                           <i :class="quiz.public ? 'bi bi-globe2' : 'bi bi-lock'"></i>
                           {{ quiz.public ? 'Công khai' : 'Riêng tư' }}
                         </span>
@@ -924,27 +814,18 @@ function removeImportImage() {
                       </p>
 
                       <div class="quiz-actions-enhanced">
-                        <button
-                          class="action-btn-enhanced play-btn-enhanced"
-                          @click="playQuiz(quiz.id)"
-                          title="Chơi quiz"
-                        >
+                        <button class="action-btn-enhanced play-btn-enhanced" @click="playQuiz(quiz.id)"
+                          title="Chơi quiz">
                           <i class="bi bi-play-fill"></i>
                           <span>Chơi</span>
                         </button>
-                        <button
-                          class="action-btn-enhanced edit-btn-enhanced"
-                          @click="editQuiz(quiz.id)"
-                          title="Chỉnh sửa"
-                        >
+                        <button class="action-btn-enhanced edit-btn-enhanced" @click="editQuiz(quiz.id)"
+                          title="Chỉnh sửa">
                           <i class="bi bi-pencil-square"></i>
                           <span>Sửa</span>
                         </button>
-                        <button
-                          class="action-btn-enhanced delete-btn-enhanced"
-                          @click="deleteQuiz(quiz.id)"
-                          title="Xóa quiz"
-                        >
+                        <button class="action-btn-enhanced delete-btn-enhanced" @click="deleteQuiz(quiz.id)"
+                          title="Xóa quiz">
                           <i class="bi bi-trash3"></i>
                           <span>Xóa</span>
                         </button>
@@ -960,18 +841,12 @@ function removeImportImage() {
     </div>
 
     <!-- Enhanced Toast Notification -->
-    <div
-      v-if="message"
-      :class="['toast-notification-enhanced', message.includes('thành công') ? 'success' : 'error']"
-    >
+    <div v-if="message" :class="['toast-notification-enhanced', message.includes('thành công') ? 'success' : 'error']">
       <div class="toast-icon">
-        <i
-          :class="
-            message.includes('thành công')
-              ? 'bi bi-check-circle-fill'
-              : 'bi bi-exclamation-triangle-fill'
-          "
-        ></i>
+        <i :class="message.includes('thành công')
+          ? 'bi bi-check-circle-fill'
+          : 'bi bi-exclamation-triangle-fill'
+          "></i>
       </div>
       <div class="toast-content">
         <strong class="toast-title">
@@ -1047,6 +922,7 @@ function removeImportImage() {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
@@ -1210,6 +1086,7 @@ function removeImportImage() {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -1368,8 +1245,8 @@ function removeImportImage() {
   border-radius: 2px;
 }
 
-.form-control-enhanced:focus + .input-border,
-.form-select-enhanced:focus + .input-border {
+.form-control-enhanced:focus+.input-border,
+.form-select-enhanced:focus+.input-border {
   width: 100%;
 }
 
@@ -1561,7 +1438,7 @@ function removeImportImage() {
   box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
 }
 
-.privacy-radio:checked + .privacy-label-enhanced {
+.privacy-radio:checked+.privacy-label-enhanced {
   border-color: #00d4ff;
   background: rgba(0, 212, 255, 0.1);
   box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
@@ -1619,7 +1496,7 @@ function removeImportImage() {
   transition: all 0.3s ease;
 }
 
-.privacy-radio:checked + .privacy-label-enhanced .privacy-checkmark {
+.privacy-radio:checked+.privacy-label-enhanced .privacy-checkmark {
   opacity: 1;
   transform: scale(1);
 }
@@ -1697,6 +1574,7 @@ function removeImportImage() {
 }
 
 @keyframes bounce {
+
   0%,
   80%,
   100% {
@@ -1800,12 +1678,10 @@ function removeImportImage() {
 
 .skeleton-image {
   height: 200px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.1) 25%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0.1) 75%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.1) 25%,
+      rgba(255, 255, 255, 0.2) 50%,
+      rgba(255, 255, 255, 0.1) 75%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -1816,12 +1692,10 @@ function removeImportImage() {
 
 .skeleton-line {
   height: 1rem;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.1) 25%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0.1) 75%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.1) 25%,
+      rgba(255, 255, 255, 0.2) 50%,
+      rgba(255, 255, 255, 0.1) 75%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
   border-radius: 0.5rem;
@@ -1913,6 +1787,7 @@ function removeImportImage() {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 0.3;
