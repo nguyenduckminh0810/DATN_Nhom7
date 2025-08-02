@@ -44,7 +44,7 @@ public class Report {
 	private LocalDateTime createdAt;
 
 	public Report(Long id, User user, Quiz quiz, Comment comment, String reason, String status,
-			LocalDateTime createdAt) {
+			User reportedUser, LocalDateTime createdAt) {
 		super();
 		this.id = id;
 		this.user = user;
@@ -52,6 +52,7 @@ public class Report {
 		this.comment = comment;
 		this.reason = reason;
 		this.status = status;
+		this.reportedUser = reportedUser;
 		this.createdAt = createdAt;
 	}
 
