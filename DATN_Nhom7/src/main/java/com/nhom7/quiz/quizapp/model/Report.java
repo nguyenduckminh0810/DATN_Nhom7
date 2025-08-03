@@ -36,15 +36,17 @@ public class Report {
 	@Column(length = 20, nullable = false)
 	private String status; // PENDING, RESOLVED, REJECTED
 
+
 	@ManyToOne(optional = false)
 	@JoinColumn(name = "reported_user_id", nullable = true)
+
 	private User reportedUser;
 
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
 	public Report(Long id, User user, Quiz quiz, Comment comment, String reason, String status,
-			LocalDateTime createdAt) {
+			User reportedUser, LocalDateTime createdAt) {
 		super();
 		this.id = id;
 		this.user = user;
@@ -52,6 +54,7 @@ public class Report {
 		this.comment = comment;
 		this.reason = reason;
 		this.status = status;
+		this.reportedUser = reportedUser;
 		this.createdAt = createdAt;
 	}
 

@@ -2,6 +2,7 @@
 import { useRoute, useRouter } from 'vue-router'
 import { computed, onMounted, ref } from 'vue'
 import { useLogin } from './useLogin'
+import axios from 'axios'
 
 const { username } = useLogin()
 const route = useRoute()
@@ -13,77 +14,126 @@ const score = parseInt(route.query.score) || 0
 
 const correctAnswers = ref(JSON.parse(route.query.correctAnswers || '[]'))
 const selectedAnswers = ref(JSON.parse(route.query.selectedAnswers || '[]'))
+const questions = ref([])
 const isLoaded = ref(false)
 
-onMounted(() => {
-    correctAnswers.value = JSON.parse(localStorage.getItem('correctAnswers') || '[]')
-    selectedAnswers.value = JSON.parse(localStorage.getItem('selectedAnswers') || '[]')
+onMounted(async () => {
+  correctAnswers.value = JSON.parse(localStorage.getItem('correctAnswers') || '[]')
+  selectedAnswers.value = JSON.parse(localStorage.getItem('selectedAnswers') || '[]')
 
-    // Animation delay
-    setTimeout(() => {
-        isLoaded.value = true
-    }, 500)
+  // Load questions data
+  try {
+    const res = await axios.get(`http://localhost:8080/api/question/${quizId}`)
+    const questionList = res.data
 
-    // Sau khi dùng xong thì xóa
-    localStorage.removeItem('correctAnswers')
-    localStorage.removeItem('selectedAnswers')
+    const enrichedQuestions = await Promise.all(
+      questionList.map(async (question) => {
+        try {
+          const ansRes = await axios.get(`http://localhost:8080/api/answer/${question.id}`)
+          return { ...question, answers: ansRes.data || [] }
+        } catch (err) {
+          console.error(`Lỗi khi lấy answers cho câu hỏi ID ${question.id}:`, err)
+          return { ...question, answers: [] }
+        }
+      }),
+    )
+
+    questions.value = enrichedQuestions
+  } catch (err) {
+    console.error('Lỗi khi tải câu hỏi:', err)
+  }
+
+  // Animation delay
+  setTimeout(() => {
+    isLoaded.value = true
+  }, 500)
+
+  // Sau khi dùng xong thì xóa
+  localStorage.removeItem('correctAnswers')
+  localStorage.removeItem('selectedAnswers')
 })
 
 const radius = 85
 const circumference = 2 * Math.PI * radius
 
 const dashOffset = computed(() => {
-    const percent = Math.min(score, 100)
-    return circumference - (percent / 100) * circumference
+  const percent = Math.min(score, 100)
+  return circumference - (percent / 100) * circumference
 })
 
 const scoreColor = computed(() => {
-    if (score >= 80) return '#28a745'
-    if (score >= 60) return '#17a2b8'
-    if (score >= 40) return '#ffc107'
-    return '#dc3545'
+  if (score >= 80) return '#28a745'
+  if (score >= 60) return '#17a2b8'
+  if (score >= 40) return '#ffc107'
+  return '#dc3545'
 })
 
 const performanceLevel = computed(() => {
-    if (score >= 90) return { text: 'Xuất sắc', icon: '🏆', class: 'excellent' }
-    if (score >= 80) return { text: 'Tốt', icon: '🎉', class: 'good' }
-    if (score >= 60) return { text: 'Khá', icon: '👍', class: 'fair' }
-    if (score >= 40) return { text: 'Trung bình', icon: '📈', class: 'average' }
-    return { text: 'Cần cải thiện', icon: '💪', class: 'poor' }
+  if (score >= 90) return { text: 'Xuất sắc', icon: '🏆', class: 'excellent' }
+  if (score >= 80) return { text: 'Tốt', icon: '🎉', class: 'good' }
+  if (score >= 60) return { text: 'Khá', icon: '👍', class: 'fair' }
+  if (score >= 40) return { text: 'Trung bình', icon: '📈', class: 'average' }
+  return { text: 'Cần cải thiện', icon: '💪', class: 'poor' }
 })
 
 const combinedResults = computed(() => {
-    return correctAnswers.value.map((ca, index) => {
-        const userAns = selectedAnswers.value.find(sa => sa.questionId === ca.questionId)
-        return {
-            questionId: ca.questionId,
-            questionNumber: index + 1,
-            correctAnswerId: ca.correctAnswerId,
-            selectedAnswerId: userAns?.answerId ?? null,
-            isCorrect: userAns?.answerId === ca.correctAnswerId
-        }
-    })
+  return correctAnswers.value.map((ca, index) => {
+    const userAns = selectedAnswers.value.find((sa) => sa.questionId === ca.questionId)
+
+    // Chuyển đổi ID thành chữ cái ABCD
+    const getAnswerLetter = (answerId, questionId) => {
+      if (!answerId) return 'Không chọn'
+
+      // Tìm câu hỏi và đáp án tương ứng
+      const question = questions.value.find((q) => q.id === questionId)
+      if (!question || !question.answers) return answerId.toString()
+
+      const answerIndex = question.answers.findIndex((a) => a.id === answerId)
+      return answerIndex >= 0 ? String.fromCharCode(65 + answerIndex) : answerId.toString()
+    }
+
+    // Lấy nội dung đáp án
+    const getAnswerContent = (answerId, questionId) => {
+      if (!answerId) return ''
+
+      const question = questions.value.find((q) => q.id === questionId)
+      if (!question || !question.answers) return ''
+
+      const answer = question.answers.find((a) => a.id === answerId)
+      return answer ? answer.content : ''
+    }
+
+    return {
+      questionId: ca.questionId,
+      questionNumber: index + 1,
+      correctAnswerId: getAnswerLetter(ca.correctAnswerId, ca.questionId),
+      selectedAnswerId: getAnswerLetter(userAns?.answerId, ca.questionId),
+      correctAnswerContent: getAnswerContent(ca.correctAnswerId, ca.questionId),
+      selectedAnswerContent: getAnswerContent(userAns?.answerId, ca.questionId),
+      isCorrect: userAns?.answerId === ca.correctAnswerId,
+    }
+  })
 })
 
 const stats = computed(() => {
-    const total = combinedResults.value.length
-    const correct = combinedResults.value.filter(r => r.isCorrect).length
-    const incorrect = total - correct
-    const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
-    
-    return { total, correct, incorrect, accuracy }
+  const total = combinedResults.value.length
+  const correct = combinedResults.value.filter((r) => r.isCorrect).length
+  const incorrect = total - correct
+  const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
+
+  return { total, correct, incorrect, accuracy }
 })
 
 function goBack() {
-    router.push({ name: 'Home' })
+  router.push({ name: 'Home' })
 }
 
 function playAgain() {
-    router.push({ name: 'PlayQuiz', params: { quizId, userId } })
+  router.push({ name: 'PlayQuiz', params: { quizId, userId } })
 }
 
 function viewQuizzes() {
-    router.push({ name: 'ListQuizPublic' })
+  router.push({ name: 'ListQuizPublic' })
 }
 </script>
 
@@ -91,25 +141,28 @@ function viewQuizzes() {
   <div class="quiz-result-container">
     <!-- Animated Background -->
     <div class="background-animation">
-      <div class="floating-element" v-for="n in 15" :key="n" :style="{ 
-        left: Math.random() * 100 + '%', 
-        animationDelay: Math.random() * 3 + 's',
-        animationDuration: (3 + Math.random() * 2) + 's'
-      }">
+      <div
+        class="floating-element"
+        v-for="n in 15"
+        :key="n"
+        :style="{
+          left: Math.random() * 100 + '%',
+          animationDelay: Math.random() * 3 + 's',
+          animationDuration: 3 + Math.random() * 2 + 's',
+        }"
+      >
         {{ ['🎉', '⭐', '🏆', '🎊', '✨'][Math.floor(Math.random() * 5)] }}
       </div>
     </div>
 
     <div class="container">
       <!-- Hero Section -->
-      <div class="hero-section" :class="{ 'loaded': isLoaded }">
+      <div class="hero-section" :class="{ loaded: isLoaded }">
         <div class="hero-content">
           <div class="celebration-icon">
             {{ performanceLevel.icon }}
           </div>
-          <h1 class="hero-title">
-            Chúc mừng {{ username || 'bạn' }}!
-          </h1>
+          <h1 class="hero-title">Chúc mừng {{ username || 'bạn' }}!</h1>
           <p class="hero-subtitle">
             Bạn đã hoàn thành quiz với kết quả {{ performanceLevel.text.toLowerCase() }}
           </p>
@@ -121,7 +174,7 @@ function viewQuizzes() {
         <div class="row g-4">
           <!-- Score Card -->
           <div class="col-lg-6">
-            <div class="result-card score-card" :class="{ 'loaded': isLoaded }">
+            <div class="result-card score-card" :class="{ loaded: isLoaded }">
               <div class="card-header">
                 <h3 class="card-title">
                   <i class="bi bi-trophy-fill"></i>
@@ -133,43 +186,49 @@ function viewQuizzes() {
                 <div class="score-circle-container">
                   <svg class="score-circle" width="200" height="200" viewBox="0 0 200 200">
                     <!-- Background Circle -->
-                    <circle 
-                      cx="100" cy="100" :r="radius" 
-                      fill="none" 
-                      stroke="rgba(255, 255, 255, 0.2)" 
+                    <circle
+                      cx="100"
+                      cy="100"
+                      :r="radius"
+                      fill="none"
+                      stroke="rgba(255, 255, 255, 0.2)"
                       stroke-width="8"
                     />
                     <!-- Progress Circle -->
-                    <circle 
-                      cx="100" cy="100" :r="radius" 
-                      fill="none" 
-                      :stroke="scoreColor" 
+                    <circle
+                      cx="100"
+                      cy="100"
+                      :r="radius"
+                      fill="none"
+                      :stroke="scoreColor"
                       stroke-width="8"
-                      stroke-linecap="round" 
-                      :stroke-dasharray="circumference" 
+                      stroke-linecap="round"
+                      :stroke-dasharray="circumference"
                       :stroke-dashoffset="isLoaded ? dashOffset : circumference"
                       transform="rotate(-90 100 100)"
                       class="progress-ring"
                     />
                     <!-- Score Text -->
-                    <text 
-                      x="100" y="95" 
-                      text-anchor="middle" 
-                      dominant-baseline="middle" 
+                    <text
+                      x="100"
+                      y="95"
+                      text-anchor="middle"
+                      dominant-baseline="middle"
                       class="score-text"
                     >
                       {{ isLoaded ? score : 0 }}
                     </text>
-                    <text 
-                      x="100" y="115" 
-                      text-anchor="middle" 
-                      dominant-baseline="middle" 
+                    <text
+                      x="100"
+                      y="115"
+                      text-anchor="middle"
+                      dominant-baseline="middle"
                       class="score-unit"
                     >
                       điểm
-                            </text>
-                        </svg>
-                    </div>
+                    </text>
+                  </svg>
+                </div>
 
                 <!-- Performance Badge -->
                 <div class="performance-badge" :class="performanceLevel.class">
@@ -182,7 +241,7 @@ function viewQuizzes() {
 
           <!-- Stats Card -->
           <div class="col-lg-6">
-            <div class="result-card stats-card" :class="{ 'loaded': isLoaded }">
+            <div class="result-card stats-card" :class="{ loaded: isLoaded }">
               <div class="card-header">
                 <h3 class="card-title">
                   <i class="bi bi-graph-up"></i>
@@ -224,7 +283,7 @@ function viewQuizzes() {
                   <div class="stat-item">
                     <div class="stat-icon accuracy">
                       <i class="bi bi-percent"></i>
-                                </div>
+                    </div>
                     <div class="stat-content">
                       <div class="stat-number">{{ stats.accuracy }}%</div>
                       <div class="stat-label">Độ chính xác</div>
@@ -234,10 +293,10 @@ function viewQuizzes() {
               </div>
             </div>
           </div>
-                    </div>
+        </div>
 
         <!-- Detailed Results -->
-        <div class="result-card details-card" :class="{ 'loaded': isLoaded }">
+        <div class="result-card details-card" :class="{ loaded: isLoaded }">
           <div class="card-header">
             <h3 class="card-title">
               <i class="bi bi-clipboard-data"></i>
@@ -246,12 +305,12 @@ function viewQuizzes() {
           </div>
           <div class="card-body">
             <div class="results-list">
-              <div 
-                v-for="(result, index) in combinedResults" 
+              <div
+                v-for="(result, index) in combinedResults"
                 :key="result.questionId"
                 class="result-item"
-                :class="{ 'correct': result.isCorrect, 'incorrect': !result.isCorrect }"
-                :style="{ animationDelay: (index * 0.1) + 's' }"
+                :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }"
+                :style="{ animationDelay: index * 0.1 + 's' }"
               >
                 <div class="result-number">
                   <span class="number">{{ result.questionNumber }}</span>
@@ -263,19 +322,21 @@ function viewQuizzes() {
                 <div class="result-content">
                   <div class="result-info">
                     <span class="label">Câu trả lời của bạn:</span>
-                    <span class="value" :class="{ 'correct': result.isCorrect, 'incorrect': !result.isCorrect }">
+                    <span
+                      class="value"
+                      :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }"
+                    >
                       {{ result.selectedAnswerId ?? 'Không chọn' }}
+                    </span>
+                    <span class="answer-content">
+                      {{ result.selectedAnswerContent }}
                     </span>
                   </div>
                   <div class="result-info">
                     <span class="label">Đáp án đúng:</span>
                     <span class="value correct">{{ result.correctAnswerId }}</span>
+                    <span class="answer-content correct">{{ result.correctAnswerContent }}</span>
                   </div>
-                </div>
-                <div class="result-status">
-                  <span class="status-badge" :class="{ 'correct': result.isCorrect, 'incorrect': !result.isCorrect }">
-                    {{ result.isCorrect ? 'Đúng' : 'Sai' }}
-                  </span>
                 </div>
               </div>
             </div>
@@ -283,7 +344,7 @@ function viewQuizzes() {
         </div>
 
         <!-- Action Buttons -->
-        <div class="actions-section" :class="{ 'loaded': isLoaded }">
+        <div class="actions-section" :class="{ loaded: isLoaded }">
           <div class="actions-container">
             <button @click="playAgain" class="action-btn primary">
               <i class="bi bi-arrow-clockwise"></i>
@@ -298,10 +359,10 @@ function viewQuizzes() {
               <span>Về trang chủ</span>
             </button>
           </div>
-                </div>
-            </div>
         </div>
+      </div>
     </div>
+  </div>
 </template>
 
 <style scoped>
@@ -320,7 +381,7 @@ function viewQuizzes() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
+  background:
     radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
     radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
@@ -346,7 +407,8 @@ function viewQuizzes() {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
     opacity: 0.7;
   }
@@ -387,7 +449,7 @@ function viewQuizzes() {
 
 .hero-content {
   max-width: 600px;
-    margin: 0 auto;
+  margin: 0 auto;
 }
 
 .celebration-icon {
@@ -397,7 +459,11 @@ function viewQuizzes() {
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
     transform: translateY(0);
   }
   40% {
@@ -750,6 +816,25 @@ function viewQuizzes() {
   color: white;
 }
 
+.status-badge.inline {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  margin-left: 10px;
+  display: inline-block;
+}
+
+.answer-content {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.9rem;
+  color: #666;
+  font-style: italic;
+}
+
+.answer-content.correct {
+  color: #28a745;
+}
+
 /* Actions Section */
 .actions-section {
   margin-top: 40px;
@@ -817,31 +902,31 @@ function viewQuizzes() {
   .hero-title {
     font-size: 2.2rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .result-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
   }
-  
+
   .result-number {
     flex-direction: row;
     min-width: auto;
   }
-  
+
   .actions-container {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .action-btn {
     width: 100%;
     max-width: 300px;
@@ -852,19 +937,19 @@ function viewQuizzes() {
   .quiz-result-container {
     padding: 20px 0;
   }
-  
+
   .card-body {
     padding: 20px 15px;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .celebration-icon {
     font-size: 3rem;
   }
-  
+
   .hero-title {
     font-size: 1.8rem;
   }
