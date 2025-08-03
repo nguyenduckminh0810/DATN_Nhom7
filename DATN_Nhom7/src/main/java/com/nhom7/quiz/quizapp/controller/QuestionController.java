@@ -28,14 +28,14 @@ public class QuestionController {
 
     @GetMapping("/{quizId}")
     public ResponseEntity<List<Question>> getQuestionsByQuizId(@PathVariable Long quizId) {
+        System.out.println("🔍 Requesting questions for quiz ID: " + quizId);
         try {
             List<Question> questions = questionService.getQuestionsByQuizId(quizId);
             if (questions.isEmpty()) {
-                System.out.println("Không tìm thấy questions cho quiz ID: " + quizId);
-                // ✅ LUÔN TRẢ VỀ ARRAY RỖNG THAY VÌ NO_CONTENT
+                System.out.println("❌ Không tìm thấy questions cho quiz ID: " + quizId);
                 return ResponseEntity.ok(questions);
             }
-            System.out.println("Tìm thấy " + questions.size() + " questions cho quiz ID: " + quizId);
+            System.out.println("✅ Tìm thấy " + questions.size() + " questions cho quiz ID: " + quizId);
 
             // ✅ DEBUG: In ra timeLimit của từng question
             for (Question q : questions) {
@@ -44,9 +44,9 @@ public class QuestionController {
 
             return ResponseEntity.ok(questions);
         } catch (Exception e) {
-            System.err.println("Lỗi khi lấy questions cho quiz ID " + quizId + ": " + e.getMessage());
+            System.err.println("❌ Lỗi khi lấy questions cho quiz ID " + quizId + ": " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

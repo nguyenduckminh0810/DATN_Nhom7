@@ -2,6 +2,9 @@ package com.nhom7.quiz.quizapp.service;
 
 import com.nhom7.quiz.quizapp.model.QuizAttempt;
 import com.nhom7.quiz.quizapp.model.dto.QuizAttemptDTO;
+import com.nhom7.quiz.quizapp.model.dto.QuizAttemptSummaryDTO;
+import java.util.List;
+import java.util.stream.Collectors;
 import com.nhom7.quiz.quizapp.repository.QuizAttemptRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -70,5 +73,30 @@ public class QuizAttemptService {
      */
     public QuizAttempt findById(Long id) {
         return quizAttemptRepo.findById(id).orElse(null);
+    }
+
+    /**
+     * Lấy recent attempts cho một quiz cụ thể
+     */
+    public List<QuizAttemptSummaryDTO> getRecentAttemptsForQuiz(Long quizId) {
+        List<QuizAttempt> attempts = quizAttemptRepo.findByQuizIdOrderByAttemptedAtDesc(quizId);
+
+        return attempts.stream()
+                .limit(5) // Chỉ lấy 5 attempts gần nhất
+                .map(this::convertToSummaryDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Chuyển đổi QuizAttempt thành QuizAttemptSummaryDTO
+     */
+    private QuizAttemptSummaryDTO convertToSummaryDTO(QuizAttempt attempt) {
+        return new QuizAttemptSummaryDTO(
+                attempt.getId(),
+                attempt.getUser().getFullName() != null ? attempt.getUser().getFullName()
+                        : attempt.getUser().getUsername(),
+                attempt.getScore(),
+                attempt.getTimeTaken(),
+                attempt.getAttemptedAt());
     }
 }

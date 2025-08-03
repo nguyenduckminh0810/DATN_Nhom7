@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.io.IOException;
 
 import org.springframework.data.domain.Page;
@@ -24,6 +25,7 @@ import com.nhom7.quiz.quizapp.model.Category;
 import com.nhom7.quiz.quizapp.service.QuizService;
 import com.nhom7.quiz.quizapp.service.ExcelImportService;
 import com.nhom7.quiz.quizapp.model.dto.QuizImportDto;
+import com.nhom7.quiz.quizapp.model.dto.QuizDetailDTO;
 import com.nhom7.quiz.quizapp.config.JwtUtil;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo;
@@ -128,6 +130,25 @@ public class QuizController {
 		return quizService.getQuizById(id)
 				.map(quiz -> ResponseEntity.ok().body(quiz))
 				.orElse(ResponseEntity.notFound().build());
+	}
+
+	@GetMapping("/{id}/detail")
+	public ResponseEntity<QuizDetailDTO> getQuizDetail(@PathVariable Long id) {
+		System.out.println("🔍 Requesting quiz detail for ID: " + id);
+		try {
+			Optional<QuizDetailDTO> detail = quizService.getQuizDetail(id);
+			if (detail.isPresent()) {
+				System.out.println("✅ Quiz detail found: " + detail.get().getTitle());
+				return ResponseEntity.ok().body(detail.get());
+			} else {
+				System.out.println("❌ Quiz not found for ID: " + id);
+				return ResponseEntity.notFound().build();
+			}
+		} catch (Exception e) {
+			System.err.println("❌ Error getting quiz detail: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
 	}
 
 	@PutMapping("/{id}")

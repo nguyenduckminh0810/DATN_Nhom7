@@ -26,6 +26,8 @@ import com.nhom7.quiz.quizapp.model.User;
 import com.nhom7.quiz.quizapp.model.dto.AnswerImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuestionImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuizImportDto;
+import com.nhom7.quiz.quizapp.model.dto.QuizDetailDTO;
+import com.nhom7.quiz.quizapp.model.dto.QuizAttemptSummaryDTO;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo; // ✅ THÊM IMPORT
 import com.nhom7.quiz.quizapp.repository.ImageRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
@@ -234,5 +236,60 @@ public class QuizService {
 		} catch (Exception e) {
 			throw new RuntimeException("Lỗi khi import file Excel: " + e.getMessage(), e);
 		}
+	}
+
+	// ✅ PHƯƠNG THỨC LẤY CHI TIẾT QUIZ VỚI THỐNG KÊ
+	public Optional<QuizDetailDTO> getQuizDetail(Long id) {
+		return quizRepo.findById(id).map(quiz -> {
+			// Lấy thông tin cơ bản
+			QuizDetailDTO detail = new QuizDetailDTO();
+			detail.setId(quiz.getId());
+			detail.setTitle(quiz.getTitle());
+			detail.setImage(quiz.getImage());
+			detail.setPublic(quiz.isPublic());
+			detail.setCreatedAt(quiz.getCreatedAt());
+
+			// Thông tin người tạo
+			if (quiz.getUser() != null) {
+				detail.setCreatorName(quiz.getUser().getFullName() != null ? quiz.getUser().getFullName()
+						: quiz.getUser().getUsername());
+				detail.setCreatorAvatar(quiz.getUser().getAvatarUrl());
+			}
+
+			// Thông tin danh mục
+			if (quiz.getCategory() != null) {
+				detail.setCategoryName(quiz.getCategory().getName());
+			}
+
+			// Thông tin tags
+			if (quiz.getQuizTags() != null && !quiz.getQuizTags().isEmpty()) {
+				List<String> tagNames = quiz.getQuizTags().stream()
+						.map(qt -> qt.getTag().getName())
+						.toList();
+				detail.setTags(tagNames);
+			}
+
+			// Thống kê câu hỏi
+			int totalQuestions = quiz.getQuestions().size();
+			int totalPoints = quiz.getQuestions().stream()
+					.mapToInt(q -> q.getPoint())
+					.sum();
+			int totalTime = quiz.getQuestions().stream()
+					.mapToInt(q -> q.getTimeLimit())
+					.sum();
+
+			detail.setTotalQuestions(totalQuestions);
+			detail.setTotalPoints(totalPoints);
+			detail.setTotalTime(totalTime);
+
+			// TODO: Thêm thống kê từ QuizAttempt khi có dữ liệu
+			detail.setTotalPlays(0);
+			detail.setAverageScore(0.0);
+			detail.setUniqueParticipants(0);
+			detail.setCompletionRate(0.0);
+			detail.setAverageTime(0);
+
+			return detail;
+		});
 	}
 }
