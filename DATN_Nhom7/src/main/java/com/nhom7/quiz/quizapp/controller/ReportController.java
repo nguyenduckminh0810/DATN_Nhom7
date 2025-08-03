@@ -46,7 +46,6 @@ public class ReportController {
             response.put("status", "SUCCESS");
             response.put("message", "Báo cáo đã được gửi thành công");
             response.put("reportId", report.getId());
-
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             Map<String, String> errorResponse = new HashMap<>();
@@ -54,6 +53,7 @@ public class ReportController {
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
         } catch (Exception e) {
+            e.printStackTrace();
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("status", "ERROR");
             errorResponse.put("message", "Có lỗi xảy ra khi tạo báo cáo");
@@ -209,6 +209,7 @@ public class ReportController {
     // Xử lí user bị report
     @Autowired
     private ReportRepo reportRepo;
+    @Autowired
     private adminservice adminService;
 
     @PutMapping("/reports/{id}/resolve")

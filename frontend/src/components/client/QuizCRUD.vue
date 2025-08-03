@@ -1,10 +1,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
 import { useQuizCRUD } from './useQuizCRUD'
 import { useLogin } from './useLogin'
 import { useRouter } from 'vue-router'
-
+import api from '@/utils/axios'
 // Hooks
 const { toQuizCRUD, categories } = useQuizCRUD()
 const { getUserId, username } = useLogin()
@@ -70,7 +69,7 @@ function clearImage() {
 // Fetch categories
 async function fetchCategories() {
   try {
-    const res = await axios.get('http://localhost:8080/api/categories')
+    const res = await api.get('/categories')
     categories.value = res.data
   } catch (error) {
     console.error('Failed to load categories:', error)
@@ -80,7 +79,7 @@ async function fetchCategories() {
 // Fetch quizzes
 async function fetchQuizzes() {
   try {
-    const response = await axios.get('http://localhost:8080/api/quiz')
+    const response = await api.get('/quiz')
     quizzes.value = response.data
   } catch (error) {
     console.error('Error fetching quizzes:', error)
@@ -107,8 +106,8 @@ async function createQuiz() {
     }
 
     // ✅ THỰC HIỆN POST VÀ LẤY RESPONSE
-    const response = await axios.post(
-      'http://localhost:8080/api/quiz/create-quiz-with-image',
+    const response = await api.post(
+      '/quiz/create-quiz-with-image',
       formData,
       {
         headers: {
@@ -164,7 +163,7 @@ function editQuiz(quizId) {
 async function deleteQuiz(quizId) {
   if (confirm('Bạn có chắc chắn muốn xóa quiz này?')) {
     try {
-      const response = await axios.delete(`http://localhost:8080/api/quiz/${quizId}`)
+      const response = await api.delete(`/quiz/${quizId}`)
 
       if (response.status === 204) {
         message.value = 'Xóa quiz thành công!'
@@ -262,8 +261,8 @@ const importQuiz = async () => {
       console.log('📸 Adding image to import:', importSelectedImage.value.name)
     }
 
-    const response = await axios.post(
-      'http://localhost:8080/api/quiz/import-excel-with-image',
+    const response = await api.post(
+      '/quiz/import-excel-with-image',
       formData,
       {
         headers: {

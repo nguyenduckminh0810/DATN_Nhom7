@@ -1,24 +1,13 @@
 <template>
-  <div
-    class="modal fade"
-    id="reportModal"
-    tabindex="-1"
-    aria-labelledby="reportModalLabel"
-    aria-hidden="true"
-    data-bs-backdrop="false"
-  >
+  <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true"
+    data-bs-backdrop="false">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header bg-warning text-dark">
           <h5 class="modal-title" id="reportModalLabel">
             <i class="bi bi-exclamation-triangle me-2"></i>Báo cáo Quiz
           </h5>
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
         <div class="modal-body">
@@ -38,27 +27,15 @@
               <label for="reportReason" class="form-label">
                 <strong>Lý do báo cáo <span class="text-danger">*</span></strong>
               </label>
-              <textarea
-                id="reportReason"
-                v-model="reportReason"
-                class="form-control"
-                rows="4"
+              <textarea id="reportReason" v-model="reportReason" class="form-control" rows="4"
                 placeholder="Vui lòng mô tả lý do báo cáo quiz này (ví dụ: nội dung không phù hợp, câu hỏi sai, vi phạm bản quyền...)"
-                required
-                maxlength="500"
-              ></textarea>
+                required maxlength="500"></textarea>
               <div class="form-text">{{ reportReason.length }}/500 ký tự</div>
             </div>
 
             <div class="mb-3">
               <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  id="confirmReport"
-                  v-model="confirmReport"
-                  required
-                />
+                <input class="form-check-input" type="checkbox" id="confirmReport" v-model="confirmReport" required />
                 <label class="form-check-label" for="confirmReport">
                   Tôi xác nhận thông tin báo cáo là chính xác và không có ý định spam
                 </label>
@@ -79,12 +56,8 @@
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             <i class="bi bi-x-circle me-1"></i>Hủy
           </button>
-          <button
-            type="button"
-            class="btn btn-warning"
-            @click="submitReport"
-            :disabled="loading || !reportReason.trim() || !confirmReport"
-          >
+          <button type="button" class="btn btn-warning" @click="submitReport"
+            :disabled="loading || !reportReason.trim() || !confirmReport">
             <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
             <i v-else class="bi bi-flag me-1"></i>
             {{ loading ? 'Đang gửi...' : 'Gửi báo cáo' }}
@@ -97,8 +70,8 @@
 
 <script setup>
 import { ref, reactive, nextTick } from 'vue' // ✅ THÊM reactive
-import axios from 'axios'
 import { useLogin } from './useLogin'
+import api from '@/utils/axios'
 
 const { userId, getUserId } = useLogin()
 const emit = defineEmits(['reported'])
@@ -183,7 +156,7 @@ async function submitReport() {
       reason: reportReason.value.trim(),
     }
 
-    await axios.post('http://localhost:8080/api/reports', reportData)
+    await api.post('/reports', reportData)
 
     success.value = 'Báo cáo đã được gửi thành công! Cảm ơn bạn đã góp ý.'
     error.value = '' // ✅ Clear mọi lỗi nếu gửi thành công

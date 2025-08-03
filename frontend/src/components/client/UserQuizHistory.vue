@@ -4,11 +4,8 @@
       <h1>Lịch sử làm quiz của tôi</h1>
       <p>Xem lại các lần làm quiz và kết quả của bạn</p>
     </div>
-    
-    <QuizHistoryTable 
-      title="Lịch sử làm quiz cá nhân"
-      :showUserFilter="false"
-    />
+
+    <QuizHistoryTable title="Lịch sử làm quiz cá nhân" :showUserFilter="false" />
   </div>
 </template>
 
@@ -34,4 +31,4 @@ import QuizHistoryTable from '@/components/QuizHistoryTable.vue'
   color: #666;
   margin: 0;
 }
-</style> 
+</style>

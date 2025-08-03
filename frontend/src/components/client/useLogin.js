@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-
+import api from '@/utils/axios'
 const status = ref('loggedOut')
 const username = ref('')
 const password = ref('')
@@ -10,14 +10,30 @@ const userId = ref('')
 const token = ref('')
 const message = ref('')
 
-// ✅ INITIALIZE TOKEN FROM LOCALSTORAGE
 const initializeToken = () => {
-    const savedToken = localStorage.getItem('token')
+    const savedToken = localStorage.getItem('accessToken')
+    const savedUserId = localStorage.getItem('userId')
+    const savedUsername = localStorage.getItem('username') // ✅ Thêm dòng này
+
     if (savedToken) {
         token.value = savedToken
         status.value = 'loggedIn'
+
+        if (savedUserId) {
+            userId.value = savedUserId
+            console.log('userId restored from localStorage:', savedUserId)
+        } else {
+            getUserId()
+        }
+
+        if (savedUsername) {
+            username.value = savedUsername
+            console.log('username restored from localStorage:', savedUsername)
+        }
     }
 }
+
+
 
 const isLoading = computed(() => status.value === 'loggingIn')
 
@@ -30,7 +46,7 @@ const resetForm = () => {
 const getUserId = async () => {
     try {
         console.log('📡 Getting user ID with token:', token.value ? 'Token exists' : 'No token')
-        const res = await axios.get('http://localhost:8080/api/user', {
+        const res = await api.get('/user', {
             headers: {
                 Authorization: `Bearer ${token.value}`
             }
@@ -53,19 +69,32 @@ const login = async () => {
 
     try {
         console.log('📡 Sending login request...')
-        const res = await axios.post('http://localhost:8080/api/login', {
+
+        const res = await api.post('/login', {
             username: username.value,
             password: password.value
         })
 
         console.log('📥 Login response:', res.data)
         const data = res.data
+
         if (data.status === 'SUCCESS') {
+            const jwt = data.token || data.accessToken
+            const user = data.user || {}
+
             message.value = data.message || '✅ Đăng nhập thành công!'
-            localStorage.setItem('token', data.token)
-            token.value = data.token
+            localStorage.setItem('username', user.username || username.value)
+
+            localStorage.setItem('accessToken', jwt)
+            localStorage.setItem('user', JSON.stringify(user))
+            token.value = jwt
             status.value = 'loggedIn'
-            await getUserId()
+
+            await getUserId().then(id => {
+                if (id) {
+                    localStorage.setItem('userId', id) // ✅ lưu userId
+                }
+            })
         } else {
             message.value = data.message || '❌ Có lỗi xảy ra!'
             status.value = 'loggedOut'
@@ -73,8 +102,7 @@ const login = async () => {
         }
     } catch (err) {
         console.error('Login error:', err)
-        
-        // ✅ IMPROVED ERROR HANDLING
+
         if (err.response?.status === 429) {
             message.value = '🚫 Quá nhiều lần thử đăng nhập! Vui lòng thử lại sau 1 phút.'
         } else if (err.response?.status === 401) {
@@ -86,27 +114,30 @@ const login = async () => {
         } else {
             message.value = err.response?.data?.message || '❌ Đăng nhập thất bại! Vui lòng thử lại.'
         }
-        
+
         status.value = 'loggedOut'
         resetForm()
     }
 }
 
+
 const logout = () => {
     // ✅ CLEAR AUTH DATA WITHOUT ROUTER
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    localStorage.removeItem('username')
-    username.value = null
-    status.value = 'loggedOut'
-    message.value = ''
+    localStorage.removeItem('accessToken')  // ✅ key đúng
+
+    token.value = null;
+    userId.value = null;
+    username.value = null;
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("username");
     resetForm()
 }
 
 export function useLogin() {
     // ✅ INITIALIZE TOKEN WHEN COMPOSABLE IS USED
     initializeToken()
-    
+
     return {
         status,
         username,

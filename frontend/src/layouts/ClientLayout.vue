@@ -2,6 +2,8 @@
 import { RouterView } from 'vue-router'
 import Navbar from '@/components/client/Navbar.vue'
 import Footer from '@/components/client/Footer.vue';
+import { useLogin } from '@/components/client/useLogin'
+useLogin()
 </script>
 
 <template>

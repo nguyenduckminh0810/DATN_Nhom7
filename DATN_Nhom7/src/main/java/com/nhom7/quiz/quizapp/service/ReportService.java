@@ -60,6 +60,9 @@ public class ReportService {
         report.setReason(reason);
         report.setStatus("PENDING");
         report.setCreatedAt(LocalDateTime.now());
+        Quiz quiz = quizOpt.get();
+
+        report.setReportedUser(quiz.getUser());
 
         return reportRepo.save(report);
     }

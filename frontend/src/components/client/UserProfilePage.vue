@@ -1,12 +1,10 @@
 <template>
-  <div class="profile-page" style="background: linear-gradient(to bottom right, #e0f0ff, #ffffff); min-height: 100vh; padding: 2rem;">
+  <div class="profile-page"
+    style="background: linear-gradient(to bottom right, #e0f0ff, #ffffff); min-height: 100vh; padding: 2rem;">
     <div class="profile-card mx-auto p-4 rounded shadow" style="max-width: 800px; background-color: lightsalmon;">
       <div class="text-center mb-4">
-        <img
-          :src="user.avatarUrl ? baseUrl + user.avatarUrl + '?t=' + Date.now() : defaultAvatar"
-          class="rounded-circle shadow border border-white"
-          style="width: 120px; height: 120px; object-fit: cover;"
-        />
+        <img :src="user.avatarUrl ? baseUrl + user.avatarUrl + '?t=' + Date.now() : defaultAvatar"
+          class="rounded-circle shadow border border-white" style="width: 120px; height: 120px; object-fit: cover;" />
         <h3 class="mt-3"><strong>{{ user.fullName }}</strong></h3>
         <p class="text-muted mb-1">{{ user.bio || "Chưa có giới thiệu" }}</p>
         <span class="badge bg-success">USER</span>
@@ -30,7 +28,8 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" :class="{ active: activeTab === 'editpassword' }" @click="activeTab = 'editpassword'" href="#">
+          <a class="nav-link" :class="{ active: activeTab === 'editpassword' }" @click="activeTab = 'editpassword'"
+            href="#">
             <i class="bi bi-clock-history me-1"></i> Đổi mật khẩu
           </a>
         </li>
@@ -83,34 +82,35 @@
       </div>
 
       <!-- Đổi mật khẩu -->
-        <div v-if="activeTab === 'editpassword'" class="mt-3">
-          <div class="mb-3">
-              <label class="form-label"><strong>Mật khẩu hiện tại</strong></label>
-              <input type="password" v-model="form.currentPassword" class="form-control" />
-          </div>
-          <div class="mb-3">
-              <label class="form-label"><strong>Mật khẩu mới</strong></label>
-              <input type="password" v-model="form.newPassword" class="form-control" />
-          </div>
-          <div class="mb-3">
-              <label class="form-label"><strong>Xác nhận mật khẩu mới</strong></label>
-              <input type="password" v-model="form.confirmPassword" class="form-control" />
-          </div>
-          <div class="d-flex justify-content-end">
-            <button class="btn btn-primary me-2" @click="changePassword">Đổi mật khẩu</button>
-            <button class="btn btn-secondary" @click="activeTab = 'view'" type="button">Huỷ</button>
-          </div>
+      <div v-if="activeTab === 'editpassword'" class="mt-3">
+        <div class="mb-3">
+          <label class="form-label"><strong>Mật khẩu hiện tại</strong></label>
+          <input type="password" v-model="form.currentPassword" class="form-control" />
         </div>
-        <!-- Xoá tài khoản -->
+        <div class="mb-3">
+          <label class="form-label"><strong>Mật khẩu mới</strong></label>
+          <input type="password" v-model="form.newPassword" class="form-control" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label"><strong>Xác nhận mật khẩu mới</strong></label>
+          <input type="password" v-model="form.confirmPassword" class="form-control" />
+        </div>
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-primary me-2" @click="changePassword">Đổi mật khẩu</button>
+          <button class="btn btn-secondary" @click="activeTab = 'view'" type="button">Huỷ</button>
+        </div>
+      </div>
+      <!-- Xoá tài khoản -->
       <div v-if="activeTab === 'delete'" class="d-flex justify-content-center mt-5">
-      <div class="text-center border p-4 rounded shadow-sm" style="max-width: 500px; width: 100%; background-color: #ffffff;">
-        <h5 class="text-danger">Xoá tài khoản</h5>
-        <p>Bạn có chắc chắn muốn xoá tài khoản? Thao tác này không thể hoàn tác.</p>
-        <button class="btn btn-danger" @click="confirmDelete">Xoá tài khoản</button>
+        <div class="text-center border p-4 rounded shadow-sm"
+          style="max-width: 500px; width: 100%; background-color: #ffffff;">
+          <h5 class="text-danger">Xoá tài khoản</h5>
+          <p>Bạn có chắc chắn muốn xoá tài khoản? Thao tác này không thể hoàn tác.</p>
+          <button class="btn btn-danger" @click="confirmDelete">Xoá tài khoản</button>
+        </div>
       </div>
     </div>
-    </div>
-    </div>
+  </div>
 </template>
 
 <script>
@@ -148,7 +148,7 @@ export default {
     const fetchUserProfile = async () => {
       try {
         const userId = route.params.id;
-        const res = await axios.get(`http://localhost:8080/api/user/${userId}`);
+        const res = await api.get(`/user/${userId}`);
         user.value = res.data;
         form.value.fullName = res.data.fullName;
         form.value.username = res.data.username;
@@ -161,7 +161,7 @@ export default {
     };
 
     const updateProfile = async () => {
-    try {
+      try {
         const userId = route.params.id;
         const formData = new FormData();
         formData.append("fullName", form.value.fullName);
@@ -169,13 +169,13 @@ export default {
         formData.append("bio", form.value.bio);
 
         if (selectedFile.value) {
-        formData.append("avatar", selectedFile.value);
+          formData.append("avatar", selectedFile.value);
         }
 
-        const response = await axios.put(`http://localhost:8080/api/user/${userId}`, formData, {
-        headers: {
+        const response = await api.put(`/user/${userId}`, formData, {
+          headers: {
             "Content-Type": "multipart/form-data",
-        },
+          },
         });
 
         // Cập nhật giao diện
@@ -183,14 +183,14 @@ export default {
         user.value.username = form.value.username;
         user.value.bio = form.value.bio;
         if (response.data.avatarUrl) {
-        user.value.avatarUrl = response.data.avatarUrl;
+          user.value.avatarUrl = response.data.avatarUrl;
         }
 
         alert("Cập nhật thành công!");
         activeTab.value = "view";
-    } catch (err) {
+      } catch (err) {
         alert("Có lỗi khi cập nhật: " + (err.response?.data || err.message));
-    }
+      }
     };
 
     const changePassword = async () => {
@@ -206,9 +206,9 @@ export default {
           newPassword: form.value.newPassword,
         };
 
-        const res = await axios.put(`http://localhost:8080/api/user/${userId}/change-password`, payload);
+        const res = await api.put(`/user/${userId}/change-password`, payload);
         alert(res.data || "Đổi mật khẩu thành công!");
-        
+
         // Reset form
         form.value.currentPassword = "";
         form.value.newPassword = "";
@@ -219,20 +219,20 @@ export default {
     };
 
     const confirmDelete = async () => {
-    const confirm = window.confirm("Bạn thật sự muốn xoá tài khoản?");
-    if (!confirm) return;
+      const confirm = window.confirm("Bạn thật sự muốn xoá tài khoản?");
+      if (!confirm) return;
 
-    try {
-      const userId = route.params.id;
-      await axios.delete(`http://localhost:8080/api/user/${userId}`);
-      alert("Tài khoản đã bị xoá.");
+      try {
+        const userId = route.params.id;
+        await api.delete(`/user/${userId}`);
+        alert("Tài khoản đã bị xoá.");
 
-      // Chuyển hướng về trang chủ hoặc đăng xuất
-      router.push("/login");
-    } catch (err) {
-      alert("Lỗi khi xoá tài khoản: " + (err.response?.data || err.message));
-    }
-  };
+        // Chuyển hướng về trang chủ hoặc đăng xuất
+        router.push("/login");
+      } catch (err) {
+        alert("Lỗi khi xoá tài khoản: " + (err.response?.data || err.message));
+      }
+    };
 
     onMounted(async () => {
       await fetchUserProfile();

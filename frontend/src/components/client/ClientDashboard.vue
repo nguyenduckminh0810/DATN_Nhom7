@@ -5,7 +5,7 @@ import { useQuizCRUD } from './useQuizCRUD'
 import ListQuizPublic from './ListQuizPublic.vue'
 import ListUserQuiz from './ListUserQuiz.vue'
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
+import api from '@/utils/axios'
 
 const router = useRouter()
 const { username, userId, logout, getUserId } = useLogin()
@@ -37,10 +37,10 @@ const avatarUrl = computed(() => {
 // ✅ LẤY THÔNG TIN PROFILE VÀ AVATAR
 async function fetchUserProfile() {
   try {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('accessToken')
     if (!token) return
 
-    const response = await axios.get('http://localhost:8080/api/user/profile', {
+    const response = await api.get('/user/profile', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -74,6 +74,7 @@ function logoutForClientDashboard() {
 
 // ✅ LOAD PROFILE KHI COMPONENT MOUNT
 onMounted(() => {
+  console.log('🌟 Mounted Dashboard with username:', username.value)
   fetchUserProfile()
 })
 
@@ -100,13 +101,8 @@ function handleAvatarError(event) {
           <!-- Welcome Section -->
           <div class="welcome-section">
             <div class="welcome-icon">
-              <img
-                v-if="avatarUrl"
-                :src="avatarUrl"
-                alt="User Avatar"
-                class="welcome-avatar"
-                @error="handleAvatarError"
-              />
+              <img v-if="avatarUrl" :src="avatarUrl" alt="User Avatar" class="welcome-avatar"
+                @error="handleAvatarError" />
               <i v-else class="bi bi-person-hearts"></i>
             </div>
             <div class="welcome-text">
@@ -221,6 +217,7 @@ function handleAvatarError(event) {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0px);
@@ -297,6 +294,7 @@ function handleAvatarError(event) {
 }
 
 @keyframes float1 {
+
   0%,
   100% {
     transform: translate(0, 0) rotate(0deg);
@@ -312,6 +310,7 @@ function handleAvatarError(event) {
 }
 
 @keyframes float2 {
+
   0%,
   100% {
     transform: translate(0, 0) rotate(0deg);
@@ -323,6 +322,7 @@ function handleAvatarError(event) {
 }
 
 @keyframes float3 {
+
   0%,
   100% {
     transform: translate(0, 0) rotate(0deg);
@@ -387,6 +387,7 @@ function handleAvatarError(event) {
 }
 
 @keyframes welcomeIconPulse {
+
   0%,
   100% {
     transform: scale(1);

@@ -1,305 +1,252 @@
 <template>
   <div class="category-manager-container">
-      <!-- Background Elements -->
-      <div class="background-elements">
-          <div class="floating-element element-1"></div>
-          <div class="floating-element element-2"></div>
-          <div class="floating-element element-3"></div>
+    <!-- Background Elements -->
+    <div class="background-elements">
+      <div class="floating-element element-1"></div>
+      <div class="floating-element element-2"></div>
+      <div class="floating-element element-3"></div>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <div class="hero-icon">
+          <i class="bi bi-tags-fill"></i>
+        </div>
+        <h1 class="hero-title">Quản lý danh mục</h1>
+        <p class="hero-subtitle">Tổ chức và quản lý các danh mục quiz một cách hiệu quả</p>
+      </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-card primary">
+          <div class="stat-icon">
+            <i class="bi bi-collection"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ categories.length }}</div>
+            <div class="stat-label">Tổng danh mục</div>
+          </div>
+        </div>
+
+        <div class="stat-card success">
+          <div class="stat-icon">
+            <i class="bi bi-plus-circle"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ recentCategories }}</div>
+            <div class="stat-label">Thêm tuần này</div>
+          </div>
+        </div>
+
+        <div class="stat-card info">
+          <div class="stat-icon">
+            <i class="bi bi-graph-up"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ mostPopularCategory }}</div>
+            <div class="stat-label">Phổ biến nhất</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Add Category Form (Admin Only) -->
+      <div v-if="isAdmin" class="add-category-section">
+        <div class="form-card">
+          <div class="form-header">
+            <h2 class="form-title">
+              <i class="bi bi-plus-circle"></i>
+              Thêm danh mục mới
+            </h2>
+            <p class="form-subtitle">Tạo danh mục mới để phân loại quiz</p>
+          </div>
+
+          <form @submit.prevent="addCategory" class="category-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="categoryName" class="form-label">
+                  <i class="bi bi-tag"></i>
+                  <span>Tên danh mục</span>
+                  <span class="required">*</span>
+                </label>
+                <input type="text" id="categoryName" v-model="newCategory.name" class="form-input"
+                  :class="{ 'error': nameError, 'success': newCategory.name && !nameError }"
+                  placeholder="Nhập tên danh mục..." maxlength="50" required />
+                <div v-if="nameError" class="error-message">{{ nameError }}</div>
+                <div class="char-count">{{ newCategory.name.length }}/50</div>
+              </div>
+
+              <div class="form-group">
+                <label for="categoryDesc" class="form-label">
+                  <i class="bi bi-text-paragraph"></i>
+                  <span>Mô tả</span>
+                </label>
+                <textarea id="categoryDesc" v-model="newCategory.description" class="form-textarea"
+                  :class="{ 'success': newCategory.description }" placeholder="Mô tả chi tiết về danh mục..." rows="3"
+                  maxlength="200"></textarea>
+                <div class="char-count">{{ newCategory.description.length }}/200</div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" @click="clearForm" class="btn-secondary">
+                <i class="bi bi-x-circle"></i>
+                Xóa form
+              </button>
+              <button type="submit" class="btn-primary" :disabled="isAdding || nameError">
+                <div v-if="isAdding" class="loading-spinner">
+                  <i class="bi bi-arrow-clockwise spin"></i>
+                </div>
+                <i v-else class="bi bi-plus-lg"></i>
+                {{ isAdding ? 'Đang thêm...' : 'Thêm danh mục' }}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
-      <!-- Hero Section -->
-      <div class="hero-section">
-          <div class="hero-content">
-              <div class="hero-icon">
-                  <i class="bi bi-tags-fill"></i>
+      <!-- Categories Table -->
+      <div class="table-section">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="header-content">
+              <h2 class="table-title">
+                <i class="bi bi-list-ul"></i>
+                Danh sách danh mục
+              </h2>
+              <p class="table-subtitle">{{ filteredCategories.length }} danh mục</p>
+            </div>
+
+            <div class="table-controls">
+              <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input v-model="searchTerm" type="text" placeholder="Tìm kiếm danh mục..." class="search-input" />
               </div>
-              <h1 class="hero-title">Quản lý danh mục</h1>
-              <p class="hero-subtitle">Tổ chức và quản lý các danh mục quiz một cách hiệu quả</p>
+              <select v-model="sortBy" class="sort-select">
+                <option value="name">Tên A-Z</option>
+                <option value="nameDesc">Tên Z-A</option>
+                <option value="newest">Mới nhất</option>
+                <option value="oldest">Cũ nhất</option>
+              </select>
+            </div>
           </div>
+
+          <div class="table-container">
+            <div v-if="isLoading" class="loading-state">
+              <div class="loading-spinner">
+                <i class="bi bi-arrow-clockwise spin"></i>
+              </div>
+              <p>Đang tải danh mục...</p>
+            </div>
+
+            <div v-else-if="filteredCategories.length === 0" class="empty-state">
+              <div class="empty-icon">
+                <i class="bi bi-inbox"></i>
+              </div>
+              <h3>{{ searchTerm ? 'Không tìm thấy danh mục' : 'Chưa có danh mục nào' }}</h3>
+              <p>{{ searchTerm ? 'Thử từ khóa khác' : 'Hãy thêm danh mục đầu tiên' }}</p>
+            </div>
+
+            <div v-else class="categories-grid">
+              <div v-for="(category, index) in filteredCategories" :key="category.id" class="category-card"
+                :class="{ 'editing': editId === category.id }" :style="{ 'animation-delay': `${index * 0.1}s` }">
+                <div class="card-header">
+                  <div class="category-info">
+                    <div v-if="editId !== category.id" class="category-name">
+                      {{ category.name }}
+                    </div>
+                    <input v-else v-model="editCategory.name" class="edit-input" placeholder="Tên danh mục..."
+                      maxlength="50" />
+
+                    <div class="category-meta">
+                      <span class="date-badge">
+                        <i class="bi bi-calendar3"></i>
+                        {{ formatDate(category.createdAt) }}
+                      </span>
+                      <span class="id-badge">
+                        ID: {{ category.id }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div v-if="isAdmin" class="card-actions">
+                    <button v-if="editId !== category.id" @click="startEdit(category)" class="btn-edit"
+                      title="Chỉnh sửa">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button v-else @click="saveEdit(category.id)" class="btn-save" title="Lưu" :disabled="isSaving">
+                      <i v-if="isSaving" class="bi bi-arrow-clockwise spin"></i>
+                      <i v-else class="bi bi-check-lg"></i>
+                    </button>
+
+                    <button v-if="editId !== category.id" @click="confirmDelete(category)" class="btn-delete"
+                      title="Xóa">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                    <button v-else @click="cancelEdit" class="btn-cancel" title="Hủy">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="card-body">
+                  <div v-if="editId !== category.id" class="category-description">
+                    {{ category.description || 'Chưa có mô tả' }}
+                  </div>
+                  <textarea v-else v-model="editCategory.description" class="edit-textarea"
+                    placeholder="Mô tả danh mục..." rows="2" maxlength="200"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <!-- Stats Overview -->
-      <div class="stats-section">
-          <div class="stats-grid">
-              <div class="stat-card primary">
-                  <div class="stat-icon">
-                      <i class="bi bi-collection"></i>
-                  </div>
-                  <div class="stat-content">
-                      <div class="stat-value">{{ categories.length }}</div>
-                      <div class="stat-label">Tổng danh mục</div>
-                  </div>
-              </div>
-              
-              <div class="stat-card success">
-                  <div class="stat-icon">
-                      <i class="bi bi-plus-circle"></i>
-                  </div>
-                  <div class="stat-content">
-                      <div class="stat-value">{{ recentCategories }}</div>
-                      <div class="stat-label">Thêm tuần này</div>
-                  </div>
-              </div>
-              
-              <div class="stat-card info">
-                  <div class="stat-icon">
-                      <i class="bi bi-graph-up"></i>
-                  </div>
-                  <div class="stat-content">
-                      <div class="stat-value">{{ mostPopularCategory }}</div>
-                      <div class="stat-label">Phổ biến nhất</div>
-                  </div>
-              </div>
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
+      <div class="delete-modal" @click.stop>
+        <div class="modal-header">
+          <div class="modal-icon">
+            <i class="bi bi-exclamation-triangle"></i>
           </div>
-      </div>
+          <h3 class="modal-title">Xác nhận xóa</h3>
+        </div>
 
-      <!-- Main Content -->
-      <div class="main-content">
-          <!-- Add Category Form (Admin Only) -->
-          <div v-if="isAdmin" class="add-category-section">
-              <div class="form-card">
-                  <div class="form-header">
-                      <h2 class="form-title">
-                          <i class="bi bi-plus-circle"></i>
-                          Thêm danh mục mới
-                      </h2>
-                      <p class="form-subtitle">Tạo danh mục mới để phân loại quiz</p>
-                  </div>
-                  
-                  <form @submit.prevent="addCategory" class="category-form">
-                      <div class="form-row">
-                          <div class="form-group">
-                              <label for="categoryName" class="form-label">
-                                  <i class="bi bi-tag"></i>
-                                  <span>Tên danh mục</span>
-                                  <span class="required">*</span>
-                              </label>
-                              <input 
-                                  type="text" 
-                                  id="categoryName"
-                                  v-model="newCategory.name" 
-                                  class="form-input"
-                                  :class="{ 'error': nameError, 'success': newCategory.name && !nameError }"
-                                  placeholder="Nhập tên danh mục..."
-                                  maxlength="50"
-                                  required
-                              />
-                              <div v-if="nameError" class="error-message">{{ nameError }}</div>
-                              <div class="char-count">{{ newCategory.name.length }}/50</div>
-                          </div>
-                          
-                          <div class="form-group">
-                              <label for="categoryDesc" class="form-label">
-                                  <i class="bi bi-text-paragraph"></i>
-                                  <span>Mô tả</span>
-                              </label>
-                              <textarea 
-                                  id="categoryDesc"
-                                  v-model="newCategory.description" 
-                                  class="form-textarea"
-                                  :class="{ 'success': newCategory.description }"
-                                  placeholder="Mô tả chi tiết về danh mục..."
-                                  rows="3"
-                                  maxlength="200"
-                              ></textarea>
-                              <div class="char-count">{{ newCategory.description.length }}/200</div>
-                          </div>
-                      </div>
-                      
-                      <div class="form-actions">
-                          <button type="button" @click="clearForm" class="btn-secondary">
-                              <i class="bi bi-x-circle"></i>
-                              Xóa form
-                          </button>
-                          <button type="submit" class="btn-primary" :disabled="isAdding || nameError">
-                              <div v-if="isAdding" class="loading-spinner">
-                                  <i class="bi bi-arrow-clockwise spin"></i>
-                              </div>
-                              <i v-else class="bi bi-plus-lg"></i>
-                              {{ isAdding ? 'Đang thêm...' : 'Thêm danh mục' }}
-                          </button>
-                      </div>
-                  </form>
-              </div>
-          </div>
+        <div class="modal-body">
+          <p>Bạn có chắc chắn muốn xóa danh mục <strong>"{{ categoryToDelete?.name }}"</strong>?</p>
+          <p class="warning-text">Hành động này không thể hoàn tác!</p>
+        </div>
 
-          <!-- Categories Table -->
-          <div class="table-section">
-              <div class="table-card">
-                  <div class="table-header">
-                      <div class="header-content">
-                          <h2 class="table-title">
-                              <i class="bi bi-list-ul"></i>
-                              Danh sách danh mục
-                          </h2>
-                          <p class="table-subtitle">{{ filteredCategories.length }} danh mục</p>
-                      </div>
-                      
-                      <div class="table-controls">
-                          <div class="search-box">
-                              <i class="bi bi-search"></i>
-                              <input 
-                                  v-model="searchTerm" 
-                                  type="text" 
-                                  placeholder="Tìm kiếm danh mục..."
-                                  class="search-input"
-                              />
-                          </div>
-                          <select v-model="sortBy" class="sort-select">
-                              <option value="name">Tên A-Z</option>
-                              <option value="nameDesc">Tên Z-A</option>
-                              <option value="newest">Mới nhất</option>
-                              <option value="oldest">Cũ nhất</option>
-                          </select>
-                      </div>
-                  </div>
-                  
-                  <div class="table-container">
-                      <div v-if="isLoading" class="loading-state">
-                          <div class="loading-spinner">
-                              <i class="bi bi-arrow-clockwise spin"></i>
-                          </div>
-                          <p>Đang tải danh mục...</p>
-                      </div>
-                      
-                      <div v-else-if="filteredCategories.length === 0" class="empty-state">
-                          <div class="empty-icon">
-                              <i class="bi bi-inbox"></i>
-                          </div>
-                          <h3>{{ searchTerm ? 'Không tìm thấy danh mục' : 'Chưa có danh mục nào' }}</h3>
-                          <p>{{ searchTerm ? 'Thử từ khóa khác' : 'Hãy thêm danh mục đầu tiên' }}</p>
-                      </div>
-                      
-                      <div v-else class="categories-grid">
-                          <div 
-                              v-for="(category, index) in filteredCategories" 
-                              :key="category.id"
-                              class="category-card"
-                              :class="{ 'editing': editId === category.id }"
-                              :style="{ 'animation-delay': `${index * 0.1}s` }"
-                          >
-                              <div class="card-header">
-                                  <div class="category-info">
-                                      <div v-if="editId !== category.id" class="category-name">
-                                          {{ category.name }}
-                                      </div>
-                                      <input 
-                                          v-else 
-                                          v-model="editCategory.name" 
-                                          class="edit-input"
-                                          placeholder="Tên danh mục..."
-                                          maxlength="50"
-                                      />
-                                      
-                                      <div class="category-meta">
-                                          <span class="date-badge">
-                                              <i class="bi bi-calendar3"></i>
-                                              {{ formatDate(category.createdAt) }}
-                                          </span>
-                                          <span class="id-badge">
-                                              ID: {{ category.id }}
-                                          </span>
-                                      </div>
-                                  </div>
-                                  
-                                  <div v-if="isAdmin" class="card-actions">
-                                      <button 
-                                          v-if="editId !== category.id" 
-                                          @click="startEdit(category)"
-                                          class="btn-edit"
-                                          title="Chỉnh sửa"
-                                      >
-                                          <i class="bi bi-pencil"></i>
-                                      </button>
-                                      <button 
-                                          v-else 
-                                          @click="saveEdit(category.id)"
-                                          class="btn-save"
-                                          title="Lưu"
-                                          :disabled="isSaving"
-                                      >
-                                          <i v-if="isSaving" class="bi bi-arrow-clockwise spin"></i>
-                                          <i v-else class="bi bi-check-lg"></i>
-                                      </button>
-                                      
-                                      <button 
-                                          v-if="editId !== category.id"
-                                          @click="confirmDelete(category)"
-                                          class="btn-delete"
-                                          title="Xóa"
-                                      >
-                                          <i class="bi bi-trash"></i>
-                                      </button>
-                                      <button 
-                                          v-else
-                                          @click="cancelEdit"
-                                          class="btn-cancel"
-                                          title="Hủy"
-                                      >
-                                          <i class="bi bi-x-lg"></i>
-                                      </button>
-                                  </div>
-                              </div>
-                              
-                              <div class="card-body">
-                                  <div v-if="editId !== category.id" class="category-description">
-                                      {{ category.description || 'Chưa có mô tả' }}
-                                  </div>
-                                  <textarea 
-                                      v-else 
-                                      v-model="editCategory.description" 
-                                      class="edit-textarea"
-                                      placeholder="Mô tả danh mục..."
-                                      rows="2"
-                                      maxlength="200"
-                                  ></textarea>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      </div>
-
-      <!-- Delete Confirmation Modal -->
-      <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
-          <div class="delete-modal" @click.stop>
-              <div class="modal-header">
-                  <div class="modal-icon">
-                      <i class="bi bi-exclamation-triangle"></i>
-                  </div>
-                  <h3 class="modal-title">Xác nhận xóa</h3>
-              </div>
-              
-              <div class="modal-body">
-                  <p>Bạn có chắc chắn muốn xóa danh mục <strong>"{{ categoryToDelete?.name }}"</strong>?</p>
-                  <p class="warning-text">Hành động này không thể hoàn tác!</p>
-              </div>
-              
-              <div class="modal-actions">
-                  <button @click="closeDeleteModal" class="btn-cancel-modal">
-                      <i class="bi bi-x-circle"></i>
-                      Hủy
-                  </button>
-                  <button @click="deleteCategory" class="btn-confirm-delete" :disabled="isDeleting">
-                      <i v-if="isDeleting" class="bi bi-arrow-clockwise spin"></i>
-                      <i v-else class="bi bi-trash"></i>
-                      {{ isDeleting ? 'Đang xóa...' : 'Xóa' }}
-                  </button>
-              </div>
-          </div>
-      </div>
-
-      <!-- Success Toast -->
-      <div v-if="toast.show" class="toast" :class="toast.type">
-          <div class="toast-content">
-              <i :class="toast.icon"></i>
-              <span>{{ toast.message }}</span>
-          </div>
-          <button @click="hideToast" class="toast-close">
-              <i class="bi bi-x"></i>
+        <div class="modal-actions">
+          <button @click="closeDeleteModal" class="btn-cancel-modal">
+            <i class="bi bi-x-circle"></i>
+            Hủy
           </button>
+          <button @click="deleteCategory" class="btn-confirm-delete" :disabled="isDeleting">
+            <i v-if="isDeleting" class="bi bi-arrow-clockwise spin"></i>
+            <i v-else class="bi bi-trash"></i>
+            {{ isDeleting ? 'Đang xóa...' : 'Xóa' }}
+          </button>
+        </div>
       </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div v-if="toast.show" class="toast" :class="toast.type">
+      <div class="toast-content">
+        <i :class="toast.icon"></i>
+        <span>{{ toast.message }}</span>
+      </div>
+      <button @click="hideToast" class="toast-close">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -307,6 +254,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'
+import api from '@/utils/axios'
 
 const categories = ref([])
 const newCategory = ref({ name: '', description: '' })
@@ -336,7 +284,7 @@ const nameError = computed(() => {
   if (!newCategory.value.name) return ''
   if (newCategory.value.name.length < 2) return 'Tên danh mục phải có ít nhất 2 ký tự'
   if (categories.value.some(cat => cat.name.toLowerCase() === newCategory.value.name.toLowerCase())) {
-      return 'Tên danh mục đã tồn tại'
+    return 'Tên danh mục đã tồn tại'
   }
   return ''
 })
@@ -344,31 +292,31 @@ const nameError = computed(() => {
 // Computed properties
 const filteredCategories = computed(() => {
   let filtered = [...categories.value]
-  
+
   // Search filter
   if (searchTerm.value) {
-      filtered = filtered.filter(cat => 
-          cat.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-          cat.description?.toLowerCase().includes(searchTerm.value.toLowerCase())
-      )
+    filtered = filtered.filter(cat =>
+      cat.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+      cat.description?.toLowerCase().includes(searchTerm.value.toLowerCase())
+    )
   }
-  
+
   // Sort
   filtered.sort((a, b) => {
-      switch(sortBy.value) {
-          case 'name':
-              return a.name.localeCompare(b.name)
-          case 'nameDesc':
-              return b.name.localeCompare(a.name)
-          case 'newest':
-              return new Date(b.createdAt) - new Date(a.createdAt)
-          case 'oldest':
-              return new Date(a.createdAt) - new Date(b.createdAt)
-          default:
-              return 0
-      }
+    switch (sortBy.value) {
+      case 'name':
+        return a.name.localeCompare(b.name)
+      case 'nameDesc':
+        return b.name.localeCompare(a.name)
+      case 'newest':
+        return new Date(b.createdAt) - new Date(a.createdAt)
+      case 'oldest':
+        return new Date(a.createdAt) - new Date(b.createdAt)
+      default:
+        return 0
+    }
   })
-  
+
   return filtered
 })
 
@@ -388,28 +336,28 @@ const mostPopularCategory = computed(() => {
 // Methods
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
   })
 }
 
 function showToast(message, type = 'success') {
   const icons = {
-      success: 'bi bi-check-circle-fill',
-      error: 'bi bi-exclamation-circle-fill',
-      info: 'bi bi-info-circle-fill'
+    success: 'bi bi-check-circle-fill',
+    error: 'bi bi-exclamation-circle-fill',
+    info: 'bi bi-info-circle-fill'
   }
-  
+
   toast.value = {
-      show: true,
-      type,
-      message,
-      icon: icons[type]
+    show: true,
+    type,
+    message,
+    icon: icons[type]
   }
-  
+
   setTimeout(() => {
-      hideToast()
+    hideToast()
   }, 4000)
 }
 
@@ -420,33 +368,33 @@ function hideToast() {
 async function fetchCategories() {
   isLoading.value = true
   try {
-      const res = await axios.get('http://localhost:8080/api/categories')
-      categories.value = res.data
+    const res = await api.get('/categories')
+    categories.value = res.data
   } catch (error) {
-      console.error('Failed to load categories:', error)
-      showToast('Không thể tải danh mục', 'error')
+    console.error('Failed to load categories:', error)
+    showToast('Không thể tải danh mục', 'error')
   } finally {
-      isLoading.value = false
+    isLoading.value = false
   }
 }
 
 async function addCategory() {
   if (!newCategory.value.name.trim() || nameError.value) return
-  
+
   isAdding.value = true
   try {
-      await axios.post('http://localhost:8080/api/categories', newCategory.value, {
-          headers: { Authorization: `Bearer ${userStore.token}` }
-      })
-      
-      clearForm()
-      await fetchCategories()
-      showToast('Thêm danh mục thành công!')
+    await api.post('/categories', newCategory.value, {
+      headers: { Authorization: `Bearer ${userStore.token}` }
+    })
+
+    clearForm()
+    await fetchCategories()
+    showToast('Thêm danh mục thành công!')
   } catch (error) {
-      console.error('Failed to add category:', error)
-      showToast('Không thể thêm danh mục', 'error')
+    console.error('Failed to add category:', error)
+    showToast('Không thể thêm danh mục', 'error')
   } finally {
-      isAdding.value = false
+    isAdding.value = false
   }
 }
 
@@ -456,9 +404,9 @@ function clearForm() {
 
 function startEdit(category) {
   editId.value = category.id
-  editCategory.value = { 
-      name: category.name, 
-      description: category.description || '' 
+  editCategory.value = {
+    name: category.name,
+    description: category.description || ''
   }
 }
 
@@ -469,21 +417,21 @@ function cancelEdit() {
 
 async function saveEdit(id) {
   if (!editCategory.value.name.trim()) return
-  
+
   isSaving.value = true
   try {
-      await axios.put(`http://localhost:8080/api/categories/${id}`, editCategory.value, {
-          headers: { Authorization: `Bearer ${userStore.token}` }
-      })
-      
-      cancelEdit()
-      await fetchCategories()
-      showToast('Cập nhật danh mục thành công!')
+    await api.put(`/categories/${id}`, editCategory.value, {
+      headers: { Authorization: `Bearer ${userStore.token}` }
+    })
+
+    cancelEdit()
+    await fetchCategories()
+    showToast('Cập nhật danh mục thành công!')
   } catch (error) {
-      console.error('Failed to update category:', error)
-      showToast('Không thể cập nhật danh mục', 'error')
+    console.error('Failed to update category:', error)
+    showToast('Không thể cập nhật danh mục', 'error')
   } finally {
-      isSaving.value = false
+    isSaving.value = false
   }
 }
 
@@ -499,21 +447,21 @@ function closeDeleteModal() {
 
 async function deleteCategory() {
   if (!categoryToDelete.value) return
-  
+
   isDeleting.value = true
   try {
-      await axios.delete(`http://localhost:8080/api/categories/${categoryToDelete.value.id}`, {
-          headers: { Authorization: `Bearer ${userStore.token}` }
-      })
-      
-      closeDeleteModal()
-      await fetchCategories()
-      showToast('Xóa danh mục thành công!')
+    await api.delete(`/categories/${categoryToDelete.value.id}`, {
+      headers: { Authorization: `Bearer ${userStore.token}` }
+    })
+
+    closeDeleteModal()
+    await fetchCategories()
+    showToast('Xóa danh mục thành công!')
   } catch (error) {
-      console.error('Failed to delete category:', error)
-      showToast('Không thể xóa danh mục', 'error')
+    console.error('Failed to delete category:', error)
+    showToast('Không thể xóa danh mục', 'error')
   } finally {
-      isDeleting.value = false
+    isDeleting.value = false
   }
 }
 
@@ -574,8 +522,15 @@ onMounted(() => {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(180deg); }
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+  }
 }
 
 /* Hero Section */
@@ -599,9 +554,22 @@ onMounted(() => {
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-10px); }
-  60% { transform: translateY(-5px); }
+
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-10px);
+  }
+
+  60% {
+    transform: translateY(-5px);
+  }
 }
 
 .hero-title {
@@ -662,9 +630,17 @@ onMounted(() => {
   color: white;
 }
 
-.stat-card.primary .stat-icon { background: linear-gradient(45deg, #667eea, #764ba2); }
-.stat-card.success .stat-icon { background: linear-gradient(45deg, #2ed573, #1e90ff); }
-.stat-card.info .stat-icon { background: linear-gradient(45deg, #ffa502, #ff6b9d); }
+.stat-card.primary .stat-icon {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+.stat-card.success .stat-icon {
+  background: linear-gradient(45deg, #2ed573, #1e90ff);
+}
+
+.stat-card.info .stat-icon {
+  background: linear-gradient(45deg, #ffa502, #ff6b9d);
+}
 
 .stat-value {
   font-size: 2.5rem;
@@ -752,7 +728,8 @@ onMounted(() => {
   color: #ff4757;
 }
 
-.form-input, .form-textarea {
+.form-input,
+.form-textarea {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 2px solid #e0e0e0;
@@ -763,18 +740,21 @@ onMounted(() => {
   resize: vertical;
 }
 
-.form-input:focus, .form-textarea:focus {
+.form-input:focus,
+.form-textarea:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.form-input.error, .form-textarea.error {
+.form-input.error,
+.form-textarea.error {
   border-color: #ff4757;
   box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1);
 }
 
-.form-input.success, .form-textarea.success {
+.form-input.success,
+.form-textarea.success {
   border-color: #2ed573;
   box-shadow: 0 0 0 3px rgba(46, 213, 115, 0.1);
 }
@@ -799,7 +779,8 @@ onMounted(() => {
   justify-content: center;
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 12px;
@@ -934,7 +915,8 @@ onMounted(() => {
   padding: 2rem;
 }
 
-.loading-state, .empty-state {
+.loading-state,
+.empty-state {
   text-align: center;
   padding: 4rem 2rem;
 }
@@ -981,8 +963,8 @@ onMounted(() => {
 
 @keyframes fadeInUp {
   to {
-      opacity: 1;
-      transform: translateY(0);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -1016,7 +998,8 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-.date-badge, .id-badge {
+.date-badge,
+.id-badge {
   background: rgba(102, 126, 234, 0.1);
   color: #667eea;
   padding: 0.25rem 0.5rem;
@@ -1033,7 +1016,10 @@ onMounted(() => {
   gap: 0.5rem;
 }
 
-.btn-edit, .btn-save, .btn-delete, .btn-cancel {
+.btn-edit,
+.btn-save,
+.btn-delete,
+.btn-cancel {
   width: 36px;
   height: 36px;
   border: none;
@@ -1092,7 +1078,8 @@ onMounted(() => {
   font-size: 0.9rem;
 }
 
-.edit-input, .edit-textarea {
+.edit-input,
+.edit-textarea {
   width: 100%;
   padding: 0.5rem;
   border: 2px solid #667eea;
@@ -1108,7 +1095,8 @@ onMounted(() => {
   min-height: 60px;
 }
 
-.edit-input:focus, .edit-textarea:focus {
+.edit-input:focus,
+.edit-textarea:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
@@ -1141,7 +1129,7 @@ onMounted(() => {
 
 @keyframes modalIn {
   to {
-      transform: scale(1);
+    transform: scale(1);
   }
 }
 
@@ -1191,7 +1179,8 @@ onMounted(() => {
   justify-content: center;
 }
 
-.btn-cancel-modal, .btn-confirm-delete {
+.btn-cancel-modal,
+.btn-confirm-delete {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 12px;
@@ -1247,12 +1236,13 @@ onMounted(() => {
 
 @keyframes toastIn {
   from {
-      transform: translateX(100%);
-      opacity: 0;
+    transform: translateX(100%);
+    opacity: 0;
   }
+
   to {
-      transform: translateX(0);
-      opacity: 1;
+    transform: translateX(0);
+    opacity: 1;
   }
 }
 
@@ -1306,93 +1296,99 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .category-manager-container {
-      padding: 1rem 0.5rem;
+    padding: 1rem 0.5rem;
   }
-  
+
   .hero-title {
-      font-size: 2rem;
+    font-size: 2rem;
   }
-  
+
   .hero-subtitle {
-      font-size: 1rem;
+    font-size: 1rem;
   }
-  
+
   .stats-grid {
-      grid-template-columns: 1fr;
-      gap: 1rem;
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
-  
+
   .form-row {
-      grid-template-columns: 1fr;
-      gap: 1rem;
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
-  
+
   .table-header {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
   }
-  
+
   .table-controls {
-      flex-direction: column;
-      align-items: stretch;
+    flex-direction: column;
+    align-items: stretch;
   }
-  
+
   .search-box {
-      min-width: auto;
+    min-width: auto;
   }
-  
+
   .categories-grid {
-      grid-template-columns: 1fr;
+    grid-template-columns: 1fr;
   }
-  
+
   .card-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
-  
+
   .card-actions {
-      align-self: flex-end;
+    align-self: flex-end;
   }
-  
+
   .modal-actions {
-      flex-direction: column;
+    flex-direction: column;
   }
-  
+
   .toast {
-      top: 1rem;
-      right: 1rem;
-      left: 1rem;
+    top: 1rem;
+    right: 1rem;
+    left: 1rem;
   }
 }
 
 @media (max-width: 480px) {
   .hero-icon {
-      font-size: 3rem;
+    font-size: 3rem;
   }
-  
+
   .hero-title {
-      font-size: 1.5rem;
+    font-size: 1.5rem;
   }
-  
-  .form-card, .table-card {
-      padding: 1rem;
+
+  .form-card,
+  .table-card {
+    padding: 1rem;
   }
-  
+
   .table-container {
-      padding: 1rem;
+    padding: 1rem;
   }
-  
+
   .delete-modal {
-      padding: 1.5rem;
+    padding: 1.5rem;
   }
 }
 </style>

@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useLogin } from './useLogin'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import api from '@/utils/axios'
 
 export function useQuizCRUD() {
     const { token } = useLogin()
@@ -20,7 +21,7 @@ export function useQuizCRUD() {
 
     onMounted(async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/categories')
+            const res = await api.get('/categories')
             categories.value = res.data
         } catch (error) {
             console.error('Không thể tải danh sách danh mục:', error)
