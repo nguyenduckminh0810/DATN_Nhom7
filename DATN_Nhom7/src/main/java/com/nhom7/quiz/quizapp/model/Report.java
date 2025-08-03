@@ -37,7 +37,7 @@ public class Report {
 	private String status; // PENDING, RESOLVED, REJECTED
 
 	@ManyToOne(optional = false)
-	@JoinColumn(name = "reported_user_id")
+	@JoinColumn(name = "reported_user_id", nullable = true)
 	private User reportedUser;
 
 	@Column(name = "created_at", nullable = false)

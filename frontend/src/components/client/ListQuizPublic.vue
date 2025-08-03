@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import debounce from 'lodash.debounce'
 import ReportModal from './ReportModal.vue'
 import { Modal } from 'bootstrap'
-
+import api from '@/utils/axios'
 const publicQuizzes = ref([])
 const currentPage = ref(0)
 const totalPages = ref(1)
@@ -32,7 +32,7 @@ async function fetchPublicQuizzes(page = 0) {
 
   isLoading.value = true
   try {
-    const res = await axios.get(`http://localhost:8080/api/quiz/public`, {
+    const res = await api.get(`/quiz/public`, {
       params: { page, size: pageSize }
     })
 

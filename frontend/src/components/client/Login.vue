@@ -3,7 +3,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import { useLogin } from './useLogin'
 import { useQuizCRUD } from './useQuizCRUD'
 import { watch, ref, computed } from 'vue'
-
+import api from '@/utils/axios'
 const router = useRouter()
 const {
     status,

@@ -40,11 +40,7 @@
 
         <div class="form-group">
           <label>Mô tả</label>
-          <textarea
-            v-model="quizDescription"
-            placeholder="Mô tả ngắn về quiz..."
-            rows="3"
-          ></textarea>
+          <textarea v-model="quizDescription" placeholder="Mô tả ngắn về quiz..." rows="3"></textarea>
         </div>
 
         <div class="form-group">
@@ -79,13 +75,7 @@
             </div>
 
             <!-- Hidden file input -->
-            <input
-              ref="imageInput"
-              type="file"
-              @change="handleImageSelect"
-              accept="image/*"
-              style="display: none"
-            />
+            <input ref="imageInput" type="file" @change="handleImageSelect" accept="image/*" style="display: none" />
           </div>
           <small class="image-help">Hỗ trợ: JPG, PNG, GIF, WebP. Tối đa 5MB</small>
         </div>
@@ -93,13 +83,8 @@
 
       <!-- File Upload -->
       <div class="file-upload">
-        <div
-          class="upload-area"
-          :class="{ 'drag-over': isDragOver }"
-          @drop="handleDrop"
-          @dragover.prevent="isDragOver = true"
-          @dragleave="isDragOver = false"
-        >
+        <div class="upload-area" :class="{ 'drag-over': isDragOver }" @drop="handleDrop"
+          @dragover.prevent="isDragOver = true" @dragleave="isDragOver = false">
           <div v-if="!selectedFile" class="upload-placeholder">
             <i class="bi bi-cloud-upload"></i>
             <p>Kéo thả file Excel vào đây</p>
@@ -121,13 +106,7 @@
           </div>
         </div>
 
-        <input
-          ref="fileInput"
-          type="file"
-          @change="handleFileSelect"
-          accept=".xlsx,.xls"
-          style="display: none"
-        />
+        <input ref="fileInput" type="file" @change="handleFileSelect" accept=".xlsx,.xls" style="display: none" />
       </div>
 
       <!-- Import Button -->
@@ -174,11 +153,7 @@
       <!-- Preview câu hỏi -->
       <div class="preview-questions">
         <h4>3 câu hỏi đầu tiên:</h4>
-        <div
-          v-for="(question, index) in previewData.previewQuestions"
-          :key="index"
-          class="question-preview"
-        >
+        <div v-for="(question, index) in previewData.previewQuestions" :key="index" class="question-preview">
           <div class="question-header">
             <span class="question-number">Câu {{ index + 1 }}:</span>
             <span class="question-time">
@@ -188,11 +163,8 @@
           </div>
           <p class="question-content">{{ question.content }}</p>
           <div class="answers-preview">
-            <div
-              v-for="(answer, ansIndex) in question.answers"
-              :key="ansIndex"
-              :class="['answer-item', answer.correct ? 'correct' : '']"
-            >
+            <div v-for="(answer, ansIndex) in question.answers" :key="ansIndex"
+              :class="['answer-item', answer.correct ? 'correct' : '']">
               <span class="answer-label">{{ String.fromCharCode(65 + ansIndex) }}:</span>
               <span class="answer-content">{{ answer.content }}</span>
               <span v-if="answer.correct" class="correct-mark">✓</span>
@@ -215,11 +187,7 @@
     </div>
 
     <!-- Progress & Results -->
-    <div
-      v-if="importResult"
-      class="import-result"
-      :class="importResult.success ? 'success' : 'error'"
-    >
+    <div v-if="importResult" class="import-result" :class="importResult.success ? 'success' : 'error'">
       <div class="result-icon">
         <i :class="importResult.success ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i>
       </div>
@@ -237,7 +205,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
-
+import api from '@/utils/axios'
 // State
 const quizTitle = ref('')
 const quizDescription = ref('')
@@ -269,7 +237,7 @@ const canImport = computed(() => {
 // Methods
 const fetchCategories = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/categories')
+    const response = await api.get('/categories')
     categories.value = response.data
     console.log('✅ Categories loaded:', categories.value.length)
   } catch (error) {
@@ -343,7 +311,7 @@ const previewFile = async () => {
     formData.append('description', quizDescription.value.trim())
     formData.append('categoryId', selectedCategory.value)
 
-    const response = await axios.post('http://localhost:8080/api/quiz/preview-excel', formData, {
+    const response = await api.post('/quiz/preview-excel', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
         Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -430,7 +398,7 @@ const importQuiz = async () => {
       console.log('📸 Adding image to import:', selectedImage.value.name)
     }
 
-    const response = await axios.post(
+    const response = await api.post(
       'http://localhost:8080/api/quiz/import-excel-with-image',
       formData,
       {
@@ -810,6 +778,7 @@ onMounted(() => {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -860,6 +829,7 @@ onMounted(() => {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

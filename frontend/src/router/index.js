@@ -61,57 +61,68 @@ const routes = [
         path: 'client-dashboard/:userId',
         name: 'ClientDashboard',
         component: ClientDashboard,
+        meta: { requiresAuth: true },
       },
       {
         path: 'dashboard',
         name: 'Dashboard',
         component: ClientDashboard,
         props: (route) => ({ userId: localStorage.getItem('userId') }),
+        meta: { requiresAuth: true },
       },
       {
         path: 'quiz-crud',
         name: 'QuizCRUD',
         component: QuizCRUD,
+        meta: { requiresAuth: true },
       },
       {
         path: 'quiz/:quizId/:userId/play',
         name: 'PlayQuiz',
         component: PlayQuiz,
+        meta: { requiresAuth: true },
       },
       {
         path: 'quiz-crud/edit/:userId/:quizId',
         name: 'EditQuiz',
         component: EditQuiz,
+        meta: { requiresAuth: true },
       },
       {
         path: 'quiz/:quizId/:userId/result',
         name: 'QuizResult',
         component: QuizResult,
+        meta: { requiresAuth: true },
       },
       {
         path: 'history/:userId',
         name: 'QuizHistory',
         component: QuizHistory,
+        meta: { requiresAuth: true },
       },
       {
         path: 'my-history',
         name: 'UserQuizHistory',
         component: UserQuizHistory,
+        meta: { requiresAuth: true },
       },
       {
         path: 'profile',
         name: 'UserProfile',
         component: UserProfile,
+        meta: { requiresAuth: true },
       },
       {
         path: 'categories',
         name: 'CategoryManager',
         component: CategoryManager,
+        meta: { requiresAuth: true },
       },
       {
         path: 'my-quizzes',
         name: 'ListUserQuiz',
         component: ListUserQuiz,
+        meta: { requiresAuth: true },
       },
       {
         path: 'public-quizzes',
@@ -122,11 +133,13 @@ const routes = [
         path: 'profile/:id',
         name: 'UserProfilePage',
         component: UserProfilePage,
+        meta: { requiresAuth: true },
       },
       {
         path: 'import-excel',
         name: 'ImportExcel',
         component: ImportExcel,
+        meta: { requiresAuth: true },
       },
     ],
   },
@@ -181,5 +194,30 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 })
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('accessToken');
+
+  // Nếu route yêu cầu đăng nhập
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!token) {
+      // Nếu chưa có token, chuyển về trang login
+      return next({ name: 'Login' });
+    }
+  }
+
+  // Nếu đã đăng nhập mà vào trang login thì chuyển hướng
+  if (to.name === 'Login' && token) {
+    const userId = localStorage.getItem('userId')
+    if (userId) {
+      return next({ name: 'ClientDashboard', params: { userId } });
+    } else {
+      console.warn('⚠️ userId chưa có trong localStorage, không chuyển hướng!');
+      return next(); // Không redirect nữa
+    }
+  }
+
+  next(); // Cho phép đi tiếp
+});
+
 
 export default router

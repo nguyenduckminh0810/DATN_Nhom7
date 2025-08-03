@@ -2,6 +2,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
+import api from '@/utils/axios'
 
 const route = useRoute()
 const userId = route.params.userId
@@ -16,19 +17,19 @@ const filterScore = ref('all') // all, excellent, good, average, poor
 // Computed properties
 const filteredHistory = computed(() => {
     let filtered = [...history.value]
-    
+
     // Search filter
     if (searchTerm.value) {
-        filtered = filtered.filter(item => 
+        filtered = filtered.filter(item =>
             item.quizTitle.toLowerCase().includes(searchTerm.value.toLowerCase())
         )
     }
-    
+
     // Score filter
     if (filterScore.value !== 'all') {
         filtered = filtered.filter(item => {
             const score = parseFloat(item.score)
-            switch(filterScore.value) {
+            switch (filterScore.value) {
                 case 'excellent': return score >= 90
                 case 'good': return score >= 70 && score < 90
                 case 'average': return score >= 50 && score < 70
@@ -37,10 +38,10 @@ const filteredHistory = computed(() => {
             }
         })
     }
-    
+
     // Sort
     filtered.sort((a, b) => {
-        switch(sortBy.value) {
+        switch (sortBy.value) {
             case 'recent':
                 return new Date(b.completedAt) - new Date(a.completedAt)
             case 'score':
@@ -51,23 +52,23 @@ const filteredHistory = computed(() => {
                 return 0
         }
     })
-    
+
     return filtered
 })
 
 const stats = computed(() => {
     if (history.value.length === 0) return null
-    
+
     const scores = history.value.map(item => parseFloat(item.score))
     const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length
     const maxScore = Math.max(...scores)
     const totalQuizzes = history.value.length
-    
+
     const excellent = scores.filter(s => s >= 90).length
     const good = scores.filter(s => s >= 70 && s < 90).length
     const average = scores.filter(s => s >= 50 && s < 70).length
     const poor = scores.filter(s => s < 50).length
-    
+
     return {
         avgScore: avgScore.toFixed(1),
         maxScore,
@@ -108,7 +109,7 @@ function formatDate(dateStr) {
     const now = new Date()
     const diffTime = Math.abs(now - date)
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
+
     if (diffDays === 1) return 'Hôm qua'
     if (diffDays <= 7) return `${diffDays} ngày trước`
     if (diffDays <= 30) return `${Math.ceil(diffDays / 7)} tuần trước`
@@ -128,7 +129,7 @@ function formatDateTime(dateStr) {
 
 onMounted(async () => {
     try {
-        const res = await axios.get(`http://localhost:8080/api/result/user/${userId}`)
+        const res = await api.get(`/result/user/${userId}`)
         history.value = res.data
     } catch (err) {
         error.value = err.response?.data?.message || 'Lỗi khi tải lịch sử làm bài.'
@@ -195,7 +196,7 @@ onMounted(async () => {
                             <div class="stat-label">Điểm trung bình</div>
                         </div>
                     </div>
-                    
+
                     <div class="stat-card success">
                         <div class="stat-icon">
                             <i class="bi bi-trophy"></i>
@@ -205,7 +206,7 @@ onMounted(async () => {
                             <div class="stat-label">Điểm cao nhất</div>
                         </div>
                     </div>
-                    
+
                     <div class="stat-card info">
                         <div class="stat-icon">
                             <i class="bi bi-list-check"></i>
@@ -215,7 +216,7 @@ onMounted(async () => {
                             <div class="stat-label">Tổng số bài</div>
                         </div>
                     </div>
-                    
+
                     <div class="stat-card warning">
                         <div class="stat-icon">
                             <i class="bi bi-star-fill"></i>
@@ -232,28 +233,32 @@ onMounted(async () => {
                     <h3 class="chart-title">Phân bố kết quả</h3>
                     <div class="chart-bars">
                         <div class="chart-bar excellent">
-                            <div class="bar-fill" :style="{ height: `${(stats.excellent / stats.totalQuizzes) * 100}%` }"></div>
+                            <div class="bar-fill"
+                                :style="{ height: `${(stats.excellent / stats.totalQuizzes) * 100}%` }"></div>
                             <div class="bar-label">
                                 <span class="bar-count">{{ stats.excellent }}</span>
                                 <span class="bar-text">Xuất sắc</span>
                             </div>
                         </div>
                         <div class="chart-bar good">
-                            <div class="bar-fill" :style="{ height: `${(stats.good / stats.totalQuizzes) * 100}%` }"></div>
+                            <div class="bar-fill" :style="{ height: `${(stats.good / stats.totalQuizzes) * 100}%` }">
+                            </div>
                             <div class="bar-label">
                                 <span class="bar-count">{{ stats.good }}</span>
                                 <span class="bar-text">Tốt</span>
                             </div>
                         </div>
                         <div class="chart-bar average">
-                            <div class="bar-fill" :style="{ height: `${(stats.average / stats.totalQuizzes) * 100}%` }"></div>
+                            <div class="bar-fill" :style="{ height: `${(stats.average / stats.totalQuizzes) * 100}%` }">
+                            </div>
                             <div class="bar-label">
                                 <span class="bar-count">{{ stats.average }}</span>
                                 <span class="bar-text">TB</span>
                             </div>
                         </div>
                         <div class="chart-bar poor">
-                            <div class="bar-fill" :style="{ height: `${(stats.poor / stats.totalQuizzes) * 100}%` }"></div>
+                            <div class="bar-fill" :style="{ height: `${(stats.poor / stats.totalQuizzes) * 100}%` }">
+                            </div>
                             <div class="bar-label">
                                 <span class="bar-count">{{ stats.poor }}</span>
                                 <span class="bar-text">Yếu</span>
@@ -267,27 +272,22 @@ onMounted(async () => {
             <div class="filters-section">
                 <div class="search-box">
                     <i class="bi bi-search"></i>
-                    <input 
-                        v-model="searchTerm" 
-                        type="text" 
-                        placeholder="Tìm kiếm quiz..."
-                        class="search-input"
-                    />
+                    <input v-model="searchTerm" type="text" placeholder="Tìm kiếm quiz..." class="search-input" />
                 </div>
-                
+
                 <div class="filter-controls">
                     <select v-model="sortBy" class="filter-select">
                         <option value="recent">Mới nhất</option>
                         <option value="score">Điểm cao nhất</option>
                         <option value="title">Tên A-Z</option>
                     </select>
-                    
+
                     <select v-model="filterScore" class="filter-select">
                         <option value="all">Tất cả điểm</option>
                         <option value="excellent">Xuất sắc (90+)</option>
                         <option value="good">Tốt (70-89)</option>
                         <option value="average">Trung bình (50-69)</option>
-                        <option value="poor">Cần cải thiện (<50)</option>
+                        <option value="poor">Cần cải thiện (&lt;50)</option>
                     </select>
                 </div>
             </div>
@@ -295,17 +295,12 @@ onMounted(async () => {
             <!-- History Timeline -->
             <div v-if="filteredHistory.length > 0" class="timeline-section">
                 <div class="timeline">
-                    <div 
-                        v-for="(item, index) in filteredHistory" 
-                        :key="item.id"
-                        class="timeline-item"
-                        :class="{ 'animate-in': true }"
-                        :style="{ 'animation-delay': `${index * 0.1}s` }"
-                    >
+                    <div v-for="(item, index) in filteredHistory" :key="item.id" class="timeline-item"
+                        :class="{ 'animate-in': true }" :style="{ 'animation-delay': `${index * 0.1}s` }">
                         <div class="timeline-marker" :style="{ backgroundColor: getScoreColor(item.score) }">
                             <i :class="getScoreIcon(item.score)"></i>
                         </div>
-                        
+
                         <div class="timeline-content">
                             <div class="quiz-card">
                                 <div class="card-header">
@@ -317,32 +312,29 @@ onMounted(async () => {
                                         </span>
                                     </div>
                                 </div>
-                                
+
                                 <div class="card-body">
                                     <div class="score-section">
                                         <div class="score-circle" :style="{ borderColor: getScoreColor(item.score) }">
                                             <div class="score-value">{{ item.score }}</div>
                                             <div class="score-max">/ 100</div>
                                         </div>
-                                        
+
                                         <div class="score-details">
                                             <div class="score-label" :style="{ color: getScoreColor(item.score) }">
                                                 {{ getScoreLabel(item.score) }}
                                             </div>
                                             <div class="score-progress">
                                                 <div class="progress-bar">
-                                                    <div 
-                                                        class="progress-fill" 
-                                                        :style="{ 
-                                                            width: `${item.score}%`,
-                                                            backgroundColor: getScoreColor(item.score)
-                                                        }"
-                                                    ></div>
+                                                    <div class="progress-fill" :style="{
+                                                        width: `${item.score}%`,
+                                                        backgroundColor: getScoreColor(item.score)
+                                                    }"></div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="quiz-info">
                                         <div class="info-item">
                                             <i class="bi bi-clock"></i>
@@ -369,12 +361,13 @@ onMounted(async () => {
                     {{ searchTerm || filterScore !== 'all' ? 'Không tìm thấy kết quả' : 'Chưa có lịch sử làm bài' }}
                 </h3>
                 <p class="empty-subtitle">
-                    {{ searchTerm || filterScore !== 'all' 
-                        ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm' 
-                        : 'Hãy bắt đầu làm quiz để xem lịch sử tại đây' 
+                    {{ searchTerm || filterScore !== 'all'
+                        ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'
+                        : 'Hãy bắt đầu làm quiz để xem lịch sử tại đây'
                     }}
                 </p>
-                <button v-if="searchTerm || filterScore !== 'all'" @click="searchTerm = ''; filterScore = 'all'" class="btn-reset">
+                <button v-if="searchTerm || filterScore !== 'all'" @click="searchTerm = ''; filterScore = 'all'"
+                    class="btn-reset">
                     <i class="bi bi-arrow-clockwise"></i>
                     Xóa bộ lọc
                 </button>
@@ -435,8 +428,15 @@ onMounted(async () => {
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(180deg); }
+
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-20px) rotate(180deg);
+    }
 }
 
 /* Hero Section */
@@ -460,9 +460,22 @@ onMounted(async () => {
 }
 
 @keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-10px); }
-    60% { transform: translateY(-5px); }
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-10px);
+    }
+
+    60% {
+        transform: translateY(-5px);
+    }
 }
 
 .hero-title {
@@ -505,12 +518,22 @@ onMounted(async () => {
     animation: spin 1s linear infinite;
 }
 
-.spinner-ring:nth-child(2) { animation-delay: 0.1s; }
-.spinner-ring:nth-child(3) { animation-delay: 0.2s; }
+.spinner-ring:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.spinner-ring:nth-child(3) {
+    animation-delay: 0.2s;
+}
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-text {
@@ -623,10 +646,21 @@ onMounted(async () => {
     color: white;
 }
 
-.stat-card.primary .stat-icon { background: linear-gradient(45deg, #667eea, #764ba2); }
-.stat-card.success .stat-icon { background: linear-gradient(45deg, #2ed573, #1e90ff); }
-.stat-card.info .stat-icon { background: linear-gradient(45deg, #1e90ff, #667eea); }
-.stat-card.warning .stat-icon { background: linear-gradient(45deg, #ffa502, #ff6b9d); }
+.stat-card.primary .stat-icon {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+.stat-card.success .stat-icon {
+    background: linear-gradient(45deg, #2ed573, #1e90ff);
+}
+
+.stat-card.info .stat-icon {
+    background: linear-gradient(45deg, #1e90ff, #667eea);
+}
+
+.stat-card.warning .stat-icon {
+    background: linear-gradient(45deg, #ffa502, #ff6b9d);
+}
 
 .stat-value {
     font-size: 2.5rem;
@@ -681,10 +715,21 @@ onMounted(async () => {
     min-height: 20px;
 }
 
-.chart-bar.excellent .bar-fill { background: linear-gradient(to top, #2ed573, #a8e6cf); }
-.chart-bar.good .bar-fill { background: linear-gradient(to top, #1e90ff, #87ceeb); }
-.chart-bar.average .bar-fill { background: linear-gradient(to top, #ffa502, #ffd700); }
-.chart-bar.poor .bar-fill { background: linear-gradient(to top, #ff4757, #ff6b9d); }
+.chart-bar.excellent .bar-fill {
+    background: linear-gradient(to top, #2ed573, #a8e6cf);
+}
+
+.chart-bar.good .bar-fill {
+    background: linear-gradient(to top, #1e90ff, #87ceeb);
+}
+
+.chart-bar.average .bar-fill {
+    background: linear-gradient(to top, #ffa502, #ffd700);
+}
+
+.chart-bar.poor .bar-fill {
+    background: linear-gradient(to top, #ff4757, #ff6b9d);
+}
 
 .bar-label {
     text-align: center;
@@ -1017,67 +1062,67 @@ onMounted(async () => {
     .quiz-history-container {
         padding: 1rem 0.5rem;
     }
-    
+
     .hero-title {
         font-size: 2rem;
     }
-    
+
     .hero-subtitle {
         font-size: 1rem;
     }
-    
+
     .stats-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
+
     .stat-card {
         padding: 1.5rem;
     }
-    
+
     .filters-section {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .search-box {
         min-width: auto;
     }
-    
+
     .filter-controls {
         justify-content: center;
     }
-    
+
     .timeline {
         padding-left: 1rem;
     }
-    
+
     .timeline::before {
         left: 10px;
     }
-    
+
     .timeline-marker {
         left: -22px;
         width: 30px;
         height: 30px;
         font-size: 1rem;
     }
-    
+
     .timeline-content {
         margin-left: 1rem;
     }
-    
+
     .score-section {
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
     }
-    
+
     .quiz-info {
         flex-direction: column;
         gap: 1rem;
     }
-    
+
     .card-header {
         flex-direction: column;
         align-items: flex-start;
@@ -1088,23 +1133,23 @@ onMounted(async () => {
     .hero-icon {
         font-size: 3rem;
     }
-    
+
     .hero-title {
         font-size: 1.5rem;
     }
-    
+
     .chart-bars {
         gap: 1rem;
     }
-    
+
     .performance-chart {
         padding: 1rem;
     }
-    
+
     .filters-section {
         padding: 1rem;
     }
-    
+
     .filter-select {
         min-width: 120px;
     }

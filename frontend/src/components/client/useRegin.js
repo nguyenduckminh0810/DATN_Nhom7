@@ -42,7 +42,7 @@ export function useRegin() {
                 throw new Error('Mật khẩu không khớp!')
             }
 
-            const res = await axios.post('http://localhost:8080/api/register', {
+            const res = await api.post('/register', {
                 username: username.value,
                 email: email.value,
                 password: password.value,

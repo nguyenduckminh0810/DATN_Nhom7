@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useLogin } from './useLogin'
-import axios from 'axios'
+import api from '@/utils/axios'
 
 const router = useRouter()
 const route = useRoute()
@@ -78,14 +78,14 @@ const passwordStrength = computed(() => {
     if (!passwordForm.value.newPassword) return 0
     let strength = 0
     const pass = passwordForm.value.newPassword
-    
+
     if (pass.length >= 8) strength++
     if (pass.length >= 12) strength++
     if (/[a-z]/.test(pass)) strength++
     if (/[A-Z]/.test(pass)) strength++
     if (/[0-9]/.test(pass)) strength++
     if (/[^A-Za-z0-9]/.test(pass)) strength++
-    
+
     return Math.min(strength, 5)
 })
 
@@ -95,9 +95,9 @@ const passwordMatch = computed(() => {
 })
 
 const getPasswordStrengthColor = (strength) => {
-    switch(strength) {
+    switch (strength) {
         case 1: return '#ff4757'
-        case 2: return '#ffa502'  
+        case 2: return '#ffa502'
         case 3: return '#2ed573'
         case 4: return '#1e90ff'
         case 5: return '#8e44ad'
@@ -106,7 +106,7 @@ const getPasswordStrengthColor = (strength) => {
 }
 
 const getPasswordStrengthText = (strength) => {
-    switch(strength) {
+    switch (strength) {
         case 1: return 'Yếu'
         case 2: return 'Trung bình'
         case 3: return 'Mạnh'
@@ -122,10 +122,10 @@ onMounted(async () => {
     try {
         // ✅ Đảm bảo có userId trước khi fetch data
         if (!userId.value) await getUserId()
-        
+
         await Promise.all([
             fetchUserData(),
-            fetchQuizHistory(), 
+            fetchQuizHistory(),
             fetchRecentActivities()
         ])
     } finally {
@@ -136,17 +136,17 @@ onMounted(async () => {
 const fetchUserData = async () => {
     try {
         const token = localStorage.getItem('token')
-        
+
         // ✅ Lấy thông tin user cơ bản
-        const userRes = await axios.get('http://localhost:8080/api/user/profile', {
+        const userRes = await api.get('/user/profile', {
             headers: { Authorization: `Bearer ${token}` }
         })
-        
+
         // ✅ Lấy danh sách quiz đã tạo
         let totalQuizzes = 0
         try {
             if (userId.value) {
-                const quizzesRes = await axios.get(`http://localhost:8080/api/quiz/user/${userId.value}/paginated?page=0&size=1000`, {
+                const quizzesRes = await api.get(`/quiz/user/${userId.value}/paginated?page=0&size=1000`, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
                 totalQuizzes = quizzesRes.data.totalItems || 0
@@ -154,20 +154,20 @@ const fetchUserData = async () => {
         } catch (error) {
             console.error('Error fetching user quizzes:', error)
         }
-        
+
         // ✅ Lấy lịch sử làm bài
         let quizAttempts = []
         let totalAttempts = 0
         try {
             if (userId.value) {
-                const attemptsRes = await axios.get(`http://localhost:8080/api/result/user/${userId.value}`)
+                const attemptsRes = await api.get(`/result/user/${userId.value}`)
                 quizAttempts = attemptsRes.data || []
                 totalAttempts = quizAttempts.length
             }
         } catch (error) {
             console.error('Error fetching quiz attempts:', error)
         }
-        
+
         userData.value = {
             ...userRes.data,
             totalQuizzes,
@@ -175,7 +175,7 @@ const fetchUserData = async () => {
             averageScore: calculateAverageScore(quizAttempts),
             bestScore: calculateBestScore(quizAttempts)
         }
-        
+
         // Update edit form
         editForm.value = {
             fullName: userData.value.fullName,
@@ -191,7 +191,7 @@ const fetchUserData = async () => {
 const fetchQuizHistory = async () => {
     try {
         if (!userId.value) return
-        const res = await axios.get(`http://localhost:8080/api/result/user/${userId.value}`)
+        const res = await api.get(`/result/user/${userId.value}`)
         quizHistory.value = res.data.slice(0, 10) // Latest 10 attempts
     } catch (error) {
         console.error('Error fetching quiz history:', error)
@@ -262,23 +262,23 @@ const saveProfile = async () => {
     try {
         const token = localStorage.getItem('token')
         const formData = new FormData()
-        
+
         formData.append('fullName', editForm.value.fullName)
         formData.append('bio', editForm.value.bio)
-        
+
         if (selectedFile.value) {
             formData.append('avatar', selectedFile.value)
         } else if (editForm.value.avatarUrl !== userData.value.avatarUrl) {
             formData.append('avatarUrl', editForm.value.avatarUrl)
         }
-        
-        const res = await axios.put('http://localhost:8080/api/user/profile', formData, {
-            headers: { 
+
+        const res = await api.put('/user/profile', formData, {
+            headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'multipart/form-data'
             }
         })
-        
+
         userData.value = { ...userData.value, ...res.data }
         isEditing.value = false
         showMessage('Cập nhật hồ sơ thành công!', 'success')
@@ -295,22 +295,22 @@ const changePassword = async () => {
         showMessage('Mật khẩu xác nhận không khớp', 'error')
         return
     }
-    
+
     if (passwordStrength.value < 3) {
         showMessage('Mật khẩu cần đạt mức độ mạnh trở lên', 'error')
         return
     }
-    
+
     isChangingPassword.value = true
     try {
         const token = localStorage.getItem('token')
-        await axios.put('http://localhost:8080/api/user/change-password', {
+        await api.put('/user/change-password', {
             currentPassword: passwordForm.value.currentPassword,
             newPassword: passwordForm.value.newPassword
         }, {
             headers: { Authorization: `Bearer ${token}` }
         })
-        
+
         passwordForm.value = {
             currentPassword: '',
             newPassword: '',
@@ -340,10 +340,10 @@ const deleteAccount = async () => {
     if (confirm('Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.')) {
         try {
             const token = localStorage.getItem('token')
-            await axios.delete('http://localhost:8080/api/user/account', {
+            await api.delete('/user/account', {
                 headers: { Authorization: `Bearer ${token}` }
             })
-            
+
             logout()
             router.push('/login')
             showMessage('Tài khoản đã được xóa', 'info')
@@ -397,11 +397,8 @@ const getScoreClass = (score) => {
                     <div class="header-content">
                         <div class="user-info">
                             <div class="avatar-section">
-                                <img 
-                                    :src="userData.avatarUrl || '/img/default-avatar.png'" 
-                                    alt="User Avatar" 
-                                    class="user-avatar"
-                                />
+                                <img :src="userData.avatarUrl || '/img/default-avatar.png'" alt="User Avatar"
+                                    class="user-avatar" />
                                 <div class="avatar-status online"></div>
                             </div>
                             <div class="user-details">
@@ -416,7 +413,7 @@ const getScoreClass = (score) => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="user-stats">
                             <div class="stat-card">
                                 <div class="stat-icon quiz-icon">
@@ -463,31 +460,23 @@ const getScoreClass = (score) => {
             <div class="profile-nav">
                 <div class="container">
                     <div class="nav-tabs">
-                        <button 
-                            :class="['nav-tab', { active: activeTab === 'profile' }]"
-                            @click="setActiveTab('profile')"
-                        >
+                        <button :class="['nav-tab', { active: activeTab === 'profile' }]"
+                            @click="setActiveTab('profile')">
                             <i class="bi bi-person"></i>
                             <span>Hồ sơ</span>
                         </button>
-                        <button 
-                            :class="['nav-tab', { active: activeTab === 'activity' }]"
-                            @click="setActiveTab('activity')"
-                        >
+                        <button :class="['nav-tab', { active: activeTab === 'activity' }]"
+                            @click="setActiveTab('activity')">
                             <i class="bi bi-activity"></i>
                             <span>Hoạt động</span>
                         </button>
-                        <button 
-                            :class="['nav-tab', { active: activeTab === 'achievements' }]"
-                            @click="setActiveTab('achievements')"
-                        >
+                        <button :class="['nav-tab', { active: activeTab === 'achievements' }]"
+                            @click="setActiveTab('achievements')">
                             <i class="bi bi-award"></i>
                             <span>Thành tựu</span>
                         </button>
-                        <button 
-                            :class="['nav-tab', { active: activeTab === 'settings' }]"
-                            @click="setActiveTab('settings')"
-                        >
+                        <button :class="['nav-tab', { active: activeTab === 'settings' }]"
+                            @click="setActiveTab('settings')">
                             <i class="bi bi-gear"></i>
                             <span>Cài đặt</span>
                         </button>
@@ -509,16 +498,12 @@ const getScoreClass = (score) => {
                                             <i class="bi bi-person-gear"></i>
                                             Thông tin cá nhân
                                         </h3>
-                                        <button 
-                                            v-if="!isEditing" 
-                                            @click="startEditing" 
-                                            class="edit-btn"
-                                        >
+                                        <button v-if="!isEditing" @click="startEditing" class="edit-btn">
                                             <i class="bi bi-pencil"></i>
                                             Chỉnh sửa
                                         </button>
                                     </div>
-                                    
+
                                     <div class="card-body">
                                         <!-- View Mode -->
                                         <div v-if="!isEditing" class="profile-view">
@@ -536,7 +521,8 @@ const getScoreClass = (score) => {
                                             </div>
                                             <div class="info-group">
                                                 <label class="info-label">Giới thiệu</label>
-                                                <p class="info-value">{{ userData.bio || 'Chưa có mô tả về bản thân' }}</p>
+                                                <p class="info-value">{{ userData.bio || 'Chưa có mô tả về bản thân' }}
+                                                </p>
                                             </div>
                                         </div>
 
@@ -548,30 +534,19 @@ const getScoreClass = (score) => {
                                                     <label class="form-label">Ảnh đại diện</label>
                                                     <div class="avatar-upload">
                                                         <div class="current-avatar">
-                                                            <img 
-                                                                :src="avatarPreview || userData.avatarUrl || '/img/default-avatar.png'" 
-                                                                alt="Avatar Preview"
-                                                                class="avatar-preview"
-                                                            />
+                                                            <img :src="avatarPreview || userData.avatarUrl || '/img/default-avatar.png'"
+                                                                alt="Avatar Preview" class="avatar-preview" />
                                                         </div>
                                                         <div class="upload-controls">
-                                                            <input 
-                                                                type="file" 
-                                                                id="avatarFile" 
-                                                                @change="handleFileUpload"
-                                                                accept="image/*"
-                                                                class="file-input"
-                                                            />
+                                                            <input type="file" id="avatarFile"
+                                                                @change="handleFileUpload" accept="image/*"
+                                                                class="file-input" />
                                                             <label for="avatarFile" class="upload-btn">
                                                                 <i class="bi bi-camera"></i>
                                                                 Thay đổi ảnh
                                                             </label>
-                                                            <button 
-                                                                v-if="avatarPreview"
-                                                                type="button" 
-                                                                @click="clearAvatar"
-                                                                class="clear-btn"
-                                                            >
+                                                            <button v-if="avatarPreview" type="button"
+                                                                @click="clearAvatar" class="clear-btn">
                                                                 <i class="bi bi-x-lg"></i>
                                                             </button>
                                                         </div>
@@ -580,32 +555,20 @@ const getScoreClass = (score) => {
 
                                                 <div class="form-group">
                                                     <label class="form-label">Tên đầy đủ</label>
-                                                    <input 
-                                                        type="text" 
-                                                        v-model="editForm.fullName"
-                                                        class="form-input"
-                                                        placeholder="Nhập tên đầy đủ của bạn"
-                                                    />
+                                                    <input type="text" v-model="editForm.fullName" class="form-input"
+                                                        placeholder="Nhập tên đầy đủ của bạn" />
                                                 </div>
 
                                                 <div class="form-group">
                                                     <label class="form-label">Giới thiệu</label>
-                                                    <textarea 
-                                                        v-model="editForm.bio"
-                                                        class="form-textarea"
-                                                        rows="4"
+                                                    <textarea v-model="editForm.bio" class="form-textarea" rows="4"
                                                         placeholder="Viết vài dòng về bản thân..."
-                                                        maxlength="500"
-                                                    ></textarea>
+                                                        maxlength="500"></textarea>
                                                     <div class="char-count">{{ (editForm.bio || '').length }}/500</div>
                                                 </div>
 
                                                 <div class="form-actions">
-                                                    <button 
-                                                        type="submit" 
-                                                        class="save-btn"
-                                                        :disabled="isSaving"
-                                                    >
+                                                    <button type="submit" class="save-btn" :disabled="isSaving">
                                                         <div v-if="isSaving" class="btn-loading">
                                                             <div class="spinner"></div>
                                                             <span>Đang lưu...</span>
@@ -615,11 +578,7 @@ const getScoreClass = (score) => {
                                                             <span>Lưu thay đổi</span>
                                                         </div>
                                                     </button>
-                                                    <button 
-                                                        type="button" 
-                                                        @click="cancelEdit"
-                                                        class="cancel-btn"
-                                                    >
+                                                    <button type="button" @click="cancelEdit" class="cancel-btn">
                                                         <i class="bi bi-x-lg"></i>
                                                         Hủy
                                                     </button>
@@ -689,11 +648,8 @@ const getScoreClass = (score) => {
                                     </div>
                                     <div class="card-body">
                                         <div class="activity-timeline">
-                                            <div 
-                                                v-for="activity in recentActivities" 
-                                                :key="activity.id"
-                                                class="timeline-item"
-                                            >
+                                            <div v-for="activity in recentActivities" :key="activity.id"
+                                                class="timeline-item">
                                                 <div class="timeline-icon">
                                                     <i :class="activity.icon"></i>
                                                 </div>
@@ -706,7 +662,7 @@ const getScoreClass = (score) => {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="col-lg-4">
                                 <div class="content-card">
                                     <div class="card-header">
@@ -717,11 +673,8 @@ const getScoreClass = (score) => {
                                     </div>
                                     <div class="card-body">
                                         <div class="quiz-history">
-                                            <div 
-                                                v-for="quiz in quizHistory.slice(0, 5)" 
-                                                :key="quiz.id"
-                                                class="history-item"
-                                            >
+                                            <div v-for="quiz in quizHistory.slice(0, 5)" :key="quiz.id"
+                                                class="history-item">
                                                 <div class="quiz-info">
                                                     <h4 class="quiz-title">{{ quiz.quizTitle }}</h4>
                                                     <span class="quiz-score" :class="getScoreClass(quiz.score)">
@@ -758,11 +711,8 @@ const getScoreClass = (score) => {
                                 <div class="achievement-section">
                                     <h4 class="section-title">🏆 Đã đạt được</h4>
                                     <div class="achievements-grid">
-                                        <div 
-                                            v-for="achievement in earnedAchievements" 
-                                            :key="achievement.id"
-                                            class="achievement-card earned"
-                                        >
+                                        <div v-for="achievement in earnedAchievements" :key="achievement.id"
+                                            class="achievement-card earned">
                                             <div class="achievement-icon">
                                                 <i :class="achievement.icon"></i>
                                             </div>
@@ -770,7 +720,8 @@ const getScoreClass = (score) => {
                                                 <h5 class="achievement-name">{{ achievement.name }}</h5>
                                                 <p class="achievement-desc">{{ achievement.description }}</p>
                                                 <span class="achievement-date">
-                                                    Đạt được ngày {{ new Date(achievement.earnedAt).toLocaleDateString('vi-VN') }}
+                                                    Đạt được ngày {{ new
+                                                        Date(achievement.earnedAt).toLocaleDateString('vi-VN') }}
                                                 </span>
                                             </div>
                                         </div>
@@ -781,11 +732,8 @@ const getScoreClass = (score) => {
                                 <div class="achievement-section">
                                     <h4 class="section-title">🎯 Chưa đạt được</h4>
                                     <div class="achievements-grid">
-                                        <div 
-                                            v-for="achievement in pendingAchievements" 
-                                            :key="achievement.id"
-                                            class="achievement-card pending"
-                                        >
+                                        <div v-for="achievement in pendingAchievements" :key="achievement.id"
+                                            class="achievement-card pending">
                                             <div class="achievement-icon">
                                                 <i :class="achievement.icon"></i>
                                             </div>
@@ -818,19 +766,14 @@ const getScoreClass = (score) => {
                                             <div class="form-group">
                                                 <label class="form-label">Mật khẩu hiện tại</label>
                                                 <div class="password-input">
-                                                    <input 
-                                                        :type="showCurrentPassword ? 'text' : 'password'"
-                                                        v-model="passwordForm.currentPassword"
-                                                        class="form-input"
-                                                        placeholder="Nhập mật khẩu hiện tại"
-                                                        required
-                                                    />
-                                                    <button 
-                                                        type="button"
+                                                    <input :type="showCurrentPassword ? 'text' : 'password'"
+                                                        v-model="passwordForm.currentPassword" class="form-input"
+                                                        placeholder="Nhập mật khẩu hiện tại" required />
+                                                    <button type="button"
                                                         @click="showCurrentPassword = !showCurrentPassword"
-                                                        class="password-toggle"
-                                                    >
-                                                        <div class="eye-icon" :class="{ 'eye-hidden': showCurrentPassword }"></div>
+                                                        class="password-toggle">
+                                                        <div class="eye-icon"
+                                                            :class="{ 'eye-hidden': showCurrentPassword }"></div>
                                                     </button>
                                                 </div>
                                             </div>
@@ -838,38 +781,26 @@ const getScoreClass = (score) => {
                                             <div class="form-group">
                                                 <label class="form-label">Mật khẩu mới</label>
                                                 <div class="password-input">
-                                                    <input 
-                                                        :type="showNewPassword ? 'text' : 'password'"
-                                                        v-model="passwordForm.newPassword"
-                                                        class="form-input"
-                                                        placeholder="Nhập mật khẩu mới"
-                                                        required
-                                                        minlength="8"
-                                                    />
-                                                    <button 
-                                                        type="button"
-                                                        @click="showNewPassword = !showNewPassword"
-                                                        class="password-toggle"
-                                                    >
-                                                        <div class="eye-icon" :class="{ 'eye-hidden': showNewPassword }"></div>
+                                                    <input :type="showNewPassword ? 'text' : 'password'"
+                                                        v-model="passwordForm.newPassword" class="form-input"
+                                                        placeholder="Nhập mật khẩu mới" required minlength="8" />
+                                                    <button type="button" @click="showNewPassword = !showNewPassword"
+                                                        class="password-toggle">
+                                                        <div class="eye-icon"
+                                                            :class="{ 'eye-hidden': showNewPassword }"></div>
                                                     </button>
                                                 </div>
-                                                
+
                                                 <!-- Password Strength -->
                                                 <div v-if="passwordForm.newPassword" class="password-strength">
                                                     <div class="strength-bar">
-                                                        <div 
-                                                            class="strength-fill"
-                                                            :style="{
-                                                                width: (passwordStrength * 20) + '%',
-                                                                backgroundColor: getPasswordStrengthColor(passwordStrength)
-                                                            }"
-                                                        ></div>
+                                                        <div class="strength-fill" :style="{
+                                                            width: (passwordStrength * 20) + '%',
+                                                            backgroundColor: getPasswordStrengthColor(passwordStrength)
+                                                        }"></div>
                                                     </div>
-                                                    <span 
-                                                        class="strength-text"
-                                                        :style="{ color: getPasswordStrengthColor(passwordStrength) }"
-                                                    >
+                                                    <span class="strength-text"
+                                                        :style="{ color: getPasswordStrengthColor(passwordStrength) }">
                                                         {{ getPasswordStrengthText(passwordStrength) }}
                                                     </span>
                                                 </div>
@@ -878,26 +809,20 @@ const getScoreClass = (score) => {
                                             <div class="form-group">
                                                 <label class="form-label">Xác nhận mật khẩu mới</label>
                                                 <div class="password-input">
-                                                    <input 
-                                                        :type="showConfirmPassword ? 'text' : 'password'"
-                                                        v-model="passwordForm.confirmPassword"
-                                                        class="form-input"
+                                                    <input :type="showConfirmPassword ? 'text' : 'password'"
+                                                        v-model="passwordForm.confirmPassword" class="form-input"
                                                         :class="{
                                                             'match-success': passwordMatch === true,
                                                             'match-error': passwordMatch === false
-                                                        }"
-                                                        placeholder="Nhập lại mật khẩu mới"
-                                                        required
-                                                    />
-                                                    <button 
-                                                        type="button"
+                                                        }" placeholder="Nhập lại mật khẩu mới" required />
+                                                    <button type="button"
                                                         @click="showConfirmPassword = !showConfirmPassword"
-                                                        class="password-toggle"
-                                                    >
-                                                        <div class="eye-icon" :class="{ 'eye-hidden': showConfirmPassword }"></div>
+                                                        class="password-toggle">
+                                                        <div class="eye-icon"
+                                                            :class="{ 'eye-hidden': showConfirmPassword }"></div>
                                                     </button>
                                                 </div>
-                                                
+
                                                 <div v-if="passwordForm.confirmPassword" class="password-match">
                                                     <i :class="[
                                                         passwordMatch ? 'bi bi-check-lg' : 'bi bi-x-lg',
@@ -909,11 +834,8 @@ const getScoreClass = (score) => {
                                                 </div>
                                             </div>
 
-                                            <button 
-                                                type="submit" 
-                                                class="change-password-btn"
-                                                :disabled="isChangingPassword || !passwordMatch || passwordStrength < 3"
-                                            >
+                                            <button type="submit" class="change-password-btn"
+                                                :disabled="isChangingPassword || !passwordMatch || passwordStrength < 3">
                                                 <div v-if="isChangingPassword" class="btn-loading">
                                                     <div class="spinner"></div>
                                                     <span>Đang thay đổi...</span>
@@ -951,7 +873,7 @@ const getScoreClass = (score) => {
                                                     </label>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="setting-item">
                                                 <div class="setting-info">
                                                     <h5>Hồ sơ công khai</h5>
@@ -987,10 +909,7 @@ const getScoreClass = (score) => {
         </div>
 
         <!-- Toast Message -->
-        <div 
-            v-if="message"
-            :class="['toast-message', messageType]"
-        >
+        <div v-if="message" :class="['toast-message', messageType]">
             <div class="toast-icon">
                 <i :class="{
                     'bi bi-check-circle-fill': messageType === 'success',
@@ -1067,9 +986,19 @@ const getScoreClass = (score) => {
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
-    33% { transform: translateY(-25px) rotate(3deg) scale(1.05); }
-    66% { transform: translateY(15px) rotate(-3deg) scale(0.95); }
+
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg) scale(1);
+    }
+
+    33% {
+        transform: translateY(-25px) rotate(3deg) scale(1.05);
+    }
+
+    66% {
+        transform: translateY(15px) rotate(-3deg) scale(0.95);
+    }
 }
 
 /* === LOADING SECTION === */
@@ -1134,8 +1063,13 @@ const getScoreClass = (score) => {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* === PROFILE CONTENT === */
@@ -1267,10 +1201,21 @@ const getScoreClass = (score) => {
     color: white;
 }
 
-.quiz-icon { background: linear-gradient(45deg, #00d4ff, #0099cc); }
-.attempt-icon { background: linear-gradient(45deg, #5f27cd, #8e44ad); }
-.score-icon { background: linear-gradient(45deg, #2ed573, #27ae60); }
-.best-icon { background: linear-gradient(45deg, #ffa502, #ff7675); }
+.quiz-icon {
+    background: linear-gradient(45deg, #00d4ff, #0099cc);
+}
+
+.attempt-icon {
+    background: linear-gradient(45deg, #5f27cd, #8e44ad);
+}
+
+.score-icon {
+    background: linear-gradient(45deg, #2ed573, #27ae60);
+}
+
+.best-icon {
+    background: linear-gradient(45deg, #ffa502, #ff7675);
+}
 
 .stat-info {
     color: white;
@@ -1338,8 +1283,15 @@ const getScoreClass = (score) => {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* === CONTENT CARDS === */
@@ -1699,11 +1651,21 @@ const getScoreClass = (score) => {
     font-weight: 500;
 }
 
-.text-success { color: #2ed573; }
-.text-danger { color: #ff4757; }
+.text-success {
+    color: #2ed573;
+}
 
-.match-success { border-color: #2ed573 !important; }
-.match-error { border-color: #ff4757 !important; }
+.text-danger {
+    color: #ff4757;
+}
+
+.match-success {
+    border-color: #2ed573 !important;
+}
+
+.match-error {
+    border-color: #ff4757 !important;
+}
 
 .change-password-btn {
     background: linear-gradient(45deg, #5f27cd, #8e44ad);
@@ -1858,9 +1820,20 @@ const getScoreClass = (score) => {
     font-weight: 700;
 }
 
-.quiz-score.excellent { background: #2ed573; color: white; }
-.quiz-score.good { background: #ffa502; color: white; }
-.quiz-score.average { background: #ff4757; color: white; }
+.quiz-score.excellent {
+    background: #2ed573;
+    color: white;
+}
+
+.quiz-score.good {
+    background: #ffa502;
+    color: white;
+}
+
+.quiz-score.average {
+    background: #ff4757;
+    color: white;
+}
 
 .quiz-time {
     font-size: 0.9rem;
@@ -2040,11 +2013,11 @@ const getScoreClass = (score) => {
     border-radius: 50%;
 }
 
-input:checked + .slider {
+input:checked+.slider {
     background: linear-gradient(45deg, #00d4ff, #5f27cd);
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
     transform: translateX(22px);
 }
 
@@ -2194,6 +2167,7 @@ input:checked + .slider:before {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -2211,7 +2185,7 @@ input:checked + .slider:before {
         flex-direction: column;
         gap: 2rem;
     }
-    
+
     .user-stats {
         grid-template-columns: repeat(4, 1fr);
     }
@@ -2223,16 +2197,16 @@ input:checked + .slider:before {
         text-align: center;
         gap: 1.5rem;
     }
-    
+
     .user-stats {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .nav-tabs {
         flex-wrap: wrap;
         justify-content: center;
     }
-    
+
     .achievements-grid {
         grid-template-columns: 1fr;
     }
@@ -2242,41 +2216,41 @@ input:checked + .slider:before {
     .profile-header {
         padding: 2rem 0;
     }
-    
+
     .user-avatar {
         width: 80px;
         height: 80px;
     }
-    
+
     .user-name {
         font-size: 2rem;
     }
-    
+
     .user-stats {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
+
     .nav-tab {
         padding: 0.75rem 1rem;
         font-size: 0.9rem;
     }
-    
+
     .card-header,
     .card-body {
         padding: 1.5rem;
     }
-    
+
     .avatar-upload {
         flex-direction: column;
         align-items: center;
         gap: 1rem;
     }
-    
+
     .form-actions {
         flex-direction: column;
     }
-    
+
     .toast-message {
         top: 1rem;
         right: 1rem;
@@ -2289,25 +2263,25 @@ input:checked + .slider:before {
     .tab-content {
         padding: 2rem 0;
     }
-    
+
     .user-name {
         font-size: 1.5rem;
     }
-    
+
     .user-bio {
         font-size: 1rem;
     }
-    
+
     .timeline-item {
         gap: 1rem;
     }
-    
+
     .timeline-icon {
         width: 40px;
         height: 40px;
         font-size: 1rem;
     }
-    
+
     .achievement-card {
         padding: 1.5rem;
         flex-direction: column;
@@ -2335,4 +2309,4 @@ input:checked + .slider:before {
     outline: 2px solid #00d4ff;
     outline-offset: 2px;
 }
-</style> 
+</style>
