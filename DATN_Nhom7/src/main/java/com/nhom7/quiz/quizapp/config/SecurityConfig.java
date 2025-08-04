@@ -30,10 +30,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // ✅ CHỈ CHO PHÉP FRONTEND PORT
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(false); // ✅ TẮT ALLOW CREDENTIALS
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -42,19 +43,28 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http
-                .cors() // ✅ thêm dòng này
-                .and()
-                .csrf().disable()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
+        System.out.println("🔧 Configuring Security Filter Chain...");
+
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/login", "/api/register", "/api/image/quiz/*", "/api/categories",
-                                "/api/user/avatars/**", "/api/upload/avatars/**")
-                        .permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/login").permitAll()
+                        .requestMatchers("/api/register").permitAll()
+                        .requestMatchers("/api/image/quiz/*").permitAll()
+                        .requestMatchers("/api/categories").permitAll()
+                        .requestMatchers("/api/user/avatars/**").permitAll()
+                        .requestMatchers("/api/upload/avatars/**").permitAll()
+                        .requestMatchers("/api/quiz-attempts/public/**").permitAll()
+                        .requestMatchers("/api/quiz/*/detail").permitAll()
+                        .requestMatchers("/api/question/*").permitAll()
+                        .requestMatchers("/api/quiz/public").permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
 
     @Bean
@@ -68,14 +78,10 @@ public class SecurityConfig {
         @Override
         public void addCorsMappings(@NonNull CorsRegistry registry) {
             registry.addMapping("/api/**")
-                    .allowedOrigins(
-                            "http://localhost:3000",
-                            "http://localhost:5173",
-                            "http://127.0.0.1:3000",
-                            "http://127.0.0.1:5173")
+                    .allowedOrigins("http://localhost:5173") // ✅ CHỈ CHO PHÉP FRONTEND PORT
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                     .allowedHeaders("*")
-                    .allowCredentials(true)
+                    .allowCredentials(false) // ✅ TẮT ALLOW CREDENTIALS
                     .maxAge(3600);
         }
 

@@ -141,6 +141,18 @@ const routes = [
         component: ImportExcel,
         meta: { requiresAuth: true },
       },
+      // ✅ THÊM ROUTE CONTACT ĐỂ TRÁNH WARNING
+      {
+        path: 'contact',
+        name: 'Contact',
+        component: Home, // Tạm thời redirect về Home
+      },
+      // ✅ THÊM 404 ROUTE
+      {
+        path: '/:pathMatch(.*)*',
+        name: 'NotFound',
+        component: Home, // Tạm thời redirect về Home
+      },
     ],
   },
 
@@ -195,13 +207,13 @@ const router = createRouter({
   routes,
 })
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem('accessToken')
 
   // Nếu route yêu cầu đăng nhập
-  if (to.matched.some(record => record.meta.requiresAuth)) {
+  if (to.matched.some((record) => record.meta.requiresAuth)) {
     if (!token) {
       // Nếu chưa có token, chuyển về trang login
-      return next({ name: 'Login' });
+      return next({ name: 'Login' })
     }
   }
 
@@ -209,15 +221,14 @@ router.beforeEach((to, from, next) => {
   if (to.name === 'Login' && token) {
     const userId = localStorage.getItem('userId')
     if (userId) {
-      return next({ name: 'ClientDashboard', params: { userId } });
+      return next({ name: 'ClientDashboard', params: { userId } })
     } else {
-      console.warn('⚠️ userId chưa có trong localStorage, không chuyển hướng!');
-      return next(); // Không redirect nữa
+      console.warn('⚠️ userId chưa có trong localStorage, không chuyển hướng!')
+      return next() // Không redirect nữa
     }
   }
 
-  next(); // Cho phép đi tiếp
-});
-
+  next() // Cho phép đi tiếp
+})
 
 export default router

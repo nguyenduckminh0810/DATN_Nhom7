@@ -3,8 +3,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogin } from './useLogin'
-import axios from 'axios'
 import api from '@/utils/axios' // Use the axios instance from utils
+import QuizDetailModal from './QuizDetailModal.vue'
 // State & Hooks
 const router = useRouter()
 const { userId, getUserId } = useLogin()
@@ -30,18 +30,17 @@ const fetchCategories = async () => {
   try {
     const { data } = await api.get('/categories')
     categories.value = data
-  } catch (_) { }
+  } catch (error) {
+    console.error('Error fetching categories:', error)
+  }
 }
 
 const fetchQuizzes = async (page = 0) => {
   isLoading.value = true
   try {
-    const { data } = await api.get(
-      `/quiz/user/${userId.value}/paginated`,
-      {
-        params: { page, size: pageSize },
-      },
-    )
+    const { data } = await api.get(`/quiz/user/${userId.value}/paginated`, {
+      params: { page, size: pageSize },
+    })
     allQuizzes.value = data.quizzes.map((q) => ({
       quiz_id: q.id,
       title: q.title,
@@ -89,7 +88,26 @@ const goToPage = (page) => {
 
 const playQuiz = (quizId) =>
   router.push({ name: 'PlayQuiz', params: { quizId, userId: userId.value } })
-const goToQuizDetail = (quizId) => router.push({ name: 'QuizDetail', params: { id: quizId } })
+// Quiz Detail Modal
+const showDetailModal = ref(false)
+const selectedQuizId = ref(null)
+
+const openDetailModal = (quizId) => {
+  console.log('🔍 Opening detail modal for quiz ID:', quizId)
+  selectedQuizId.value = quizId
+  showDetailModal.value = true
+  console.log(
+    '✅ Modal state - showDetailModal:',
+    showDetailModal.value,
+    'selectedQuizId:',
+    selectedQuizId.value,
+  )
+}
+
+const closeDetailModal = () => {
+  showDetailModal.value = false
+  selectedQuizId.value = null
+}
 const editQuiz = (quizId) => router.push(`/quiz-crud/edit/${userId.value}/${quizId}`)
 
 const formatDate = (str) => (str ? new Date(str).toLocaleDateString('vi-VN') : '')
@@ -138,7 +156,12 @@ onMounted(async () => {
 
     <!-- Filter & Search -->
     <div class="filter-bar">
-      <input v-model="search" @input="applyFilters" class="search-input" placeholder="Tìm kiếm quiz theo tiêu đề..." />
+      <input
+        v-model="search"
+        @input="applyFilters"
+        class="search-input"
+        placeholder="Tìm kiếm quiz theo tiêu đề..."
+      />
       <select v-model="filterPublic" @change="applyFilters" class="filter-select">
         <option value="all">Tất cả</option>
         <option value="public">Công khai</option>
@@ -190,12 +213,21 @@ onMounted(async () => {
 
     <!-- Quiz Grid -->
     <div v-else class="quiz-grid">
-      <div class="quiz-card" v-for="quiz in quizzes" :key="quiz.quiz_id" @mouseenter="hoveredQuiz = quiz.quiz_id"
-        @mouseleave="hoveredQuiz = null">
+      <div
+        class="quiz-card"
+        v-for="quiz in quizzes"
+        :key="quiz.quiz_id"
+        @mouseenter="hoveredQuiz = quiz.quiz_id"
+        @mouseleave="hoveredQuiz = null"
+      >
         <!-- Card Image -->
         <div class="quiz-image">
-          <img :src="getQuizImageUrl(quiz.quiz_id)" alt="Quiz Image" @error="handleImageError"
-            @load="handleImageLoad" />
+          <img
+            :src="getQuizImageUrl(quiz.quiz_id)"
+            alt="Quiz Image"
+            @error="handleImageError"
+            @load="handleImageLoad"
+          />
         </div>
         <!-- Card Header -->
         <div class="card-header">
@@ -203,7 +235,10 @@ onMounted(async () => {
             <i class="bi bi-tag"></i>
             <span>{{ quiz.categoryName }}</span>
           </div>
-          <div class="visibility-badge" :class="{ public: quiz.publicQuiz, private: !quiz.publicQuiz }">
+          <div
+            class="visibility-badge"
+            :class="{ public: quiz.publicQuiz, private: !quiz.publicQuiz }"
+          >
             <i :class="quiz.publicQuiz ? 'bi bi-globe' : 'bi bi-lock'"></i>
             <span>{{ quiz.publicQuiz ? 'Công khai' : 'Riêng tư' }}</span>
           </div>
@@ -224,8 +259,12 @@ onMounted(async () => {
             </div>
           </div>
           <div class="quiz-extra">
-            <span class="badge play-count"><i class="bi bi-controller"></i> {{ quiz.playCount }} lượt chơi</span>
-            <span class="badge created-at"><i class="bi bi-calendar"></i> {{ formatDate(quiz.createdAt) }}</span>
+            <span class="badge play-count"
+              ><i class="bi bi-controller"></i> {{ quiz.playCount }} lượt chơi</span
+            >
+            <span class="badge created-at"
+              ><i class="bi bi-calendar"></i> {{ formatDate(quiz.createdAt) }}</span
+            >
           </div>
         </div>
 
@@ -241,7 +280,7 @@ onMounted(async () => {
                 <i class="bi bi-pencil-square"></i>
                 <span>Chỉnh sửa</span>
               </button>
-              <button class="action-btn info" @click.stop="goToQuizDetail(quiz.quiz_id)">
+              <button class="action-btn info" @click.stop="openDetailModal(quiz.quiz_id)">
                 <i class="bi bi-info-circle"></i>
                 <span>Chi tiết</span>
               </button>
@@ -254,7 +293,11 @@ onMounted(async () => {
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="pagination-container">
       <div class="pagination-wrapper">
-        <button class="page-btn prev" :disabled="currentPage === 0" @click="goToPage(currentPage - 1)">
+        <button
+          class="page-btn prev"
+          :disabled="currentPage === 0"
+          @click="goToPage(currentPage - 1)"
+        >
           <i class="bi bi-chevron-left"></i>
           <span>Trước</span>
         </button>
@@ -265,7 +308,11 @@ onMounted(async () => {
           <span class="total-pages">{{ totalPages }}</span>
         </div>
 
-        <button class="page-btn next" :disabled="currentPage === totalPages - 1" @click="goToPage(currentPage + 1)">
+        <button
+          class="page-btn next"
+          :disabled="currentPage === totalPages - 1"
+          @click="goToPage(currentPage + 1)"
+        >
           <span>Sau</span>
           <i class="bi bi-chevron-right"></i>
         </button>
@@ -275,14 +322,23 @@ onMounted(async () => {
     <!-- Toast Notification -->
     <transition name="slide-up">
       <div v-if="toast.show" :class="['toast', toast.type]">
-        <i :class="{
-          'bi bi-check-circle-fill': toast.type === 'success',
-          'bi bi-x-circle-fill': toast.type === 'error',
-          'bi bi-info-circle-fill': toast.type === 'info',
-        }"></i>
+        <i
+          :class="{
+            'bi bi-check-circle-fill': toast.type === 'success',
+            'bi bi-x-circle-fill': toast.type === 'error',
+            'bi bi-info-circle-fill': toast.type === 'info',
+          }"
+        ></i>
         <span>{{ toast.message }}</span>
       </div>
     </transition>
+
+    <!-- Quiz Detail Modal -->
+    <QuizDetailModal
+      :show-modal="showDetailModal"
+      :quiz-id="selectedQuizId"
+      @close="closeDetailModal"
+    />
   </div>
 </template>
 
@@ -595,10 +651,12 @@ onMounted(async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(0, 0, 0, 0.85) 0%,
-      rgba(255, 107, 157, 0.9) 50%,
-      rgba(255, 61, 113, 0.9) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(255, 107, 157, 0.9) 50%,
+    rgba(255, 61, 113, 0.9) 100%
+  );
   backdrop-filter: blur(15px);
   display: flex;
   align-items: center;
@@ -766,7 +824,6 @@ onMounted(async () => {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;

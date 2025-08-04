@@ -5,7 +5,6 @@ import { computed, watch, onMounted, onUnmounted, ref } from 'vue'
 import axios from 'axios'
 import api from '@/utils/axios'
 
-
 const { logout, username, message, userId, getUserId, token } = useLogin()
 const router = useRouter()
 
@@ -125,10 +124,10 @@ function showNotifications() {
 }
 
 // ✅ XỬ LÝ LỖI AVATAR
-function handleAvatarError(event) {
-  console.log('❌ Avatar load error, showing default icon')
+const handleAvatarError = (event) => {
+  console.log('❌ Avatar load error, using fallback')
   event.target.style.display = 'none'
-  // Icon sẽ hiển thị tự động vì v-else
+  event.target.nextElementSibling.style.display = 'block'
 }
 
 // ✅ FORCE REFRESH AVATAR (có thể gọi từ bên ngoài)
@@ -276,7 +275,13 @@ onUnmounted(() => {
         <div v-else class="user-menu dropdown">
           <div class="user-trigger">
             <div class="user-avatar">
-              <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="avatar-image" @error="handleAvatarError" />
+              <img
+                v-if="avatarUrl"
+                :src="avatarUrl"
+                alt="Avatar"
+                class="avatar-image"
+                @error="handleAvatarError"
+              />
               <i v-else class="bi bi-person-circle"></i>
             </div>
             <div class="user-info">
@@ -285,7 +290,7 @@ onUnmounted(() => {
                 <!-- ✅ NOTIFICATION BADGE BÊN NGOÀI -->
                 <span v-if="notificationCount > 0" class="navbar-notification-badge">{{
                   notificationCount
-                  }}</span>
+                }}</span>
               </div>
               <small class="user-status">Online</small>
             </div>
@@ -295,8 +300,13 @@ onUnmounted(() => {
           <div class="user-dropdown">
             <div class="user-profile-header">
               <div class="profile-avatar">
-                <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="profile-avatar-image"
-                  @error="handleAvatarError" />
+                <img
+                  v-if="avatarUrl"
+                  :src="avatarUrl"
+                  alt="Avatar"
+                  class="profile-avatar-image"
+                  @error="handleAvatarError"
+                />
                 <i v-else class="bi bi-person-circle"></i>
               </div>
               <div class="profile-info">
@@ -322,7 +332,7 @@ onUnmounted(() => {
               <span>Thông báo</span>
               <span v-if="notificationCount > 0" class="notification-badge">{{
                 notificationCount
-                }}</span>
+              }}</span>
             </a>
 
             <div class="dropdown-divider"></div>

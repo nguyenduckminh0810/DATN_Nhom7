@@ -37,40 +37,87 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
+        String requestURI = request.getRequestURI();
         String authHeader = request.getHeader("Authorization");
+        String method = request.getMethod();
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if (jwtUtil.validateToken(token)) {
-                String username = jwtUtil.extractUsername(token);
-                if (username != null) {
-                    // ✅ ĐỌC USER TỪ DATABASE ĐỂ LẤY ROLE CHÍNH XÁC
-                    User user = loginService.findByUsername(username);
-                    List<SimpleGrantedAuthority> authorities;
+        System.out.println("🔍 JWT Filter - Request URI: " + requestURI);
+        System.out.println("🔍 JWT Filter - Method: " + method);
+        System.out.println("🔍 JWT Filter - Auth Header: " + (authHeader != null ? "Present" : "Not present"));
 
-                    if (user != null) {
-                        // ✅ SỬ DỤNG ROLE TỪ DATABASE
-                        String role = user.getRole();
-                        if ("ADMIN".equalsIgnoreCase(role)) {
-                            authorities = List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
-                        } else {
-                            authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
-                        }
-                    } else {
-                        // Fallback nếu không tìm thấy user
-                        authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
-                    }
-
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            username, null, authorities);
-
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                }
-            }
+        // ✅ BỎ QUA OPTIONS REQUESTS (CORS PREFLIGHT)
+        if ("OPTIONS".equalsIgnoreCase(method)) {
+            System.out.println("✅ JWT Filter - Skipping OPTIONS request");
+            filterChain.doFilter(request, response);
+            return;
         }
 
+        // ✅ BỎ QUA PUBLIC ENDPOINTS
+        if (requestURI.startsWith("/api/login") ||
+                requestURI.startsWith("/api/register") ||
+                requestURI.startsWith("/api/image/quiz/") ||
+                requestURI.startsWith("/api/categories") ||
+                requestURI.startsWith("/api/user/avatars/") ||
+                requestURI.startsWith("/api/upload/avatars/") ||
+                requestURI.startsWith("/api/quiz-attempts/public/") ||
+                requestURI.startsWith("/api/public/") ||
+                requestURI.startsWith("/api/quiz/") && requestURI.contains("/detail") ||
+                requestURI.startsWith("/api/question/") ||
+                requestURI.startsWith("/api/quiz/public")) {
+
+            System.out.println("✅ JWT Filter - Skipping public endpoint: " + requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // ✅ CHỈ XỬ LÝ JWT NẾU CÓ AUTH HEADER
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+
+            // ✅ KIỂM TRA TOKEN HỢP LỆ VÀ CHƯA HẾT HẠN
+            if (jwtUtil.validateToken(token) && !jwtUtil.isTokenExpired(token)) {
+                String username = jwtUtil.extractUsername(token);
+                if (username != null) {
+                    try {
+                        // ✅ ĐỌC USER TỪ DATABASE ĐỂ LẤY ROLE CHÍNH XÁC
+                        User user = loginService.findByUsername(username);
+                        List<SimpleGrantedAuthority> authorities;
+
+                        if (user != null) {
+                            // ✅ SỬ DỤNG ROLE TỪ DATABASE
+                            String role = user.getRole();
+                            if ("ADMIN".equalsIgnoreCase(role)) {
+                                authorities = List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                            } else {
+                                authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+                            }
+                        } else {
+                            // Fallback nếu không tìm thấy user
+                            authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+                        }
+
+                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                username, null, authorities);
+
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        System.out.println("✅ JWT Filter - Authentication set for user: " + username);
+                    } catch (Exception e) {
+                        // ✅ LOG ERROR VÀ TIẾP TỤC REQUEST
+                        System.err.println("❌ Error in JWT filter: " + e.getMessage());
+                        // Không set authentication, để request tiếp tục
+                    }
+                }
+            } else {
+                // ✅ LOG INVALID TOKEN
+                System.out.println("⚠️ Invalid or expired token");
+            }
+        } else {
+            System.out.println("ℹ️ No JWT token found, continuing with request");
+        }
+
+        // ✅ LUÔN TIẾP TỤC FILTER CHAIN
         filterChain.doFilter(request, response);
     }
 }
