@@ -63,7 +63,8 @@ public class JwtFilter extends OncePerRequestFilter {
                 requestURI.startsWith("/api/public/") ||
                 requestURI.startsWith("/api/quiz/") && requestURI.contains("/detail") ||
                 requestURI.startsWith("/api/question/") ||
-                requestURI.startsWith("/api/quiz/public")) {
+                requestURI.startsWith("/api/quiz/public") ||
+                requestURI.startsWith("/api/quizzes/")) {
 
             System.out.println("✅ JWT Filter - Skipping public endpoint: " + requestURI);
             filterChain.doFilter(request, response);
