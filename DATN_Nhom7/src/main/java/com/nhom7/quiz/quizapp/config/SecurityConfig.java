@@ -33,7 +33,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of("http://localhost:5173")); // ✅ CHỈ CHO PHÉP FRONTEND PORT
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(false); // ✅ TẮT ALLOW CREDENTIALS
+        configuration.setAllowCredentials(true); // ✅ TẮT ALLOW CREDENTIALS
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -46,21 +46,18 @@ public class SecurityConfig {
         System.out.println("🔧 Configuring Security Filter Chain...");
 
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                .cors() // ✅ thêm dòng này
+                .and()
+                .csrf().disable()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/login").permitAll()
-                        .requestMatchers("/api/register").permitAll()
-                        .requestMatchers("/api/image/quiz/*").permitAll()
-                        .requestMatchers("/api/categories").permitAll()
-                        .requestMatchers("/api/user/avatars/**").permitAll()
-                        .requestMatchers("/api/upload/avatars/**").permitAll()
-                        .requestMatchers("/api/quiz-attempts/public/**").permitAll()
-                        .requestMatchers("/api/quiz/*/detail").permitAll()
-                        .requestMatchers("/api/question/*").permitAll()
-                        .requestMatchers("/api/quiz/public").permitAll()
+                        .requestMatchers("/api/login", "/api/register", "/api/image/quiz/*", "/api/categories",
+                                "/api/user/avatars/**", "/api/upload/avatars/**",
+                                "/api/quiz/public/**", "/api/image/quiz**", "/api/quiz/detail/**", "/api/question/**",
+                                "/api/quiz-attempts/public/recent/**")
+                        .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

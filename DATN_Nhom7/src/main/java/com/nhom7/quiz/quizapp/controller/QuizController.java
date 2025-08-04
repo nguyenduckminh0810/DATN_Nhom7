@@ -132,7 +132,7 @@ public class QuizController {
 				.orElse(ResponseEntity.notFound().build());
 	}
 
-	@GetMapping("/{id}/detail")
+	@GetMapping("/detail/{id}")
 	public ResponseEntity<QuizDetailDTO> getQuizDetail(@PathVariable Long id) {
 		System.out.println("🔍 Requesting quiz detail for ID: " + id);
 		try {
