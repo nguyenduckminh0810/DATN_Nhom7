@@ -1,6 +1,7 @@
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import api from '@/utils/axios'
 
 export function useRegin() {
     const status = ref('loggedOut')

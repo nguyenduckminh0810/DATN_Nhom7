@@ -251,9 +251,19 @@ public class QuizService {
 
 			// Thông tin người tạo
 			if (quiz.getUser() != null) {
+				System.out.println("🔍 Setting creator info:");
+				System.out.println("  - User ID: " + quiz.getUser().getId());
+				System.out.println("  - Username: " + quiz.getUser().getUsername());
+				System.out.println("  - Full Name: " + quiz.getUser().getFullName());
+
 				detail.setCreatorName(quiz.getUser().getFullName() != null ? quiz.getUser().getFullName()
 						: quiz.getUser().getUsername());
 				detail.setCreatorAvatar(quiz.getUser().getAvatarUrl());
+				detail.setCreatorId(quiz.getUser().getId());
+
+				System.out.println("  - Set creatorId: " + detail.getCreatorId());
+			} else {
+				System.out.println("❌ Quiz user is null!");
 			}
 
 			// Thông tin danh mục

@@ -75,7 +75,15 @@ function goToPage(page) {
 }
 
 function playQuiz(quizId) {
-  router.push({ name: 'PlayQuiz', params: { quizId } })
+  const userId = localStorage.getItem('userId')
+  if (!userId) {
+    console.error('❌ Missing userId - user not logged in')
+    // Có thể chuyển hướng đến trang login
+    router.push({ name: 'Login' })
+    return
+  }
+  console.log('🎮 Playing quiz:', quizId, 'for user:', userId)
+  router.push({ name: 'PlayQuiz', params: { quizId, userId } })
 }
 
 function goToQuizDetail(quizId) {

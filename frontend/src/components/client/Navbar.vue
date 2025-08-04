@@ -2,7 +2,6 @@
 import { useRouter, RouterLink } from 'vue-router'
 import { useLogin } from './useLogin'
 import { computed, watch, onMounted, onUnmounted, ref } from 'vue'
-import axios from 'axios'
 import api from '@/utils/axios'
 
 const { logout, username, message, userId, getUserId, token } = useLogin()
@@ -16,19 +15,33 @@ const notificationCount = ref(3) // Có thể lấy từ API sau
 async function fetchUserProfile() {
   try {
     const token = localStorage.getItem('accessToken')
-    if (!token) return
+    if (!token) {
+      console.log('❌ No token found in localStorage')
+      return
+    }
 
-    const response = await api.get('/user/profile', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    console.log('🔍 Token found:', token.substring(0, 20) + '...')
+
+    const response = await api.get('/user/profile')
 
     userProfile.value = response.data
     console.log('🔍 User Profile loaded:', response.data)
     console.log('🔍 Avatar URL:', response.data.avatarUrl)
   } catch (error) {
     console.error('Error fetching user profile:', error)
+
+    // Nếu lỗi 401, có thể token đã hết hạn
+    if (error.response?.status === 401) {
+      console.log('❌ Token expired or invalid, clearing localStorage')
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('username')
+      userProfile.value = null
+
+      // Redirect về login page nếu đang ở trang cần authentication
+      if (router.currentRoute.value.path !== '/login' && router.currentRoute.value.path !== '/') {
+        router.push('/login')
+      }
+    }
   }
 }
 
