@@ -146,7 +146,7 @@ const submitReview = async () => {
 
   try {
     submitting.value = true
-    await api.post(`/api/quizzes/${quizId}/review`, {
+    await api.post(`/quizzes/${quizId}/review`, {
       userId,
       rating: review.value.rating,
       reviewText: review.value.reviewText

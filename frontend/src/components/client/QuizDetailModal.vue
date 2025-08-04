@@ -277,7 +277,7 @@
                   >
                 </div>
 
-                <!-- Sample Comments -->
+                <!-- Comments -->
                 <div class="recent-activity">
                   <h6 class="activity-subtitle">
                     <i class="bi bi-chat-dots text-primary"></i>
@@ -291,15 +291,15 @@
                     <div class="activity-avatar">
                       <img
                         :src="comment.avatar || '/img/default-avatar.png'"
-                        :alt="comment.userName"
+                        :alt="comment.user.fullName || comment.user.username"
                         class="avatar-img"
                         @error="handleAvatarError"
                       />
                     </div>
                     <div class="activity-content">
                       <div class="activity-text">
-                        <strong>{{ comment.userName }}</strong>
-                        <span class="comment-text">{{ comment.content }}</span>
+                        <strong>{{ comment.user.fullName || comment.user.username }}</strong>
+                        <span class="comment-text">{{ comment.reviewText }}</span>
                       </div>
                       <div class="activity-time">{{ formatTimeAgo(comment.createdAt) }}</div>
                       <div class="comment-rating" v-if="comment.rating">
@@ -323,22 +323,15 @@
                   </div>
 
                   <!-- Show more comments button -->
-                  <div v-if="sampleComments.length > 3" class="text-center mt-3">
-                    <button
-                      class="btn btn-outline-primary btn-sm"
-                      @click="showAllComments = !showAllComments"
-                    >
-                      <i
-                        class="bi"
-                        :class="showAllComments ? 'bi-chevron-up' : 'bi-chevron-down'"
-                      ></i>
-                      {{
-                        showAllComments
-                          ? 'Ẩn bớt'
-                          : 'Xem thêm ' + (sampleComments.length - 3) + ' bình luận'
-                      }}
-                    </button>
-                  </div>
+                <div v-if="comments.length > 3" class="text-center mt-3">
+                  <button
+                    class="btn btn-outline-primary btn-sm"
+                    @click="showAllComments = !showAllComments"
+                  >
+                    <i class="bi" :class="showAllComments ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                    {{ showAllComments ? 'Ẩn bớt' : 'Xem thêm ' + (comments.length - 3) + ' bình luận' }}
+                  </button>
+                </div>
                 </div>
               </div>
             </div>
@@ -423,6 +416,7 @@ const quizDetail = ref(null)
 const questions = ref([])
 const recentAttempts = ref([])
 const showAllQuestions = ref(false)
+const comments = ref([])
 
 // Computed stats
 const quizStats = computed(() => {
@@ -483,16 +477,19 @@ const loadQuizDetail = async () => {
 
     try {
       // ✅ LOAD TẤT CẢ CÙNG LÚC THAY VÌ SEQUENTIAL
-      const [quizRes, questionsRes, attemptsRes] = await Promise.allSettled([
+      const [quizRes, questionsRes, attemptsRes, reviewsRes] = await Promise.allSettled([
         api.get(`/quiz/detail/${props.quizId}`),
         api.get(`/question/play/${props.quizId}`), // ✅ SỬA: Dùng endpoint play cho tất cả quiz
         api.get(`/quiz-attempts/public/recent/${props.quizId}`),
+        api.get(`/quizzes/${props.quizId}/reviews`)
       ])
 
       // ✅ XỬ LÝ KẾT QUẢ
       if (quizRes.status === 'fulfilled') {
         console.log('✅ Quiz detail response:', quizRes.value.data)
         quizDetail.value = quizRes.value.data
+        comments.value = reviewsRes.value.data
+        console.log("📝 Danh sách bình luận:", comments.value)
       } else {
         console.error('❌ Quiz detail error:', quizRes.reason)
         quizDetail.value = null
@@ -599,64 +596,15 @@ const playQuiz = () => {
   }
 }
 
-// Sample comments for recent activity
-const sampleComments = [
-  {
-    id: 1,
-    userName: 'Nguyễn Văn A',
-    avatar: '/img/default-avatar.png',
-    content: 'Quiz này rất hay! Tôi đã đạt được 90 điểm. Cảm ơn tác giả!',
-    rating: 5,
-    score: 90,
-    createdAt: '2023-10-28T10:30:00Z',
-  },
-  {
-    id: 2,
-    userName: 'Trần Thị B',
-    avatar: '/img/default-avatar.png',
-    content: 'Quiz này khá khó, nhưng tôi đã hoàn thành với 75 điểm. Tuyệt vời!',
-    rating: 4,
-    score: 75,
-    createdAt: '2023-10-27T14:00:00Z',
-  },
-  {
-    id: 3,
-    userName: 'Lê Văn C',
-    avatar: '/img/default-avatar.png',
-    content: 'Quiz này rất thú vị. Tôi đã đạt 85 điểm. Cảm ơn nhiều!',
-    rating: 5,
-    score: 85,
-    createdAt: '2023-10-26T09:15:00Z',
-  },
-  {
-    id: 4,
-    userName: 'Phạm Thị D',
-    avatar: '/img/default-avatar.png',
-    content: 'Câu hỏi rất sát với thực tế. Tôi đạt 80 điểm.',
-    rating: 4,
-    score: 80,
-    createdAt: '2023-10-25T16:45:00Z',
-  },
-  {
-    id: 5,
-    userName: 'Hoàng Văn E',
-    avatar: '/img/default-avatar.png',
-    content: 'Quiz này giúp tôi học được nhiều điều mới. Đạt 95 điểm!',
-    rating: 5,
-    score: 95,
-    createdAt: '2023-10-24T11:20:00Z',
-  },
-]
-
 // State for showing all comments
 const showAllComments = ref(false)
 
 // Computed property for displayed comments
 const displayedComments = computed(() => {
   if (showAllComments.value) {
-    return sampleComments
+    return comments.value
   }
-  return sampleComments.slice(0, 3)
+  return comments.value.slice(0, 3)
 })
 
 // Computed property to check if the current user is the quiz creator

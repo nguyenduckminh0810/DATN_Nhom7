@@ -1,5 +1,6 @@
 package com.nhom7.quiz.quizapp.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -41,4 +42,11 @@ public class QuizReviewService {
     public Double getAverageRating(Long quizId) {
         return reviewRepo.getAverageRating(quizId);
     }
+
+    // Phương thức trả về danh sách đánh giá
+    public List<QuizReview> getReviewsForQuiz(Long quizId) {
+        Quiz quiz = quizRepo.findById(quizId).orElseThrow();
+        return reviewRepo.findByQuizOrderByCreatedAtDesc(quiz);
+    }
+
 }

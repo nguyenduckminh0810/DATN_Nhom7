@@ -17,4 +17,7 @@ public interface QuizReviewRepo extends JpaRepository<QuizReview, Long> {
 
     @Query("SELECT AVG(qr.rating) FROM QuizReview qr WHERE qr.quiz.id = :quizId")
     Double getAverageRating(Long quizId);
+
+    List<QuizReview> findByQuizOrderByCreatedAtDesc(Quiz quiz);
+
 }

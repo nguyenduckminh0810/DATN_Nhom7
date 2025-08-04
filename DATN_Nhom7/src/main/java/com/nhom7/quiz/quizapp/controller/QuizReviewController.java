@@ -19,6 +19,13 @@ public class QuizReviewController {
     @Autowired
     private QuizReviewService reviewService;
 
+    // Lấy danh sách đánh giá
+    @GetMapping("/{quizId}/reviews")
+    public ResponseEntity<?> getReviewsForQuiz(@PathVariable Long quizId) {
+        return ResponseEntity.ok(reviewService.getReviewsForQuiz(quizId));
+    }
+
+    // Gửi đánh giá quiz
     @PostMapping("/{quizId}/review")
     public ResponseEntity<?> submitReview(@PathVariable Long quizId,
             @RequestBody ReviewRequestDTO request) {
