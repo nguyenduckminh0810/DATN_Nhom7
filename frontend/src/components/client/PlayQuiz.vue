@@ -48,8 +48,8 @@ onMounted(async () => {
     const quizRes = await api.get(`/quiz/${quizId}`)
     quizTitle.value = quizRes.data.title || 'Quiz'
 
-    // Get questions
-    const res = await api.get(`/question/${quizId}`)
+    // Get questions for playing
+    const res = await api.get(`/question/play/${quizId}`)
     const questionList = res.data
 
     const enrichedQuestions = await Promise.all(
@@ -197,11 +197,28 @@ async function submitQuiz() {
           <div class="timer-circle">
             <svg width="120" height="120" class="timer-svg" viewBox="0 0 120 120">
               <!-- Background Circle -->
-              <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="8" />
+              <circle
+                cx="60"
+                cy="60"
+                r="50"
+                fill="none"
+                stroke="rgba(255, 255, 255, 0.2)"
+                stroke-width="8"
+              />
               <!-- Progress Circle -->
-              <circle cx="60" cy="60" r="50" fill="none" :stroke="timeColor" stroke-width="8" stroke-linecap="round"
-                stroke-dasharray="314.16" :stroke-dashoffset="314.16 - (timeProgress * 314.16) / 100"
-                class="timer-progress-circle" transform="rotate(-90 60 60)" />
+              <circle
+                cx="60"
+                cy="60"
+                r="50"
+                fill="none"
+                :stroke="timeColor"
+                stroke-width="8"
+                stroke-linecap="round"
+                stroke-dasharray="314.16"
+                :stroke-dashoffset="314.16 - (timeProgress * 314.16) / 100"
+                class="timer-progress-circle"
+                transform="rotate(-90 60 60)"
+              />
             </svg>
             <div class="timer-content">
               <div class="timer-number">{{ countdown }}</div>
@@ -238,15 +255,27 @@ async function submitQuiz() {
       <!-- Answers Section -->
       <div class="answers-section" :class="{ 'fade-out': showNextAnimation }">
         <div class="answers-grid" v-if="currentQuestion?.answers.length">
-          <div class="answer-option" v-for="(answer, index) in currentQuestion.answers" :key="answer.id" :class="{
-            selected: selectedAnswers[currentQuestion.id] === answer.id,
-            'option-a': index === 0,
-            'option-b': index === 1,
-            'option-c': index === 2,
-            'option-d': index === 3,
-          }" @click="selectAnswer(currentQuestion.id, answer.id)">
-            <input type="radio" :id="`answer-${answer.id}`" :name="`question-${currentQuestion.id}`" :value="answer.id"
-              :checked="selectedAnswers[currentQuestion.id] === answer.id" style="display: none" />
+          <div
+            class="answer-option"
+            v-for="(answer, index) in currentQuestion.answers"
+            :key="answer.id"
+            :class="{
+              selected: selectedAnswers[currentQuestion.id] === answer.id,
+              'option-a': index === 0,
+              'option-b': index === 1,
+              'option-c': index === 2,
+              'option-d': index === 3,
+            }"
+            @click="selectAnswer(currentQuestion.id, answer.id)"
+          >
+            <input
+              type="radio"
+              :id="`answer-${answer.id}`"
+              :name="`question-${currentQuestion.id}`"
+              :value="answer.id"
+              :checked="selectedAnswers[currentQuestion.id] === answer.id"
+              style="display: none"
+            />
             <div class="answer-label">
               <span class="answer-letter">{{ String.fromCharCode(65 + index) }}</span>
             </div>
@@ -268,26 +297,40 @@ async function submitQuiz() {
       <!-- Navigation Section -->
       <div class="navigation-section">
         <div class="nav-buttons">
-          <button class="nav-btn prev-btn" :disabled="currentQuestionIndex === 0" @click="prevQuestion">
+          <button
+            class="nav-btn prev-btn"
+            :disabled="currentQuestionIndex === 0"
+            @click="prevQuestion"
+          >
             <i class="bi bi-arrow-left"></i>
             <span>Câu trước</span>
           </button>
 
           <div class="question-dots">
-            <div class="question-dot" v-for="(question, index) in questions" :key="question.id" :class="{
-              active: index === currentQuestionIndex,
-              answered: selectedAnswers[question.id],
-            }" @click="
+            <div
+              class="question-dot"
+              v-for="(question, index) in questions"
+              :key="question.id"
+              :class="{
+                active: index === currentQuestionIndex,
+                answered: selectedAnswers[question.id],
+              }"
+              @click="
                 () => {
                   currentQuestionIndex = index
                   startTimer()
                 }
-              ">
+              "
+            >
               {{ index + 1 }}
             </div>
           </div>
 
-          <button class="nav-btn next-btn" v-if="currentQuestionIndex < questions.length - 1" @click="nextQuestion">
+          <button
+            class="nav-btn next-btn"
+            v-if="currentQuestionIndex < questions.length - 1"
+            @click="nextQuestion"
+          >
             <span>Câu tiếp</span>
             <i class="bi bi-arrow-right"></i>
           </button>
@@ -581,7 +624,6 @@ async function submitQuiz() {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;

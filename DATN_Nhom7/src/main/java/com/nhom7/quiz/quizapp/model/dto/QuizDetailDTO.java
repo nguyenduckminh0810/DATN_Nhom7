@@ -13,6 +13,7 @@ public class QuizDetailDTO {
     // Creator info
     private String creatorName;
     private String creatorAvatar;
+    private Long creatorId;
 
     // Category info
     private String categoryName;
@@ -35,7 +36,7 @@ public class QuizDetailDTO {
     }
 
     public QuizDetailDTO(Long id, String title, String image, boolean isPublic, LocalDateTime createdAt,
-            String creatorName, String creatorAvatar, String categoryName, List<String> tags,
+            String creatorName, String creatorAvatar, Long creatorId, String categoryName, List<String> tags,
             int totalQuestions, int totalPoints, int totalTime, int totalPlays, double averageScore,
             int uniqueParticipants, double completionRate, int averageTime) {
         this.id = id;
@@ -45,6 +46,7 @@ public class QuizDetailDTO {
         this.createdAt = createdAt;
         this.creatorName = creatorName;
         this.creatorAvatar = creatorAvatar;
+        this.creatorId = creatorId;
         this.categoryName = categoryName;
         this.tags = tags;
         this.totalQuestions = totalQuestions;
@@ -112,6 +114,14 @@ public class QuizDetailDTO {
 
     public void setCreatorAvatar(String creatorAvatar) {
         this.creatorAvatar = creatorAvatar;
+    }
+
+    public Long getCreatorId() {
+        return creatorId;
+    }
+
+    public void setCreatorId(Long creatorId) {
+        this.creatorId = creatorId;
     }
 
     public String getCategoryName() {
