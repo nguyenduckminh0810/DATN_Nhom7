@@ -1,6 +1,10 @@
 <template>
-  <div v-if="showModal" class="modal fade show d-block" tabindex="-1"
-    style="background-color: rgba(0, 0, 0, 0.5); z-index: 1050">
+  <div
+    v-if="showModal"
+    class="modal fade show d-block"
+    tabindex="-1"
+    style="background-color: rgba(0, 0, 0, 0.5); z-index: 1050"
+  >
     <!-- ✅ LOADING SPINNER -->
     <LoadingSpinner :loading="loading" message="Đang tải thông tin chi tiết..." />
 
@@ -21,9 +25,16 @@
             <div class="row mb-4">
               <div class="col-md-4">
                 <div class="quiz-image-container">
-                  <img :src="quizDetail.image || '/img/default-quiz.jpg'" :alt="quizDetail.title" class="quiz-image"
-                    @error="handleImageError" />
-                  <div class="quiz-status-badge" :class="quizDetail.isPublic ? 'public' : 'private'">
+                  <img
+                    :src="quizDetail.image || '/img/default-quiz.jpg'"
+                    :alt="quizDetail.title"
+                    class="quiz-image"
+                    @error="handleImageError"
+                  />
+                  <div
+                    class="quiz-status-badge"
+                    :class="quizDetail.isPublic ? 'public' : 'private'"
+                  >
                     <i class="bi" :class="quizDetail.isPublic ? 'bi-globe' : 'bi-lock'"></i>
                     {{ quizDetail.isPublic ? 'Công khai' : 'Riêng tư' }}
                   </div>
@@ -36,7 +47,9 @@
                 <div class="quiz-meta mb-3">
                   <div class="meta-item">
                     <i class="bi bi-person-circle text-primary"></i>
-                    <span><strong>Tác giả:</strong> {{ quizDetail.creatorName || 'Không rõ' }}</span>
+                    <span
+                      ><strong>Tác giả:</strong> {{ quizDetail.creatorName || 'Không rõ' }}</span
+                    >
                   </div>
 
                   <div class="meta-item">
@@ -46,14 +59,21 @@
 
                   <div class="meta-item">
                     <i class="bi bi-tag text-warning"></i>
-                    <span><strong>Danh mục:</strong>
-                      {{ quizDetail.categoryName || 'Không phân loại' }}</span>
+                    <span
+                      ><strong>Danh mục:</strong>
+                      {{ quizDetail.categoryName || 'Không phân loại' }}</span
+                    >
                   </div>
 
                   <div class="meta-item" v-if="quizDetail.tags && quizDetail.tags.length">
                     <i class="bi bi-bookmark text-info"></i>
-                    <span><strong>Tags:</strong>
-                      <span class="badge bg-secondary me-1" v-for="tag in quizDetail.tags" :key="tag">
+                    <span
+                      ><strong>Tags:</strong>
+                      <span
+                        class="badge bg-secondary me-1"
+                        v-for="tag in quizDetail.tags"
+                        :key="tag"
+                      >
                         {{ tag }}
                       </span>
                     </span>
@@ -134,8 +154,8 @@
               </div>
             </div>
 
-            <!-- Questions Preview Section - CHỈ HIỂN THỊ CHO QUIZ RIÊNG TƯ -->
-            <div class="row mb-4" v-if="questions.length > 0 && !isPublicQuiz">
+            <!-- Questions Preview Section - CHỈ HIỂN THỊ CHO NGƯỜI TẠO QUIZ -->
+            <div class="row mb-4" v-if="questions.length > 0 && isQuizCreator">
               <div class="col-12">
                 <h5 class="section-title">
                   <i class="bi bi-question-circle text-success"></i>
@@ -143,7 +163,11 @@
                 </h5>
 
                 <div class="questions-preview">
-                  <div class="question-item" v-for="(question, index) in questions.slice(0, 3)" :key="question.id">
+                  <div
+                    class="question-item"
+                    v-for="(question, index) in questions.slice(0, 3)"
+                    :key="question.id"
+                  >
                     <div class="question-header">
                       <span class="question-number">Câu {{ index + 1 }}</span>
                       <span class="question-points">{{ question.point }} điểm</span>
@@ -153,12 +177,19 @@
                       {{ question.content }}
                     </div>
                     <div class="question-image" v-if="question.image">
-                      <img :src="question.image" :alt="'Hình ảnh câu hỏi ' + (index + 1)" class="img-fluid" />
+                      <img
+                        :src="question.image"
+                        :alt="'Hình ảnh câu hỏi ' + (index + 1)"
+                        class="img-fluid"
+                      />
                     </div>
                   </div>
 
                   <div v-if="questions.length > 3" class="text-center mt-3">
-                    <button class="btn btn-outline-primary" @click="showAllQuestions = !showAllQuestions">
+                    <button
+                      class="btn btn-outline-primary"
+                      @click="showAllQuestions = !showAllQuestions"
+                    >
                       {{
                         showAllQuestions ? 'Ẩn bớt' : 'Xem tất cả ' + questions.length + ' câu hỏi'
                       }}
@@ -166,7 +197,11 @@
                   </div>
 
                   <div v-if="showAllQuestions" class="additional-questions">
-                    <div class="question-item" v-for="(question, index) in questions.slice(3)" :key="question.id">
+                    <div
+                      class="question-item"
+                      v-for="(question, index) in questions.slice(3)"
+                      :key="question.id"
+                    >
                       <div class="question-header">
                         <span class="question-number">Câu {{ index + 4 }}</span>
                         <span class="question-points">{{ question.point }} điểm</span>
@@ -181,12 +216,12 @@
               </div>
             </div>
 
-            <!-- Thông báo cho quiz công khai -->
-            <div class="row mb-4" v-if="isPublicQuiz">
+            <!-- Thông báo cho tất cả người không phải tác giả -->
+            <div class="row mb-4" v-if="questions.length > 0 && !isQuizCreator">
               <div class="col-12">
                 <div class="alert alert-info">
                   <i class="bi bi-info-circle me-2"></i>
-                  <strong>Quiz công khai:</strong> Câu hỏi sẽ được hiển thị khi bắt đầu chơi để đảm
+                  <strong>Thông báo:</strong> Chỉ người tạo quiz mới có thể xem trước câu hỏi để đảm
                   bảo tính công bằng.
                 </div>
               </div>
@@ -206,7 +241,11 @@
                     <i class="bi bi-play-circle text-success"></i>
                     Lượt chơi gần đây
                   </h6>
-                  <div class="activity-item" v-for="attempt in recentAttempts.slice(0, 3)" :key="attempt.id">
+                  <div
+                    class="activity-item"
+                    v-for="attempt in recentAttempts.slice(0, 3)"
+                    :key="attempt.id"
+                  >
                     <div class="activity-avatar">
                       <i class="bi bi-person-circle"></i>
                     </div>
@@ -233,7 +272,9 @@
                 <div v-if="recentAttempts.length === 0 && !isQuizCreator" class="text-center py-4">
                   <i class="bi bi-lock text-muted" style="font-size: 2rem"></i>
                   <p class="text-muted mt-2">Thông tin riêng tư</p>
-                  <small class="text-muted">Chỉ người tạo quiz mới có thể xem danh sách người chơi</small>
+                  <small class="text-muted"
+                    >Chỉ người tạo quiz mới có thể xem danh sách người chơi</small
+                  >
                 </div>
 
                 <!-- Sample Comments -->
@@ -242,10 +283,18 @@
                     <i class="bi bi-chat-dots text-primary"></i>
                     Bình luận gần đây
                   </h6>
-                  <div class="activity-item comment-item" v-for="comment in displayedComments" :key="comment.id">
+                  <div
+                    class="activity-item comment-item"
+                    v-for="comment in displayedComments"
+                    :key="comment.id"
+                  >
                     <div class="activity-avatar">
-                      <img :src="comment.avatar || '/img/default-avatar.png'" :alt="comment.userName" class="avatar-img"
-                        @error="handleAvatarError" />
+                      <img
+                        :src="comment.avatar || '/img/default-avatar.png'"
+                        :alt="comment.userName"
+                        class="avatar-img"
+                        @error="handleAvatarError"
+                      />
                     </div>
                     <div class="activity-content">
                       <div class="activity-text">
@@ -255,10 +304,16 @@
                       <div class="activity-time">{{ formatTimeAgo(comment.createdAt) }}</div>
                       <div class="comment-rating" v-if="comment.rating">
                         <div class="stars">
-                          <i v-for="star in 5" :key="star" class="bi" :class="star <= comment.rating
-                            ? 'bi-star-fill text-warning'
-                            : 'bi-star text-muted'
-                            "></i>
+                          <i
+                            v-for="star in 5"
+                            :key="star"
+                            class="bi"
+                            :class="
+                              star <= comment.rating
+                                ? 'bi-star-fill text-warning'
+                                : 'bi-star text-muted'
+                            "
+                          ></i>
                         </div>
                       </div>
                     </div>
@@ -269,8 +324,14 @@
 
                   <!-- Show more comments button -->
                   <div v-if="sampleComments.length > 3" class="text-center mt-3">
-                    <button class="btn btn-outline-primary btn-sm" @click="showAllComments = !showAllComments">
-                      <i class="bi" :class="showAllComments ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                    <button
+                      class="btn btn-outline-primary btn-sm"
+                      @click="showAllComments = !showAllComments"
+                    >
+                      <i
+                        class="bi"
+                        :class="showAllComments ? 'bi-chevron-up' : 'bi-chevron-down'"
+                      ></i>
                       {{
                         showAllComments
                           ? 'Ẩn bớt'
@@ -293,7 +354,10 @@
                 <div class="difficulty-analysis">
                   <div class="difficulty-item">
                     <div class="difficulty-label">Độ khó:</div>
-                    <div class="difficulty-value" :class="getDifficultyClass(quizStats.averageScore)">
+                    <div
+                      class="difficulty-value"
+                      :class="getDifficultyClass(quizStats.averageScore)"
+                    >
                       {{ getDifficultyText(quizStats.averageScore) }}
                     </div>
                   </div>
@@ -421,7 +485,7 @@ const loadQuizDetail = async () => {
       // ✅ LOAD TẤT CẢ CÙNG LÚC THAY VÌ SEQUENTIAL
       const [quizRes, questionsRes, attemptsRes] = await Promise.allSettled([
         api.get(`/quiz/detail/${props.quizId}`),
-        api.get(`/question/${props.quizId}`),
+        api.get(`/question/play/${props.quizId}`), // ✅ SỬA: Dùng endpoint play cho tất cả quiz
         api.get(`/quiz-attempts/public/recent/${props.quizId}`),
       ])
 
@@ -439,6 +503,7 @@ const loadQuizDetail = async () => {
         questions.value = questionsRes.value.data
       } else {
         console.error('❌ Questions error:', questionsRes.reason)
+        // Với endpoint play, không cần kiểm tra 403 nữa
         questions.value = []
       }
 
@@ -521,7 +586,15 @@ const handleAvatarError = (event) => {
 
 const playQuiz = () => {
   if (quizDetail.value) {
-    router.push(`/play-quiz/${quizDetail.value.id}`)
+    const userId = localStorage.getItem('userId')
+    if (!userId) {
+      console.error('❌ Missing userId - user not logged in')
+      // Có thể chuyển hướng đến trang login
+      router.push({ name: 'Login' })
+      return
+    }
+    console.log('🎮 Playing quiz:', quizDetail.value.id, 'for user:', userId)
+    router.push({ name: 'PlayQuiz', params: { quizId: quizDetail.value.id, userId } })
     closeModal()
   }
 }
@@ -588,24 +661,45 @@ const displayedComments = computed(() => {
 
 // Computed property to check if the current user is the quiz creator
 const isQuizCreator = computed(() => {
-  return quizDetail.value && quizDetail.value.creatorId === localStorage.getItem('userId')
+  const currentUserId = localStorage.getItem('userId')
+  const creatorId = quizDetail.value?.creatorId
+
+  console.log('🔍 Checking quiz creator:')
+  console.log('  - Current user ID:', currentUserId, '(type:', typeof currentUserId, ')')
+  console.log('  - Creator ID:', creatorId, '(type:', typeof creatorId, ')')
+  console.log('  - Quiz detail:', quizDetail.value)
+
+  // Kiểm tra null/undefined
+  if (!currentUserId) {
+    console.log('❌ Current user ID is null/undefined')
+    return false
+  }
+  if (!creatorId) {
+    console.log('❌ Creator ID is null/undefined')
+    return false
+  }
+
+  // Chuyển đổi sang number và so sánh
+  const currentUserIdNum = Number(currentUserId)
+  const creatorIdNum = Number(creatorId)
+
+  console.log('  - Current user ID (number):', currentUserIdNum)
+  console.log('  - Creator ID (number):', creatorIdNum)
+  console.log('  - IDs equal:', currentUserIdNum === creatorIdNum)
+
+  const isCreator = currentUserIdNum === creatorIdNum
+  console.log('  - Is creator:', isCreator)
+
+  return isCreator
 })
 
-// Computed property to check if the quiz is public
-const isPublicQuiz = computed(() => {
-  if (!quizDetail.value) return false
-
-  // ✅ KIỂM TRA NHIỀU TRƯỜNG HỢP
-  const isPublic =
-    quizDetail.value.isPublic ||
-    quizDetail.value.public ||
-    quizDetail.value.is_public ||
-    quizDetail.value.status === 'PUBLIC' ||
-    quizDetail.value.status === 'public'
-
-  console.log('🔍 Quiz isPublic:', isPublic, 'Quiz detail:', quizDetail.value)
-  return isPublic
-})
+// Computed property to check if the quiz is public (removed - no longer needed)
+// const isPublicQuiz = computed(() => {
+//   if (!quizDetail.value) return false
+//   const isPublic = quizDetail.value.isPublic || quizDetail.value.public || quizDetail.value.is_public || quizDetail.value.status === 'PUBLIC' || quizDetail.value.status === 'public'
+//   console.log('🔍 Quiz isPublic:', isPublic, 'Quiz detail:', quizDetail.value)
+//   return isPublic
+// })
 
 // Watch for quizId changes - SỬA ĐỂ TRÁNH MULTIPLE CALLS
 watch(

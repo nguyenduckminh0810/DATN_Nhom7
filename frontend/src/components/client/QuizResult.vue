@@ -23,7 +23,7 @@ onMounted(async () => {
 
   // Load questions data
   try {
-    const res = await api.get(`/question/${quizId}`)
+    const res = await api.get(`/question/play/${quizId}`)
     const questionList = res.data
 
     const enrichedQuestions = await Promise.all(
@@ -141,11 +141,16 @@ function viewQuizzes() {
   <div class="quiz-result-container">
     <!-- Animated Background -->
     <div class="background-animation">
-      <div class="floating-element" v-for="n in 15" :key="n" :style="{
-        left: Math.random() * 100 + '%',
-        animationDelay: Math.random() * 3 + 's',
-        animationDuration: 3 + Math.random() * 2 + 's',
-      }">
+      <div
+        class="floating-element"
+        v-for="n in 15"
+        :key="n"
+        :style="{
+          left: Math.random() * 100 + '%',
+          animationDelay: Math.random() * 3 + 's',
+          animationDuration: 3 + Math.random() * 2 + 's',
+        }"
+      >
         {{ ['🎉', '⭐', '🏆', '🎊', '✨'][Math.floor(Math.random() * 5)] }}
       </div>
     </div>
@@ -181,18 +186,45 @@ function viewQuizzes() {
                 <div class="score-circle-container">
                   <svg class="score-circle" width="200" height="200" viewBox="0 0 200 200">
                     <!-- Background Circle -->
-                    <circle cx="100" cy="100" :r="radius" fill="none" stroke="rgba(255, 255, 255, 0.2)"
-                      stroke-width="8" />
+                    <circle
+                      cx="100"
+                      cy="100"
+                      :r="radius"
+                      fill="none"
+                      stroke="rgba(255, 255, 255, 0.2)"
+                      stroke-width="8"
+                    />
                     <!-- Progress Circle -->
-                    <circle cx="100" cy="100" :r="radius" fill="none" :stroke="scoreColor" stroke-width="8"
-                      stroke-linecap="round" :stroke-dasharray="circumference"
-                      :stroke-dashoffset="isLoaded ? dashOffset : circumference" transform="rotate(-90 100 100)"
-                      class="progress-ring" />
+                    <circle
+                      cx="100"
+                      cy="100"
+                      :r="radius"
+                      fill="none"
+                      :stroke="scoreColor"
+                      stroke-width="8"
+                      stroke-linecap="round"
+                      :stroke-dasharray="circumference"
+                      :stroke-dashoffset="isLoaded ? dashOffset : circumference"
+                      transform="rotate(-90 100 100)"
+                      class="progress-ring"
+                    />
                     <!-- Score Text -->
-                    <text x="100" y="95" text-anchor="middle" dominant-baseline="middle" class="score-text">
+                    <text
+                      x="100"
+                      y="95"
+                      text-anchor="middle"
+                      dominant-baseline="middle"
+                      class="score-text"
+                    >
                       {{ isLoaded ? score : 0 }}
                     </text>
-                    <text x="100" y="115" text-anchor="middle" dominant-baseline="middle" class="score-unit">
+                    <text
+                      x="100"
+                      y="115"
+                      text-anchor="middle"
+                      dominant-baseline="middle"
+                      class="score-unit"
+                    >
                       điểm
                     </text>
                   </svg>
@@ -273,9 +305,13 @@ function viewQuizzes() {
           </div>
           <div class="card-body">
             <div class="results-list">
-              <div v-for="(result, index) in combinedResults" :key="result.questionId" class="result-item"
+              <div
+                v-for="(result, index) in combinedResults"
+                :key="result.questionId"
+                class="result-item"
                 :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }"
-                :style="{ animationDelay: index * 0.1 + 's' }">
+                :style="{ animationDelay: index * 0.1 + 's' }"
+              >
                 <div class="result-number">
                   <span class="number">{{ result.questionNumber }}</span>
                   <div class="result-indicator">
@@ -286,7 +322,10 @@ function viewQuizzes() {
                 <div class="result-content">
                   <div class="result-info">
                     <span class="label">Câu trả lời của bạn:</span>
-                    <span class="value" :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }">
+                    <span
+                      class="value"
+                      :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }"
+                    >
                       {{ result.selectedAnswerId ?? 'Không chọn' }}
                     </span>
                     <span class="answer-content">
@@ -368,7 +407,6 @@ function viewQuizzes() {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
@@ -424,7 +462,6 @@ function viewQuizzes() {
 }
 
 @keyframes bounce {
-
   0%,
   20%,
   50%,

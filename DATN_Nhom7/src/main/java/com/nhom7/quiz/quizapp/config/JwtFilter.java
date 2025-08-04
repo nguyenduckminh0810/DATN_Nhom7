@@ -13,11 +13,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
+
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-// ✅ THÊM IMPORT ĐỂ ĐỌC USER TỪ DATABASE
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 import com.nhom7.quiz.quizapp.model.User;
 
@@ -27,9 +26,22 @@ public class JwtFilter extends OncePerRequestFilter {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // ✅ THÊM LOGINSERVICE ĐỂ ĐỌC USER TỪ DATABASE
     @Autowired
     private LoginService loginService;
+
+    private static final List<String> PUBLIC_ENDPOINT_PREFIXES = List.of(
+            "/api/login",
+            "/api/register",
+            "/api/image/quiz/",
+            "/api/categories",
+            "/api/user/avatars/",
+            "/api/upload/avatars/",
+            "/api/quiz-attempts/public/",
+            "/api/public/",
+            "/api/question/play/",
+            "/api/quiz/public",
+            "/api/quiz/detail",
+            "/api/result/submit");
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -38,61 +50,40 @@ public class JwtFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
-        String authHeader = request.getHeader("Authorization");
         String method = request.getMethod();
+        String authHeader = request.getHeader("Authorization");
 
-        System.out.println("🔍 JWT Filter - Request URI: " + requestURI);
+        System.out.println("🔍 JWT Filter - URI: " + requestURI);
         System.out.println("🔍 JWT Filter - Method: " + method);
-        System.out.println("🔍 JWT Filter - Auth Header: " + (authHeader != null ? "Present" : "Not present"));
+        System.out.println("🔍 JWT Filter - Auth Header: " + (authHeader != null ? "✅ Present" : "❌ Not Present"));
 
-        // ✅ BỎ QUA OPTIONS REQUESTS (CORS PREFLIGHT)
         if ("OPTIONS".equalsIgnoreCase(method)) {
-            System.out.println("✅ JWT Filter - Skipping OPTIONS request");
+            System.out.println("✅ Skipping OPTIONS request");
             filterChain.doFilter(request, response);
             return;
         }
 
-        // ✅ BỎ QUA PUBLIC ENDPOINTS
-        if (requestURI.startsWith("/api/login") ||
-                requestURI.startsWith("/api/register") ||
-                requestURI.startsWith("/api/image/quiz/") ||
-                requestURI.startsWith("/api/categories") ||
-                requestURI.startsWith("/api/user/avatars/") ||
-                requestURI.startsWith("/api/upload/avatars/") ||
-                requestURI.startsWith("/api/quiz-attempts/public/") ||
-                requestURI.startsWith("/api/public/") ||
-                requestURI.startsWith("/api/quiz/") && requestURI.contains("/detail") ||
-                requestURI.startsWith("/api/question/") ||
-                requestURI.startsWith("/api/quiz/public")) {
-
-            System.out.println("✅ JWT Filter - Skipping public endpoint: " + requestURI);
+        if (isPublicEndpoint(requestURI)) {
+            System.out.println("✅ Skipping JWT filter for public endpoint: " + requestURI);
             filterChain.doFilter(request, response);
             return;
         }
 
-        // ✅ CHỈ XỬ LÝ JWT NẾU CÓ AUTH HEADER
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
-            // ✅ KIỂM TRA TOKEN HỢP LỆ VÀ CHƯA HẾT HẠN
             if (jwtUtil.validateToken(token) && !jwtUtil.isTokenExpired(token)) {
                 String username = jwtUtil.extractUsername(token);
                 if (username != null) {
                     try {
-                        // ✅ ĐỌC USER TỪ DATABASE ĐỂ LẤY ROLE CHÍNH XÁC
                         User user = loginService.findByUsername(username);
                         List<SimpleGrantedAuthority> authorities;
 
                         if (user != null) {
-                            // ✅ SỬ DỤNG ROLE TỪ DATABASE
                             String role = user.getRole();
-                            if ("ADMIN".equalsIgnoreCase(role)) {
-                                authorities = List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
-                            } else {
-                                authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
-                            }
+                            authorities = List.of(new SimpleGrantedAuthority(
+                                    "ADMIN".equalsIgnoreCase(role) ? "ROLE_ADMIN" : "ROLE_USER"));
                         } else {
-                            // Fallback nếu không tìm thấy user
                             authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
                         }
 
@@ -100,24 +91,21 @@ public class JwtFilter extends OncePerRequestFilter {
                                 username, null, authorities);
 
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        System.out.println("✅ JWT Filter - Authentication set for user: " + username);
+                        System.out.println("✅ Authenticated user: " + username);
                     } catch (Exception e) {
-                        // ✅ LOG ERROR VÀ TIẾP TỤC REQUEST
-                        System.err.println("❌ Error in JWT filter: " + e.getMessage());
-                        // Không set authentication, để request tiếp tục
+                        System.err.println("❌ JWT filter error: " + e.getMessage());
                     }
                 }
             } else {
-                // ✅ LOG INVALID TOKEN
                 System.out.println("⚠️ Invalid or expired token");
             }
-        } else {
-            System.out.println("ℹ️ No JWT token found, continuing with request");
         }
 
-        // ✅ LUÔN TIẾP TỤC FILTER CHAIN
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isPublicEndpoint(String uri) {
+        return PUBLIC_ENDPOINT_PREFIXES.stream().anyMatch(uri::startsWith);
     }
 }
