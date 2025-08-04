@@ -207,7 +207,7 @@ async function fetchQuizInfo() {
     quizInfo.value = { ...quizInfo.value, ...res.data }
     // Set image preview if image exists
     if (quizInfo.value.image) {
-      imagePreview.value = `http://localhost:8080/api/image/quiz/${quizId}`
+      imagePreview.value = `/api/image/quiz/${quizId}`
       imageUploadType.value = 'url'
     }
     console.log('Quiz info loaded:', quizInfo.value)
@@ -324,7 +324,7 @@ async function updateQuizInfo() {
 
     if (imageUrl) {
       // ✅ SỬ DỤNG ENDPOINT CHUẨN CHO PREVIEW
-      imagePreview.value = `http://localhost:8080/api/image/quiz/${quizId}`
+      imagePreview.value = `/api/image/quiz/${quizId}`
       console.log('🎯 Preview updated với endpoint chuẩn')
     }
 

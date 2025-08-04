@@ -41,23 +41,21 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
+            
             if (jwtUtil.validateToken(token)) {
                 String username = jwtUtil.extractUsername(token);
+                String role = jwtUtil.extractRole(token);
+                
                 if (username != null) {
-                    // ✅ ĐỌC USER TỪ DATABASE ĐỂ LẤY ROLE CHÍNH XÁC
-                    User user = loginService.findByUsername(username);
                     List<SimpleGrantedAuthority> authorities;
 
-                    if (user != null) {
-                        // ✅ SỬ DỤNG ROLE TỪ DATABASE
-                        String role = user.getRole();
+                    if (role != null) {
                         if ("ADMIN".equalsIgnoreCase(role)) {
                             authorities = List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
                         } else {
                             authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
                         }
                     } else {
-                        // Fallback nếu không tìm thấy user
                         authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
                     }
 

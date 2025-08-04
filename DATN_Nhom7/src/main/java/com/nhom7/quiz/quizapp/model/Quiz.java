@@ -33,6 +33,24 @@ public class Quiz {
 	// ✅ THÊM FIELD IMAGE
 	private String image;
 
+	// ✅ THÊM FIELDS CHO SOFT DELETE
+	@Column(name = "deleted")
+	private Boolean deleted = false; // ✅ SỬA: Thay đổi từ boolean sang Boolean
+
+	@Column(name = "deleted_at")
+	private LocalDateTime deletedAt;
+
+	@ManyToOne
+	@JoinColumn(name = "deleted_by")
+	private User deletedBy;
+
+	// ✅ THÊM FIELDS CHO QUIZ CODE
+	@Column(name = "quiz_code", unique = true)
+	private String quizCode;
+
+	@Column(name = "code_created_at")
+	private LocalDateTime codeCreatedAt;
+
 	@JsonIgnore
 	@OneToMany(mappedBy = "quiz")
 	private Set<QuizTag> quizTags;
@@ -119,6 +137,48 @@ public class Quiz {
 
 	public void setQuestions(Set<Question> questions) {
 		this.questions = questions;
+	}
+
+	// ✅ GETTER/SETTER CHO SOFT DELETE FIELDS
+	public Boolean isDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(Boolean deleted) {
+		this.deleted = deleted;
+	}
+
+	public LocalDateTime getDeletedAt() {
+		return deletedAt;
+	}
+
+	public void setDeletedAt(LocalDateTime deletedAt) {
+		this.deletedAt = deletedAt;
+	}
+
+	public User getDeletedBy() {
+		return deletedBy;
+	}
+
+	public void setDeletedBy(User deletedBy) {
+		this.deletedBy = deletedBy;
+	}
+
+	// ✅ THÊM GETTER/SETTER CHO QUIZ CODE
+	public String getQuizCode() {
+		return quizCode;
+	}
+
+	public void setQuizCode(String quizCode) {
+		this.quizCode = quizCode;
+	}
+
+	public LocalDateTime getCodeCreatedAt() {
+		return codeCreatedAt;
+	}
+
+	public void setCodeCreatedAt(LocalDateTime codeCreatedAt) {
+		this.codeCreatedAt = codeCreatedAt;
 	}
 
 	public Quiz(Long id, String title, User user, Category category, boolean isPublic, LocalDateTime createdAt,

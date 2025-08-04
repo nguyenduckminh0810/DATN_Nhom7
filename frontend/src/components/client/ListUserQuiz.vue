@@ -21,7 +21,76 @@ const search = ref('')
 const filterPublic = ref('all')
 const filterCategory = ref('all')
 const hoveredQuiz = ref(null)
-const toast = ref({ show: false, type: 'success', message: '' })
+const toast = ref({ show: false, message: '', type: 'info' })
+
+// ✅ THÊM STATE CHO QUIZ CODE MODAL
+const showCodeModal = ref(false)
+const quizCode = ref('')
+const quizTitle = ref('')
+
+// ✅ LƯU QUIZ INFO ĐỂ SHARE
+const quizInfo = ref(null)
+
+// ✅ METHOD XEM QUIZ CODE
+const viewQuizCode = async (quizId) => {
+  try {
+    const response = await api.get(`/quiz/${quizId}/code`)
+    
+    if (response.data.success) {
+      quizCode.value = response.data.quizCode
+      quizTitle.value = response.data.quizTitle
+      // ✅ LƯU QUIZ INFO ĐỂ SHARE
+      quizInfo.value = {
+        quizId: quizId,
+        quizCode: response.data.quizCode,
+        title: response.data.quizTitle
+      }
+      showCodeModal.value = true
+    } else {
+      showToast(response.data.message || 'Lỗi khi lấy mã code', 'error')
+    }
+  } catch (error) {
+    console.error('❌ Error getting quiz code:', error)
+    showToast('Lỗi khi lấy mã code', 'error')
+  }
+}
+
+// ✅ COPY CODE
+const copyQuizCode = async () => {
+  try {
+    await navigator.clipboard.writeText(quizCode.value)
+    showToast('Đã copy mã code!', 'success')
+  } catch (error) {
+    console.error('Lỗi khi copy:', error)
+    showToast('Lỗi khi copy mã code', 'error')
+  }
+}
+
+// ✅ SHARE CODE
+const shareCode = async () => {
+  try {
+    // ✅ TẠO LINK TRỰC TIẾP ĐẾN QUIZ PLAY PAGE
+    const userId = localStorage.getItem('userId') || '1'
+    const quizId = quizInfo.value?.quizId
+    const shareUrl = `${window.location.origin}/quiz/${quizId}/${userId}/play`
+    const shareText = `Tham gia quiz "${quizTitle.value}" với mã code: ${quizCode.value}\nLink trực tiếp: ${shareUrl}`
+    
+    if (navigator.share) {
+      await navigator.share({
+        title: 'Tham gia Quiz',
+        text: shareText,
+        url: shareUrl
+      })
+    } else {
+      // Fallback: copy to clipboard
+      await navigator.clipboard.writeText(shareText)
+      showToast('Đã copy thông tin chia sẻ!', 'success')
+    }
+  } catch (error) {
+    console.error('Error sharing:', error)
+    showToast('Lỗi khi chia sẻ!', 'error')
+  }
+}
 
 const pageSize = 6
 
@@ -42,30 +111,35 @@ const fetchQuizzes = async (page = 0) => {
         params: { page, size: pageSize },
       },
     )
-    allQuizzes.value = data.quizzes.map((q) => ({
-      quiz_id: q.id,
-      title: q.title,
-      user_id: q.user.id,
-      fullName: q.user.fullName,
-      categoryName: q.category.name,
-      categoryDescription: q.category.description,
-      publicQuiz: q.public,
-      playCount: q.playCount || 0,
-      createdAt: q.createdAt,
-      imageUrl: q.imageUrl || null,
-    }))
+    
+    allQuizzes.value = data.quizzes.map((q) => {
+      const mappedQuiz = {
+        quiz_id: q.id,
+        title: q.title,
+        user_id: q.user?.id,
+        fullName: q.user?.fullName,
+        categoryName: q.category?.name,
+        categoryDescription: q.category?.description,
+        publicQuiz: q.isPublic !== undefined ? q.isPublic : (q.public !== undefined ? q.public : true),
+        playCount: q.playCount || 0,
+        createdAt: q.createdAt,
+        imageUrl: q.imageUrl || null,
+      }
+      return mappedQuiz
+    })
+    
     currentPage.value = data.currentPage
     totalPages.value = data.totalPages
     applyFilters()
   } catch (err) {
     error.value = 'Không thể tải quiz.'
-    console.error(err)
+    console.error('❌ Error fetching quizzes:', err)
   } finally {
     isLoading.value = false
   }
 }
 
-const getQuizImageUrl = (quizId) => `http://localhost:8080/api/image/quiz/${quizId}`
+const getQuizImageUrl = (quizId) => `/api/image/quiz/${quizId}`
 
 const applyFilters = () => {
   let filtered = allQuizzes.value
@@ -92,6 +166,59 @@ const playQuiz = (quizId) =>
 const goToQuizDetail = (quizId) => router.push({ name: 'QuizDetail', params: { id: quizId } })
 const editQuiz = (quizId) => router.push(`/quiz-crud/edit/${userId.value}/${quizId}`)
 
+// ✅ THÊM METHOD XÓA QUIZ (SOFT DELETE)
+const deleteQuiz = async (quizId) => {
+  if (!confirm('Bạn có chắc chắn muốn xóa quiz này? Hành động này không thể hoàn tác.')) {
+    return
+  }
+  
+  try {
+    const response = await api.delete(`/quiz/${quizId}`)
+    
+    // Kiểm tra status code và response data
+    if (response.status === 200 && response.data && response.data.success) {
+      // Hiển thị thông báo thành công
+      showToast(response.data.message || 'Quiz đã được xóa thành công!', 'success')
+      
+      console.log('✅ Quiz deleted successfully, refreshing list...')
+      // Refresh danh sách quiz
+      await fetchQuizzes(currentPage.value)
+      console.log('✅ Quiz list refreshed')
+      
+      // ✅ THÔNG BÁO CHO CÁC COMPONENT KHÁC BIẾT QUIZ ĐÃ BỊ XÓA
+      window.dispatchEvent(new CustomEvent('quizDeleted', { 
+        detail: { quizId: quizId } 
+      }))
+    } else {
+      showToast('Có lỗi xảy ra khi xóa quiz. Vui lòng thử lại.', 'error')
+    }
+  } catch (error) {
+    console.error('Lỗi khi xóa quiz:', error)
+    console.error('Error response:', error.response)
+    console.error('Error status:', error.response?.status)
+    console.error('Error data:', error.response?.data)
+    
+    // Kiểm tra nếu là lỗi 403 (Forbidden) - có thể do token hết hạn
+    if (error.response && error.response.status === 403) {
+      showToast('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error')
+      // Có thể redirect về trang login
+      // router.push('/login')
+    } else if (error.response && error.response.status === 404) {
+      showToast('Quiz không tồn tại hoặc đã được xóa.', 'error')
+    } else {
+      showToast('Có lỗi xảy ra khi xóa quiz. Vui lòng thử lại.', 'error')
+    }
+  }
+}
+
+// ✅ THÊM METHOD HIỂN THỊ TOAST
+const showToast = (message, type = 'info') => {
+  toast.value = { show: true, type, message }
+  setTimeout(() => {
+    toast.value.show = false
+  }, 3000)
+}
+
 const formatDate = (str) => (str ? new Date(str).toLocaleDateString('vi-VN') : '')
 
 // ✅ THÊM METHODS XỬ LÝ LỖI ẢNH
@@ -99,6 +226,8 @@ const handleImageError = (event) => {
   // Thay thế bằng ảnh mặc định khi lỗi
   event.target.src = '/img/hero-img.png'
   event.target.style.opacity = '0.7'
+  // Ẩn lỗi 404 trong console
+  event.preventDefault()
 }
 
 const handleImageLoad = (event) => {
@@ -107,9 +236,9 @@ const handleImageLoad = (event) => {
 }
 
 onMounted(async () => {
-  if (!userId.value) await getUserId()
+  await getUserId()
   await fetchCategories()
-  if (userId.value) fetchQuizzes()
+  await fetchQuizzes()
 })
 </script>
 
@@ -241,9 +370,17 @@ onMounted(async () => {
                 <i class="bi bi-pencil-square"></i>
                 <span>Chỉnh sửa</span>
               </button>
+              <button class="action-btn info" @click.stop="viewQuizCode(quiz.quiz_id)">
+                <i class="bi bi-key"></i>
+                <span>Xem Code</span>
+              </button>
               <button class="action-btn info" @click.stop="goToQuizDetail(quiz.quiz_id)">
                 <i class="bi bi-info-circle"></i>
                 <span>Chi tiết</span>
+              </button>
+              <button class="action-btn danger" @click.stop="deleteQuiz(quiz.quiz_id)">
+                <i class="bi bi-trash"></i>
+                <span>Xóa</span>
               </button>
             </div>
           </div>
@@ -283,6 +420,64 @@ onMounted(async () => {
         <span>{{ toast.message }}</span>
       </div>
     </transition>
+  </div>
+
+  <!-- ✅ QUIZ CODE MODAL -->
+  <div v-if="showCodeModal" class="modal-overlay" @click="showCodeModal = false">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <div class="success-icon">
+          <i class="bi bi-key-fill"></i>
+        </div>
+        <h3>Mã Code Quiz</h3>
+        <button @click="showCodeModal = false" class="modal-close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="code-section">
+          <h4>{{ quizTitle }}</h4>
+          <div class="code-display">
+            <div class="code-container">
+              <span class="quiz-code">{{ quizCode }}</span>
+              <div class="code-actions">
+                <button @click="copyQuizCode" class="copy-btn" title="Copy mã code">
+                  <i class="bi bi-clipboard"></i>
+                  Copy
+                </button>
+                <button @click="shareCode" class="share-btn" title="Chia sẻ">
+                  <i class="bi bi-share"></i>
+                  Chia sẻ
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="code-info">
+            <div class="info-item">
+              <i class="bi bi-info-circle"></i>
+              <span>Chia sẻ mã code này cho học sinh để họ có thể tham gia quiz</span>
+            </div>
+            <div class="info-item">
+              <i class="bi bi-clock"></i>
+              <span>Mã code có hiệu lực vĩnh viễn</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button @click="showCodeModal = false" class="btn btn-secondary">
+            <i class="bi bi-check"></i>
+            Đóng
+          </button>
+          <RouterLink to="/join-quiz" class="btn btn-primary">
+            <i class="bi bi-key"></i>
+            Thử nghiệm tham gia
+          </RouterLink>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -622,21 +817,24 @@ onMounted(async () => {
 .overlay-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
+  padding: 15px;
+  max-height: 80%;
+  overflow-y: auto;
 }
 
 .action-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 20px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: all 0.3s ease;
   cursor: pointer;
-  min-width: 130px;
+  min-width: 120px;
   justify-content: center;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
@@ -690,6 +888,20 @@ onMounted(async () => {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
   border-color: white;
+}
+
+/* ✅ RESPONSIVE CHO MOBILE */
+@media (max-width: 768px) {
+  .overlay-content {
+    gap: 8px;
+    padding: 10px;
+  }
+  
+  .action-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    min-width: 100px;
+  }
 }
 
 .pagination-container {
@@ -830,4 +1042,202 @@ onMounted(async () => {
 }
 
 /* --- KẾT THÚC STYLE ĐẦY ĐỦ --- */
+
+/* === QUIZ CODE MODAL === */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 25px;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.success-icon {
+  font-size: 2rem;
+  color: #28a745;
+  margin-right: 15px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  flex: 1;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-body {
+  padding: 30px;
+}
+
+.code-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.code-section h4 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+}
+
+.code-display {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 20px;
+}
+
+.code-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.quiz-code {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #667eea;
+  letter-spacing: 4px;
+  font-family: 'Courier New', monospace;
+  background: white;
+  padding: 15px 25px;
+  border-radius: 10px;
+  border: 2px solid #e9ecef;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.code-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.copy-btn, .share-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copy-btn {
+  background: #667eea;
+  color: white;
+}
+
+.copy-btn:hover {
+  background: #5a6fd8;
+  transform: translateY(-1px);
+}
+
+.share-btn {
+  background: #28a745;
+  color: white;
+}
+
+.share-btn:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.code-info {
+  margin-top: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.info-item i {
+  color: #667eea;
+  font-size: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.modal-actions .btn {
+  padding: 12px 25px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
 </style>
