@@ -91,7 +91,7 @@ public class UserController {
 			case SUCCESS -> {
 				// ✅ LẤY THÔNG TIN USER ĐẦY ĐỦ TỪ DATABASE
 				User fullUser = result.user();
-				String token = jwtUtil.generateToken(fullUser.getUsername());
+				String token = jwtUtil.generateToken(fullUser.getUsername(), fullUser.getRole()); // ✅ THÊM ROLE VÀO TOKEN
 
 				Map<String, Object> response = new java.util.HashMap<>();
 				response.put("status", "SUCCESS");

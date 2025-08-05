@@ -218,6 +218,13 @@ onUnmounted(() => {
                   <small class="link-desc">Tạo quiz mới</small>
                 </div>
               </RouterLink>
+              <RouterLink to="/join-quiz" class="dropdown-link">
+                <i class="bi bi-key"></i>
+                <div class="link-content">
+                  <span class="link-title">Tham gia Quiz</span>
+                  <small class="link-desc">Nhập mã code</small>
+                </div>
+              </RouterLink>
               <RouterLink to="/my-quizzes" class="dropdown-link">
                 <i class="bi bi-collection"></i>
                 <div class="link-content">
@@ -338,6 +345,11 @@ onUnmounted(() => {
             <RouterLink to="/profile" class="user-dropdown-link">
               <i class="bi bi-gear"></i>
               <span>Cài đặt</span>
+            </RouterLink>
+
+            <RouterLink to="/trash" class="user-dropdown-link">
+              <i class="bi bi-trash3"></i>
+              <span>Thùng rác</span>
             </RouterLink>
 
             <a href="#" class="user-dropdown-link" @click.prevent="showNotifications">

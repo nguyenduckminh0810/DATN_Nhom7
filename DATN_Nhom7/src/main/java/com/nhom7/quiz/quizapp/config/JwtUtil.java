@@ -24,18 +24,29 @@ public class JwtUtil {
     }
 
     // Phương thức này sẽ tạo token JWT cho người dùng
-    public String generateToken(String username) {
+    public String generateToken(String username, String role) {
         return Jwts.builder()
                 .setSubject(username)
+                .claim("role", role) // ✅ THÊM ROLE VÀO TOKEN
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
+    
+    // Phương thức này sẽ tạo token JWT cho người dùng (backward compatibility)
+    public String generateToken(String username) {
+        return generateToken(username, "USER"); // Default role
+    }
 
     // Phương thức này sẽ trích xuất tên người dùng từ token
     public String extractUsername(String token) {
         return getClaims(token).getSubject();
+    }
+    
+    // ✅ THÊM METHOD ĐỂ EXTRACT ROLE TỪ TOKEN
+    public String extractRole(String token) {
+        return getClaims(token).get("role", String.class);
     }
 
     // Phương thức này sẽ kiểm tra xem token có hợp lệ hay không

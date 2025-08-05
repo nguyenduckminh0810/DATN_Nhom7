@@ -84,9 +84,10 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-
-            if (jwtUtil.validateToken(token) && !jwtUtil.isTokenExpired(token)) {
+            if (jwtUtil.validateToken(token)) {
                 String username = jwtUtil.extractUsername(token);
+                String role = jwtUtil.extractRole(token);
+                
                 if (username != null) {
                     try {
                         User user = loginService.findByUsername(username);
@@ -99,7 +100,6 @@ public class JwtFilter extends OncePerRequestFilter {
                         } else {
                             authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
                         }
-
                         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                                 username, null, authorities);
 

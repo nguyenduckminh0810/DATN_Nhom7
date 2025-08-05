@@ -28,9 +28,19 @@ public class ImageController {
     
     @GetMapping("/image/quiz/{quizId}")
     public ResponseEntity<Resource> getImageByQuizId(@PathVariable Long quizId) throws IOException {
+        System.out.println("🖼️ Image request for quiz ID: " + quizId);
+        
         Image image = imageService.getImageByQuizId(quizId);
+        
+        // ✅ DEBUG: Kiểm tra image từ database
+        System.out.println("🔍 Image from database: " + image);
+        if (image != null) {
+            System.out.println("🔍 Image URL: " + image.getUrl());
+            System.out.println("🔍 Image Quiz ID: " + (image.getQuiz() != null ? image.getQuiz().getId() : "NULL"));
+        }
 
         if (image == null || image.getUrl() == null) {
+            System.out.println("❌ No image found for quiz ID: " + quizId);
             return ResponseEntity.notFound().build();
         }
 
@@ -49,16 +59,17 @@ public class ImageController {
         Path filePath = Paths.get(uploadDir, filename);
 
         if (!Files.exists(filePath)) {
+            System.out.println("❌ Image file not found: " + filePath);
             return ResponseEntity.notFound().build();
         }
 
         String contentType = Files.probeContentType(filePath);
         ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(filePath));
-        System.out.println("Image: " + image);
-        System.out.println("Image URL: " + imageUrl);
-        System.out.println("Extracted filename: " + filename);
-        System.out.println("File path: " + filePath);
-        System.out.println("File exists: " + Files.exists(filePath));
+        System.out.println("✅ Image found: " + image);
+        System.out.println("✅ Image URL: " + imageUrl);
+        System.out.println("✅ Extracted filename: " + filename);
+        System.out.println("✅ File path: " + filePath);
+        System.out.println("✅ File exists: " + Files.exists(filePath));
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType != null

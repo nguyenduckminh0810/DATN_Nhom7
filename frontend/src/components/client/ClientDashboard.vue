@@ -47,8 +47,6 @@ async function fetchUserProfile() {
     })
 
     userProfile.value = response.data
-    console.log('🔍 Dashboard - User Profile loaded:', response.data)
-    console.log('🔍 Dashboard - Avatar URL:', response.data.avatarUrl)
   } catch (error) {
     console.error('Error fetching user profile in dashboard:', error)
   }
@@ -74,13 +72,11 @@ function logoutForClientDashboard() {
 
 // ✅ LOAD PROFILE KHI COMPONENT MOUNT
 onMounted(() => {
-  console.log('🌟 Mounted Dashboard with username:', username.value)
   fetchUserProfile()
 })
 
 // ✅ XỬ LÝ LỖI AVATAR
 function handleAvatarError(event) {
-  console.log('❌ Dashboard Avatar load error, showing default icon')
   event.target.style.display = 'none'
   // Icon sẽ hiển thị tự động vì v-else
 }

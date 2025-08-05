@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -15,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nhom7.quiz.quizapp.model.Answer;
@@ -57,6 +60,9 @@ public class QuizService {
 
 	@Autowired
 	private AnswerService answerService;
+	
+	@Autowired
+	private ResultService resultService;
 
 	// Lấy tất cả quiz
 	public List<Quiz> getAllQuiz() {
@@ -74,17 +80,63 @@ public class QuizService {
 			System.out.println("📝 Quiz IsPublic: " + quiz.isPublic());
 
 			quiz.setCreatedAt(LocalDateTime.now());
+			
+			// ✅ LƯU QUIZ TRƯỚC
 			Quiz savedQuiz = quizRepo.save(quiz);
+			
+			// ✅ TẠO CODE SAU KHI ĐÃ CÓ ID
+			String quizCode = generateQuizCode(savedQuiz.getId());
+			savedQuiz.setQuizCode(quizCode);
+			savedQuiz.setCodeCreatedAt(LocalDateTime.now());
+			
+			// ✅ LƯU LẠI VỚI CODE
+			Quiz finalQuiz = quizRepo.save(savedQuiz);
 
 			// ✅ DEBUG: In ra quiz sau khi lưu
-			System.out.println("📝 Quiz created successfully with ID: " + savedQuiz.getId());
+			System.out.println("📝 Quiz created successfully with ID: " + finalQuiz.getId());
+			System.out.println("📝 Quiz Code: " + finalQuiz.getQuizCode());
 
-			return savedQuiz;
+			return finalQuiz;
 		} catch (Exception e) {
 			System.err.println("❌ Error creating quiz: " + e.getMessage());
 			e.printStackTrace();
 			throw e;
 		}
+	}
+
+	// ✅ THÊM METHOD TẠO CODE QUIZ
+	public String generateQuizCode(Long quizId) {
+		// Tạo code 6 ký tự: 3 chữ cái + 3 số
+		String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		String numbers = "0123456789";
+		
+		StringBuilder code = new StringBuilder();
+		Random random = new Random();
+		
+		// Tạo 3 chữ cái ngẫu nhiên
+		for (int i = 0; i < 3; i++) {
+			code.append(letters.charAt(random.nextInt(letters.length())));
+		}
+		
+		// Tạo 3 số ngẫu nhiên
+		for (int i = 0; i < 3; i++) {
+			code.append(numbers.charAt(random.nextInt(numbers.length())));
+		}
+		
+		String generatedCode = code.toString();
+		
+		// Kiểm tra xem code đã tồn tại chưa
+		if (quizRepo.existsByQuizCode(generatedCode)) {
+			// Nếu đã tồn tại, tạo lại
+			return generateQuizCode(quizId);
+		}
+		
+		return generatedCode;
+	}
+
+	// ✅ THÊM METHOD TÌM QUIZ THEO CODE
+	public Optional<Quiz> findByQuizCode(String quizCode) {
+		return quizRepo.findByQuizCode(quizCode.toUpperCase());
 	}
 
 	// Lấy quiz theo ID
@@ -127,12 +179,140 @@ public class QuizService {
 	// Lấy danh sách quiz theo userId có phân trang
 	public Page<Quiz> getQuizzesByUserPaginated(Long userId, int page, int size) {
 		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+		return quizRepo.findByUserIdAndDeletedFalse(userId, pageable);
+	}
+
+	public Page<Quiz> getPublicQuizzes(Boolean isPublic, int page, int size) {
+		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+		return quizRepo.findByIsPublicAndDeletedFalse(isPublic, pageable);
+	}
+
+	// ✅ THÊM CÁC METHOD CHO SOFT DELETE
+	// Lấy tất cả quiz của user (kể cả đã xóa) - cho admin
+	public Page<Quiz> getAllQuizzesByUserPaginated(Long userId, int page, int size) {
+		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 		return quizRepo.findByUserId(userId, pageable);
 	}
 
-	public Page<Quiz> getPublicQuizzes(boolean isPublic, int page, int size) {
-		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-		return quizRepo.findByIsPublic(isPublic, pageable);
+	// Lấy quiz đã bị xóa mềm của user
+	public Page<Quiz> getDeletedQuizzesByUserPaginated(Long userId, int page, int size) {
+		Pageable pageable = PageRequest.of(page, size, Sort.by("deletedAt").descending());
+		return quizRepo.findByUserIdAndDeletedTrue(userId, pageable);
+	}
+
+	// Soft delete quiz
+	@Transactional
+	public boolean softDeleteQuiz(Long id, Long deletedByUserId) {
+		System.out.println("🔍 Checking if quiz exists: " + id);
+		if (quizRepo.existsByIdAndDeletedFalse(id)) {
+			System.out.println("✅ Quiz exists, proceeding with soft deletion");
+			try {
+				Optional<Quiz> quizOpt = quizRepo.findById(id);
+				if (quizOpt.isPresent()) {
+					Quiz quiz = quizOpt.get();
+					quiz.setDeleted(true); // ✅ SỬA: Sử dụng Boolean.TRUE
+					quiz.setDeletedAt(LocalDateTime.now());
+					
+					// Set user who deleted (nếu cần)
+					if (deletedByUserId != null) {
+						User deletedBy = loginService.findById(deletedByUserId);
+						if (deletedBy != null) {
+							quiz.setDeletedBy(deletedBy);
+						}
+					}
+					
+					quizRepo.save(quiz);
+					System.out.println("✅ Quiz soft deleted successfully");
+					return true;
+				}
+				return false;
+			} catch (Exception e) {
+				System.err.println("❌ Error soft deleting quiz: " + e.getMessage());
+				e.printStackTrace();
+				return false;
+			}
+		} else {
+			System.out.println("❌ Quiz not found or already deleted: " + id);
+			return false;
+		}
+	}
+
+	// Restore quiz (khôi phục quiz đã xóa mềm)
+	@Transactional
+	public boolean restoreQuiz(Long id) {
+		System.out.println("🔍 Attempting to restore quiz: " + id);
+		if (quizRepo.existsById(id)) {
+			try {
+				quizRepo.restoreQuiz(id);
+				System.out.println("✅ Quiz restored successfully");
+				return true;
+			} catch (Exception e) {
+				System.err.println("❌ Error restoring quiz: " + e.getMessage());
+				e.printStackTrace();
+				return false;
+			}
+		} else {
+			System.out.println("❌ Quiz not found: " + id);
+			return false;
+		}
+	}
+
+	// Hard delete quiz (xóa hoàn toàn)
+	@Transactional
+	public boolean hardDeleteQuiz(Long id) {
+		System.out.println("🔍 Checking if quiz exists: " + id);
+		if (quizRepo.existsById(id)) {
+			System.out.println("✅ Quiz exists, proceeding with hard deletion");
+			try {
+				// 1. Xóa image trước
+				Image image = imageRepo.findByQuizId(id);
+				if (image != null) {
+					System.out.println("🗑️ Deleting image: " + image.getUrl());
+					imageRepo.delete(image);
+				}
+				
+				// 2. Xóa results trước (vì results reference đến quiz)
+				System.out.println("🗑️ Deleting results for quiz: " + id);
+				resultService.deleteResultsByQuizId(id);
+				
+				// 3. Lấy questions của quiz
+				List<Question> questions = questionService.getQuestionsByQuizId(id);
+				System.out.println("🗑️ Found " + (questions != null ? questions.size() : 0) + " questions to delete");
+				if (questions != null && !questions.isEmpty()) {
+					// 4. Xóa answers trước (vì answers reference đến questions)
+					for (Question question : questions) {
+						System.out.println("🗑️ Deleting answers for question: " + question.getId());
+						answerService.deleteByQuestionId(question.getId());
+					}
+					
+					// 5. Xóa questions
+					for (Question question : questions) {
+						System.out.println("🗑️ Deleting question: " + question.getId());
+						questionService.deleteQuestion(question.getId());
+					}
+				}
+				
+				// 6. Cuối cùng xóa quiz
+				System.out.println("🗑️ Deleting quiz: " + id);
+				quizRepo.deleteById(id);
+				System.out.println("✅ Quiz hard deleted successfully");
+				return true;
+			} catch (Exception e) {
+				System.err.println("❌ Error hard deleting quiz: " + e.getMessage());
+				e.printStackTrace();
+				return false;
+			}
+		} else {
+			System.out.println("❌ Quiz not found: " + id);
+			return false;
+		}
+	}
+
+	// ✅ GIỮ LẠI METHOD CŨ ĐỂ TƯƠNG THÍCH NGƯỢC
+	@Transactional
+	public boolean deleteQuiz(Long id) {
+		// Mặc định sử dụng soft delete
+		return softDeleteQuiz(id, null);
 	}
 
 	public Image uploadImageForQuiz(Quiz quiz, MultipartFile file) throws IOException {
@@ -155,19 +335,6 @@ public class QuizService {
 		image.setQuiz(quiz);
 
 		return imageRepo.save(image);
-	}
-
-	// Xoá quiz
-	public boolean deleteQuiz(Long id) {
-		if (quizRepo.existsById(id)) {
-			Image image = imageRepo.findByQuizId(id);
-			if (image != null) {
-				imageRepo.delete(image); // Xoá tay từng ảnh
-			}
-			quizRepo.deleteById(id);
-			return true;
-		}
-		return false;
 	}
 
 	// ✅ PHƯƠNG THỨC IMPORT TỪ EXCEL - ĐÃ SỬA HOÀN CHỈNH
@@ -197,6 +364,12 @@ public class QuizService {
 
 		Quiz savedQuiz = quizRepo.save(quiz);
 
+		// ✅ TẠO CODE CHO QUIZ IMPORT
+		String quizCode = generateQuizCode(savedQuiz.getId());
+		savedQuiz.setQuizCode(quizCode);
+		savedQuiz.setCodeCreatedAt(LocalDateTime.now());
+		Quiz finalQuiz = quizRepo.save(savedQuiz);
+
 		// Tạo questions và answers
 		for (QuestionImportDto questionDto : quizData.getQuestions()) {
 			Question question = new Question();
@@ -220,7 +393,7 @@ public class QuizService {
 			}
 		}
 
-		return savedQuiz;
+		return finalQuiz;
 	}
 
 	// ✅ PHƯƠNG THỨC IMPORT QUIZ TỪ FILE EXCEL

@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.io.IOException;
+import java.util.Optional;
+import java.time.LocalDateTime;
 
 import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,7 +114,14 @@ public class QuizController {
 				}
 			}
 
-			return new ResponseEntity<>(savedQuiz, HttpStatus.CREATED);
+			// ✅ TRẢ VỀ RESPONSE VỚI QUIZ CODE
+			Map<String, Object> response = new HashMap<>();
+			response.put("success", true);
+			response.put("message", "Tạo quiz thành công!");
+			response.put("quiz", savedQuiz);
+			response.put("quizCode", savedQuiz.getQuizCode());
+			
+			return new ResponseEntity<>(response, HttpStatus.CREATED);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("Lỗi khi tạo quiz với ảnh: " + e.getMessage(),
@@ -159,10 +168,102 @@ public class QuizController {
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> deleteQuiz(@PathVariable Long id) {
-		return quizService.deleteQuiz(id)
-				? ResponseEntity.noContent().build()
-				: ResponseEntity.notFound().build();
+	public ResponseEntity<Map<String, Object>> deleteQuiz(@PathVariable Long id, HttpServletRequest request) {
+		try {
+			boolean deleted = quizService.deleteQuiz(id);
+			if (deleted) {
+				Map<String, Object> response = new HashMap<>();
+				response.put("success", true);
+				response.put("message", "Quiz đã được xóa thành công");
+				return ResponseEntity.ok(response);
+			} else {
+				Map<String, Object> response = new HashMap<>();
+				response.put("success", false);
+				response.put("message", "Không tìm thấy quiz hoặc đã bị xóa");
+				return ResponseEntity.ok(response);
+			}
+		} catch (Exception e) {
+			Map<String, Object> response = new HashMap<>();
+			response.put("success", false);
+			response.put("message", "Lỗi khi xóa quiz: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
+
+	// ✅ THÊM CÁC ENDPOINT MỚI CHO SOFT DELETE
+	@DeleteMapping("/{id}/hard")
+	public ResponseEntity<Map<String, Object>> hardDeleteQuiz(@PathVariable Long id, HttpServletRequest request) {
+		Map<String, Object> response = new HashMap<>();
+		
+		try {
+			System.out.println("🗑️ Attempting to hard delete quiz ID: " + id);
+			boolean deleteResult = quizService.hardDeleteQuiz(id);
+			System.out.println("🗑️ Hard delete result: " + deleteResult);
+			
+			if (deleteResult) {
+				response.put("success", true);
+				response.put("message", "Quiz đã được xóa hoàn toàn");
+				System.out.println("✅ Quiz hard deleted successfully");
+				return ResponseEntity.ok(response);
+			} else {
+				response.put("success", false);
+				response.put("message", "Quiz không tồn tại");
+				System.out.println("❌ Quiz not found");
+				return ResponseEntity.notFound().build();
+			}
+		} catch (Exception e) {
+			System.err.println("❌ Error hard deleting quiz: " + e.getMessage());
+			response.put("success", false);
+			response.put("message", "Lỗi khi xóa quiz: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
+
+	@PostMapping("/{id}/restore")
+	public ResponseEntity<Map<String, Object>> restoreQuiz(@PathVariable Long id, HttpServletRequest request) {
+		Map<String, Object> response = new HashMap<>();
+		
+		try {
+			System.out.println("🔄 Attempting to restore quiz ID: " + id);
+			boolean restoreResult = quizService.restoreQuiz(id);
+			System.out.println("🔄 Restore result: " + restoreResult);
+			
+			if (restoreResult) {
+				response.put("success", true);
+				response.put("message", "Quiz đã được khôi phục thành công");
+				System.out.println("✅ Quiz restored successfully");
+				return ResponseEntity.ok(response);
+			} else {
+				response.put("success", false);
+				response.put("message", "Quiz không tồn tại");
+				System.out.println("❌ Quiz not found");
+				return ResponseEntity.notFound().build();
+			}
+		} catch (Exception e) {
+			System.err.println("❌ Error restoring quiz: " + e.getMessage());
+			response.put("success", false);
+			response.put("message", "Lỗi khi khôi phục quiz: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
+
+	@GetMapping("/user/{userId}/deleted/paginated")
+	public ResponseEntity<Map<String, Object>> getDeletedQuizzesByUser(
+			@PathVariable Long userId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "6") int size) {
+
+		Page<Quiz> quizPage = quizService.getDeletedQuizzesByUserPaginated(userId, page, size);
+		List<Quiz> quizzes = quizPage.getContent();
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("quizzes", quizzes);
+		response.put("currentPage", quizPage.getNumber());
+		response.put("totalPages", quizPage.getTotalPages());
+		response.put("totalItems", quizPage.getTotalElements());
+		response.put("pageSize", quizPage.getSize());
+
+		return ResponseEntity.ok(response);
 	}
 
 	@GetMapping("/user/{userId}/paginated")
@@ -173,6 +274,16 @@ public class QuizController {
 
 		Page<Quiz> quizPage = quizService.getQuizzesByUserPaginated(userId, page, size);
 		List<Quiz> quizzes = quizPage.getContent();
+
+		// ✅ DEBUG: Kiểm tra trạng thái isPublic của quiz
+		System.out.println("🔍 Debug: Checking quiz public status for user " + userId);
+		for (Quiz quiz : quizzes) {
+			System.out.println("📝 Quiz ID: " + quiz.getId() + 
+				", Title: " + quiz.getTitle() + 
+				", IsPublic: " + quiz.isPublic() + 
+				", Deleted: " + quiz.isDeleted() +
+				", Has Image: " + (quiz.getImage() != null));
+		}
 
 		Map<String, Object> response = new HashMap<>();
 		response.put("quizzes", quizzes);
@@ -188,7 +299,20 @@ public class QuizController {
 	public Page<Quiz> getPublicQuizzes(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "8") int size) {
-		return quizService.getPublicQuizzes(true, page, size);
+		
+		Page<Quiz> quizPage = quizService.getPublicQuizzes(Boolean.TRUE, page, size);
+		
+		// ✅ DEBUG: Kiểm tra public quiz
+		System.out.println("🌍 Debug: Checking public quizzes");
+		for (Quiz quiz : quizPage.getContent()) {
+			System.out.println("📝 Public Quiz ID: " + quiz.getId() + 
+				", Title: " + quiz.getTitle() + 
+				", IsPublic: " + quiz.isPublic() + 
+				", Deleted: " + quiz.isDeleted() +
+				", Has Image: " + (quiz.getImage() != null));
+		}
+		
+		return quizPage;
 	}
 
 	// ✅ THÊM ENDPOINT PREVIEW
@@ -358,6 +482,7 @@ public class QuizController {
 			response.put("success", true);
 			response.put("message", "Import quiz thành công!");
 			response.put("quiz", importedQuiz);
+			response.put("quizCode", importedQuiz.getQuizCode());
 			response.put("questionsCount",
 					importedQuiz.getQuestions() != null ? importedQuiz.getQuestions().size() : 0);
 			response.put("hasImage", imageFile != null && !imageFile.isEmpty());
@@ -378,9 +503,146 @@ public class QuizController {
 		response.put("success", true);
 		response.put("message", "Hướng dẫn sử dụng template Excel");
 		response.put("columns", new String[] { "STT", "Câu hỏi", "Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D",
-				"Đáp án đúng", "Thời gian (giây)" }); // ✅ THÊM CỘT THỜI GIAN
+				"Đáp án đúng", "Thời gian (giây)" });
 		response.put("notes", "Đáp án đúng phải là A, B, C, hoặc D. Thời gian mặc định 30s, range 5-300s.");
 		return ResponseEntity.ok(response);
 	}
 
+	// ✅ THÊM ENDPOINT JOIN QUIZ BẰNG CODE
+	@GetMapping("/join/{code}")
+	public ResponseEntity<Map<String, Object>> joinQuizByCode(@PathVariable String code) {
+		Map<String, Object> response = new HashMap<>();
+		
+		try {
+			System.out.println("🎯 Join quiz request with code: " + code);
+			
+			Optional<Quiz> quizOpt = quizService.findByQuizCode(code);
+			
+			if (quizOpt.isEmpty()) {
+				System.out.println("❌ Quiz not found for code: " + code);
+				response.put("success", false);
+				response.put("message", "Không tìm thấy quiz với mã code này");
+				return ResponseEntity.notFound().build();
+			}
+			
+			Quiz quiz = quizOpt.get();
+			
+			if (quiz.isDeleted() != null && quiz.isDeleted()) {
+				System.out.println("❌ Quiz is deleted: " + quiz.getId());
+				response.put("success", false);
+				response.put("message", "Quiz này đã bị xóa");
+				return ResponseEntity.badRequest().body(response);
+			}
+			
+			System.out.println("✅ Quiz found: " + quiz.getTitle());
+			
+			// ✅ TRẢ VỀ THÔNG TIN QUIZ ĐỂ PREVIEW
+			Map<String, Object> quizInfo = new HashMap<>();
+			quizInfo.put("quizId", quiz.getId());
+			quizInfo.put("title", quiz.getTitle());
+			quizInfo.put("quizCode", quiz.getQuizCode());
+			quizInfo.put("isPublic", quiz.isPublic());
+			quizInfo.put("createdAt", quiz.getCreatedAt());
+			
+			// Thêm thông tin category nếu có
+			if (quiz.getCategory() != null) {
+				quizInfo.put("categoryName", quiz.getCategory().getName());
+			}
+			
+			// Thêm thông tin user nếu có
+			if (quiz.getUser() != null) {
+				quizInfo.put("creatorName", quiz.getUser().getFullName());
+			}
+			
+			response.put("success", true);
+			response.put("message", "Tìm thấy quiz thành công");
+			response.put("quiz", quizInfo);
+			
+			return ResponseEntity.ok(response);
+			
+		} catch (Exception e) {
+			System.err.println("❌ Error joining quiz: " + e.getMessage());
+			response.put("success", false);
+			response.put("message", "Lỗi khi tham gia quiz: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
+
+	// ✅ THÊM ENDPOINT LẤY QUIZ CODE
+	@GetMapping("/{id}/code")
+	public ResponseEntity<Map<String, Object>> getQuizCode(@PathVariable Long id) {
+		Map<String, Object> response = new HashMap<>();
+		
+		try {
+			Optional<Quiz> quizOpt = quizService.getQuizById(id);
+			
+			if (quizOpt.isEmpty()) {
+				response.put("success", false);
+				response.put("message", "Quiz không tồn tại");
+				return ResponseEntity.notFound().build();
+			}
+			
+			Quiz quiz = quizOpt.get();
+			
+			// Kiểm tra quiz có bị xóa không
+			if (Boolean.TRUE.equals(quiz.isDeleted())) {
+				response.put("success", false);
+				response.put("message", "Quiz đã bị xóa");
+				return ResponseEntity.ok(response);
+			}
+			
+			// Tạo code nếu chưa có
+			if (quiz.getQuizCode() == null || quiz.getQuizCode().isEmpty()) {
+				String quizCode = quizService.generateQuizCode(quiz.getId());
+				quiz.setQuizCode(quizCode);
+				quiz.setCodeCreatedAt(LocalDateTime.now());
+				quiz = quizService.updateQuiz(quiz.getId(), quiz).orElse(quiz);
+			}
+			
+			response.put("success", true);
+			response.put("quizCode", quiz.getQuizCode());
+			response.put("quizTitle", quiz.getTitle());
+			response.put("codeCreatedAt", quiz.getCodeCreatedAt());
+			
+			return ResponseEntity.ok(response);
+			
+		} catch (Exception e) {
+			System.err.println("❌ Error getting quiz code: " + e.getMessage());
+			e.printStackTrace();
+			response.put("success", false);
+			response.put("message", "Lỗi khi lấy mã code: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
+
+	@GetMapping("/debug/user/{userId}")
+	public ResponseEntity<Map<String, Object>> debugUserQuizzes(@PathVariable Long userId) {
+		Map<String, Object> response = new HashMap<>();
+		
+		try {
+			// Lấy tất cả quiz của user (kể cả đã xóa)
+			Page<Quiz> allQuizzes = quizService.getAllQuizzesByUserPaginated(userId, 0, 100);
+			
+			// Lấy quiz chưa bị xóa
+			Page<Quiz> activeQuizzes = quizService.getQuizzesByUserPaginated(userId, 0, 100);
+			
+			// Lấy quiz đã bị xóa
+			Page<Quiz> deletedQuizzes = quizService.getDeletedQuizzesByUserPaginated(userId, 0, 100);
+			
+			response.put("allQuizzesCount", allQuizzes.getTotalElements());
+			response.put("activeQuizzesCount", activeQuizzes.getTotalElements());
+			response.put("deletedQuizzesCount", deletedQuizzes.getTotalElements());
+			
+			response.put("allQuizzes", allQuizzes.getContent());
+			response.put("activeQuizzes", activeQuizzes.getContent());
+			response.put("deletedQuizzes", deletedQuizzes.getContent());
+			
+			return ResponseEntity.ok(response);
+			
+		} catch (Exception e) {
+			System.err.println("❌ Error debugging user quizzes: " + e.getMessage());
+			response.put("error", e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
 }

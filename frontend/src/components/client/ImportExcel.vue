@@ -18,11 +18,17 @@
       <div class="template-info">
         <p><strong>Cấu trúc file Excel:</strong></p>
         <ul>
-          <li>Cột A: STT (1, 2, 3...)</li>
-          <li>Cột B: Câu hỏi</li>
-          <li>Cột C-F: Đáp án A, B, C, D</li>
-          <li>Cột G: Đáp án đúng (A/B/C/D)</li>
-          <li>Cột H: Thời gian (giây) - mặc định 30s, range 5-300s</li>
+          <li>Cột A: Câu hỏi (bắt buộc)</li>
+          <li>Cột B-E: Đáp án A, B, C, D (bắt buộc)</li>
+          <li>Cột F: Đáp án đúng (A/B/C/D) (bắt buộc)</li>
+          <li>Cột G: Thời gian (giây) - mặc định 30s, range 5-300s</li>
+        </ul>
+        <p><strong>⚠️ Lưu ý validation:</strong></p>
+        <ul>
+          <li>Tất cả câu hỏi và đáp án không được để trống</li>
+          <li>Đáp án đúng phải là A, B, C hoặc D</li>
+          <li>Thời gian phải từ 5-300 giây</li>
+          <li>File phải có ít nhất 1 câu hỏi</li>
         </ul>
       </div>
     </div>
@@ -69,7 +75,7 @@
             <!-- Trạng thái đã chọn ảnh -->
             <div v-else class="image-selected">
               <img :src="imagePreview" alt="Preview" class="image-preview" />
-              <button @click="removeImage" class="remove-image">
+              <button @click="removeImage" class="remove-image" type="button">
                 <i class="bi bi-x-circle"></i>
               </button>
             </div>
@@ -95,14 +101,22 @@
           </div>
 
           <div v-else class="file-selected">
-            <i class="bi bi-file-earmark-excel"></i>
-            <div class="file-info">
-              <p class="file-name">{{ selectedFile.name }}</p>
-              <p class="file-size">{{ formatFileSize(selectedFile.size) }}</p>
+            <div class="file-content">
+              <i class="bi bi-file-earmark-excel"></i>
+              <div class="file-info">
+                <p class="file-name">{{ selectedFile.name }}</p>
+                <p class="file-size">{{ formatFileSize(selectedFile.size) }}</p>
+              </div>
+              <button 
+                @click="removeFile" 
+                class="remove-file" 
+                type="button"
+                title="Xóa file Excel"
+                aria-label="Xóa file Excel"
+              >
+                <i class="bi bi-x-circle"></i>
+              </button>
             </div>
-            <button @click="removeFile" class="remove-file">
-              <i class="bi bi-x-circle"></i>
-            </button>
           </div>
         </div>
 
@@ -206,6 +220,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import api from '@/utils/axios'
+import * as XLSX from 'xlsx'
 // State
 const quizTitle = ref('')
 const quizDescription = ref('')
@@ -252,11 +267,72 @@ const fetchCategories = async () => {
 }
 
 const downloadTemplate = () => {
-  // Tạo file Excel mẫu
-  const link = document.createElement('a')
-  link.href = '/templates/quiz-template.xlsx'
-  link.download = 'quiz-template.xlsx'
-  link.click()
+  // Tạo file Excel template thực sự với thư viện xlsx
+  const sampleData = [
+    { 
+      'Câu hỏi': 'Thủ đô của Việt Nam là gì?', 
+      'Đáp án A': 'Hà Nội', 
+      'Đáp án B': 'TP.HCM', 
+      'Đáp án C': 'Đà Nẵng', 
+      'Đáp án D': 'Huế', 
+      'Đáp án đúng': 'A', 
+      'Thời gian (giây)': 30 
+    },
+    { 
+      'Câu hỏi': '1 + 1 = ?', 
+      'Đáp án A': '1', 
+      'Đáp án B': '2', 
+      'Đáp án C': '3', 
+      'Đáp án D': '4', 
+      'Đáp án đúng': 'B', 
+      'Thời gian (giây)': 20 
+    },
+    { 
+      'Câu hỏi': 'Màu của lá cây thường là gì?', 
+      'Đáp án A': 'Đỏ', 
+      'Đáp án B': 'Vàng', 
+      'Đáp án C': 'Xanh', 
+      'Đáp án D': 'Trắng', 
+      'Đáp án đúng': 'C', 
+      'Thời gian (giây)': 25 
+    },
+    { 
+      'Câu hỏi': 'Con vật nào có 4 chân?', 
+      'Đáp án A': 'Cá', 
+      'Đáp án B': 'Chim', 
+      'Đáp án C': 'Chó', 
+      'Đáp án D': 'Rắn', 
+      'Đáp án đúng': 'C', 
+      'Thời gian (giây)': 15 
+    },
+    { 
+      'Câu hỏi': 'Nước nào lớn nhất thế giới?', 
+      'Đáp án A': 'Trung Quốc', 
+      'Đáp án B': 'Mỹ', 
+      'Đáp án C': 'Nga', 
+      'Đáp án D': 'Canada', 
+      'Đáp án đúng': 'C', 
+      'Thời gian (giây)': 60 
+    }
+  ];
+
+  try {
+    // Tạo worksheet từ dữ liệu
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    
+    // Tạo workbook mới
+    const workbook = XLSX.utils.book_new();
+    
+    // Thêm worksheet vào workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Câu hỏi');
+    
+    // Ghi file Excel thực sự
+    XLSX.writeFile(workbook, 'quiz-template.xlsx');
+    
+    console.log('✅ Excel template downloaded successfully');
+  } catch (error) {
+    console.error('❌ Error creating Excel template:', error);
+  }
 }
 
 // ✅ THÊM METHODS CHO IMAGE UPLOAD
@@ -363,10 +439,12 @@ const handleDrop = (event) => {
 }
 
 const removeFile = () => {
+  console.log('🗑️ Removing file...')
   selectedFile.value = null
   importResult.value = null
   showPreview.value = false
   previewData.value = null
+  console.log('✅ File removed successfully')
 }
 
 const formatFileSize = (bytes) => {
@@ -608,6 +686,7 @@ onMounted(() => {
 .image-selected {
   position: relative;
   display: inline-block;
+  z-index: 1;
 }
 
 .image-preview {
@@ -631,8 +710,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 14px;
   transition: background 0.3s;
+  z-index: 10;
 }
 
 .remove-image:hover {
@@ -703,22 +783,40 @@ onMounted(() => {
   padding: 20px;
   border-radius: 8px;
   border: 2px solid #27ae60;
+  position: relative;
+  min-height: 80px;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.file-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  position: relative;
 }
 
 .file-selected i {
   font-size: 32px;
   color: #27ae60;
+  flex-shrink: 0;
 }
 
 .file-info {
   flex: 1;
   margin-left: 15px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .file-name {
   font-weight: bold;
   color: #2c3e50;
   margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .file-size {
@@ -727,17 +825,49 @@ onMounted(() => {
 }
 
 .remove-file {
+  position: absolute;
+  top: -8px;
+  right: -8px;
   background: #e74c3c;
   color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
   transition: background 0.3s;
+  z-index: 10;
 }
 
 .remove-file:hover {
   background: #c0392b;
+  transform: scale(1.1);
+}
+
+
+
+/* Đảm bảo nút xóa hiển thị đúng trên mobile */
+@media (max-width: 768px) {
+  .remove-file {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+    top: -6px;
+    right: -6px;
+  }
+  
+  .file-selected {
+    padding: 15px;
+    min-height: 70px;
+  }
+  
+  .file-info {
+    margin-left: 10px;
+  }
 }
 
 .import-actions {

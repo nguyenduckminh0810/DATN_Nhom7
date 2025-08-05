@@ -38,13 +38,14 @@ public class DashboardService {
 
     public DashboardDTO getDashboardStats() {
         long totalUsers = userRepo.count();
-        long totalQuizzes = quizRepo.count();
+        // ✅ Cập nhật để chỉ đếm quiz chưa bị xóa
+        long totalQuizzes = quizRepo.countByIsPublicFalseAndDeletedFalse() + quizRepo.countByIsPublicTrueAndDeletedFalse();
         long totalAttempts = attemptRepo.count();
         long totalCategories = categoryRepo.count();
         long totalReports = reportRepo.count();
 
-        // Số lượng quiz chờ duyệt = isPublic = false
-        long pendingApproval = quizRepo.countByIsPublicFalse();
+        // Số lượng quiz chờ duyệt = isPublic = false và chưa bị xóa
+        long pendingApproval = quizRepo.countByIsPublicFalseAndDeletedFalse();
 
         return new DashboardDTO(
                 totalUsers,
@@ -56,7 +57,8 @@ public class DashboardService {
     }
 
     public List<QuizPendingDTO> getPendingQuizzes() {
-        return quizRepo.findByIsPublicFalseOrderByCreatedAtDesc().stream()
+        // ✅ Cập nhật để chỉ lấy quiz chưa bị xóa
+        return quizRepo.findByIsPublicFalseAndDeletedFalseOrderByCreatedAtDesc().stream()
                 .map(quiz -> new QuizPendingDTO(
                         quiz.getId(),
                         quiz.getTitle(),

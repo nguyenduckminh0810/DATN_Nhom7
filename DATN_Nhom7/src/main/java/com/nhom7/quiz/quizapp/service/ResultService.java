@@ -83,4 +83,12 @@ public class ResultService {
 
         return new EvaluationResult(score, correctAnswers);
     }
+
+    public List<Result> getResultsByQuizId(Long quizId) {
+        return resultRepo.findByQuiz_Id(quizId);
+    }
+
+    public void deleteResultsByQuizId(Long quizId) {
+        resultRepo.deleteByQuiz_Id(quizId);
+    }
 }

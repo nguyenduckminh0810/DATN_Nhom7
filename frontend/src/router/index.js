@@ -24,6 +24,8 @@ import UserQuizHistory from '@/components/client/UserQuizHistory.vue'
 import UserProfile from '@/components/client/UserProfile.vue'
 import UserManager from '@/components/admin/UserManager.vue'
 import QuizManager from '@/components/admin/QuizManager.vue'
+import QuizTrash from '@/components/client/QuizTrash.vue'
+import JoinQuiz from '@/components/client/JoinQuiz.vue'
 
 import UserProfilePage from '@/components/client/UserProfilePage.vue'
 
@@ -141,12 +143,29 @@ const routes = [
         component: ImportExcel,
         meta: { requiresAuth: true },
       },
-      // ✅ THÊM ROUTE CONTACT ĐỂ TRÁNH WARNING
+      {
+        path: 'trash',
+        name: 'QuizTrash',
+        component: QuizTrash,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'join-quiz',
+        name: 'JoinQuiz',
+        component: JoinQuiz,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'quiz/:code/join',
+        name: 'JoinQuizDirect',
+        component: JoinQuiz,
+        meta: { requiresAuth: true },
+      },
       {
         path: 'contact',
         name: 'Contact',
-        component: Home, // Tạm thời redirect về Home
-      },
+        component: () => import('@/components/client/Contact.vue'),
+
       // ✅ THÊM 404 ROUTE
       {
         path: '/:pathMatch(.*)*',

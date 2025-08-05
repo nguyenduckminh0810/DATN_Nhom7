@@ -4,6 +4,7 @@ import { useQuizCRUD } from './useQuizCRUD'
 import { useLogin } from './useLogin'
 import { useRouter } from 'vue-router'
 import api from '@/utils/axios'
+import * as XLSX from 'xlsx'
 // Hooks
 const { toQuizCRUD, categories } = useQuizCRUD()
 const { getUserId, username } = useLogin()
@@ -23,6 +24,7 @@ const isLoading = ref(false)
 const isCreating = ref(false)
 const loadingQuizzes = ref(true)
 const description = ref('')
+const messageType = ref('success')
 
 // State - Import Excel
 const activeTab = ref('create')
@@ -37,6 +39,11 @@ const importSelectedImage = ref(null)
 const importPreviewUrl = ref(null)
 const importIsPublic = ref(true)
 
+// ✅ THÊM STATE CHO QUIZ CODE
+const showCodeModal = ref(false)
+const quizCode = ref('')
+const quizInfo = ref(null)
+
 function handleImageUpload(event) {
   const file = event.target.files[0]
   if (file) {
@@ -45,8 +52,8 @@ function handleImageUpload(event) {
   }
 }
 
-function getQuizImageUrl(quizId) {
-  return `http://localhost:8080/api/image/quiz/${quizId}`
+const getQuizImageUrl = (quizId) => {
+  return `/api/image/quiz/${quizId}`
 }
 
 // Lifecycle
@@ -79,8 +86,24 @@ async function fetchCategories() {
 // Fetch quizzes
 async function fetchQuizzes() {
   try {
-    const response = await api.get('/quiz')
-    quizzes.value = response.data
+    // ✅ SỬA: CHỈ LẤY QUIZ CỦA USER HIỆN TẠI
+    const response = await api.get(`/quiz/user/${userId.value}/paginated`, {
+      params: { page: 0, size: 50 } // Lấy nhiều quiz hơn
+    })
+    console.log('🔍 Fetch quizzes response:', response.data)
+    quizzes.value = response.data.quizzes || response.data
+    console.log('✅ Quizzes loaded:', quizzes.value.length)
+    
+    // ✅ DEBUG: Kiểm tra từng quiz
+    quizzes.value.forEach((quiz, index) => {
+      console.log(`📝 Quiz ${index + 1}:`, {
+        id: quiz.id,
+        title: quiz.title,
+        isPublic: quiz.isPublic,
+        deleted: quiz.deleted,
+        deletedAt: quiz.deletedAt
+      })
+    })
   } catch (error) {
     console.error('Error fetching quizzes:', error)
   }
@@ -117,25 +140,23 @@ async function createQuiz() {
     )
 
     // ✅ LẤY quizId từ response
-    const quizId = response.data.id
+    const quizId = response.data.quiz?.id || response.data.id
+    const quizCode = response.data.quiz?.quizCode || response.data.quizCode
 
     message.value = 'Tạo quiz thành công!'
-
-    // Reset form
-    title.value = ''
-    description.value = ''
-    selectedCategoryId.value = ''
-    isPublic.value = true
-    selectedImage.value = null
-    previewUrl.value = null
-
+    messageType.value = 'success'
+    
+    // ✅ HIỂN THỊ QUIZ CODE VÀ LƯU QUIZ INFO
+    if (quizCode) {
+      showQuizCode(quizCode, quizId)
+    }
+    
+    resetForm()
     await fetchQuizzes()
-
-    // ✅ Điều hướng đến trang chỉnh sửa
-    router.push(`/quiz-crud/edit/${userId.value}/${quizId}`)
   } catch (error) {
     console.error('Lỗi khi tạo quiz:', error)
     message.value = 'Tạo quiz thất bại!'
+    messageType.value = 'error'
     setTimeout(() => {
       message.value = ''
     }, 3000)
@@ -165,8 +186,8 @@ async function deleteQuiz(quizId) {
     try {
       const response = await api.delete(`/quiz/${quizId}`)
 
-      if (response.status === 204) {
-        message.value = 'Xóa quiz thành công!'
+      if (response.status === 200 && response.data && response.data.success) {
+        message.value = response.data.message || 'Xóa quiz thành công!'
       } else {
         message.value = 'Xóa quiz thất bại: Quiz không tồn tại!'
       }
@@ -177,7 +198,9 @@ async function deleteQuiz(quizId) {
         message.value = ''
       }, 3000)
     } catch (error) {
-      if (error.response && error.response.status === 404) {
+      if (error.response && error.response.status === 403) {
+        message.value = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!'
+      } else if (error.response && error.response.status === 404) {
         message.value = 'Quiz không tồn tại!'
       } else {
         console.error('Lỗi khi xóa quiz:', error)
@@ -201,11 +224,72 @@ const canImport = computed(() => {
 
 // ✅ METHODS CHO IMPORT EXCEL
 const downloadTemplate = () => {
-  // Tạo và download file Excel template
-  const link = document.createElement('a')
-  link.href = '/templates/quiz-template-updated.xlsx'
-  link.download = 'quiz-template.xlsx'
-  link.click()
+  // Tạo file Excel template thực sự với thư viện xlsx
+  const sampleData = [
+    { 
+      'Câu hỏi': 'Thủ đô của Việt Nam là gì?', 
+      'Đáp án A': 'Hà Nội', 
+      'Đáp án B': 'TP.HCM', 
+      'Đáp án C': 'Đà Nẵng', 
+      'Đáp án D': 'Huế', 
+      'Đáp án đúng': 'A', 
+      'Thời gian (giây)': 30 
+    },
+    { 
+      'Câu hỏi': '1 + 1 = ?', 
+      'Đáp án A': '1', 
+      'Đáp án B': '2', 
+      'Đáp án C': '3', 
+      'Đáp án D': '4', 
+      'Đáp án đúng': 'B', 
+      'Thời gian (giây)': 20 
+    },
+    { 
+      'Câu hỏi': 'Màu của lá cây thường là gì?', 
+      'Đáp án A': 'Đỏ', 
+      'Đáp án B': 'Vàng', 
+      'Đáp án C': 'Xanh', 
+      'Đáp án D': 'Trắng', 
+      'Đáp án đúng': 'C', 
+      'Thời gian (giây)': 25 
+    },
+    { 
+      'Câu hỏi': 'Con vật nào có 4 chân?', 
+      'Đáp án A': 'Cá', 
+      'Đáp án B': 'Chim', 
+      'Đáp án C': 'Chó', 
+      'Đáp án D': 'Rắn', 
+      'Đáp án đúng': 'C', 
+      'Thời gian (giây)': 15 
+    },
+    { 
+      'Câu hỏi': 'Nước nào lớn nhất thế giới?', 
+      'Đáp án A': 'Trung Quốc', 
+      'Đáp án B': 'Mỹ', 
+      'Đáp án C': 'Nga', 
+      'Đáp án D': 'Canada', 
+      'Đáp án đúng': 'C', 
+      'Thời gian (giây)': 60 
+    }
+  ];
+
+  try {
+    // Tạo worksheet từ dữ liệu
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    
+    // Tạo workbook mới
+    const workbook = XLSX.utils.book_new();
+    
+    // Thêm worksheet vào workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Câu hỏi');
+    
+    // Ghi file Excel thực sự
+    XLSX.writeFile(workbook, 'quiz-template.xlsx');
+    
+    console.log('✅ Excel template downloaded successfully');
+  } catch (error) {
+    console.error('❌ Error creating Excel template:', error);
+  }
 }
 
 const handleFileSelect = (event) => {
@@ -275,6 +359,16 @@ const importQuiz = async () => {
     importResult.value = response.data
 
     if (response.data.success) {
+      message.value = 'Import quiz thành công!'
+      messageType.value = 'success'
+      
+      // ✅ HIỂN THỊ QUIZ CODE CHO IMPORT
+      if (response.data.quiz && response.data.quiz.quizCode) {
+        showQuizCode(response.data.quiz.quizCode)
+      } else if (response.data.quizCode) {
+        showQuizCode(response.data.quizCode)
+      }
+      
       // Reset form và refresh quiz list
       setTimeout(() => {
         resetImportForm()
@@ -327,6 +421,70 @@ function handleImportImageUpload(event) {
 function removeImportImage() {
   importSelectedImage.value = null
   importPreviewUrl.value = null
+}
+
+// ✅ HIỂN THỊ QUIZ CODE
+const showQuizCode = (code, quizId = null) => {
+  quizCode.value = code
+  if (quizId) {
+    // ✅ LƯU QUIZ INFO ĐỂ SHARE
+    quizInfo.value = {
+      quizId: quizId,
+      quizCode: code
+    }
+  }
+  showCodeModal.value = true
+}
+
+// ✅ COPY CODE
+const copyQuizCode = async () => {
+  try {
+    await navigator.clipboard.writeText(quizCode.value)
+    message.value = 'Đã copy mã code!'
+    messageType.value = 'success'
+  } catch (error) {
+    console.error('Lỗi khi copy:', error)
+    message.value = 'Lỗi khi copy mã code'
+    messageType.value = 'error'
+  }
+}
+
+// ✅ SHARE CODE
+const shareCode = async () => {
+  try {
+    // ✅ TẠO LINK TRỰC TIẾP ĐẾN QUIZ PLAY PAGE
+    const userId = localStorage.getItem('userId') || '1'
+    const quizId = quizInfo.value?.quizId
+    const shareUrl = `${window.location.origin}/quiz/${quizId}/${userId}/play`
+    const shareText = `Tham gia quiz với mã code: ${quizCode.value}\nLink trực tiếp: ${shareUrl}`
+    
+    if (navigator.share) {
+      await navigator.share({
+        title: 'Tham gia Quiz',
+        text: shareText,
+        url: shareUrl
+      })
+    } else {
+      // Fallback: copy to clipboard
+      await navigator.clipboard.writeText(shareText)
+      message.value = 'Đã copy thông tin chia sẻ!'
+      messageType.value = 'success'
+    }
+  } catch (error) {
+    console.error('Error sharing:', error)
+    message.value = 'Lỗi khi chia sẻ!'
+    messageType.value = 'error'
+  }
+}
+
+// ✅ RESET FORM
+const resetForm = () => {
+  title.value = ''
+  description.value = ''
+  selectedCategoryId.value = ''
+  isPublic.value = true
+  selectedImage.value = null
+  previewUrl.value = null
 }
 </script>
 
@@ -856,6 +1014,76 @@ function removeImportImage() {
       <button class="toast-close" @click="message = ''">
         <i class="bi bi-x-lg"></i>
       </button>
+    </div>
+  </div>
+
+  <!-- ✅ QUIZ CODE MODAL -->
+  <div v-if="showCodeModal" class="modal-overlay" @click="showCodeModal = false">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <div class="success-icon">
+          <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h3>🎉 Quiz đã được tạo thành công!</h3>
+        <button @click="showCodeModal = false" class="modal-close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="code-section">
+          <h4>Mã code để tham gia quiz:</h4>
+          <div class="code-display">
+            <div class="code-container">
+              <span class="quiz-code">{{ quizCode }}</span>
+              <div class="code-actions">
+                <button @click="copyQuizCode" class="copy-btn" title="Copy mã code">
+                  <i class="bi bi-clipboard"></i>
+                  Copy
+                </button>
+                <button @click="shareCode" class="share-btn" title="Chia sẻ">
+                  <i class="bi bi-share"></i>
+                  Chia sẻ
+                </button>
+              </div>
+            </div>
+            
+            <!-- ✅ QR CODE CHO LOCALHOST -->
+            <div class="qr-section">
+              <h5>QR Code để tham gia</h5>
+              <div class="qr-container">
+                <div class="qr-placeholder">
+                  <i class="bi bi-qr-code"></i>
+                  <p>Scan để tham gia quiz</p>
+                  <small>localhost:3000/join-quiz</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="code-info">
+            <div class="info-item">
+              <i class="bi bi-info-circle"></i>
+              <span>Chia sẻ mã code này cho học sinh để họ có thể tham gia quiz</span>
+            </div>
+            <div class="info-item">
+              <i class="bi bi-clock"></i>
+              <span>Mã code có hiệu lực vĩnh viễn</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button @click="showCodeModal = false" class="btn btn-secondary">
+            <i class="bi bi-check"></i>
+            Hoàn thành
+          </button>
+          <RouterLink to="/join-quiz" class="btn btn-primary">
+            <i class="bi bi-key"></i>
+            Thử nghiệm tham gia
+          </RouterLink>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -2683,5 +2911,257 @@ function removeImportImage() {
     margin-top: 24px;
     padding-top: 16px;
   }
+}
+
+/* === QUIZ CODE MODAL === */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 25px;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.success-icon {
+  font-size: 2rem;
+  color: #28a745;
+  margin-right: 15px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  flex: 1;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-body {
+  padding: 30px;
+}
+
+.code-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.code-section h4 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+}
+
+.code-display {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 20px;
+}
+
+.code-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.quiz-code {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #667eea;
+  letter-spacing: 4px;
+  font-family: 'Courier New', monospace;
+  background: white;
+  padding: 15px 25px;
+  border-radius: 10px;
+  border: 2px solid #e9ecef;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.code-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.copy-btn, .share-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copy-btn {
+  background: #667eea;
+  color: white;
+}
+
+.copy-btn:hover {
+  background: #5a6fd8;
+  transform: translateY(-1px);
+}
+
+.share-btn {
+  background: #28a745;
+  color: white;
+}
+
+.share-btn:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.code-info {
+  margin-top: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.info-item i {
+  color: #667eea;
+  font-size: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.modal-actions .btn {
+  padding: 12px 25px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.code-instruction {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.qr-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+.qr-section h5 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1rem;
+}
+
+.qr-container {
+  display: flex;
+  justify-content: center;
+}
+
+.qr-placeholder {
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-placeholder i {
+  font-size: 3rem;
+  color: #6c757d;
+  margin-bottom: 10px;
+}
+
+.qr-placeholder p {
+  margin: 5px 0;
+  color: #333;
+  font-weight: 600;
+}
+
+.qr-placeholder small {
+  color: #6c757d;
+  font-size: 0.8rem;
 }
 </style>

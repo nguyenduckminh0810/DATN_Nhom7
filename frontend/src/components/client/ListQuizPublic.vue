@@ -36,14 +36,19 @@ async function fetchPublicQuizzes(page = 0) {
       params: { page, size: pageSize },
     })
 
-    const transformed = res.data.content.map((q) => ({
-      quiz_id: q.id,
-      title: q.title,
-      fullName: q.user.fullName,
-      categoryName: q.category.name,
-      categoryDescription: q.category.description,
-      publicQuiz: q.public,
-    }))
+
+    const transformed = res.data.content.map(q => {
+      const mappedQuiz = {
+        quiz_id: q.id,
+        title: q.title,
+        fullName: q.user?.fullName || 'Unknown',
+        categoryName: q.category?.name || 'Uncategorized',
+        categoryDescription: q.category?.description || '',
+        publicQuiz: q.isPublic !== undefined ? q.isPublic : (q.public !== undefined ? q.public : true)
+      }
+      return mappedQuiz
+    })
+
 
     quizCache.set(page, {
       content: transformed,
@@ -56,7 +61,7 @@ async function fetchPublicQuizzes(page = 0) {
     totalPages.value = res.data.totalPages
   } catch (err) {
     error.value = 'Không thể tải quiz công khai.'
-    console.error(err)
+    console.error('❌ Error fetching public quizzes:', err)
   } finally {
     isLoading.value = false
   }
@@ -64,8 +69,17 @@ async function fetchPublicQuizzes(page = 0) {
 
 const fetchPublicQuizzesDebounced = debounce(fetchPublicQuizzes, 300)
 
+// ✅ THÊM METHOD ĐỂ REFRESH DANH SÁCH
+const refreshPublicQuizzes = () => {
+  quizCache.clear() // Xóa cache
+  fetchPublicQuizzes(currentPage.value) // Tải lại data
+}
+
 onMounted(() => {
   fetchPublicQuizzes()
+  
+  // ✅ THÊM EVENT LISTENER ĐỂ LẮNG NGHE KHI CÓ QUIZ BỊ XÓA
+  window.addEventListener('quizDeleted', refreshPublicQuizzes)
 })
 
 function goToPage(page) {
@@ -207,13 +221,8 @@ function handleImageError(event) {
           >
             <!-- Quiz Image -->
             <div class="quiz-image-container">
-              <img
-                :src="`http://localhost:8080/api/image/quiz/${quiz.quiz_id}`"
-                :alt="quiz.title"
-                class="quiz-image"
-                @error="handleImageError"
-                loading="lazy"
-              />
+              <img :src="`/api/image/quiz/${quiz.quiz_id}`" :alt="quiz.title" class="quiz-image"
+                @error="handleImageError" loading="lazy" />
 
               <div class="quiz-overlay">
                 <button
