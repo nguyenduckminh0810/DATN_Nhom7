@@ -86,8 +86,7 @@ public class JwtFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
             if (jwtUtil.validateToken(token)) {
                 String username = jwtUtil.extractUsername(token);
-                String role = jwtUtil.extractRole(token);
-                
+
                 if (username != null) {
                     try {
                         User user = loginService.findByUsername(username);

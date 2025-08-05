@@ -30,12 +30,11 @@ const quizTitle = ref('')
 
 // ✅ LƯU QUIZ INFO ĐỂ SHARE
 const quizInfo = ref(null)
-
 // ✅ METHOD XEM QUIZ CODE
 const viewQuizCode = async (quizId) => {
   try {
     const response = await api.get(`/quiz/${quizId}/code`)
-    
+
     if (response.data.success) {
       quizCode.value = response.data.quizCode
       quizTitle.value = response.data.quizTitle
@@ -74,7 +73,7 @@ const shareCode = async () => {
     const quizId = quizInfo.value?.quizId
     const shareUrl = `${window.location.origin}/quiz/${quizId}/${userId}/play`
     const shareText = `Tham gia quiz "${quizTitle.value}" với mã code: ${quizCode.value}\nLink trực tiếp: ${shareUrl}`
-    
+
     if (navigator.share) {
       await navigator.share({
         title: 'Tham gia Quiz',
@@ -113,7 +112,7 @@ const fetchQuizzes = async (page = 0) => {
         params: { page, size: pageSize },
       },
     )
-    
+
     allQuizzes.value = data.quizzes.map((q) => {
       const mappedQuiz = {
         quiz_id: q.id,
@@ -191,23 +190,23 @@ const deleteQuiz = async (quizId) => {
   if (!confirm('Bạn có chắc chắn muốn xóa quiz này? Hành động này không thể hoàn tác.')) {
     return
   }
-  
+
   try {
     const response = await api.delete(`/quiz/${quizId}`)
-    
+
     // Kiểm tra status code và response data
     if (response.status === 200 && response.data && response.data.success) {
       // Hiển thị thông báo thành công
       showToast(response.data.message || 'Quiz đã được xóa thành công!', 'success')
-      
+
       console.log('✅ Quiz deleted successfully, refreshing list...')
       // Refresh danh sách quiz
       await fetchQuizzes(currentPage.value)
       console.log('✅ Quiz list refreshed')
-      
+
       // ✅ THÔNG BÁO CHO CÁC COMPONENT KHÁC BIẾT QUIZ ĐÃ BỊ XÓA
-      window.dispatchEvent(new CustomEvent('quizDeleted', { 
-        detail: { quizId: quizId } 
+      window.dispatchEvent(new CustomEvent('quizDeleted', {
+        detail: { quizId: quizId }
       }))
     } else {
       showToast('Có lỗi xảy ra khi xóa quiz. Vui lòng thử lại.', 'error')
@@ -217,7 +216,7 @@ const deleteQuiz = async (quizId) => {
     console.error('Error response:', error.response)
     console.error('Error status:', error.response?.status)
     console.error('Error data:', error.response?.data)
-    
+
     // Kiểm tra nếu là lỗi 403 (Forbidden) - có thể do token hết hạn
     if (error.response && error.response.status === 403) {
       showToast('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error')
@@ -287,12 +286,7 @@ onMounted(async () => {
 
     <!-- Filter & Search -->
     <div class="filter-bar">
-      <input
-        v-model="search"
-        @input="applyFilters"
-        class="search-input"
-        placeholder="Tìm kiếm quiz theo tiêu đề..."
-      />
+      <input v-model="search" @input="applyFilters" class="search-input" placeholder="Tìm kiếm quiz theo tiêu đề..." />
       <select v-model="filterPublic" @change="applyFilters" class="filter-select">
         <option value="all">Tất cả</option>
         <option value="public">Công khai</option>
@@ -344,21 +338,12 @@ onMounted(async () => {
 
     <!-- Quiz Grid -->
     <div v-else class="quiz-grid">
-      <div
-        class="quiz-card"
-        v-for="quiz in quizzes"
-        :key="quiz.quiz_id"
-        @mouseenter="hoveredQuiz = quiz.quiz_id"
-        @mouseleave="hoveredQuiz = null"
-      >
+      <div class="quiz-card" v-for="quiz in quizzes" :key="quiz.quiz_id" @mouseenter="hoveredQuiz = quiz.quiz_id"
+        @mouseleave="hoveredQuiz = null">
         <!-- Card Image -->
         <div class="quiz-image">
-          <img
-            :src="getQuizImageUrl(quiz.quiz_id)"
-            alt="Quiz Image"
-            @error="handleImageError"
-            @load="handleImageLoad"
-          />
+          <img :src="getQuizImageUrl(quiz.quiz_id)" alt="Quiz Image" @error="handleImageError"
+            @load="handleImageLoad" />
         </div>
         <!-- Card Header -->
         <div class="card-header">
@@ -366,10 +351,7 @@ onMounted(async () => {
             <i class="bi bi-tag"></i>
             <span>{{ quiz.categoryName }}</span>
           </div>
-          <div
-            class="visibility-badge"
-            :class="{ public: quiz.publicQuiz, private: !quiz.publicQuiz }"
-          >
+          <div class="visibility-badge" :class="{ public: quiz.publicQuiz, private: !quiz.publicQuiz }">
             <i :class="quiz.publicQuiz ? 'bi bi-globe' : 'bi bi-lock'"></i>
             <span>{{ quiz.publicQuiz ? 'Công khai' : 'Riêng tư' }}</span>
           </div>
@@ -390,12 +372,8 @@ onMounted(async () => {
             </div>
           </div>
           <div class="quiz-extra">
-            <span class="badge play-count"
-              ><i class="bi bi-controller"></i> {{ quiz.playCount }} lượt chơi</span
-            >
-            <span class="badge created-at"
-              ><i class="bi bi-calendar"></i> {{ formatDate(quiz.createdAt) }}</span
-            >
+            <span class="badge play-count"><i class="bi bi-controller"></i> {{ quiz.playCount }} lượt chơi</span>
+            <span class="badge created-at"><i class="bi bi-calendar"></i> {{ formatDate(quiz.createdAt) }}</span>
           </div>
         </div>
 
@@ -415,7 +393,7 @@ onMounted(async () => {
                 <i class="bi bi-key"></i>
                 <span>Xem Code</span>
               </button>
-              <button class="action-btn info" @click.stop="goToQuizDetail(quiz.quiz_id)">
+              <button class="action-btn info" @click.stop="openDetailModal(quiz.quiz_id)">
 
                 <i class="bi bi-info-circle"></i>
                 <span>Chi tiết</span>
@@ -433,11 +411,7 @@ onMounted(async () => {
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="pagination-container">
       <div class="pagination-wrapper">
-        <button
-          class="page-btn prev"
-          :disabled="currentPage === 0"
-          @click="goToPage(currentPage - 1)"
-        >
+        <button class="page-btn prev" :disabled="currentPage === 0" @click="goToPage(currentPage - 1)">
           <i class="bi bi-chevron-left"></i>
           <span>Trước</span>
         </button>
@@ -448,11 +422,7 @@ onMounted(async () => {
           <span class="total-pages">{{ totalPages }}</span>
         </div>
 
-        <button
-          class="page-btn next"
-          :disabled="currentPage === totalPages - 1"
-          @click="goToPage(currentPage + 1)"
-        >
+        <button class="page-btn next" :disabled="currentPage === totalPages - 1" @click="goToPage(currentPage + 1)">
           <span>Sau</span>
           <i class="bi bi-chevron-right"></i>
         </button>
@@ -462,23 +432,17 @@ onMounted(async () => {
     <!-- Toast Notification -->
     <transition name="slide-up">
       <div v-if="toast.show" :class="['toast', toast.type]">
-        <i
-          :class="{
-            'bi bi-check-circle-fill': toast.type === 'success',
-            'bi bi-x-circle-fill': toast.type === 'error',
-            'bi bi-info-circle-fill': toast.type === 'info',
-          }"
-        ></i>
+        <i :class="{
+          'bi bi-check-circle-fill': toast.type === 'success',
+          'bi bi-x-circle-fill': toast.type === 'error',
+          'bi bi-info-circle-fill': toast.type === 'info',
+        }"></i>
         <span>{{ toast.message }}</span>
       </div>
     </transition>
 
     <!-- Quiz Detail Modal -->
-    <QuizDetailModal
-      :show-modal="showDetailModal"
-      :quiz-id="selectedQuizId"
-      @close="closeDetailModal"
-    />
+    <QuizDetailModal :show-modal="showDetailModal" :quiz-id="selectedQuizId" @close="closeDetailModal" />
   </div>
 
   <!-- ✅ QUIZ CODE MODAL -->
@@ -493,7 +457,7 @@ onMounted(async () => {
           <i class="bi bi-x-lg"></i>
         </button>
       </div>
-      
+
       <div class="modal-body">
         <div class="code-section">
           <h4>{{ quizTitle }}</h4>
@@ -512,7 +476,7 @@ onMounted(async () => {
               </div>
             </div>
           </div>
-          
+
           <div class="code-info">
             <div class="info-item">
               <i class="bi bi-info-circle"></i>
@@ -524,7 +488,7 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        
+
         <div class="modal-actions">
           <button @click="showCodeModal = false" class="btn btn-secondary">
             <i class="bi bi-check"></i>
@@ -849,12 +813,10 @@ onMounted(async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(0, 0, 0, 0.85) 0%,
-    rgba(255, 107, 157, 0.9) 50%,
-    rgba(255, 61, 113, 0.9) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(0, 0, 0, 0.85) 0%,
+      rgba(255, 107, 157, 0.9) 50%,
+      rgba(255, 61, 113, 0.9) 100%);
   backdrop-filter: blur(15px);
   display: flex;
   align-items: center;
@@ -957,7 +919,7 @@ onMounted(async () => {
     gap: 8px;
     padding: 10px;
   }
-  
+
   .action-btn {
     padding: 6px 12px;
     font-size: 0.8rem;
@@ -1039,6 +1001,7 @@ onMounted(async () => {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
@@ -1213,7 +1176,8 @@ onMounted(async () => {
   gap: 10px;
 }
 
-.copy-btn, .share-btn {
+.copy-btn,
+.share-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;

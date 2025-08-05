@@ -51,7 +51,7 @@ public class SecurityConfig {
                 .and()
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/login", "/api/register", "/api/image/quiz/*", "/api/categories",
-                                "/api/user/avatars/**", "/api/upload/avatars/**", "/api/quiz/join/*")
+                                "/api/user/avatars/**", "/api/upload/avatars/**", "/api/quiz/join/*",
                                 "/api/quiz/public/**", "/api/image/quiz**", "/api/quiz/detail/**", "/api/question/**",
                                 "/api/quiz-attempts/public/recent/**",
                                 "/api/quizzes/**")

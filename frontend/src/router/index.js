@@ -165,7 +165,7 @@ const routes = [
         path: 'contact',
         name: 'Contact',
         component: () => import('@/components/client/Contact.vue'),
-
+      },
       // ✅ THÊM 404 ROUTE
       {
         path: '/:pathMatch(.*)*',
