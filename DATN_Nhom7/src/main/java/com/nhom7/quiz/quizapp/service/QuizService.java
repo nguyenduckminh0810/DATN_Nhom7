@@ -64,6 +64,23 @@ public class QuizService {
 	@Autowired
 	private ResultService resultService;
 
+	// ✅ OWNERSHIP VALIDATION METHOD
+	public boolean isOwner(Long quizId, String username) {
+		try {
+			Optional<Quiz> quizOpt = quizRepo.findById(quizId);
+			if (quizOpt.isPresent()) {
+				Quiz quiz = quizOpt.get();
+				User user = loginService.findByUsername(username);
+				return user != null && quiz.getUser() != null && 
+					   user.getId().equals(quiz.getUser().getId());
+			}
+			return false;
+		} catch (Exception e) {
+			System.err.println("❌ Error checking ownership: " + e.getMessage());
+			return false;
+		}
+	}
+
 	// Lấy tất cả quiz
 	public List<Quiz> getAllQuiz() {
 		return quizRepo.findAll();

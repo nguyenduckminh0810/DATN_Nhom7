@@ -2,6 +2,7 @@ package com.nhom7.quiz.quizapp.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,14 +20,15 @@ public class QuizReviewController {
     @Autowired
     private QuizReviewService reviewService;
 
-    // Lấy danh sách đánh giá
+    // Lấy danh sách đánh giá - ai cũng có thể xem
     @GetMapping("/{quizId}/reviews")
     public ResponseEntity<?> getReviewsForQuiz(@PathVariable Long quizId) {
         return ResponseEntity.ok(reviewService.getReviewsForQuiz(quizId));
     }
 
-    // Gửi đánh giá quiz
+    // Gửi đánh giá quiz - chỉ user đã đăng nhập
     @PostMapping("/{quizId}/review")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<?> submitReview(@PathVariable Long quizId,
             @RequestBody ReviewRequestDTO request) {
         Long userId = request.getUserId();
@@ -34,6 +36,7 @@ public class QuizReviewController {
         return ResponseEntity.ok(review);
     }
 
+    // Lấy điểm trung bình - ai cũng có thể xem
     @GetMapping("/{quizId}/average-rating")
     public ResponseEntity<Double> getAverageRating(@PathVariable Long quizId) {
         Double avg = reviewService.getAverageRating(quizId);

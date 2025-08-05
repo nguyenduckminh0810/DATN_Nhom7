@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.nhom7.quiz.quizapp.model.Answer;
@@ -35,7 +38,52 @@ public class ResultService {
     @Autowired
     private QuizRepo quizRepo;
 
+    // Kiểm tra quyền admin
+    private void checkAdminPermission() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
+            throw new AccessDeniedException("Chỉ admin mới có quyền thực hiện thao tác này");
+        }
+    }
+
+    // Kiểm tra quyền user (chỉ có thể xem kết quả của mình)
+    private void checkUserPermission(Long userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new AccessDeniedException("Không có quyền truy cập");
+        }
+        
+        // Admin có thể xem tất cả
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin) {
+            // User thường chỉ có thể xem kết quả của mình
+            String currentUsername = authentication.getName();
+            User currentUser = userRepo.findByUsername(currentUsername).orElse(null);
+            if (currentUser == null || !currentUser.getId().equals(userId)) {
+                throw new AccessDeniedException("Bạn chỉ có thể xem kết quả của mình");
+            }
+        }
+    }
+
+    // Method cho @PreAuthorize
+    public boolean checkUserPermission(Long userId, String username) {
+        // Admin có thể xem tất cả
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
+            return true;
+        }
+        
+        // User thường chỉ có thể xem kết quả của mình
+        User currentUser = userRepo.findByUsername(username).orElse(null);
+        return currentUser != null && currentUser.getId().equals(userId);
+    }
+
     public List<Result> getResultsByUserId(Long userId) {
+        checkUserPermission(userId);
         return resultRepo.findByUser_Id(userId);
     }
 
@@ -85,10 +133,12 @@ public class ResultService {
     }
 
     public List<Result> getResultsByQuizId(Long quizId) {
+        checkAdminPermission();
         return resultRepo.findByQuiz_Id(quizId);
     }
 
     public void deleteResultsByQuizId(Long quizId) {
+        checkAdminPermission();
         resultRepo.deleteByQuiz_Id(quizId);
     }
 }

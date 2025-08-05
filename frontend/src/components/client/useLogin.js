@@ -11,7 +11,7 @@ const token = ref('')
 const message = ref('')
 
 const initializeToken = () => {
-  const savedToken = localStorage.getItem('accessToken')
+  const savedToken = localStorage.getItem('token')
   const savedUserId = localStorage.getItem('userId')
   const savedUsername = localStorage.getItem('username') // ✅ Thêm dòng này
 
@@ -84,7 +84,7 @@ const login = async () => {
       message.value = data.message || '✅ Đăng nhập thành công!'
       localStorage.setItem('username', user.username || username.value)
 
-      localStorage.setItem('accessToken', jwt)
+      localStorage.setItem('token', jwt)
       localStorage.setItem('user', JSON.stringify(user))
       token.value = jwt
       status.value = 'loggedIn'
@@ -97,10 +97,14 @@ const login = async () => {
           console.log('❌ Failed to get userId')
         }
       })
+      
+      // ✅ RETURN USER DATA FOR REDIRECT LOGIC
+      return { success: true, user }
     } else {
       message.value = data.message || '❌ Có lỗi xảy ra!'
       status.value = 'loggedOut'
       resetForm()
+      return { success: false }
     }
   } catch (err) {
     console.error('Login error:', err)
@@ -119,20 +123,27 @@ const login = async () => {
 
     status.value = 'loggedOut'
     resetForm()
+    return { success: false }
   }
 }
 
 const logout = () => {
   // ✅ CLEAR AUTH DATA WITHOUT ROUTER
-  localStorage.removeItem('accessToken') // ✅ key đúng
-
-  token.value = null
-  userId.value = null
-  username.value = null
   localStorage.removeItem('token')
   localStorage.removeItem('userId')
   localStorage.removeItem('username')
+  localStorage.removeItem('user')
+  localStorage.removeItem('admin_user') // ✅ Xóa cả admin_user nếu có
+  
+  // ✅ Reset reactive values
+  token.value = null
+  userId.value = null
+  username.value = null
+  status.value = 'loggedOut'
+  message.value = ''
   resetForm()
+  
+  console.log('✅ Logout completed - all auth data cleared')
 }
 
 export function useLogin() {

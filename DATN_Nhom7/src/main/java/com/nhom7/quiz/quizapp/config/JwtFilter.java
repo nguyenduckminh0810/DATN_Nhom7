@@ -33,7 +33,6 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/login",
             "/api/register",
             "/api/image/quiz/",
-            "/api/categories",
             "/api/user/avatars/",
             "/api/upload/avatars/",
             "/api/quiz-attempts/public/",
@@ -67,7 +66,8 @@ public class JwtFilter extends OncePerRequestFilter {
         if (requestURI.startsWith("/api/login") ||
                 requestURI.startsWith("/api/register") ||
                 requestURI.startsWith("/api/image/quiz/") ||
-                requestURI.startsWith("/api/categories") ||
+                // ✅ CHỈ BỎ QUA GET /api/categories, KHÔNG BỎ QUA POST/PUT/DELETE
+                (requestURI.startsWith("/api/categories") && "GET".equalsIgnoreCase(method)) ||
                 requestURI.startsWith("/api/user/avatars/") ||
                 requestURI.startsWith("/api/upload/avatars/") ||
                 requestURI.startsWith("/api/quiz-attempts/public/") ||
@@ -94,10 +94,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
                         if (user != null) {
                             String role = user.getRole();
-                            authorities = List.of(new SimpleGrantedAuthority(
-                                    "ADMIN".equalsIgnoreCase(role) ? "ROLE_ADMIN" : "ROLE_USER"));
+                            String authority = "ADMIN".equalsIgnoreCase(role) ? "ROLE_ADMIN" : "ROLE_USER";
+                            authorities = List.of(new SimpleGrantedAuthority(authority));
+                            System.out.println("🔐 User: " + username + " | Role: " + role + " | Authority: " + authority);
                         } else {
                             authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+                            System.out.println("⚠️ User not found: " + username + " | Default Authority: ROLE_USER");
                         }
                         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                                 username, null, authorities);

@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api")
@@ -286,6 +287,7 @@ public class UserController {
 
 	// Cập nhật thông tin người dùng
 	@PutMapping("/user/{id}")
+	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal")
 	public ResponseEntity<?> updateUserProfile(
 			@PathVariable Long id,
 			@RequestParam("fullName") String fullName,
@@ -342,6 +344,7 @@ public class UserController {
 
 	// Đổi mật khẩu
 	@PutMapping("/user/{id}/change-password")
+	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal")
 	public ResponseEntity<?> changePassword(
 			@PathVariable Long id,
 			@RequestBody Map<String, String> passwordMap) {
@@ -368,6 +371,7 @@ public class UserController {
 
 	// Xóa tài khoản
 	@DeleteMapping("/user/{id}")
+	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal")
 	public ResponseEntity<?> deleteUser(@PathVariable Long id) {
 		Optional<User> userOpt = userRepo.findById(id);
 		if (userOpt.isEmpty()) {

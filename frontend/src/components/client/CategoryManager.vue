@@ -98,7 +98,11 @@
                 <i class="bi bi-x-circle"></i>
                 Xóa form
               </button>
-              <button type="submit" class="btn-primary" :disabled="isAdding || nameError">
+              <button 
+                type="submit" 
+                class="btn-primary" 
+                :disabled="isButtonDisabled"
+              >
                 <div v-if="isAdding" class="loading-spinner">
                   <i class="bi bi-arrow-clockwise spin"></i>
                 </div>
@@ -133,6 +137,10 @@
                 <option value="newest">Mới nhất</option>
                 <option value="oldest">Cũ nhất</option>
               </select>
+              <RouterLink to="/admin/categories/trash" class="btn-trash">
+                <i class="bi bi-trash3"></i>
+                <span>Thùng rác</span>
+              </RouterLink>
             </div>
           </div>
 
@@ -215,12 +223,35 @@
           <div class="modal-icon">
             <i class="bi bi-exclamation-triangle"></i>
           </div>
-          <h3 class="modal-title">Xác nhận xóa</h3>
+          <h3 class="modal-title">Xác nhận xóa danh mục</h3>
         </div>
 
         <div class="modal-body">
-          <p>Bạn có chắc chắn muốn xóa danh mục <strong>"{{ categoryToDelete?.name }}"</strong>?</p>
-          <p class="warning-text">Hành động này không thể hoàn tác!</p>
+          <div class="category-info">
+            <h4>{{ categoryToDelete?.name }}</h4>
+            <p class="category-description">{{ categoryToDelete?.description || 'Không có mô tả' }}</p>
+            <div class="category-meta">
+              <span class="date-badge">
+                <i class="bi bi-calendar3"></i>
+                {{ formatDate(categoryToDelete?.createdAt) }}
+              </span>
+              <span class="id-badge">ID: {{ categoryToDelete?.id }}</span>
+            </div>
+          </div>
+          
+          <div class="warning-section">
+            <div class="warning-icon">
+              <i class="bi bi-info-circle"></i>
+            </div>
+            <div class="warning-content">
+              <p><strong>Lưu ý:</strong></p>
+              <ul>
+                <li>Danh mục sẽ được ẩn khỏi danh sách (soft delete)</li>
+                <li>Có thể khôi phục lại sau này</li>
+                <li>Nếu có quiz trong danh mục, không thể xóa</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         <div class="modal-actions">
@@ -231,7 +262,7 @@
           <button @click="deleteCategory" class="btn-confirm-delete" :disabled="isDeleting">
             <i v-if="isDeleting" class="bi bi-arrow-clockwise spin"></i>
             <i v-else class="bi bi-trash"></i>
-            {{ isDeleting ? 'Đang xóa...' : 'Xóa' }}
+            {{ isDeleting ? 'Đang xóa...' : 'Xóa danh mục' }}
           </button>
         </div>
       </div>
@@ -270,7 +301,25 @@ const showDeleteModal = ref(false)
 const categoryToDelete = ref(null)
 
 const userStore = useUserStore()
-const isAdmin = userStore.isAdmin()
+
+// ✅ CHECK ADMIN STATUS
+const isAdmin = computed(() => {
+  // Kiểm tra từ userStore
+  if (userStore.isAdmin()) {
+    return true
+  }
+  
+  // Kiểm tra trực tiếp từ localStorage
+  const userInfo = localStorage.getItem('user')
+  if (userInfo) {
+    const userData = JSON.parse(userInfo)
+    if (userData.role === 'admin' || userData.role === 'ADMIN') {
+      return true
+    }
+  }
+  
+  return false
+})
 
 const toast = ref({
   show: false,
@@ -281,12 +330,21 @@ const toast = ref({
 
 // Validation
 const nameError = computed(() => {
-  if (!newCategory.value.name) return ''
-  if (newCategory.value.name.length < 2) return 'Tên danh mục phải có ít nhất 2 ký tự'
+  if (!newCategory.value.name) {
+    return ''
+  }
+  if (newCategory.value.name.length < 2) {
+    return 'Tên danh mục phải có ít nhất 2 ký tự'
+  }
   if (categories.value.some(cat => cat.name.toLowerCase() === newCategory.value.name.toLowerCase())) {
     return 'Tên danh mục đã tồn tại'
   }
   return ''
+})
+
+// ✅ BUTTON DISABLED STATE
+const isButtonDisabled = computed(() => {
+  return isAdding.value || !!nameError.value
 })
 
 // Computed properties
@@ -365,10 +423,12 @@ function hideToast() {
   toast.value.show = false
 }
 
+
+
 async function fetchCategories() {
   isLoading.value = true
   try {
-    const res = await api.get('/categories')
+    const res = await api.get('/admin/categories')
     categories.value = res.data
   } catch (error) {
     console.error('Failed to load categories:', error)
@@ -379,12 +439,15 @@ async function fetchCategories() {
 }
 
 async function addCategory() {
-  if (!newCategory.value.name.trim() || nameError.value) return
+  if (!newCategory.value.name.trim() || nameError.value) {
+    return
+  }
 
   isAdding.value = true
   try {
-    await api.post('/categories', newCategory.value, {
-      headers: { Authorization: `Bearer ${userStore.token}` }
+    const token = localStorage.getItem('token')
+    await api.post('/admin/categories', newCategory.value, {
+      headers: { Authorization: `Bearer ${token}` }
     })
 
     clearForm()
@@ -420,8 +483,9 @@ async function saveEdit(id) {
 
   isSaving.value = true
   try {
-    await api.put(`/categories/${id}`, editCategory.value, {
-      headers: { Authorization: `Bearer ${userStore.token}` }
+    const token = localStorage.getItem('token')
+    await api.put(`/admin/categories/${id}`, editCategory.value, {
+      headers: { Authorization: `Bearer ${token}` }
     })
 
     cancelEdit()
@@ -445,21 +509,34 @@ function closeDeleteModal() {
   categoryToDelete.value = null
 }
 
+// ✅ DELETE CATEGORY WITH SOFT DELETE
 async function deleteCategory() {
   if (!categoryToDelete.value) return
 
   isDeleting.value = true
   try {
-    await api.delete(`/categories/${categoryToDelete.value.id}`, {
-      headers: { Authorization: `Bearer ${userStore.token}` }
+    const token = localStorage.getItem('token')
+    const response = await api.delete(`/admin/categories/${categoryToDelete.value.id}`, {
+      headers: { Authorization: `Bearer ${token}` }
     })
 
+    // ✅ KIỂM TRA RESPONSE MESSAGE
+    const message = response.data || 'Xóa danh mục thành công!'
+    
+    // ✅ KIỂM TRA NẾU CÓ QUIZ
+    if (message.includes('Không thể xóa danh mục vì có')) {
+      showToast(message, 'error')
+      closeDeleteModal()
+      return
+    }
+
+    showToast(message, 'success')
     closeDeleteModal()
     await fetchCategories()
-    showToast('Xóa danh mục thành công!')
   } catch (error) {
     console.error('Failed to delete category:', error)
-    showToast('Không thể xóa danh mục', 'error')
+    const errorMessage = error.response?.data || 'Không thể xóa danh mục'
+    showToast(errorMessage, 'error')
   } finally {
     isDeleting.value = false
   }
@@ -910,6 +987,28 @@ onMounted(() => {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+.btn-trash {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #ff4757, #ff6b9d);
+  color: white;
+  text-decoration: none;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-trash:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(255, 71, 87, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
 /* Table Container */
 .table-container {
   padding: 2rem;
@@ -1159,12 +1258,74 @@ onMounted(() => {
 
 .modal-body {
   margin-bottom: 2rem;
-  text-align: center;
 }
 
 .modal-body p {
   color: #666;
   margin-bottom: 1rem;
+}
+
+/* ✅ CATEGORY INFO SECTION */
+.category-info {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #667eea;
+}
+
+.category-info h4 {
+  color: #333;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.category-description {
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.category-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* ✅ WARNING SECTION */
+.warning-section {
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border-left: 4px solid #ffc107;
+}
+
+.warning-section .warning-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: #856404;
+  font-size: 1.1rem;
+}
+
+.warning-content p {
+  color: #856404;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.warning-content ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #856404;
+}
+
+.warning-content li {
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
 }
 
 .warning-text {

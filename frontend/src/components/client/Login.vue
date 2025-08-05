@@ -34,11 +34,20 @@ function toQuizHistory() {
     }
 }
 
+// ✅ Reset status when component mounts
+import { onMounted } from 'vue'
+
+onMounted(() => {
+    // ✅ Reset status to ensure clean state
+    status.value = 'loggedOut'
+    message.value = ''
+})
+
 watch(status, (newStatus) => {
     if (newStatus === 'loggedIn') {
         getUserId().then(id => {
             if (id) {
-                router.push({ name: 'ClientDashboard', params: { userId: id } })
+                router.push({ name: 'Dashboard', params: { userId: id } })
             } else alert("Không thể lấy thông tin người dùng.")
         })
     }
@@ -48,7 +57,7 @@ function togglePassword() {
     showPassword.value = !showPassword.value
 }
 
-function handleSubmit(e) {
+async function handleSubmit(e) {
     e.preventDefault() // ✅ PREVENT DEFAULT FORM SUBMISSION
     console.log('🔐 Login attempt:', { username: username.value, password: password.value ? '***' : 'empty' })
     console.log('📍 Current URL:', window.location.href)
@@ -61,7 +70,13 @@ function handleSubmit(e) {
     }
     
     console.log('✅ Form validation passed, calling login()')
-    login()
+    const result = await login()
+    
+    if (result.success) {
+        // ✅ REDIRECT TO USER DASHBOARD FOR ALL USERS
+        console.log('🚀 Redirecting to user dashboard')
+        router.push('/dashboard')
+    }
 }
 </script>
 

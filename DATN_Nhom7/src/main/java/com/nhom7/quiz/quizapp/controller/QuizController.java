@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/quiz")
@@ -161,6 +162,7 @@ public class QuizController {
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
 	public ResponseEntity<Quiz> updateQuiz(@PathVariable Long id, @RequestBody Quiz quiz) {
 		return quizService.updateQuiz(id, quiz)
 				.map(updatedQuiz -> ResponseEntity.ok().body(updatedQuiz))
@@ -168,6 +170,7 @@ public class QuizController {
 	}
 
 	@DeleteMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
 	public ResponseEntity<Map<String, Object>> deleteQuiz(@PathVariable Long id, HttpServletRequest request) {
 		try {
 			boolean deleted = quizService.deleteQuiz(id);
@@ -192,6 +195,7 @@ public class QuizController {
 
 	// ✅ THÊM CÁC ENDPOINT MỚI CHO SOFT DELETE
 	@DeleteMapping("/{id}/hard")
+	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
 	public ResponseEntity<Map<String, Object>> hardDeleteQuiz(@PathVariable Long id, HttpServletRequest request) {
 		Map<String, Object> response = new HashMap<>();
 		
@@ -220,6 +224,7 @@ public class QuizController {
 	}
 
 	@PostMapping("/{id}/restore")
+	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
 	public ResponseEntity<Map<String, Object>> restoreQuiz(@PathVariable Long id, HttpServletRequest request) {
 		Map<String, Object> response = new HashMap<>();
 		
