@@ -31,6 +31,7 @@ import com.nhom7.quiz.quizapp.repository.TagRepo;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
 import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
+import com.nhom7.quiz.quizapp.service.CategoryService;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -38,9 +39,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/admin")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
         @Autowired
         private CategoryRepo categoryRepo;
@@ -231,6 +234,92 @@ public class AdminController {
         @GetMapping("/categories")
         public List<Category> getAllCategories() {
                 return categoryRepo.findAll();
+        }
+
+        // Tạo danh mục mới
+        @PostMapping("/categories")
+        public ResponseEntity<?> createCategory(@RequestBody Category category) {
+                try {
+                        category.setCreatedAt(LocalDateTime.now());
+                        Category savedCategory = categoryRepo.save(category);
+                        return ResponseEntity.ok(savedCategory);
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body("Lỗi khi tạo danh mục: " + e.getMessage());
+                }
+        }
+
+        // Cập nhật danh mục
+        @PutMapping("/categories/{id}")
+        public ResponseEntity<?> updateCategory(@PathVariable Long id, @RequestBody Category category) {
+                if (!categoryRepo.existsById(id)) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Danh mục không tồn tại.");
+                }
+
+                try {
+                        Category existingCategory = categoryRepo.findById(id).orElse(null);
+                        if (existingCategory != null) {
+                                existingCategory.setName(category.getName());
+                                existingCategory.setDescription(category.getDescription());
+                                Category updatedCategory = categoryRepo.save(existingCategory);
+                                return ResponseEntity.ok(updatedCategory);
+                        }
+                        return ResponseEntity.notFound().build();
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body("Lỗi khi cập nhật danh mục: " + e.getMessage());
+                }
+        }
+
+        @Autowired
+        private CategoryService categoryService;
+
+        // ✅ SOFT DELETE CATEGORY
+        @DeleteMapping("/categories/{id}")
+        public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+                try {
+                        String result = categoryService.delete(id);
+                        return ResponseEntity.ok(result);
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body("Lỗi khi xóa danh mục: " + e.getMessage());
+                }
+        }
+
+        // ✅ HARD DELETE CATEGORY
+        @DeleteMapping("/categories/{id}/hard")
+        public ResponseEntity<?> hardDeleteCategory(@PathVariable Long id) {
+                try {
+                        String result = categoryService.hardDelete(id);
+                        return ResponseEntity.ok(result);
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body("Lỗi khi xóa hoàn toàn danh mục: " + e.getMessage());
+                }
+        }
+
+        // ✅ RESTORE CATEGORY
+        @PutMapping("/categories/{id}/restore")
+        public ResponseEntity<?> restoreCategory(@PathVariable Long id) {
+                try {
+                        String result = categoryService.restore(id);
+                        return ResponseEntity.ok(result);
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body("Lỗi khi khôi phục danh mục: " + e.getMessage());
+                }
+        }
+
+        // ✅ GET DELETED CATEGORIES
+        @GetMapping("/categories/deleted")
+        public ResponseEntity<?> getDeletedCategories() {
+                try {
+                        List<Category> deletedCategories = categoryService.getDeletedCategories();
+                        return ResponseEntity.ok(deletedCategories);
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body("Lỗi khi lấy danh sách danh mục đã xóa: " + e.getMessage());
+                }
         }
 
         @Autowired

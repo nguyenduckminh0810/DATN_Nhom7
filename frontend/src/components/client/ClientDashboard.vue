@@ -37,7 +37,7 @@ const avatarUrl = computed(() => {
 // ✅ LẤY THÔNG TIN PROFILE VÀ AVATAR
 async function fetchUserProfile() {
   try {
-    const token = localStorage.getItem('accessToken')
+    const token = localStorage.getItem('token')
     if (!token) return
 
     const response = await api.get('/user/profile', {

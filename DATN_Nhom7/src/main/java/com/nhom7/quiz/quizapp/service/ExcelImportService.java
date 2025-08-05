@@ -3,6 +3,9 @@ package com.nhom7.quiz.quizapp.service;
 import com.nhom7.quiz.quizapp.model.dto.*;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,14 +17,26 @@ import java.util.List;
 @Service
 public class ExcelImportService {
 
+    // Kiểm tra quyền admin
+    private void checkAdminPermission() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
+            throw new AccessDeniedException("Chỉ admin mới có quyền import dữ liệu từ Excel");
+        }
+    }
+
     // ✅ THÊM METHOD PREVIEW
     public QuizImportDto previewExcelFile(MultipartFile file, String title, String description, Long categoryId)
             throws IOException {
+        checkAdminPermission();
         return parseExcelFile(file, title, description, categoryId);
     }
 
     public QuizImportDto parseExcelFile(MultipartFile file, String title, String description, Long categoryId)
             throws IOException {
+        checkAdminPermission();
+        
         List<QuestionImportDto> questions = new ArrayList<>();
 
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
@@ -145,6 +160,8 @@ public class ExcelImportService {
     }
 
     public void validateQuizData(QuizImportDto quizData) throws IllegalArgumentException {
+        checkAdminPermission();
+        
         if (quizData.getTitle() == null || quizData.getTitle().trim().isEmpty()) {
             throw new IllegalArgumentException("Tên quiz không được để trống");
         }

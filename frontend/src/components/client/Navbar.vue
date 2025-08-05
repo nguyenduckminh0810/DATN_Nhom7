@@ -16,6 +16,53 @@ const isLoggedIn = computed(() => !!token.value)
 const userProfile = ref(null)
 const notificationCount = ref(3) // Có thể lấy từ API sau
 
+// ✅ CHECK USER ROLE
+const isAdmin = computed(() => {
+  const isAdminUser = userProfile.value?.role === 'admin' || userProfile.value?.role === 'ADMIN'
+  console.log('🔍 isAdmin computed:', isAdminUser, 'userProfile:', userProfile.value)
+  return isAdminUser
+})
+
+const isUser = computed(() => {
+  const isRegularUser = userProfile.value?.role === 'user' || userProfile.value?.role === 'USER' || !userProfile.value?.role
+  console.log('🔍 isUser computed:', isRegularUser, 'userProfile:', userProfile.value)
+  return isRegularUser
+})
+
+// ✅ ROLE-BASED MENU ITEMS
+const userMenuItems = computed(() => {
+  const items = [
+    {
+      label: 'Hồ sơ cá nhân',
+      icon: 'bi bi-person',
+      link: '/profile',
+      description: 'Xem và chỉnh sửa thông tin cá nhân'
+    },
+    {
+      label: 'Cài đặt',
+      icon: 'bi bi-gear',
+      link: '/settings',
+      description: 'Cài đặt tài khoản'
+    },
+    {
+      label: 'Thùng rác',
+      icon: 'bi bi-trash3',
+      link: '/trash',
+      description: 'Quiz đã xóa'
+    },
+    {
+      label: 'Thông báo',
+      icon: 'bi bi-bell',
+      action: 'notifications',
+      description: 'Xem thông báo mới',
+      badge: notificationCount.value
+    }
+  ]
+  return items
+})
+
+
+
 // ✅ LẤY THÔNG TIN PROFILE VÀ AVATAR
 async function fetchUserProfile() {
   try {
@@ -86,6 +133,45 @@ function handleLogoClick() {
   }
 }
 
+// ✅ SWITCH TO ADMIN PANEL
+const switchToAdminPanel = () => {
+  router.push('/admin/dashboard')
+}
+
+// ✅ SWITCH TO USER PANEL
+const switchToUserPanel = () => {
+  router.push('/dashboard')
+}
+
+// ✅ SHOW NOTIFICATIONS
+const showNotifications = () => {
+  // TODO: Implement notifications modal
+  alert('Tính năng thông báo sẽ được implement sau')
+}
+
+// ✅ LOGOUT FOR NAVBAR
+const logoutForNavbar = () => {
+  logout()
+  // ✅ Reset user profile
+  userProfile.value = null
+  // ✅ Close all dropdowns
+  closeAllDropdowns()
+  // ✅ Clear all reactive state
+  notificationCount.value = 0
+  avatarUrl.value = null
+  username.value = null
+  
+  // ✅ Clear all localStorage completely
+  localStorage.clear()
+  
+  // ✅ Redirect to login page after logout
+  router.push('/login')
+  console.log('✅ Logout completed - redirected to login')
+  
+  // ✅ Force refresh immediately
+  window.location.reload()
+}
+
 watch(message, (newVal) => {
   if (newVal === 'SUCCESS' && !username.value) {
     username.value = localStorage.getItem('username')
@@ -95,8 +181,22 @@ watch(message, (newVal) => {
 
 // ✅ Lấy profile khi component mount nếu đã login
 watch(isLoggedIn, (newVal) => {
-  if (newVal) {
+  // ✅ Chỉ load profile nếu có token
+  const token = localStorage.getItem('token')
+  if (newVal && token) {
     fetchUserProfile()
+  } else {
+    // ✅ Reset profile khi không login
+    userProfile.value = null
+  }
+})
+
+// ✅ Watch for token changes
+watch(() => localStorage.getItem('token'), (newToken) => {
+  if (!newToken) {
+    // ✅ Reset profile khi token bị xóa
+    userProfile.value = null
+    console.log('✅ Token removed - reset user profile')
   }
 })
 
@@ -104,88 +204,212 @@ watch(isLoggedIn, (newVal) => {
 watch(
   () => router.currentRoute.value.path,
   () => {
-    if (isLoggedIn.value) {
+    // ✅ Chỉ reload profile nếu user thực sự đã login và có token
+    const token = localStorage.getItem('token')
+    if (isLoggedIn.value && token) {
       fetchUserProfile()
     }
-  },
+  }
 )
 
-function logoutForNavbar() {
-  console.log('🔴 LOGOUT BUTTON CLICKED')
-
-  if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
-    logout()
-    router.push('/login')
-  }
-}
-
-async function goToHistory() {
-  try {
-    // Ensure we have userId
-    if (!userId.value) {
-      await getUserId()
-    }
-
-    if (userId.value) {
-      router.push({ name: 'QuizHistory', params: { userId: userId.value } })
-    } else {
-      console.error('Cannot get user ID for history navigation')
-      router.push('/login')
-    }
-  } catch (error) {
-    console.error('Error navigating to history:', error)
-    router.push('/login')
-  }
-}
-
-function showNotifications() {
-  alert('🔔 Tính năng thông báo sẽ được phát triển trong tương lai!')
-}
-
-// ✅ XỬ LÝ LỖI AVATAR
-const handleAvatarError = (event) => {
-  console.log('❌ Avatar load error, using fallback')
-  event.target.style.display = 'none'
-  event.target.nextElementSibling.style.display = 'block'
-}
-
-// ✅ FORCE REFRESH AVATAR (có thể gọi từ bên ngoài)
-function refreshAvatar() {
-  if (isLoggedIn.value) {
-    fetchUserProfile()
-  }
-}
-
-// ✅ EXPOSE FUNCTION CHO COMPONENT KHÁC
-defineExpose({
-  refreshAvatar,
-})
-
-let handleScroll
-
+// ✅ Lấy profile khi component mount nếu đã login
 onMounted(() => {
-  const header = document.getElementById('header')
-  handleScroll = () => {
-    if (window.scrollY > 10) {
-      header?.classList.add('scrolled')
-    } else {
-      header?.classList.remove('scrolled')
-    }
-  }
-
-  window.addEventListener('scroll', handleScroll)
-  handleScroll()
-
-  // ✅ Lấy profile nếu đã login
-  console.log('🔎 Navbar mounted - username:', username.value)
-  if (isLoggedIn.value) {
+  // ✅ Chỉ load profile nếu có token
+  const token = localStorage.getItem('token')
+  if (isLoggedIn.value && token) {
     fetchUserProfile()
   }
+  
+  // Add click outside listener
+  document.addEventListener('click', handleClickOutside)
+  
+  // Add mouse leave listeners for dropdowns
+  const dropdowns = document.querySelectorAll('.nav-item.dropdown')
+  dropdowns.forEach(dropdown => {
+    dropdown.addEventListener('mouseleave', () => {
+      setTimeout(() => {
+        const panel = dropdown.querySelector('.dropdown-panel')
+        if (panel && !dropdown.matches(':hover')) {
+          panel.style.opacity = '0'
+          panel.style.visibility = 'hidden'
+          panel.style.transform = 'translateX(-50%) translateY(-10px)'
+          dropdown.classList.remove('active')
+        }
+      }, 100)
+    })
+  })
 })
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
+  // Remove click outside listener
+  document.removeEventListener('click', handleClickOutside)
+  
+  // Remove mouse leave listeners
+  const dropdowns = document.querySelectorAll('.nav-item.dropdown')
+  dropdowns.forEach(dropdown => {
+    dropdown.removeEventListener('mouseleave', () => {})
+  })
 })
+
+// ✅ Xử lý lỗi avatar
+function handleAvatarError(event) {
+  console.log('❌ Avatar load error, showing fallback icon')
+  event.target.style.display = 'none'
+  const fallbackIcon = event.target.nextElementSibling
+  if (fallbackIcon) {
+    fallbackIcon.style.display = 'block'
+  }
+}
+
+// ✅ GO TO HISTORY
+function goToHistory() {
+  if (isLoggedIn.value) {
+    router.push('/history')
+  } else {
+    router.push('/login')
+  }
+}
+
+// ✅ DROPDOWN HANDLING
+const handleDropdownClick = (event) => {
+  event.preventDefault()
+  event.stopPropagation()
+  
+  const dropdown = event.currentTarget.closest('.dropdown')
+  const panel = dropdown.querySelector('.dropdown-panel')
+  
+  // Close all other dropdowns first
+  closeAllDropdowns()
+  
+  // Toggle current dropdown
+  if (panel.style.visibility === 'visible') {
+    panel.style.opacity = '0'
+    panel.style.visibility = 'hidden'
+    panel.style.transform = 'translateX(-50%) translateY(-10px)'
+    dropdown.classList.remove('active')
+  } else {
+    panel.style.opacity = '1'
+    panel.style.visibility = 'visible'
+    panel.style.transform = 'translateX(-50%) translateY(0)'
+    dropdown.classList.add('active')
+  }
+}
+
+// ✅ CLOSE ALL DROPDOWNS
+const closeAllDropdowns = () => {
+  const dropdowns = document.querySelectorAll('.dropdown-panel')
+  const dropdownItems = document.querySelectorAll('.nav-item.dropdown')
+  const userDropdowns = document.querySelectorAll('.user-dropdown')
+  const userMenus = document.querySelectorAll('.user-menu')
+  
+  dropdowns.forEach(panel => {
+    panel.style.opacity = '0'
+    panel.style.visibility = 'hidden'
+    panel.style.transform = 'translateX(-50%) translateY(-10px)'
+  })
+  
+  dropdownItems.forEach(item => {
+    item.classList.remove('active')
+  })
+  
+  userDropdowns.forEach(dropdown => {
+    dropdown.style.display = 'none'
+  })
+  
+  userMenus.forEach(menu => {
+    menu.classList.remove('active')
+  })
+}
+
+// ✅ CLICK OUTSIDE TO CLOSE
+const handleClickOutside = (event) => {
+  if (!event.target.closest('.dropdown')) {
+    closeAllDropdowns()
+  }
+}
+
+// ✅ USER DROPDOWN HANDLING
+const handleUserDropdownClick = (event) => {
+  event.preventDefault()
+  event.stopPropagation()
+  
+  const userMenu = event.currentTarget.closest('.user-menu')
+  const userDropdown = userMenu.querySelector('.user-dropdown')
+  
+  // Close all other dropdowns first
+  closeAllDropdowns()
+  
+  // Toggle user dropdown
+  if (userDropdown.style.display === 'block') {
+    userDropdown.style.display = 'none'
+    userMenu.classList.remove('active')
+  } else {
+    userDropdown.style.display = 'block'
+    userMenu.classList.add('active')
+  }
+}
+
+// ✅ HOVER DROPDOWN HANDLING
+const handleDropdownHover = (event) => {
+  const dropdown = event.currentTarget.closest('.dropdown')
+  const panel = dropdown.querySelector('.dropdown-panel')
+  
+  // Close all other dropdowns first
+  closeAllDropdowns()
+  
+  // Show current dropdown
+  panel.style.opacity = '1'
+  panel.style.visibility = 'visible'
+  panel.style.transform = 'translateX(-50%) translateY(0)'
+  dropdown.classList.add('active')
+}
+
+const handleDropdownLeave = (event) => {
+  const dropdown = event.currentTarget.closest('.dropdown')
+  const panel = dropdown.querySelector('.dropdown-panel')
+  
+  // Hide dropdown after delay
+  setTimeout(() => {
+    if (!dropdown.matches(':hover')) {
+      panel.style.opacity = '0'
+      panel.style.visibility = 'hidden'
+      panel.style.transform = 'translateX(-50%) translateY(-10px)'
+      dropdown.classList.remove('active')
+    }
+  }, 150)
+}
+
+// ✅ USER DROPDOWN HOVER HANDLING
+const handleUserDropdownHover = (event) => {
+  const userMenu = event.currentTarget.closest('.user-menu')
+  const userDropdown = userMenu.querySelector('.user-dropdown')
+  
+  // Close all other dropdowns first
+  closeAllDropdowns()
+  
+  // Show user dropdown
+  userDropdown.style.display = 'block'
+  userDropdown.style.opacity = '1'
+  userDropdown.style.visibility = 'visible'
+  userDropdown.style.transform = 'translateY(0)'
+  userMenu.classList.add('active')
+}
+
+const handleUserDropdownLeave = (event) => {
+  const userMenu = event.currentTarget.closest('.user-menu')
+  const userDropdown = userMenu.querySelector('.user-dropdown')
+  
+  // Hide user dropdown after delay
+  setTimeout(() => {
+    if (!userMenu.matches(':hover')) {
+      userDropdown.style.display = 'none'
+      userDropdown.style.opacity = '0'
+      userDropdown.style.visibility = 'hidden'
+      userDropdown.style.transform = 'translateY(-10px)'
+      userMenu.classList.remove('active')
+    }
+  }, 150)
+}
 </script>
 
 <template>
@@ -210,35 +434,35 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="nav-item dropdown">
-            <div class="nav-content">
+          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
+            <div class="nav-content" @click="handleDropdownClick">
               <i class="bi bi-puzzle"></i>
               <span>Quiz</span>
               <i class="bi bi-chevron-down dropdown-arrow"></i>
             </div>
             <div class="dropdown-panel">
-              <RouterLink to="/quiz-crud" class="dropdown-link">
+              <RouterLink to="/quiz-crud" class="dropdown-link" @click="closeAllDropdowns">
                 <i class="bi bi-plus-circle"></i>
                 <div class="link-content">
                   <span class="link-title">Tạo Quiz</span>
                   <small class="link-desc">Tạo quiz mới</small>
                 </div>
               </RouterLink>
-              <RouterLink to="/join-quiz" class="dropdown-link">
+              <RouterLink to="/join-quiz" class="dropdown-link" @click="closeAllDropdowns">
                 <i class="bi bi-key"></i>
                 <div class="link-content">
                   <span class="link-title">Tham gia Quiz</span>
                   <small class="link-desc">Nhập mã code</small>
                 </div>
               </RouterLink>
-              <RouterLink to="/my-quizzes" class="dropdown-link">
+              <RouterLink to="/my-quizzes" class="dropdown-link" @click="closeAllDropdowns">
                 <i class="bi bi-collection"></i>
                 <div class="link-content">
                   <span class="link-title">Quiz của tôi</span>
                   <small class="link-desc">Quản lý quiz</small>
                 </div>
               </RouterLink>
-              <RouterLink to="/public-quizzes" class="dropdown-link">
+              <RouterLink to="/public-quizzes" class="dropdown-link" @click="closeAllDropdowns">
                 <i class="bi bi-globe"></i>
                 <div class="link-content">
                   <span class="link-title">Quiz công khai</span>
@@ -248,21 +472,21 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="nav-item dropdown">
-            <div class="nav-content">
+          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
+            <div class="nav-content" @click="handleDropdownClick">
               <i class="bi bi-folder2"></i>
               <span>Danh mục</span>
               <i class="bi bi-chevron-down dropdown-arrow"></i>
             </div>
             <div class="dropdown-panel">
-              <RouterLink :to="{ name: 'CategoryManager' }" class="dropdown-link">
+              <RouterLink :to="{ name: 'CategoryView' }" class="dropdown-link" @click="closeAllDropdowns">
                 <i class="bi bi-grid"></i>
                 <div class="link-content">
                   <span class="link-title">Xem danh mục</span>
                   <small class="link-desc">Duyệt theo chủ đề</small>
                 </div>
               </RouterLink>
-              <RouterLink :to="{ name: 'CategoryManager' }" class="dropdown-link">
+              <RouterLink v-if="isAdmin" :to="{ name: 'AdminCategories' }" class="dropdown-link" @click="closeAllDropdowns">
                 <i class="bi bi-gear"></i>
                 <div class="link-content">
                   <span class="link-title">Quản lý</span>
@@ -298,8 +522,8 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <div v-else class="user-menu dropdown">
-          <div class="user-trigger">
+        <div v-else class="user-menu dropdown" @mouseenter="handleUserDropdownHover" @mouseleave="handleUserDropdownLeave">
+          <div class="user-trigger" @click="handleUserDropdownClick">
             <div class="user-avatar">
               <img
                 v-if="avatarUrl"
@@ -343,35 +567,40 @@ onUnmounted(() => {
 
             <div class="dropdown-divider"></div>
 
-            <RouterLink to="/profile" class="user-dropdown-link">
-              <i class="bi bi-person"></i>
-              <span>Hồ sơ cá nhân</span>
-            </RouterLink>
-
-            <RouterLink to="/profile" class="user-dropdown-link">
-              <i class="bi bi-gear"></i>
-              <span>Cài đặt</span>
-            </RouterLink>
-
-            <RouterLink to="/trash" class="user-dropdown-link">
-              <i class="bi bi-trash3"></i>
-              <span>Thùng rác</span>
-            </RouterLink>
-
-            <a href="#" class="user-dropdown-link" @click.prevent="showNotifications">
-              <i class="bi bi-bell"></i>
-              <span>Thông báo</span>
-              <span v-if="notificationCount > 0" class="notification-badge">{{
-                notificationCount
-              }}</span>
-            </a>
-
+            <!-- Menu Items - Show user menu items for all users -->
+            <div v-if="userMenuItems && userMenuItems.length > 0">
+              <!-- User Menu Items -->
+              <template v-for="(item, index) in userMenuItems" :key="`user-item-${index}`">
+                <RouterLink 
+                  v-if="item.link"
+                  :to="item.link" 
+                  class="user-dropdown-link"
+                  @click="closeAllDropdowns"
+                >
+                  <i :class="item.icon"></i>
+                  <span>{{ item.label }}</span>
+                  <span v-if="item.badge" class="notification-badge">{{ item.badge }}</span>
+                </RouterLink>
+                
+                <a 
+                  v-else-if="item.action"
+                  href="#" 
+                  class="user-dropdown-link" 
+                  @click.prevent="item.action === 'notifications' ? showNotifications() : null"
+                >
+                  <i :class="item.icon"></i>
+                  <span>{{ item.label }}</span>
+                  <span v-if="item.badge" class="notification-badge">{{ item.badge }}</span>
+                </a>
+              </template>
+            </div>
+            
+            <!-- Logout Button - Always show -->
             <div class="dropdown-divider"></div>
-
-            <button @click="logoutForNavbar" class="user-dropdown-link logout-link">
+            <a href="#" class="user-dropdown-link logout-link" @click.prevent="logoutForNavbar">
               <i class="bi bi-box-arrow-right"></i>
               <span>Đăng xuất</span>
-            </button>
+            </a>
           </div>
         </div>
       </div>
@@ -528,6 +757,10 @@ onUnmounted(() => {
   transform: rotate(180deg);
 }
 
+.nav-item.dropdown.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
 /* DROPDOWN PANELS */
 .dropdown-panel {
   position: absolute;
@@ -548,7 +781,8 @@ onUnmounted(() => {
   z-index: 1001;
 }
 
-.nav-item.dropdown:hover .dropdown-panel {
+.nav-item.dropdown:hover .dropdown-panel,
+.nav-item.dropdown.active .dropdown-panel {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
@@ -740,6 +974,10 @@ onUnmounted(() => {
   transform: rotate(180deg);
 }
 
+.user-menu.active .user-arrow {
+  transform: rotate(180deg);
+}
+
 /* USER DROPDOWN */
 .user-dropdown {
   position: absolute;
@@ -757,12 +995,22 @@ onUnmounted(() => {
   transform: translateY(-10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1001;
+  display: none;
 }
 
-.user-menu:hover .user-dropdown {
+.user-menu:hover .user-dropdown,
+.user-menu.active .user-dropdown {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
+  display: block;
+}
+
+/* HOVER BEHAVIOR FOR NAV DROPDOWNS */
+.nav-item.dropdown:hover .dropdown-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 .user-profile-header {
@@ -830,6 +1078,30 @@ onUnmounted(() => {
   width: 20px;
   text-align: center;
   color: #667eea;
+}
+
+.dropdown-header {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-link {
+  color: #dc3545 !important;
+}
+
+.admin-link:hover {
+  background-color: #dc3545 !important;
+  color: white !important;
+}
+
+.admin-link i {
+  color: #dc3545 !important;
 }
 
 .logout-link {

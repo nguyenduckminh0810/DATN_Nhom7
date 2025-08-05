@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,7 +38,9 @@ public class QuestionController {
     @Autowired
     private LoginService loginService;
 
+    // Xem câu hỏi để chỉnh sửa - chỉ chủ sở hữu quiz
     @GetMapping("/{quizId}")
+    @PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#quizId, authentication.principal)")
     public ResponseEntity<List<Question>> getQuestionsByQuizId(@PathVariable Long quizId,
             Authentication authentication) {
         System.out.println("🔍 Requesting questions for quiz ID: " + quizId);
@@ -135,7 +138,9 @@ public class QuestionController {
     @Autowired
     private AnswerService answerService;
 
+    // Xóa câu hỏi - chỉ chủ sở hữu quiz hoặc admin
     @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#id, authentication.principal)")
     public ResponseEntity<?> deleteQuestion(@PathVariable Long id) {
         try {
             answerService.deleteByQuestionId(id);
@@ -147,7 +152,9 @@ public class QuestionController {
         }
     }
 
+    // Cập nhật câu hỏi - chỉ chủ sở hữu quiz hoặc admin
     @PutMapping("/update/{questionId}")
+    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#questionId, authentication.principal)")
     public ResponseEntity<Question> updateQuestion(@PathVariable Long questionId, @RequestBody Question question) {
         Question updatedQuestion = questionService.updateQuestion(questionId, question);
         if (updatedQuestion == null) {
@@ -156,7 +163,9 @@ public class QuestionController {
         return ResponseEntity.ok(updatedQuestion);
     }
 
+    // Tạo câu hỏi - chỉ chủ sở hữu quiz hoặc admin
     @PostMapping("/create")
+    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#question.quiz.id, authentication.principal)")
     public ResponseEntity<Question> createQuestion(@RequestBody Question question) {
         Question createdQuestion = questionService.createQuestion(question);
         return ResponseEntity.status(201).body(createdQuestion);

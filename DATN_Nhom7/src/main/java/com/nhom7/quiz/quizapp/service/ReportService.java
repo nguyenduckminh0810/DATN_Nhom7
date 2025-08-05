@@ -11,6 +11,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.nhom7.quiz.quizapp.model.Quiz;
@@ -31,6 +34,36 @@ public class ReportService {
 
     @Autowired
     private UserRepo userRepo;
+
+    // Kiểm tra quyền admin
+    private void checkAdminPermission() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
+            throw new AccessDeniedException("Chỉ admin mới có quyền thực hiện thao tác này");
+        }
+    }
+
+    // Kiểm tra quyền user (chỉ có thể xem báo cáo của mình)
+    private void checkUserPermission(Long userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new AccessDeniedException("Không có quyền truy cập");
+        }
+        
+        // Admin có thể xem tất cả
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin) {
+            // User thường chỉ có thể xem báo cáo của mình
+            String currentUsername = authentication.getName();
+            User currentUser = userRepo.findByUsername(currentUsername).orElse(null);
+            if (currentUser == null || !currentUser.getId().equals(userId)) {
+                throw new AccessDeniedException("Bạn chỉ có thể xem báo cáo của mình");
+            }
+        }
+    }
 
     // Tạo báo cáo quiz mới
     public Report createQuizReport(Long userId, Long quizId, String reason) {
@@ -67,19 +100,25 @@ public class ReportService {
         return reportRepo.save(report);
     }
 
-    // Lấy tất cả báo cáo với phân trang
+    // Lấy tất cả báo cáo với phân trang (chỉ admin)
     public Page<Report> getAllReports(int page, int size) {
+        checkAdminPermission();
+        
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return reportRepo.findAll(pageable);
     }
 
     public Page<Report> getReportsByStatus(String status, int page, int size) {
+        checkAdminPermission();
+        
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return reportRepo.findByStatus(status, pageable);
     }
 
-    // Cập nhật trạng thái báo cáo
+    // Cập nhật trạng thái báo cáo (chỉ admin)
     public Report updateReportStatus(Long reportId, String newStatus) {
+        checkAdminPermission();
+        
         Optional<Report> reportOpt = reportRepo.findById(reportId);
         if (reportOpt.isEmpty()) {
             throw new IllegalArgumentException("Báo cáo không tồn tại!");
@@ -108,22 +147,31 @@ public class ReportService {
         return reportRepo.save(report);
     }
 
-    // Lấy báo cáo theo ID
+    // Lấy báo cáo theo ID (admin hoặc user sở hữu)
     public Optional<Report> getReportById(Long id) {
-        return reportRepo.findById(id);
+        Optional<Report> reportOpt = reportRepo.findById(id);
+        if (reportOpt.isPresent()) {
+            Report report = reportOpt.get();
+            checkUserPermission(report.getUser().getId());
+        }
+        return reportOpt;
     }
 
     public List<Report> getReportsByUserId(Long userId) {
+        checkUserPermission(userId);
         return reportRepo.findByUser_Id(userId);
     }
 
-    // Lấy báo cáo của quiz
+    // Lấy báo cáo của quiz (chỉ admin)
     public List<Report> getReportsByQuizId(Long quizId) {
+        checkAdminPermission();
         return reportRepo.findByQuiz_Id(quizId);
     }
 
-    // Thống kê báo cáo
+    // Thống kê báo cáo (chỉ admin)
     public Map<String, Object> getReportStats() {
+        checkAdminPermission();
+        
         Map<String, Object> stats = new HashMap<>();
 
         // Tổng số báo cáo
@@ -153,8 +201,10 @@ public class ReportService {
         return stats;
     }
 
-    // Xóa báo cáo
+    // Xóa báo cáo (chỉ admin)
     public boolean deleteReport(Long reportId) {
+        checkAdminPermission();
+        
         if (reportRepo.existsById(reportId)) {
             reportRepo.deleteById(reportId);
             return true;

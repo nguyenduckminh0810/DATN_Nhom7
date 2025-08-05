@@ -8,6 +8,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.nhom7.quiz.quizapp.model.Quiz;
@@ -27,8 +30,19 @@ public class adminservice {
         @Autowired
         private ResultRepo resultRepo;
 
+        // Kiểm tra quyền admin
+        private void checkAdminPermission() {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication == null || !authentication.getAuthorities().stream()
+                                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
+                        throw new AccessDeniedException("Chỉ admin mới có quyền thực hiện thao tác này");
+                }
+        }
+
         // Lấy danh sách tất cả quiz (kể cả riêng tư), lọc theo tags, có phân trang
         public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, int page, int size) {
+                checkAdminPermission();
+                
                 Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
                 Page<Quiz> quizzes = quizRepo.findAll(pageable);
@@ -67,6 +81,8 @@ public class adminservice {
 
         // Lấy danh sách tất cả quiz attempts (lịch sử làm quiz) cho admin
         public Page<ResultDTO> getAllQuizAttempts(int page, int size, Long userId, Long quizId) {
+                checkAdminPermission();
+                
                 Pageable pageable = PageRequest.of(page, size, Sort.by("completedAt").descending());
 
                 Page<Result> resultPage;
@@ -101,6 +117,8 @@ public class adminservice {
 
         // Phương thức để lấy danh sách tất cả người dùng
         public Page<UserDTO> getAllUsers(int page, int size, String search, String role) {
+                checkAdminPermission();
+                
                 Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
                 Page<User> userPage;
@@ -135,6 +153,8 @@ public class adminservice {
 
         // Phương thức dùng để sửa thông tin người dùng
         public UserDTO updateUser(Long id, UserDTO dto) {
+                checkAdminPermission();
+                
                 User user = userRepo.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
@@ -156,6 +176,8 @@ public class adminservice {
 
         // Phương thức dùng để xóa người dùng
         public void deleteUser(Long id) {
+                checkAdminPermission();
+                
                 if (!userRepo.existsById(id)) {
                         throw new RuntimeException("Người dùng không tồn tại");
                 }
@@ -168,6 +190,8 @@ public class adminservice {
         // Lấy danh sách tất cả quiz (kể cả riêng tư), lọc theo tags, có phân trang
 
         public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, Boolean isPublic, int page, int size) {
+                checkAdminPermission();
+                
                 Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
                 Page<Quiz> quizzes = quizRepo.searchQuizzes(
@@ -207,6 +231,8 @@ public class adminservice {
         private static final int REPORT_THRESHOLD = 5;
 
         public void checkAndBanUser(Long userId) {
+                checkAdminPermission();
+                
                 int reportCount = reportRepo.countByReportedUserIdAndStatus(userId, "RESOLVED");
 
                 if (reportCount >= REPORT_THRESHOLD) {

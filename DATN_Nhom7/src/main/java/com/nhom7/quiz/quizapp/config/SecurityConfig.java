@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +23,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     @Autowired
@@ -42,7 +44,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        System.out.println("🔐 Configuring Security Filter Chain");
+        System.out.println("🔐 Configuring Security Filter Chain with Role-Based Access");
 
         http
                 .cors().and()
@@ -50,13 +52,49 @@ public class SecurityConfig {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/login", "/api/register", "/api/image/quiz/*", "/api/categories",
-                                "/api/user/avatars/**", "/api/upload/avatars/**", "/api/quiz/join/*",
-                                "/api/quiz/public/**", "/api/image/quiz**", "/api/quiz/detail/**", "/api/question/**",
+                        // ✅ PUBLIC ENDPOINTS - Không cần authentication
+                        .requestMatchers(
+                                "/api/login", 
+                                "/api/register", 
+                                "/api/image/quiz/*", 
+                                "/api/categories", // ✅ Chỉ GET categories là public
+                                "/api/user/avatars/**", 
+                                "/api/upload/avatars/**", 
+                                "/api/quiz/join/*",
+                                "/api/quiz/public/**", 
+                                "/api/image/quiz**", 
+                                "/api/quiz/detail/**", 
+                                "/api/question/**",
                                 "/api/quiz-attempts/public/recent/**",
-                                "/api/quizzes/*/reviews", "/api/quizzes/*/average-rating", "/api/quizzes/*/review")
-                        .permitAll()
-                        .anyRequest().authenticated())
+                                "/api/quizzes/**"
+                        ).permitAll()
+                        
+                        // ✅ ADMIN-ONLY ENDPOINTS
+                        .requestMatchers(
+                                "/api/admin/**",
+                                "/api/admin/dashboard/**",
+                                "/api/admin/users/**",
+                                "/api/admin/quizzes/**",
+                                "/api/admin/reports/**",
+                                "/api/admin/analytics/**",
+                                "/api/admin/attempts/**"
+                        ).hasRole("ADMIN")
+                        
+                        // ✅ USER ENDPOINTS - Cần authentication
+                        .requestMatchers(
+                                "/api/user/**",
+                                "/api/quiz/**",
+                                "/api/quiz-attempts/**"
+                        ).hasAnyRole("USER", "ADMIN")
+                        
+                        // ✅ CATEGORIES CRUD - Chỉ admin mới được tạo/sửa/xóa
+                        .requestMatchers(
+                                "/api/categories/**"
+                        ).hasRole("ADMIN")
+                        
+                        // ✅ DEFAULT - Tất cả request khác cần authentication
+                        .anyRequest().authenticated()
+                )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

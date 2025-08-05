@@ -4,7 +4,7 @@ import { ref } from 'vue'
 export const useUserStore = defineStore('user', () => {
   const user = ref(null)
   const token = ref(localStorage.getItem('token') || null)
-  const isAuthenticated = ref(!!token.value)
+  const isAuthenticated = ref(!!localStorage.getItem('token'))
 
   // Lấy thông tin user từ localStorage
   const userInfo = localStorage.getItem('user')
@@ -33,7 +33,7 @@ export const useUserStore = defineStore('user', () => {
 
   // Computed properties
   const isAdmin = () => {
-    return user.value && user.value.role === 'ADMIN'
+    return user.value && (user.value.role === 'ADMIN' || user.value.role === 'admin')
   }
 
   const getUserId = () => {

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,7 +34,7 @@ public class ReportController {
     @Autowired
     private ReportService reportService;
 
-    // Tạo báo cáo
+    // Tạo báo cáo - ai cũng có thể tạo
     @PostMapping
     public ResponseEntity<?> createReport(@RequestBody ReportDTO reportDTO) {
         try {
@@ -61,8 +62,9 @@ public class ReportController {
         }
     }
 
-    // Lấy tất cả báo cáo
+    // Lấy tất cả báo cáo - chỉ admin
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllReports(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -83,8 +85,9 @@ public class ReportController {
         return ResponseEntity.ok(response);
     }
 
-    // Lấy báo cáo theo trạng thái
+    // Lấy báo cáo theo trạng thái - chỉ admin
     @GetMapping("/status/{status}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getReportsByStatus(
             @PathVariable String status,
             @RequestParam(defaultValue = "0") int page,
@@ -107,7 +110,7 @@ public class ReportController {
         return ResponseEntity.ok(response);
     }
 
-    // Lấy chi tiết báo cáo theo ID
+    // Lấy chi tiết báo cáo theo ID - admin hoặc user sở hữu
     @GetMapping("/{id}")
     public ResponseEntity<?> getReportById(@PathVariable Long id) {
         Optional<Report> reportOpt = reportService.getReportById(id);
@@ -123,8 +126,9 @@ public class ReportController {
         return ResponseEntity.ok(reportDTO);
     }
 
-    // Cập nhật trạng thái báo cáo
+    // Cập nhật trạng thái báo cáo - chỉ admin
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateReportStatus(
             @PathVariable Long id,
             @RequestBody ReportDTO reportDTO) {
@@ -146,8 +150,9 @@ public class ReportController {
         }
     }
 
-    // Lấy báo cáo của user
+    // Lấy báo cáo của user - admin hoặc user sở hữu
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal")
     public ResponseEntity<List<ReportDTO>> getReportsByUserId(@PathVariable Long userId) {
         List<Report> reports = reportService.getReportsByUserId(userId);
         List<ReportDTO> reportDTOs = reports.stream()
@@ -156,8 +161,9 @@ public class ReportController {
         return ResponseEntity.ok(reportDTOs);
     }
 
-    // Lấy báo cáo của quiz
+    // Lấy báo cáo của quiz - chỉ admin
     @GetMapping("/quiz/{quizId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<ReportDTO>> getReportsByQuizId(@PathVariable Long quizId) {
         List<Report> reports = reportService.getReportsByQuizId(quizId);
         List<ReportDTO> reportDTOs = reports.stream()
@@ -166,14 +172,15 @@ public class ReportController {
         return ResponseEntity.ok(reportDTOs);
     }
 
-    // Thống kê báo cáo
+    // Thống kê báo cáo - chỉ admin
     @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getReportStats() {
         Map<String, Object> stats = reportService.getReportStats();
         return ResponseEntity.ok(stats);
     }
 
-    // Kiểm tra user đã báo cáo quiz chưa
+    // Kiểm tra user đã báo cáo quiz chưa - ai cũng có thể kiểm tra
     @GetMapping("/check")
     public ResponseEntity<Map<String, Object>> checkUserReported(
             @RequestParam Long userId,
@@ -188,8 +195,9 @@ public class ReportController {
         return ResponseEntity.ok(response);
     }
 
-    // Xóa báo cáo
+    // Xóa báo cáo - chỉ admin
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteReport(@PathVariable Long id) {
         boolean deleted = reportService.deleteReport(id);
 
@@ -206,13 +214,14 @@ public class ReportController {
         }
     }
 
-    // Xử lí user bị report
+    // Xử lí user bị report - chỉ admin
     @Autowired
     private ReportRepo reportRepo;
     @Autowired
     private adminservice adminService;
 
     @PutMapping("/reports/{id}/resolve")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> resolveReport(@PathVariable Long id) {
         Report report = reportRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy report"));

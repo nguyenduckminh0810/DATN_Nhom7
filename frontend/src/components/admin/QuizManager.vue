@@ -129,7 +129,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import api from '@/utils/axios';
 
 const quizzes = ref([]);
 const search = ref('');
@@ -151,7 +151,7 @@ function formatDate(dateString) {
 
 async function fetchCategories() {
   try {
-    const response = await axios.get('/api/admin/categories');
+    const response = await api.get('/admin/categories');
     categories.value = response.data;
   } catch (error) {
     console.error('Lỗi khi tải thể loại:', error);
@@ -160,7 +160,7 @@ async function fetchCategories() {
 
 async function fetchTags() {
   try {
-    const response = await axios.get('/api/admin/tags'); // endpoint em viết
+    const response = await api.get('/admin/tags'); // endpoint em viết
     tags.value = response.data;
   } catch (error) {
     console.error('Lỗi khi tải tag:', error);
@@ -169,7 +169,7 @@ async function fetchTags() {
 
 async function fetchQuizzes() {
   try {
-    const response = await axios.get('/api/admin/all-quizzes/filter', {
+    const response = await api.get('/admin/all-quizzes/filter', {
       params: {
         keyword: search.value,
         tagId: selectedTagId.value === '' ? null : selectedTagId.value,

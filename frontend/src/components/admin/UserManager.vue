@@ -161,7 +161,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import api from '@/utils/axios'
 
 // State
 const users = ref([])
@@ -185,7 +185,7 @@ const newUser = ref({
 // Fetch users
 const fetchUsers = async () => {
   try {
-    const res = await axios.get('/api/admin/all-users', {
+    const res = await api.get('/admin/all-users', {
       params: {
         page: currentPage.value,
         size: pageSize,
