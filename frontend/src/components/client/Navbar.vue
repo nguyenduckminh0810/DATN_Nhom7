@@ -4,6 +4,11 @@ import { useLogin } from './useLogin'
 import { computed, watch, onMounted, onUnmounted, ref } from 'vue'
 import api from '@/utils/axios'
 
+// Define component name for Vue DevTools
+defineOptions({
+  name: 'MainNavbar',
+})
+
 const { logout, username, message, userId, getUserId, token } = useLogin()
 const router = useRouter()
 
@@ -77,10 +82,11 @@ async function fetchUserProfile() {
   } catch (error) {
     console.error('Error fetching user profile:', error)
 
-    // Nếu lỗi 401, có thể token đã hết hạn
-    if (error.response?.status === 401) {
+    // Nếu lỗi 401 hoặc 403, có thể token đã hết hạn hoặc không hợp lệ
+    if (error.response?.status === 401 || error.response?.status === 403) {
       console.log('❌ Token expired or invalid, clearing localStorage')
-      localStorage.removeItem('accessToken')
+      localStorage.removeItem('token')
+      localStorage.removeItem('userId')
       localStorage.removeItem('username')
       userProfile.value = null
 
