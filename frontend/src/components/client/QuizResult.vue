@@ -2,7 +2,6 @@
 import { useRoute, useRouter } from 'vue-router'
 import { computed, onMounted, ref } from 'vue'
 import { useLogin } from './useLogin'
-import axios from 'axios'
 import api from '@/utils/axios'
 const { username } = useLogin()
 const route = useRoute()
@@ -16,6 +15,12 @@ const correctAnswers = ref(JSON.parse(route.query.correctAnswers || '[]'))
 const selectedAnswers = ref(JSON.parse(route.query.selectedAnswers || '[]'))
 const questions = ref([])
 const isLoaded = ref(false)
+const review = ref({
+  rating: '',
+  reviewText: ''
+})
+const submitting = ref(false)
+const successMessage = ref('')
 
 onMounted(async () => {
   correctAnswers.value = JSON.parse(localStorage.getItem('correctAnswers') || '[]')
@@ -134,6 +139,28 @@ function playAgain() {
 
 function viewQuizzes() {
   router.push({ name: 'ListQuizPublic' })
+}
+
+const submitReview = async () => {
+  if (!review.value.rating || !review.value.reviewText || !userId) return
+
+  try {
+    submitting.value = true
+    await api.post(`/quizzes/${quizId}/review`, {
+      userId,
+      rating: review.value.rating,
+      reviewText: review.value.reviewText
+    })
+    successMessage.value = 'Cảm ơn bạn đã đánh giá!'
+    // Reset form
+    review.value.rating = ''
+    review.value.reviewText = ''
+  } catch (error) {
+    console.error('Lỗi khi gửi đánh giá:', error)
+    alert('Gửi đánh giá thất bại. Vui lòng thử lại!')
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -340,6 +367,33 @@ function viewQuizzes() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Form đánh giá -->
+        <div class="result-card review-card" :class="{ loaded: isLoaded }">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="bi bi-star-fill text-warning"></i>
+              Đánh giá trải nghiệm quiz
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="rating">Chọn số sao:</label>
+              <select v-model="review.rating" class="form-select">
+                <option disabled value="">-- Chọn --</option>
+                <option v-for="n in 5" :key="n" :value="n">{{ n }} sao</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="reviewText">Ý kiến của bạn:</label>
+              <textarea v-model="review.reviewText" class="form-control" rows="3" placeholder="Viết cảm nhận của bạn..."></textarea>
+            </div>
+            <button @click="submitReview" class="btn btn-primary" :disabled="review.rating === '' || submitting">
+              <i class="bi bi-send-fill me-2"></i> Gửi đánh giá
+            </button>
+            <div v-if="successMessage" class="alert alert-success mt-2">{{ successMessage }}</div>
           </div>
         </div>
 

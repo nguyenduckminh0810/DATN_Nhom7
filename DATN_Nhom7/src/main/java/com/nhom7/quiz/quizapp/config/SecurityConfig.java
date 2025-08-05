@@ -51,21 +51,11 @@ public class SecurityConfig {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/login",
-                                "/api/register",
-                                "/api/image/quiz/**",
-                                "/api/categories",
-                                "/api/user/avatars/**",
-                                "/api/upload/avatars/**",
-                                "/api/quiz/public/**",
-                                "/api/quiz/detail/**",
-                                "/api/question/play/**",
-                                "/api/quiz-attempts/public/**",
-                                "/api/quiz/user/**",
-                                "/api/quiz/**",
-                                "/api/answer/**",
-                                "/api/result/submit/**")
+                        .requestMatchers("/api/login", "/api/register", "/api/image/quiz/*", "/api/categories",
+                                "/api/user/avatars/**", "/api/upload/avatars/**",
+                                "/api/quiz/public/**", "/api/image/quiz**", "/api/quiz/detail/**", "/api/question/**",
+                                "/api/quiz-attempts/public/recent/**",
+                                "/api/quizzes/**")
                         .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -92,7 +82,7 @@ public class SecurityConfig {
         }
 
         @Override
-        public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
             registry.addResourceHandler("/uploads/**")
                     .addResourceLocations("file:uploads/");
         }

@@ -63,8 +63,21 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (isPublicEndpoint(requestURI)) {
-            System.out.println("✅ Skipping JWT filter for public endpoint: " + requestURI);
+        // ✅ BỎ QUA PUBLIC ENDPOINTS
+        if (requestURI.startsWith("/api/login") ||
+                requestURI.startsWith("/api/register") ||
+                requestURI.startsWith("/api/image/quiz/") ||
+                requestURI.startsWith("/api/categories") ||
+                requestURI.startsWith("/api/user/avatars/") ||
+                requestURI.startsWith("/api/upload/avatars/") ||
+                requestURI.startsWith("/api/quiz-attempts/public/") ||
+                requestURI.startsWith("/api/public/") ||
+                requestURI.startsWith("/api/quiz/") && requestURI.contains("/detail") ||
+                requestURI.startsWith("/api/question/") ||
+                requestURI.startsWith("/api/quiz/public") ||
+                requestURI.startsWith("/api/quizzes/")) {
+
+            System.out.println("✅ JWT Filter - Skipping public endpoint: " + requestURI);
             filterChain.doFilter(request, response);
             return;
         }
