@@ -42,7 +42,7 @@ const viewQuizCode = async (quizId) => {
       quizInfo.value = {
         quizId: quizId,
         quizCode: response.data.quizCode,
-        title: response.data.quizTitle
+        title: response.data.quizTitle,
       }
       showCodeModal.value = true
     } else {
@@ -78,7 +78,7 @@ const shareCode = async () => {
       await navigator.share({
         title: 'Tham gia Quiz',
         text: shareText,
-        url: shareUrl
+        url: shareUrl,
       })
     } else {
       // Fallback: copy to clipboard
@@ -104,14 +104,19 @@ const fetchCategories = async () => {
 }
 
 const fetchQuizzes = async (page = 0) => {
+  // Kiểm tra token trước khi gọi API
+  const token = localStorage.getItem('token')
+  if (!token) {
+    console.error('❌ No token found - redirecting to login')
+    router.push('/login')
+    return
+  }
+
   isLoading.value = true
   try {
-    const { data } = await api.get(
-      `/quiz/user/${userId.value}/paginated`,
-      {
-        params: { page, size: pageSize },
-      },
-    )
+    const { data } = await api.get(`/quiz/user/${userId.value}/paginated`, {
+      params: { page, size: pageSize },
+    })
 
     allQuizzes.value = data.quizzes.map((q) => {
       const mappedQuiz = {
@@ -121,7 +126,8 @@ const fetchQuizzes = async (page = 0) => {
         fullName: q.user?.fullName,
         categoryName: q.category?.name,
         categoryDescription: q.category?.description,
-        publicQuiz: q.isPublic !== undefined ? q.isPublic : (q.public !== undefined ? q.public : true),
+        publicQuiz:
+          q.isPublic !== undefined ? q.isPublic : q.public !== undefined ? q.public : true,
         playCount: q.playCount || 0,
         createdAt: q.createdAt,
         imageUrl: q.imageUrl || null,
@@ -132,8 +138,16 @@ const fetchQuizzes = async (page = 0) => {
     totalPages.value = data.totalPages
     applyFilters()
   } catch (err) {
-    error.value = 'Không thể tải quiz.'
-    console.error('❌ Error fetching quizzes:', err)
+    if (err.response?.status === 403) {
+      console.error('❌ 403 Forbidden - Token may be invalid or expired')
+      // Xóa token và chuyển hướng về login
+      localStorage.removeItem('token')
+      localStorage.removeItem('userId')
+      router.push('/login')
+    } else {
+      error.value = 'Không thể tải quiz.'
+      console.error('❌ Error fetching quizzes:', err)
+    }
   } finally {
     isLoading.value = false
   }
@@ -205,9 +219,11 @@ const deleteQuiz = async (quizId) => {
       console.log('✅ Quiz list refreshed')
 
       // ✅ THÔNG BÁO CHO CÁC COMPONENT KHÁC BIẾT QUIZ ĐÃ BỊ XÓA
-      window.dispatchEvent(new CustomEvent('quizDeleted', {
-        detail: { quizId: quizId }
-      }))
+      window.dispatchEvent(
+        new CustomEvent('quizDeleted', {
+          detail: { quizId: quizId },
+        }),
+      )
     } else {
       showToast('Có lỗi xảy ra khi xóa quiz. Vui lòng thử lại.', 'error')
     }
@@ -255,6 +271,14 @@ const handleImageLoad = (event) => {
 }
 
 onMounted(async () => {
+  // Kiểm tra token trước khi load data
+  const token = localStorage.getItem('token')
+  if (!token) {
+    console.error('❌ No token found - redirecting to login')
+    router.push('/login')
+    return
+  }
+
   await getUserId()
   await fetchCategories()
   await fetchQuizzes()
@@ -286,7 +310,12 @@ onMounted(async () => {
 
     <!-- Filter & Search -->
     <div class="filter-bar">
-      <input v-model="search" @input="applyFilters" class="search-input" placeholder="Tìm kiếm quiz theo tiêu đề..." />
+      <input
+        v-model="search"
+        @input="applyFilters"
+        class="search-input"
+        placeholder="Tìm kiếm quiz theo tiêu đề..."
+      />
       <select v-model="filterPublic" @change="applyFilters" class="filter-select">
         <option value="all">Tất cả</option>
         <option value="public">Công khai</option>
@@ -338,12 +367,21 @@ onMounted(async () => {
 
     <!-- Quiz Grid -->
     <div v-else class="quiz-grid">
-      <div class="quiz-card" v-for="quiz in quizzes" :key="quiz.quiz_id" @mouseenter="hoveredQuiz = quiz.quiz_id"
-        @mouseleave="hoveredQuiz = null">
+      <div
+        class="quiz-card"
+        v-for="quiz in quizzes"
+        :key="quiz.quiz_id"
+        @mouseenter="hoveredQuiz = quiz.quiz_id"
+        @mouseleave="hoveredQuiz = null"
+      >
         <!-- Card Image -->
         <div class="quiz-image">
-          <img :src="getQuizImageUrl(quiz.quiz_id)" alt="Quiz Image" @error="handleImageError"
-            @load="handleImageLoad" />
+          <img
+            :src="getQuizImageUrl(quiz.quiz_id)"
+            alt="Quiz Image"
+            @error="handleImageError"
+            @load="handleImageLoad"
+          />
         </div>
         <!-- Card Header -->
         <div class="card-header">
@@ -351,7 +389,10 @@ onMounted(async () => {
             <i class="bi bi-tag"></i>
             <span>{{ quiz.categoryName }}</span>
           </div>
-          <div class="visibility-badge" :class="{ public: quiz.publicQuiz, private: !quiz.publicQuiz }">
+          <div
+            class="visibility-badge"
+            :class="{ public: quiz.publicQuiz, private: !quiz.publicQuiz }"
+          >
             <i :class="quiz.publicQuiz ? 'bi bi-globe' : 'bi bi-lock'"></i>
             <span>{{ quiz.publicQuiz ? 'Công khai' : 'Riêng tư' }}</span>
           </div>
@@ -372,8 +413,12 @@ onMounted(async () => {
             </div>
           </div>
           <div class="quiz-extra">
-            <span class="badge play-count"><i class="bi bi-controller"></i> {{ quiz.playCount }} lượt chơi</span>
-            <span class="badge created-at"><i class="bi bi-calendar"></i> {{ formatDate(quiz.createdAt) }}</span>
+            <span class="badge play-count"
+              ><i class="bi bi-controller"></i> {{ quiz.playCount }} lượt chơi</span
+            >
+            <span class="badge created-at"
+              ><i class="bi bi-calendar"></i> {{ formatDate(quiz.createdAt) }}</span
+            >
           </div>
         </div>
 
@@ -394,7 +439,6 @@ onMounted(async () => {
                 <span>Xem Code</span>
               </button>
               <button class="action-btn info" @click.stop="openDetailModal(quiz.quiz_id)">
-
                 <i class="bi bi-info-circle"></i>
                 <span>Chi tiết</span>
               </button>
@@ -411,7 +455,11 @@ onMounted(async () => {
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="pagination-container">
       <div class="pagination-wrapper">
-        <button class="page-btn prev" :disabled="currentPage === 0" @click="goToPage(currentPage - 1)">
+        <button
+          class="page-btn prev"
+          :disabled="currentPage === 0"
+          @click="goToPage(currentPage - 1)"
+        >
           <i class="bi bi-chevron-left"></i>
           <span>Trước</span>
         </button>
@@ -422,7 +470,11 @@ onMounted(async () => {
           <span class="total-pages">{{ totalPages }}</span>
         </div>
 
-        <button class="page-btn next" :disabled="currentPage === totalPages - 1" @click="goToPage(currentPage + 1)">
+        <button
+          class="page-btn next"
+          :disabled="currentPage === totalPages - 1"
+          @click="goToPage(currentPage + 1)"
+        >
           <span>Sau</span>
           <i class="bi bi-chevron-right"></i>
         </button>
@@ -432,17 +484,23 @@ onMounted(async () => {
     <!-- Toast Notification -->
     <transition name="slide-up">
       <div v-if="toast.show" :class="['toast', toast.type]">
-        <i :class="{
-          'bi bi-check-circle-fill': toast.type === 'success',
-          'bi bi-x-circle-fill': toast.type === 'error',
-          'bi bi-info-circle-fill': toast.type === 'info',
-        }"></i>
+        <i
+          :class="{
+            'bi bi-check-circle-fill': toast.type === 'success',
+            'bi bi-x-circle-fill': toast.type === 'error',
+            'bi bi-info-circle-fill': toast.type === 'info',
+          }"
+        ></i>
         <span>{{ toast.message }}</span>
       </div>
     </transition>
 
     <!-- Quiz Detail Modal -->
-    <QuizDetailModal :show-modal="showDetailModal" :quiz-id="selectedQuizId" @close="closeDetailModal" />
+    <QuizDetailModal
+      :show-modal="showDetailModal"
+      :quiz-id="selectedQuizId"
+      @close="closeDetailModal"
+    />
   </div>
 
   <!-- ✅ QUIZ CODE MODAL -->
@@ -813,10 +871,12 @@ onMounted(async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(0, 0, 0, 0.85) 0%,
-      rgba(255, 107, 157, 0.9) 50%,
-      rgba(255, 61, 113, 0.9) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(255, 107, 157, 0.9) 50%,
+    rgba(255, 61, 113, 0.9) 100%
+  );
   backdrop-filter: blur(15px);
   display: flex;
   align-items: center;
@@ -1001,7 +1061,6 @@ onMounted(async () => {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
