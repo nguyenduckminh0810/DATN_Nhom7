@@ -2,7 +2,6 @@
 import { useRoute, useRouter } from 'vue-router'
 import { computed, onMounted, ref } from 'vue'
 import { useLogin } from './useLogin'
-import axios from 'axios'
 import api from '@/utils/axios'
 const { username } = useLogin()
 const route = useRoute()
@@ -16,6 +15,12 @@ const correctAnswers = ref(JSON.parse(route.query.correctAnswers || '[]'))
 const selectedAnswers = ref(JSON.parse(route.query.selectedAnswers || '[]'))
 const questions = ref([])
 const isLoaded = ref(false)
+const review = ref({
+  rating: '',
+  reviewText: ''
+})
+const submitting = ref(false)
+const successMessage = ref('')
 
 onMounted(async () => {
   correctAnswers.value = JSON.parse(localStorage.getItem('correctAnswers') || '[]')
@@ -23,7 +28,7 @@ onMounted(async () => {
 
   // Load questions data
   try {
-    const res = await api.get(`/question/${quizId}`)
+    const res = await api.get(`/question/play/${quizId}`)
     const questionList = res.data
 
     const enrichedQuestions = await Promise.all(
@@ -135,17 +140,44 @@ function playAgain() {
 function viewQuizzes() {
   router.push({ name: 'ListQuizPublic' })
 }
+
+const submitReview = async () => {
+  if (!review.value.rating || !review.value.reviewText || !userId) return
+
+  try {
+    submitting.value = true
+    await api.post(`/quizzes/${quizId}/review`, {
+      userId,
+      rating: review.value.rating,
+      reviewText: review.value.reviewText
+    })
+    successMessage.value = 'Cảm ơn bạn đã đánh giá!'
+    // Reset form
+    review.value.rating = ''
+    review.value.reviewText = ''
+  } catch (error) {
+    console.error('Lỗi khi gửi đánh giá:', error)
+    alert('Gửi đánh giá thất bại. Vui lòng thử lại!')
+  } finally {
+    submitting.value = false
+  }
+}
 </script>
 
 <template>
   <div class="quiz-result-container">
     <!-- Animated Background -->
     <div class="background-animation">
-      <div class="floating-element" v-for="n in 15" :key="n" :style="{
-        left: Math.random() * 100 + '%',
-        animationDelay: Math.random() * 3 + 's',
-        animationDuration: 3 + Math.random() * 2 + 's',
-      }">
+      <div
+        class="floating-element"
+        v-for="n in 15"
+        :key="n"
+        :style="{
+          left: Math.random() * 100 + '%',
+          animationDelay: Math.random() * 3 + 's',
+          animationDuration: 3 + Math.random() * 2 + 's',
+        }"
+      >
         {{ ['🎉', '⭐', '🏆', '🎊', '✨'][Math.floor(Math.random() * 5)] }}
       </div>
     </div>
@@ -181,18 +213,45 @@ function viewQuizzes() {
                 <div class="score-circle-container">
                   <svg class="score-circle" width="200" height="200" viewBox="0 0 200 200">
                     <!-- Background Circle -->
-                    <circle cx="100" cy="100" :r="radius" fill="none" stroke="rgba(255, 255, 255, 0.2)"
-                      stroke-width="8" />
+                    <circle
+                      cx="100"
+                      cy="100"
+                      :r="radius"
+                      fill="none"
+                      stroke="rgba(255, 255, 255, 0.2)"
+                      stroke-width="8"
+                    />
                     <!-- Progress Circle -->
-                    <circle cx="100" cy="100" :r="radius" fill="none" :stroke="scoreColor" stroke-width="8"
-                      stroke-linecap="round" :stroke-dasharray="circumference"
-                      :stroke-dashoffset="isLoaded ? dashOffset : circumference" transform="rotate(-90 100 100)"
-                      class="progress-ring" />
+                    <circle
+                      cx="100"
+                      cy="100"
+                      :r="radius"
+                      fill="none"
+                      :stroke="scoreColor"
+                      stroke-width="8"
+                      stroke-linecap="round"
+                      :stroke-dasharray="circumference"
+                      :stroke-dashoffset="isLoaded ? dashOffset : circumference"
+                      transform="rotate(-90 100 100)"
+                      class="progress-ring"
+                    />
                     <!-- Score Text -->
-                    <text x="100" y="95" text-anchor="middle" dominant-baseline="middle" class="score-text">
+                    <text
+                      x="100"
+                      y="95"
+                      text-anchor="middle"
+                      dominant-baseline="middle"
+                      class="score-text"
+                    >
                       {{ isLoaded ? score : 0 }}
                     </text>
-                    <text x="100" y="115" text-anchor="middle" dominant-baseline="middle" class="score-unit">
+                    <text
+                      x="100"
+                      y="115"
+                      text-anchor="middle"
+                      dominant-baseline="middle"
+                      class="score-unit"
+                    >
                       điểm
                     </text>
                   </svg>
@@ -273,9 +332,13 @@ function viewQuizzes() {
           </div>
           <div class="card-body">
             <div class="results-list">
-              <div v-for="(result, index) in combinedResults" :key="result.questionId" class="result-item"
+              <div
+                v-for="(result, index) in combinedResults"
+                :key="result.questionId"
+                class="result-item"
                 :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }"
-                :style="{ animationDelay: index * 0.1 + 's' }">
+                :style="{ animationDelay: index * 0.1 + 's' }"
+              >
                 <div class="result-number">
                   <span class="number">{{ result.questionNumber }}</span>
                   <div class="result-indicator">
@@ -286,7 +349,10 @@ function viewQuizzes() {
                 <div class="result-content">
                   <div class="result-info">
                     <span class="label">Câu trả lời của bạn:</span>
-                    <span class="value" :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }">
+                    <span
+                      class="value"
+                      :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }"
+                    >
                       {{ result.selectedAnswerId ?? 'Không chọn' }}
                     </span>
                     <span class="answer-content">
@@ -301,6 +367,33 @@ function viewQuizzes() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Form đánh giá -->
+        <div class="result-card review-card" :class="{ loaded: isLoaded }">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="bi bi-star-fill text-warning"></i>
+              Đánh giá trải nghiệm quiz
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="rating">Chọn số sao:</label>
+              <select v-model="review.rating" class="form-select">
+                <option disabled value="">-- Chọn --</option>
+                <option v-for="n in 5" :key="n" :value="n">{{ n }} sao</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="reviewText">Ý kiến của bạn:</label>
+              <textarea v-model="review.reviewText" class="form-control" rows="3" placeholder="Viết cảm nhận của bạn..."></textarea>
+            </div>
+            <button @click="submitReview" class="btn btn-primary" :disabled="review.rating === '' || submitting">
+              <i class="bi bi-send-fill me-2"></i> Gửi đánh giá
+            </button>
+            <div v-if="successMessage" class="alert alert-success mt-2">{{ successMessage }}</div>
           </div>
         </div>
 
@@ -368,7 +461,6 @@ function viewQuizzes() {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
@@ -424,7 +516,6 @@ function viewQuizzes() {
 }
 
 @keyframes bounce {
-
   0%,
   20%,
   50%,

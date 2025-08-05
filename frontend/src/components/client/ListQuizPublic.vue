@@ -1,9 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
 import { useRouter } from 'vue-router'
 import debounce from 'lodash.debounce'
 import ReportModal from './ReportModal.vue'
+import QuizDetailModal from './QuizDetailModal.vue'
 import { Modal } from 'bootstrap'
 import api from '@/utils/axios'
 const publicQuizzes = ref([])
@@ -33,8 +33,9 @@ async function fetchPublicQuizzes(page = 0) {
   isLoading.value = true
   try {
     const res = await api.get(`/quiz/public`, {
-      params: { page, size: pageSize }
+      params: { page, size: pageSize },
     })
+
 
     const transformed = res.data.content.map(q => {
       const mappedQuiz = {
@@ -48,10 +49,11 @@ async function fetchPublicQuizzes(page = 0) {
       return mappedQuiz
     })
 
+
     quizCache.set(page, {
       content: transformed,
       page: res.data.number,
-      totalPages: res.data.totalPages
+      totalPages: res.data.totalPages,
     })
 
     publicQuizzes.value = transformed
@@ -87,7 +89,15 @@ function goToPage(page) {
 }
 
 function playQuiz(quizId) {
-  router.push({ name: 'PlayQuiz', params: { quizId } })
+  const userId = localStorage.getItem('userId')
+  if (!userId) {
+    console.error('❌ Missing userId - user not logged in')
+    // Có thể chuyển hướng đến trang login
+    router.push({ name: 'Login' })
+    return
+  }
+  console.log('🎮 Playing quiz:', quizId, 'for user:', userId)
+  router.push({ name: 'PlayQuiz', params: { quizId, userId } })
 }
 
 function goToQuizDetail(quizId) {
@@ -97,11 +107,36 @@ function goToQuizDetail(quizId) {
 }
 const reportModalRef = ref(null)
 const reportQuiz = (quiz) => {
-  const quizData = { quiz_id: quiz.quiz_id, id: quiz.quiz_id, title: quiz.title, author: quiz.fullName }
+  const quizData = {
+    quiz_id: quiz.quiz_id,
+    id: quiz.quiz_id,
+    title: quiz.title,
+    author: quiz.fullName,
+  }
   reportModalRef.value?.openModal(quizData)
   setTimeout(() => new Modal(document.getElementById('reportModal')).show(), 100)
 }
 
+// Quiz Detail Modal
+const showDetailModal = ref(false)
+const selectedQuizId = ref(null)
+
+const openDetailModal = (quizId) => {
+  console.log('🔍 Opening detail modal for quiz ID:', quizId)
+  selectedQuizId.value = quizId
+  showDetailModal.value = true
+  console.log(
+    '✅ Modal state - showDetailModal:',
+    showDetailModal.value,
+    'selectedQuizId:',
+    selectedQuizId.value,
+  )
+}
+
+const closeDetailModal = () => {
+  showDetailModal.value = false
+  selectedQuizId.value = null
+}
 
 function handleImageError(event) {
   const canvas = document.createElement('canvas')
@@ -123,7 +158,6 @@ function handleImageError(event) {
 }
 </script>
 
-
 <template>
   <div class="quiz-public-container">
     <!-- Hero Section -->
@@ -133,9 +167,7 @@ function handleImageError(event) {
           <i class="bi bi-globe2"></i>
           Quiz Công Khai
         </h1>
-        <p class="hero-subtitle">
-          Khám phá hàng ngàn quiz thú vị được chia sẻ bởi cộng đồng
-        </p>
+        <p class="hero-subtitle">Khám phá hàng ngàn quiz thú vị được chia sẻ bởi cộng đồng</p>
       </div>
       <div class="hero-decoration">
         <div class="floating-icon">🧠</div>
@@ -152,7 +184,6 @@ function handleImageError(event) {
         <div v-if="isLoading" class="quiz-skeleton-grid">
           <div v-for="i in 4" :key="i" class="quiz-skeleton-card"></div>
         </div>
-
       </div>
 
       <!-- Error State -->
@@ -181,16 +212,24 @@ function handleImageError(event) {
 
         <!-- Quiz Cards -->
         <div v-else class="quiz-grid">
-          <div v-for="quiz in publicQuizzes" :key="quiz.quiz_id" class="quiz-card"
-            @mouseenter="hoveredQuizId = quiz.quiz_id" @mouseleave="hoveredQuizId = null">
+          <div
+            v-for="quiz in publicQuizzes"
+            :key="quiz.quiz_id"
+            class="quiz-card"
+            @mouseenter="hoveredQuizId = quiz.quiz_id"
+            @mouseleave="hoveredQuizId = null"
+          >
             <!-- Quiz Image -->
             <div class="quiz-image-container">
               <img :src="`/api/image/quiz/${quiz.quiz_id}`" :alt="quiz.title" class="quiz-image"
                 @error="handleImageError" loading="lazy" />
 
               <div class="quiz-overlay">
-                <button @click="playQuiz(quiz.quiz_id)" class="play-btn"
-                  :class="{ 'hovered': hoveredQuizId === quiz.quiz_id }">
+                <button
+                  @click="playQuiz(quiz.quiz_id)"
+                  class="play-btn"
+                  :class="{ hovered: hoveredQuizId === quiz.quiz_id }"
+                >
                   <i class="bi bi-play-fill"></i>
                   Chơi ngay
                 </button>
@@ -204,7 +243,11 @@ function handleImageError(event) {
                   {{ quiz.title }}
                 </h3>
                 <div class="quiz-actions">
-                  <button @click="reportQuiz(quiz)" class="action-btn report-btn" title="Báo cáo quiz">
+                  <button
+                    @click="reportQuiz(quiz)"
+                    class="action-btn report-btn"
+                    title="Báo cáo quiz"
+                  >
                     <i class="bi bi-flag"></i>
                   </button>
                 </div>
@@ -230,8 +273,8 @@ function handleImageError(event) {
                   <i class="bi bi-globe2"></i>
                   Công khai
                 </span>
-                <button @click="goToQuizDetail(quiz.quiz_id)" class="detail-btn">
-                  <i class="bi bi-eye"></i>
+                <button @click="openDetailModal(quiz.quiz_id)" class="detail-btn">
+                  <i class="bi bi-info-circle"></i>
                   Chi tiết
                 </button>
               </div>
@@ -245,14 +288,22 @@ function handleImageError(event) {
             <ul class="pagination">
               <!-- Previous Button -->
               <li class="page-item" :class="{ disabled: currentPage === 0 }">
-                <button class="page-link" @click="goToPage(currentPage - 1)" :disabled="currentPage === 0">
+                <button
+                  class="page-link"
+                  @click="goToPage(currentPage - 1)"
+                  :disabled="currentPage === 0"
+                >
                   <i class="bi bi-chevron-left"></i>
                 </button>
               </li>
 
               <!-- Page Numbers -->
-              <li v-for="page in Math.min(5, totalPages)" :key="page" class="page-item"
-                :class="{ active: currentPage === page - 1 }">
+              <li
+                v-for="page in Math.min(5, totalPages)"
+                :key="page"
+                class="page-item"
+                :class="{ active: currentPage === page - 1 }"
+              >
                 <button class="page-link" @click="goToPage(page - 1)">
                   {{ page }}
                 </button>
@@ -260,7 +311,11 @@ function handleImageError(event) {
 
               <!-- Next Button -->
               <li class="page-item" :class="{ disabled: currentPage >= totalPages - 1 }">
-                <button class="page-link" @click="goToPage(currentPage + 1)" :disabled="currentPage >= totalPages - 1">
+                <button
+                  class="page-link"
+                  @click="goToPage(currentPage + 1)"
+                  :disabled="currentPage >= totalPages - 1"
+                >
                   <i class="bi bi-chevron-right"></i>
                 </button>
               </li>
@@ -268,6 +323,13 @@ function handleImageError(event) {
           </nav>
         </div>
         <ReportModal ref="reportModalRef" @reported="onQuizReported" />
+
+        <!-- Quiz Detail Modal -->
+        <QuizDetailModal
+          :show-modal="showDetailModal"
+          :quiz-id="selectedQuizId"
+          @close="closeDetailModal"
+        />
       </div>
     </div>
 
@@ -761,7 +823,6 @@ function handleImageError(event) {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0px);
