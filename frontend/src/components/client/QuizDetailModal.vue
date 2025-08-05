@@ -323,15 +323,22 @@
                   </div>
 
                   <!-- Show more comments button -->
-                <div v-if="comments.length > 3" class="text-center mt-3">
-                  <button
-                    class="btn btn-outline-primary btn-sm"
-                    @click="showAllComments = !showAllComments"
-                  >
-                    <i class="bi" :class="showAllComments ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                    {{ showAllComments ? 'Ẩn bớt' : 'Xem thêm ' + (comments.length - 3) + ' bình luận' }}
-                  </button>
-                </div>
+                  <div v-if="comments.length > 3" class="text-center mt-3">
+                    <button
+                      class="btn btn-outline-primary btn-sm"
+                      @click="showAllComments = !showAllComments"
+                    >
+                      <i
+                        class="bi"
+                        :class="showAllComments ? 'bi-chevron-up' : 'bi-chevron-down'"
+                      ></i>
+                      {{
+                        showAllComments
+                          ? 'Ẩn bớt'
+                          : 'Xem thêm ' + (comments.length - 3) + ' bình luận'
+                      }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -481,18 +488,25 @@ const loadQuizDetail = async () => {
         api.get(`/quiz/detail/${props.quizId}`),
         api.get(`/question/play/${props.quizId}`), // ✅ SỬA: Dùng endpoint play cho tất cả quiz
         api.get(`/quiz-attempts/public/recent/${props.quizId}`),
-        api.get(`/quizzes/${props.quizId}/reviews`)
+        api.get(`/quizzes/${props.quizId}/reviews`),
       ])
 
       // ✅ XỬ LÝ KẾT QUẢ
       if (quizRes.status === 'fulfilled') {
         console.log('✅ Quiz detail response:', quizRes.value.data)
         quizDetail.value = quizRes.value.data
-        comments.value = reviewsRes.value.data
-        console.log("📝 Danh sách bình luận:", comments.value)
       } else {
         console.error('❌ Quiz detail error:', quizRes.reason)
         quizDetail.value = null
+      }
+
+      // Xử lý reviews riêng biệt
+      if (reviewsRes.status === 'fulfilled') {
+        console.log('✅ Reviews response:', reviewsRes.value.data)
+        comments.value = reviewsRes.value.data || []
+      } else {
+        console.warn('⚠️ Reviews error:', reviewsRes.reason)
+        comments.value = []
       }
 
       if (questionsRes.status === 'fulfilled') {

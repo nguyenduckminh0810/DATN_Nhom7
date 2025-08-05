@@ -67,9 +67,19 @@ public class UserController {
 				yield ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 			}
 			case SUCCESS -> {
-				Map<String, String> response = new java.util.HashMap<>();
+				// Tạo token cho user mới đăng ký
+				String token = jwtUtil.generateToken(result.user().getUsername(), result.user().getRole());
+
+				Map<String, Object> response = new java.util.HashMap<>();
 				response.put("status", "SUCCESS");
-				response.put("message", "Đăng ký thành công");// Bạn có thể generate token thực nếu muốn
+				response.put("message", "Đăng ký thành công");
+				response.put("token", token);
+				response.put("user", Map.of(
+						"id", result.user().getId(),
+						"username", result.user().getUsername(),
+						"email", result.user().getEmail(),
+						"fullName", result.user().getFullName(),
+						"role", result.user().getRole()));
 				yield ResponseEntity.ok(response);
 			}
 		};
@@ -91,7 +101,8 @@ public class UserController {
 			case SUCCESS -> {
 				// ✅ LẤY THÔNG TIN USER ĐẦY ĐỦ TỪ DATABASE
 				User fullUser = result.user();
-				String token = jwtUtil.generateToken(fullUser.getUsername(), fullUser.getRole()); // ✅ THÊM ROLE VÀO TOKEN
+				String token = jwtUtil.generateToken(fullUser.getUsername(), fullUser.getRole()); // ✅ THÊM ROLE VÀO
+																									// TOKEN
 
 				Map<String, Object> response = new java.util.HashMap<>();
 				response.put("status", "SUCCESS");

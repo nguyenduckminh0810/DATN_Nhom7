@@ -54,7 +54,7 @@ public class SecurityConfig {
                                 "/api/user/avatars/**", "/api/upload/avatars/**", "/api/quiz/join/*",
                                 "/api/quiz/public/**", "/api/image/quiz**", "/api/quiz/detail/**", "/api/question/**",
                                 "/api/quiz-attempts/public/recent/**",
-                                "/api/quizzes/**")
+                                "/api/quizzes/*/reviews", "/api/quizzes/*/average-rating", "/api/quizzes/*/review")
                         .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
