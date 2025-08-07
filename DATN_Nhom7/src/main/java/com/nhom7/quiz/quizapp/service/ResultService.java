@@ -61,11 +61,11 @@ public class ResultService {
         if (authentication == null) {
             throw new AccessDeniedException("Không có quyền truy cập");
         }
-        
+
         // Admin có thể xem tất cả
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
-        
+
         if (!isAdmin) {
             // User thường chỉ có thể xem kết quả của mình
             String currentUsername = authentication.getName();
@@ -84,7 +84,7 @@ public class ResultService {
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
             return true;
         }
-        
+
         // User thường chỉ có thể xem kết quả của mình
         User currentUser = userRepo.findByUsername(username).orElse(null);
         return currentUser != null && currentUser.getId().equals(userId);
@@ -129,38 +129,37 @@ public class ResultService {
             throw new IllegalArgumentException("User hoặc Quiz không tồn tại.");
         }
 
-User user = userOpt.get();
-Quiz quiz = quizOpt.get();
+        User user = userOpt.get();
+        Quiz quiz = quizOpt.get();
 
-// Tính bonus điểm
-int bonusPoints = calculateBonusPoints(submission.getQuizId(), submission.getUserId(), baseScore);
-int finalScore = baseScore + bonusPoints;
+        // Tính bonus điểm
+        int bonusPoints = calculateBonusPoints(submission.getQuizId(), submission.getUserId(), baseScore);
+        int finalScore = baseScore + bonusPoints;
 
-Result result = new Result();
-result.setUser(user);
-result.setQuiz(quiz);
-result.setScore(finalScore);
-result.setCompletedAt(LocalDateTime.now());
-result.setTimeTaken(submission.getTimeTaken()); // Thêm thời gian làm quiz
+        Result result = new Result();
+        result.setUser(user);
+        result.setQuiz(quiz);
+        result.setScore(finalScore);
+        result.setCompletedAt(LocalDateTime.now());
+        result.setTimeTaken(submission.getTimeTaken()); // Thêm thời gian làm quiz
 
-resultRepo.save(result);
+        resultRepo.save(result);
 
-// ✅ TẠO QUIZ ATTEMPT ĐỂ CẬP NHẬT HISTORY
-QuizAttempt attempt = new QuizAttempt();
-attempt.setUser(user);
-attempt.setQuiz(quiz);
-attempt.setScore(finalScore);
-attempt.setAttemptedAt(LocalDateTime.now());
-attempt.setTimeTaken(submission.getTimeTaken() != null ? submission.getTimeTaken() : 0);
+        // ✅ TẠO QUIZ ATTEMPT ĐỂ CẬP NHẬT HISTORY
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setUser(user);
+        attempt.setQuiz(quiz);
+        attempt.setScore(finalScore);
+        attempt.setAttemptedAt(LocalDateTime.now());
+        attempt.setTimeTaken(submission.getTimeTaken() != null ? submission.getTimeTaken() : 0);
 
-quizAttemptRepo.save(attempt);
-System.out.println("✅ Created QuizAttempt: User " + user.getUsername() + 
-                  " -> Quiz " + quiz.getTitle() + " (Score: " + finalScore + "%)");
-
+        quizAttemptRepo.save(attempt);
+        System.out.println("✅ Created QuizAttempt: User " + user.getUsername() +
+                " -> Quiz " + quiz.getTitle() + " (Score: " + finalScore + "%)");
 
         // ✅ GỬI NOTIFICATION CHO USER
         try {
-            notificationService.sendQuizResultNotification(user.getId(), quiz.getId(), quiz.getTitle(), score);
+            notificationService.sendQuizResultNotification(user.getId(), quiz.getId(), quiz.getTitle(), finalScore);
             System.out.println("✅ Sent quiz result notification to user: " + user.getUsername());
         } catch (Exception e) {
             System.err.println("❌ Error sending notification: " + e.getMessage());
@@ -168,7 +167,8 @@ System.out.println("✅ Created QuizAttempt: User " + user.getUsername() +
 
         // ✅ GỬI NOTIFICATION CHO ADMIN
         try {
-            notificationService.sendQuizCompletedNotification(quiz.getId(), quiz.getTitle(), user.getUsername(), score);
+            notificationService.sendQuizCompletedNotification(quiz.getId(), quiz.getTitle(), user.getUsername(),
+                    finalScore);
             System.out.println("✅ Sent quiz completed notification to admins");
         } catch (Exception e) {
             System.err.println("❌ Error sending admin notification: " + e.getMessage());
@@ -180,35 +180,36 @@ System.out.println("✅ Created QuizAttempt: User " + user.getUsername() +
     // Tính toán bonus điểm cho leaderboard
     private int calculateBonusPoints(Long quizId, Long userId, int baseScore) {
         int bonus = 0;
-        
+
         // +3 điểm nếu không sai câu nào (100% chính xác)
         if (baseScore == 100) {
             bonus += 3;
             System.out.println("🎯 Perfect Score Bonus: +3 points");
         }
-        
+
         // +5 điểm nếu trong top 3 nhanh nhất
-        List<Result> top3Fastest = resultRepo.findTop3ByQuizIdOrderByTimeTakenAsc(quizId);
+        org.springframework.data.domain.Pageable top3 = org.springframework.data.domain.PageRequest.of(0, 3);
+        List<Result> top3Fastest = resultRepo.findTop3ByQuizIdOrderByTimeTakenAsc(quizId, top3);
         if (!top3Fastest.isEmpty() && top3Fastest.size() <= 3) {
             // Kiểm tra xem user có trong top 3 không (sẽ được cập nhật sau khi save)
             bonus += 5;
             System.out.println("⚡ Speed Bonus: +5 points (Top 3 fastest)");
         }
-        
+
         // +2 điểm nếu làm liên tiếp 3 quiz trong ngày
         long todayAttempts = resultRepo.countByUserIdAndCompletedAtToday(userId);
         if (todayAttempts >= 3) {
             bonus += 2;
             System.out.println("🔥 Streak Bonus: +2 points (3+ quizzes today)");
         }
-        
+
         // +1 điểm nếu làm quiz lần đầu tiên
         long totalAttempts = resultRepo.countByUser_Id(userId);
         if (totalAttempts == 0) {
             bonus += 1;
             System.out.println("🌟 First Time Bonus: +1 point");
         }
-        
+
         System.out.println("💰 Total Bonus Points: " + bonus);
         return bonus;
     }

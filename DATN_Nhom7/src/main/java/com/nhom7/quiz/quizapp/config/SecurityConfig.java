@@ -49,108 +49,105 @@ public class SecurityConfig {
         System.out.println("🔐 Configuring Security Filter Chain with Role-Based Access");
 
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
-                .requestMatchers(
-                    "/api/login",
-                    "/api/register",
-                    "/api/admin/login",
-                    "/api/image/quiz/**",
-                    "/api/user/avatars/**",
-                    "/api/upload/avatars/**",
-                    "/api/quiz/join/**",
-                    "/api/quiz/public/**",
-                    "/api/quiz/detail/**",
-                    "/api/question/**",
-                    "/api/quiz-attempts/public/**",
-                    "/api/result/submit",
-                    "/ws/**",
-                    "/topic/**",
-                    "/queue/**"
-                ).permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/quizzes/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/quizzes/*/review").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(
-                    "/api/admin/dashboard/**", "/api/admin/users/**", "/api/admin/quizzes/**", 
-                    "/api/admin/reports/**", "/api/admin/analytics/**", "/api/admin/attempts/**"
-                ).hasRole("ADMIN")
-                .requestMatchers("/api/categories/**").hasRole("ADMIN")
-                .requestMatchers(
-                    "/api/user/**",
-                    "/api/quiz/user/**",
-                    "/api/quiz-attempts/**",
-                    "/api/quiz/create-quiz-with-image",
-                    "/api/answer/**",
-                    "/api/result/**"
-                ).hasAnyRole("USER", "ADMIN")
-                .anyRequest().authenticated()
-            )
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType("application/json");
-                    response.setCharacterEncoding("UTF-8");
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        .requestMatchers(
+                                "/api/login",
+                                "/api/register",
+                                "/api/admin/login",
+                                "/api/image/quiz/**",
+                                "/api/user/avatars/**",
+                                "/api/upload/avatars/**",
+                                "/api/quiz/join/**",
+                                "/api/quiz/public/**",
+                                "/api/quiz/detail/**",
+                                "/api/question/**",
+                                "/api/quiz-attempts/public/**",
+                                "/api/result/submit",
+                                "/ws/**",
+                                "/topic/**",
+                                "/queue/**", "/api/leaderboard/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/quizzes/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/quizzes/*/review").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(
+                                "/api/admin/dashboard/**", "/api/admin/users/**", "/api/admin/quizzes/**",
+                                "/api/admin/reports/**", "/api/admin/analytics/**", "/api/admin/attempts/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers("/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(
+                                "/api/user/**",
+                                "/api/quiz/user/**",
+                                "/api/quiz-attempts/**",
+                                "/api/quiz/create-quiz-with-image",
+                                "/api/answer/**",
+                                "/api/result/**")
+                        .hasAnyRole("USER", "ADMIN")
+                        .anyRequest().authenticated())
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            response.setCharacterEncoding("UTF-8");
 
-                    String jsonResponse = """
-                        {
-                            "error": "AUTHENTICATION_REQUIRED",
-                            "message": "Bạn cần đăng nhập để truy cập endpoint này",
-                            "userRole": "ROLE_ANONYMOUS",
-                            "endpoint": "%s",
-                            "method": "%s",
-                            "timestamp": "%s"
-                        }
-                        """.formatted(
-                            request.getRequestURI(),
-                            request.getMethod(),
-                            new java.util.Date()
-                        );
+                            String jsonResponse = """
+                                    {
+                                        "error": "AUTHENTICATION_REQUIRED",
+                                        "message": "Bạn cần đăng nhập để truy cập endpoint này",
+                                        "userRole": "ROLE_ANONYMOUS",
+                                        "endpoint": "%s",
+                                        "method": "%s",
+                                        "timestamp": "%s"
+                                    }
+                                    """.formatted(
+                                    request.getRequestURI(),
+                                    request.getMethod(),
+                                    new java.util.Date());
 
-                    response.getWriter().write(jsonResponse);
-                })
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    String userRole = "ROLE_ANONYMOUS";
-                    String username = "anonymous";
+                            response.getWriter().write(jsonResponse);
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            String userRole = "ROLE_ANONYMOUS";
+                            String username = "anonymous";
 
-                    var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-                    if (authentication != null && authentication.isAuthenticated() &&
-                        !authentication.getName().equals("anonymousUser")) {
-                        username = authentication.getName();
-                        var authorities = authentication.getAuthorities();
-                        if (!authorities.isEmpty()) {
-                            userRole = authorities.iterator().next().getAuthority();
-                        }
-                    }
+                            var authentication = org.springframework.security.core.context.SecurityContextHolder
+                                    .getContext().getAuthentication();
+                            if (authentication != null && authentication.isAuthenticated() &&
+                                    !authentication.getName().equals("anonymousUser")) {
+                                username = authentication.getName();
+                                var authorities = authentication.getAuthorities();
+                                if (!authorities.isEmpty()) {
+                                    userRole = authorities.iterator().next().getAuthority();
+                                }
+                            }
 
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType("application/json");
-                    response.setCharacterEncoding("UTF-8");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            response.setCharacterEncoding("UTF-8");
 
-                    String jsonResponse = """
-                        {
-                            "error": "ACCESS_DENIED",
-                            "message": "Bạn không có quyền truy cập endpoint này. Cần quyền ADMIN.",
-                            "username": "%s",
-                            "userRole": "%s",
-                            "endpoint": "%s",
-                            "method": "%s",
-                            "timestamp": "%s"
-                        }
-                        """.formatted(
-                            username,
-                            userRole,
-                            request.getRequestURI(),
-                            request.getMethod(),
-                            new java.util.Date()
-                        );
+                            String jsonResponse = """
+                                    {
+                                        "error": "ACCESS_DENIED",
+                                        "message": "Bạn không có quyền truy cập endpoint này. Cần quyền ADMIN.",
+                                        "username": "%s",
+                                        "userRole": "%s",
+                                        "endpoint": "%s",
+                                        "method": "%s",
+                                        "timestamp": "%s"
+                                    }
+                                    """.formatted(
+                                    username,
+                                    userRole,
+                                    request.getRequestURI(),
+                                    request.getMethod(),
+                                    new java.util.Date());
 
-                    response.getWriter().write(jsonResponse);
-                })
-            )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                            response.getWriter().write(jsonResponse);
+                        }))
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -165,17 +162,17 @@ public class SecurityConfig {
         @Override
         public void addCorsMappings(@NonNull CorsRegistry registry) {
             registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:5173")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                .allowedHeaders("*")
-                .allowCredentials(false)
-                .maxAge(3600);
+                    .allowedOrigins("http://localhost:5173")
+                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+                    .allowedHeaders("*")
+                    .allowCredentials(false)
+                    .maxAge(3600);
         }
 
         @Override
         public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
             registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:uploads/");
+                    .addResourceLocations("file:uploads/");
         }
     }
 }
