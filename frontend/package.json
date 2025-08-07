@@ -21,6 +21,8 @@
     "lodash.debounce": "^4.0.8",
     "pinia": "^3.0.1",
     "slsx": "^0.0.3",
+    "sockjs-client": "^1.6.1",
+    "@stomp/stompjs": "^7.0.0",
     "vue": "^3.5.13",
     "vue-chartjs": "^5.3.2",
     "vue-router": "^4.5.0",

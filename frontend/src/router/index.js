@@ -18,6 +18,7 @@ import PlayQuiz from '@/components/client/PlayQuiz.vue'
 import EditQuiz from '@/components/client/editQuiz.vue'
 import QuizResult from '@/components/client/QuizResult.vue'
 import QuizHistory from '@/components/client/QuizHistory.vue'
+import QuizHistoryModern from '@/components/QuizHistoryModern.vue'
 import ClientDashboard from '@/components/client/ClientDashboard.vue'
 import CategoryManager from '@/components/client/CategoryManager.vue'
 import CategoryView from '@/components/client/CategoryView.vue'
@@ -162,7 +163,7 @@ const routes = [
       {
         path: 'history',
         name: 'UserQuizHistory',
-        component: UserQuizHistory,
+        component: QuizHistoryModern,
         meta: { requiresAuth: true, requiresUser: true },
       },
     ]
@@ -200,7 +201,8 @@ const routes = [
       {
         path: 'attempts',
         name: 'AdminAttempts',
-        component: AdminQuizAttempts,
+        component: QuizHistoryModern,
+        props: { title: 'Quản lý lịch sử làm quiz', showUserFilter: true },
         meta: { requiresAuth: true, requiresAdmin: true },
       },
       {

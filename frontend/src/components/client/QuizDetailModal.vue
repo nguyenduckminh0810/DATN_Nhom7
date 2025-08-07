@@ -290,15 +290,15 @@
                   >
                     <div class="activity-avatar">
                       <img
-                        :src="comment.avatar || '/img/default-avatar.png'"
-                        :alt="comment.user.fullName || comment.user.username"
+                        :src="comment.userAvatarUrl || '/img/default-avatar.png'"
+                        :alt="comment.userFullName || comment.username"
                         class="avatar-img"
                         @error="handleAvatarError"
                       />
                     </div>
                     <div class="activity-content">
                       <div class="activity-text">
-                        <strong>{{ comment.user.fullName || comment.user.username }}</strong>
+                        <strong>{{ comment.userFullName || comment.username }}</strong>
                         <span class="comment-text">{{ comment.reviewText }}</span>
                       </div>
                       <div class="activity-time">{{ formatTimeAgo(comment.createdAt) }}</div>

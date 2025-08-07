@@ -6,7 +6,9 @@ public class QuizSubmissionDTO {
     private Long quizId;
     private Long userId;
     private List<AnswerSubmission> answers;
-    private Integer timeTaken; // Thời gian làm quiz (giây)
+
+    private Integer timeTaken; // thời gian làm bài (giây)
+
 
     public QuizSubmissionDTO() {
     }

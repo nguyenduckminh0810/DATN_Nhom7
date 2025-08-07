@@ -41,14 +41,27 @@ public class QuizAttemptController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
         User currentUser = loginService.findByUsername(currentUsername);
+        
+        System.out.println("🔍 QuizAttempt Request:");
+        System.out.println("  📋 Current user: " + currentUsername + " (ID: " + currentUser.getId() + ", Role: " + currentUser.getRole() + ")");
+        System.out.println("  📋 Request params - userId: " + userId + ", quizId: " + quizId + ", page: " + page + ", size: " + size);
 
         // Phân quyền: User thường chỉ xem được lịch sử của chính mình
-        if (!"ADMIN".equals(currentUser.getRole())) {
+        // Fix: Handle both "admin" and "ADMIN" role formats
+        String userRole = currentUser.getRole();
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole) || "admin".equalsIgnoreCase(userRole);
+        
+        if (!isAdmin) {
             userId = currentUser.getId(); // Ghi đè userId bằng ID của user hiện tại
+            System.out.println("  🔒 Non-admin user, filtering to own attempts only (userId: " + userId + ")");
+        } else {
+            System.out.println("  👑 Admin user, can view all attempts (role: " + userRole + ")");
         }
 
         // Gọi service để lấy dữ liệu
         Page<QuizAttemptDTO> attempts = quizAttemptService.findQuizAttempts(userId, quizId, page, size);
+        
+        System.out.println("  📊 Query result: " + attempts.getTotalElements() + " total attempts, " + attempts.getContent().size() + " in current page");
 
         return ResponseEntity.ok(attempts);
     }
@@ -82,6 +95,38 @@ public class QuizAttemptController {
     public ResponseEntity<String> testPublicEndpoint() {
         System.out.println("✅ Test public endpoint accessed successfully!");
         return ResponseEntity.ok("Public endpoint works!");
+    }
+
+    /**
+     * Debug endpoint để kiểm tra database
+     * GET /api/quiz-attempts/debug/count
+     */
+    @GetMapping("/debug/count")
+    public ResponseEntity<String> debugDatabaseCount() {
+        try {
+            long totalCount = quizAttemptService.getTotalCount();
+            System.out.println("🔍 Total quiz attempts in database: " + totalCount);
+            return ResponseEntity.ok("Total quiz attempts in database: " + totalCount);
+        } catch (Exception e) {
+            System.err.println("❌ Error checking database: " + e.getMessage());
+            return ResponseEntity.ok("Error checking database: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Debug endpoint để tạo sample data
+     * POST /api/quiz-attempts/debug/create-sample
+     */
+    @PostMapping("/debug/create-sample")
+    public ResponseEntity<String> createSampleData() {
+        try {
+            String result = quizAttemptService.createSampleData();
+            System.out.println("✅ Sample data creation result: " + result);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            System.err.println("❌ Error creating sample data: " + e.getMessage());
+            return ResponseEntity.ok("Error creating sample data: " + e.getMessage());
+        }
     }
 
     /**
