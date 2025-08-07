@@ -32,6 +32,9 @@ public class Result {
     @Column(name = "completed_at", nullable = false)
     private LocalDateTime completedAt;
 
+    @Column(name = "time_taken")
+    private Integer timeTaken; // Thời gian làm quiz (giây)
+
 	public Long getId() {
 		return id;
 	}
@@ -72,6 +75,14 @@ public class Result {
 		this.completedAt = completedAt;
 	}
 
+	public Integer getTimeTaken() {
+		return timeTaken;
+	}
+
+	public void setTimeTaken(Integer timeTaken) {
+		this.timeTaken = timeTaken;
+	}
+
 	public Result(Long id, User user, Quiz quiz, int score, LocalDateTime completedAt) {
 		super();
 		this.id = id;
@@ -79,6 +90,16 @@ public class Result {
 		this.quiz = quiz;
 		this.score = score;
 		this.completedAt = completedAt;
+	}
+
+	public Result(Long id, User user, Quiz quiz, int score, LocalDateTime completedAt, Integer timeTaken) {
+		super();
+		this.id = id;
+		this.user = user;
+		this.quiz = quiz;
+		this.score = score;
+		this.completedAt = completedAt;
+		this.timeTaken = timeTaken;
 	}
 
 	public Result() {
