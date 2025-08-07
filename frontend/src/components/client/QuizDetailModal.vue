@@ -376,6 +376,17 @@
                 </div>
               </div>
             </div>
+
+            <!-- Leaderboard Section -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <h5 class="section-title">
+                  <i class="bi bi-trophy text-warning"></i>
+                  Bảng xếp hạng
+                </h5>
+                <Leaderboard :quizId="quizId" :limit="5" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -399,6 +410,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/utils/axios'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import Leaderboard from './Leaderboard.vue'
 
 const router = useRouter()
 

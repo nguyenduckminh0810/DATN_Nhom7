@@ -75,7 +75,9 @@ public class JwtFilter extends OncePerRequestFilter {
                 requestURI.startsWith("/api/quiz/") && requestURI.contains("/detail") ||
                 requestURI.startsWith("/api/question/") ||
                 requestURI.startsWith("/api/quiz/public") ||
-                requestURI.startsWith("/api/quizzes/")) {
+                requestURI.startsWith("/api/quizzes/") ||
+                requestURI.startsWith("/api/leaderboard/") ||
+                requestURI.startsWith("/api/result/submit")) {
 
             System.out.println("✅ JWT Filter - Skipping public endpoint: " + requestURI);
             filterChain.doFilter(request, response);
@@ -96,7 +98,8 @@ public class JwtFilter extends OncePerRequestFilter {
                             String role = user.getRole();
                             String authority = "ADMIN".equalsIgnoreCase(role) ? "ROLE_ADMIN" : "ROLE_USER";
                             authorities = List.of(new SimpleGrantedAuthority(authority));
-                            System.out.println("🔐 User: " + username + " | Role: " + role + " | Authority: " + authority);
+                            System.out.println(
+                                    "🔐 User: " + username + " | Role: " + role + " | Authority: " + authority);
                         } else {
                             authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
                             System.out.println("⚠️ User not found: " + username + " | Default Authority: ROLE_USER");

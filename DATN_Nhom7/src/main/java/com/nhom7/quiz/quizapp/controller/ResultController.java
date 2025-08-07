@@ -28,8 +28,18 @@ public class ResultController {
     // Nộp kết quả quiz - ai cũng có thể nộp
     @PostMapping("/submit")
     public ResponseEntity<EvaluationResult> submitResult(@RequestBody QuizSubmissionDTO submission) {
-        EvaluationResult result = resultService.evaluateAndSave(submission);
-        return ResponseEntity.ok(result);
+        try {
+            System.out.println("📝 Submitting quiz result for user: " + submission.getUserId());
+            System.out.println("📝 Quiz ID: " + submission.getQuizId());
+            System.out.println("📝 Time taken: " + submission.getTimeTaken() + " seconds");
+            
+            EvaluationResult result = resultService.evaluateAndSave(submission);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            System.err.println("❌ Error submitting quiz result: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     // Xem kết quả của user - chỉ admin hoặc user sở hữu

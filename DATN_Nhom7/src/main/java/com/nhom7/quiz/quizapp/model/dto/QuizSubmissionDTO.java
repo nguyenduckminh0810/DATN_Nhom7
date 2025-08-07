@@ -6,6 +6,7 @@ public class QuizSubmissionDTO {
     private Long quizId;
     private Long userId;
     private List<AnswerSubmission> answers;
+    private Integer timeTaken; // Thời gian làm quiz (giây)
 
     public QuizSubmissionDTO() {
     }
@@ -14,6 +15,13 @@ public class QuizSubmissionDTO {
         this.quizId = quizId;
         this.userId = userId;
         this.answers = answers;
+    }
+
+    public QuizSubmissionDTO(Long quizId, Long userId, List<AnswerSubmission> answers, Integer timeTaken) {
+        this.quizId = quizId;
+        this.userId = userId;
+        this.answers = answers;
+        this.timeTaken = timeTaken;
     }
 
     public Long getQuizId() {
@@ -38,6 +46,14 @@ public class QuizSubmissionDTO {
 
     public void setAnswers(List<AnswerSubmission> answers) {
         this.answers = answers;
+    }
+
+    public Integer getTimeTaken() {
+        return timeTaken;
+    }
+
+    public void setTimeTaken(Integer timeTaken) {
+        this.timeTaken = timeTaken;
     }
 
     public static class AnswerSubmission {

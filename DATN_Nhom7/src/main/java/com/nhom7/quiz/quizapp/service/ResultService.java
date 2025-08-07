@@ -111,7 +111,7 @@ public class ResultService {
         }
 
         int total = submission.getAnswers().size();
-        int score = (int) ((correctCount / (double) total) * 100);
+        int baseScore = (int) ((correctCount / (double) total) * 100);
 
         // Lấy User và Quiz từ ID
         Optional<User> userOpt = userRepo.findById(submission.getUserId());
@@ -121,15 +121,56 @@ public class ResultService {
             throw new IllegalArgumentException("User hoặc Quiz không tồn tại.");
         }
 
+        // Tính bonus điểm
+        int bonusPoints = calculateBonusPoints(submission.getQuizId(), submission.getUserId(), baseScore);
+        int finalScore = baseScore + bonusPoints;
+
         Result result = new Result();
         result.setUser(userOpt.get());
         result.setQuiz(quizOpt.get());
-        result.setScore(score);
+        result.setScore(finalScore);
         result.setCompletedAt(LocalDateTime.now());
+        result.setTimeTaken(submission.getTimeTaken()); // Thêm thời gian làm quiz
 
         resultRepo.save(result);
 
-        return new EvaluationResult(score, correctAnswers);
+        return new EvaluationResult(finalScore, correctAnswers);
+    }
+
+    // Tính toán bonus điểm cho leaderboard
+    private int calculateBonusPoints(Long quizId, Long userId, int baseScore) {
+        int bonus = 0;
+        
+        // +3 điểm nếu không sai câu nào (100% chính xác)
+        if (baseScore == 100) {
+            bonus += 3;
+            System.out.println("🎯 Perfect Score Bonus: +3 points");
+        }
+        
+        // +5 điểm nếu trong top 3 nhanh nhất
+        List<Result> top3Fastest = resultRepo.findTop3ByQuizIdOrderByTimeTakenAsc(quizId);
+        if (!top3Fastest.isEmpty() && top3Fastest.size() <= 3) {
+            // Kiểm tra xem user có trong top 3 không (sẽ được cập nhật sau khi save)
+            bonus += 5;
+            System.out.println("⚡ Speed Bonus: +5 points (Top 3 fastest)");
+        }
+        
+        // +2 điểm nếu làm liên tiếp 3 quiz trong ngày
+        long todayAttempts = resultRepo.countByUserIdAndCompletedAtToday(userId);
+        if (todayAttempts >= 3) {
+            bonus += 2;
+            System.out.println("🔥 Streak Bonus: +2 points (3+ quizzes today)");
+        }
+        
+        // +1 điểm nếu làm quiz lần đầu tiên
+        long totalAttempts = resultRepo.countByUser_Id(userId);
+        if (totalAttempts == 0) {
+            bonus += 1;
+            System.out.println("🌟 First Time Bonus: +1 point");
+        }
+        
+        System.out.println("💰 Total Bonus Points: " + bonus);
+        return bonus;
     }
 
     public List<Result> getResultsByQuizId(Long quizId) {
