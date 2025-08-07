@@ -47,12 +47,15 @@ public class ImageController {
         String imageUrl = image.getUrl();
         String filename;
         
-        
+        // ✅ FIX: Handle different URL formats properly
         if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
-            
+            // External URL - extract filename
+            filename = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+        } else if (imageUrl.startsWith("/uploads/")) {
+            // Internal path - extract filename only
             filename = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
         } else {
-            
+            // Just filename
             filename = imageUrl;
         }
         

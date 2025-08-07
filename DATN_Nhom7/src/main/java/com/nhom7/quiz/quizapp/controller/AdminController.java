@@ -6,11 +6,11 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
+// ✅ Removed unused Bean import
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+// ✅ Removed unused BCryptPasswordEncoder import
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,7 +31,9 @@ import com.nhom7.quiz.quizapp.repository.TagRepo;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
 import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
+import com.nhom7.quiz.quizapp.config.JwtUtil;
 import com.nhom7.quiz.quizapp.service.CategoryService;
+import com.nhom7.quiz.quizapp.service.NotificationService;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -43,24 +45,35 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/admin")
-@PreAuthorize("hasRole('ADMIN')")
+// ✅ REMOVED class-level PreAuthorize - will add method-level where needed
 public class AdminController {
         @Autowired
         private CategoryRepo categoryRepo;
         @Autowired
         private LoginService loginService;
+        
+        @Autowired
+        private JwtUtil jwtUtil;
 
-        // Tạo đăng nhập cho admin
+        @Autowired
+        private NotificationService notificationService;
+
+        // ✅ ADMIN LOGIN - PUBLIC (không cần PreAuthorize)
         @PostMapping("/login")
         public ResponseEntity<?> adminLogin(@RequestBody LoginRequest loginRequest) {
                 // Phương thức để xác thực người dùng
                 LoginService.LoginResultForAdmin result = loginService.authenticateAdmin(loginRequest.getUsername(),
                                 loginRequest.getPassword());
                 return switch (result.status()) {
-                        case SUCCESS -> ResponseEntity.ok(Map.of(
-                                        "status", "SUCCESS",
-                                        "message", "Đăng nhập thành công",
-                                        "user", result.user()));
+                        case SUCCESS -> {
+                                // ✅ Generate JWT token for admin
+                                String token = jwtUtil.generateToken(result.user().getUsername(), result.user().getRole());
+                                yield ResponseEntity.ok(Map.of(
+                                                "status", "SUCCESS",
+                                                "message", "Đăng nhập thành công",
+                                                "token", token,
+                                                "user", result.user()));
+                        }
                         case USER_NOT_FOUND -> ResponseEntity
                                         .status(HttpStatus.NOT_FOUND)
                                         .body(Map.of(
@@ -82,8 +95,9 @@ public class AdminController {
         @Autowired
         private adminservice adminService;
 
-        // Lấy danh sách người dùng
+        // ✅ ADMIN ONLY - Lấy danh sách người dùng
         @GetMapping("/all-users")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<Page<UserDTO>> getAllUsers(
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "10") int size,
@@ -94,18 +108,20 @@ public class AdminController {
                 return ResponseEntity.ok(adminService.getAllUsers(page, size, search, role));
         }
 
-        // Cập nhật user
+        // ✅ ADMIN ONLY - Cập nhật user
         @PutMapping("/users/{id}")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDTO dto) {
                 UserDTO updated = adminService.updateUser(id, dto);
                 return ResponseEntity.ok(updated);
         }
 
-        // Thêm user
+        // ✅ ADMIN ONLY - Thêm user
         @Autowired
         private PasswordEncoder passwordEncoder;
 
         @PostMapping("/users")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<?> createUser(@RequestBody User user) {
                 if (userRepo.existsByEmail(user.getEmail()) || userRepo.existsByUsername(user.getUsername())) {
                         return ResponseEntity.badRequest().body("Email hoặc Username đã tồn tại.");
@@ -118,8 +134,9 @@ public class AdminController {
                 return ResponseEntity.ok(saved);
         }
 
-        // Xoá user
+        // ✅ ADMIN ONLY - Xoá user
         @DeleteMapping("/users/{id}")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<?> deleteUser(@PathVariable Long id) {
                 adminService.deleteUser(id);
                 return ResponseEntity.ok("Đã xoá người dùng thành công");
@@ -130,17 +147,28 @@ public class AdminController {
         private UserRepo userRepo;
 
         @PutMapping("/users/{id}/ban")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<?> banUser(@PathVariable Long id) {
                 User user = userRepo.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-                user.setRole("BANNED");
+                user.setBanned(true);
                 userRepo.save(user);
+                
+                // ✅ GỬI NOTIFICATION CHO USER
+                try {
+                    notificationService.sendAccountStatusNotification(user.getId(), true);
+                    System.out.println("✅ Sent ban notification to user: " + user.getUsername());
+                } catch (Exception e) {
+                    System.err.println("❌ Error sending ban notification: " + e.getMessage());
+                }
+                
                 return ResponseEntity.ok("Người dùng đã bị ban.");
         }
 
-        // Test ban user
+        // ✅ ADMIN ONLY - Test ban user
         @PostMapping("/test-ban/{id}")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<String> testBan(@PathVariable Long id) {
                 adminService.checkAndBanUser(id);
                 return ResponseEntity.ok("Đã kiểm tra và xử lý ban nếu đủ report");

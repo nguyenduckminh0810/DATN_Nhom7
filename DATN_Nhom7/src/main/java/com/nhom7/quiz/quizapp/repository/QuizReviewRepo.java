@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.QuizReview;
@@ -18,6 +19,8 @@ public interface QuizReviewRepo extends JpaRepository<QuizReview, Long> {
     @Query("SELECT AVG(qr.rating) FROM QuizReview qr WHERE qr.quiz.id = :quizId")
     Double getAverageRating(Long quizId);
 
-    List<QuizReview> findByQuizOrderByCreatedAtDesc(Quiz quiz);
+    // ✅ EAGER FETCH để tránh lazy loading issues
+    @Query("SELECT qr FROM QuizReview qr JOIN FETCH qr.user WHERE qr.quiz = :quiz ORDER BY qr.createdAt DESC")
+    List<QuizReview> findByQuizOrderByCreatedAtDesc(@Param("quiz") Quiz quiz);
 
 }

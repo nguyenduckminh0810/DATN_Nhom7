@@ -1,0 +1,85 @@
+/* ✅ VIETNAMESE TYPOGRAPHY OPTIMIZATION */
+
+/* Global font settings for Vietnamese text */
+* {
+  font-family: 'Inter', 'Noto Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
+  font-feature-settings: "liga" 1, "kern" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Specific Vietnamese character support */
+body, html {
+  font-variant-ligatures: common-ligatures;
+  font-kerning: normal;
+  font-optical-sizing: auto;
+}
+
+/* Heading optimization */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif !important;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+/* Body text optimization */
+p, span, div, a, li, td, th, label, input, textarea, button {
+  font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif !important;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+/* Form elements */
+input, textarea, select, button {
+  font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif !important;
+}
+
+/* Bootstrap override */
+.btn, .form-control, .form-select, .form-check-label {
+  font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif !important;
+}
+
+/* Card and modal text */
+.card-title, .card-text, .modal-title, .modal-body {
+  font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif !important;
+}
+
+/* Navigation */
+.nav-link, .navbar-brand, .dropdown-item {
+  font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif !important;
+}
+
+/* Table text */
+.table th, .table td {
+  font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif !important;
+}
+
+/* Toast and alert text */
+.toast, .alert {
+  font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif !important;
+}
+
+/* Utility classes for Vietnamese text */
+.text-vietnamese {
+  font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif !important;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+.heading-vietnamese {
+  font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif !important;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+/* Fix common Vietnamese text rendering issues */
+.vietnamese-text {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures;
+}

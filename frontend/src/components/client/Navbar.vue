@@ -3,6 +3,9 @@ import { useRouter, RouterLink } from 'vue-router'
 import { useLogin } from './useLogin'
 import { computed, watch, onMounted, onUnmounted, ref } from 'vue'
 import api from '@/utils/axios'
+import { useThemeStore } from '@/stores/theme'
+import { useNotificationStore } from '@/stores/notification'
+import NotificationComponent from '../NotificationComponent.vue'
 
 // Define component name for Vue DevTools
 defineOptions({
@@ -11,10 +14,13 @@ defineOptions({
 
 const { logout, username, message, userId, getUserId, token } = useLogin()
 const router = useRouter()
+const themeStore = useThemeStore()
+const notificationStore = useNotificationStore()
+const notificationComponent = ref(null)
 
 const isLoggedIn = computed(() => !!token.value)
 const userProfile = ref(null)
-const notificationCount = ref(3) // Có thể lấy từ API sau
+const notificationCount = computed(() => notificationStore.unreadCount)
 
 // ✅ CHECK USER ROLE
 const isAdmin = computed(() => {
@@ -145,8 +151,13 @@ const switchToUserPanel = () => {
 
 // ✅ SHOW NOTIFICATIONS
 const showNotifications = () => {
-  // TODO: Implement notifications modal
-  alert('Tính năng thông báo sẽ được implement sau')
+  console.log('🔔 Show notifications clicked')
+  if (notificationComponent.value) {
+    // ✅ Trigger toggle panel trực tiếp
+    notificationComponent.value.toggleNotificationPanel()
+  } else {
+    console.log('❌ NotificationComponent not found')
+  }
 }
 
 // ✅ LOGOUT FOR NAVBAR
@@ -218,6 +229,8 @@ onMounted(() => {
   const token = localStorage.getItem('token')
   if (isLoggedIn.value && token) {
     fetchUserProfile()
+    // ✅ Khởi tạo notification store
+    notificationStore.initialize()
   }
   
   // Add click outside listener
@@ -319,6 +332,9 @@ const closeAllDropdowns = () => {
   userMenus.forEach(menu => {
     menu.classList.remove('active')
   })
+  
+  // ✅ KHÔNG Ẩn notification panel khi close dropdown
+  // Notification panel sẽ được đóng bằng nút X hoặc click outside
 }
 
 // ✅ CLICK OUTSIDE TO CLOSE
@@ -514,6 +530,11 @@ const handleUserDropdownLeave = (event) => {
 
       <!-- User Section -->
       <div class="user-section">
+        <!-- Dark Mode Toggle -->
+        <button @click="themeStore.toggleTheme" class="theme-toggle-btn" :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'">
+          <i :class="themeStore.isDarkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
+        </button>
+        
         <div v-if="!isLoggedIn" class="auth-actions">
           <RouterLink to="/register" class="btn btn-ghost"> Đăng ký </RouterLink>
           <button @click="login" class="btn btn-primary">
@@ -522,7 +543,10 @@ const handleUserDropdownLeave = (event) => {
           </button>
         </div>
 
-        <div v-else class="user-menu dropdown" @mouseenter="handleUserDropdownHover" @mouseleave="handleUserDropdownLeave">
+        <!-- ✅ NOTIFICATION COMPONENT (VISIBLE FOR TESTING) -->
+        <NotificationComponent v-if="isLoggedIn" ref="notificationComponent" />
+        
+        <div v-if="isLoggedIn" class="user-menu dropdown" @mouseenter="handleUserDropdownHover" @mouseleave="handleUserDropdownLeave">
           <div class="user-trigger" @click="handleUserDropdownClick">
             <div class="user-avatar">
               <img
@@ -602,6 +626,17 @@ const handleUserDropdownLeave = (event) => {
               <span>Đăng xuất</span>
             </a>
           </div>
+        </div>
+        
+        <div v-else class="auth-buttons">
+          <RouterLink to="/login" class="btn-login">
+            <i class="bi bi-box-arrow-in-right"></i>
+            <span>Đăng nhập</span>
+          </RouterLink>
+          <RouterLink to="/register" class="btn-register">
+            <i class="bi bi-person-plus"></i>
+            <span>Đăng ký</span>
+          </RouterLink>
         </div>
       </div>
     </div>
@@ -833,6 +868,41 @@ const handleUserDropdownLeave = (event) => {
 /* USER SECTION */
 .user-section {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* THEME TOGGLE BUTTON */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle-btn i {
+  font-size: 1.1rem;
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle-btn:hover i {
+  transform: scale(1.1);
 }
 
 .auth-actions {

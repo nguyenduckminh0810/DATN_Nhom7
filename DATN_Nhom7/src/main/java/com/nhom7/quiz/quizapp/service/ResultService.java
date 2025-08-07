@@ -22,6 +22,8 @@ import com.nhom7.quiz.quizapp.repository.AnswerRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
 import com.nhom7.quiz.quizapp.repository.ResultRepo;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
+import com.nhom7.quiz.quizapp.repository.QuizAttemptRepo;
+import com.nhom7.quiz.quizapp.model.QuizAttempt;
 
 @Service
 public class ResultService {
@@ -37,6 +39,12 @@ public class ResultService {
 
     @Autowired
     private QuizRepo quizRepo;
+
+    @Autowired
+    private QuizAttemptRepo quizAttemptRepo;
+
+    @Autowired
+    private NotificationService notificationService;
 
     // Kiểm tra quyền admin
     private void checkAdminPermission() {
@@ -121,13 +129,44 @@ public class ResultService {
             throw new IllegalArgumentException("User hoặc Quiz không tồn tại.");
         }
 
+        User user = userOpt.get();
+        Quiz quiz = quizOpt.get();
+        
+        // ✅ TẠO RESULT
         Result result = new Result();
-        result.setUser(userOpt.get());
-        result.setQuiz(quizOpt.get());
+        result.setUser(user);
+        result.setQuiz(quiz);
         result.setScore(score);
         result.setCompletedAt(LocalDateTime.now());
-
         resultRepo.save(result);
+        
+        // ✅ TẠO QUIZ ATTEMPT ĐỂ CẬP NHẬT HISTORY
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setUser(user);
+        attempt.setQuiz(quiz);
+        attempt.setScore(score);
+        attempt.setAttemptedAt(LocalDateTime.now());
+        attempt.setTimeTaken(submission.getTimeTaken() != null ? submission.getTimeTaken() : 0);
+        
+        quizAttemptRepo.save(attempt);
+        System.out.println("✅ Created QuizAttempt: User " + user.getUsername() + 
+                          " -> Quiz " + quiz.getTitle() + " (Score: " + score + "%)");
+
+        // ✅ GỬI NOTIFICATION CHO USER
+        try {
+            notificationService.sendQuizResultNotification(user.getId(), quiz.getId(), quiz.getTitle(), score);
+            System.out.println("✅ Sent quiz result notification to user: " + user.getUsername());
+        } catch (Exception e) {
+            System.err.println("❌ Error sending notification: " + e.getMessage());
+        }
+
+        // ✅ GỬI NOTIFICATION CHO ADMIN
+        try {
+            notificationService.sendQuizCompletedNotification(quiz.getId(), quiz.getTitle(), user.getUsername(), score);
+            System.out.println("✅ Sent quiz completed notification to admins");
+        } catch (Exception e) {
+            System.err.println("❌ Error sending admin notification: " + e.getMessage());
+        }
 
         return new EvaluationResult(score, correctAnswers);
     }

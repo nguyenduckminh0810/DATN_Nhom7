@@ -52,14 +52,22 @@ public class JwtUtil {
     // Phương thức này sẽ kiểm tra xem token có hợp lệ hay không
     public boolean validateToken(String token) {
         try {
-            getClaims(token); // Nếu token không hợp lệ, sẽ ném lỗi
+            getClaims(token);
+            System.out.println("✅ Token validation successful");
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            System.out.println("JWT Validation Error: " + e.getMessage());
+        } catch (ExpiredJwtException e) {
+            System.err.println("❌ Token expired: " + e.getMessage());
+            return false;
+        } catch (JwtException e) {
+            System.err.println("❌ Token invalid: " + e.getMessage());
+            return false;
+        } catch (Exception e) {
+            System.err.println("❌ Token validation error: " + e.getMessage());
             return false;
         }
     }
 
+    // Get claims method
     private Claims getClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())

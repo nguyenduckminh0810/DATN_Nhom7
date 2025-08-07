@@ -98,39 +98,14 @@
 
       <!-- User Section -->
       <div class="user-section">
-        <!-- Notifications -->
-        <div class="notification-dropdown">
-          <button class="notification-btn" @click="toggleNotifications">
-            <i class="bi bi-bell"></i>
-            <span v-if="notificationCount > 0" class="notification-badge">
-              {{ notificationCount }}
-            </span>
-          </button>
-          
-          <div v-if="showNotifications" class="notification-menu">
-            <div class="notification-header">
-              <h6>Thông báo</h6>
-              <button class="close-btn" @click="toggleNotifications">
-                <i class="bi bi-x"></i>
-              </button>
-            </div>
-            <div class="notification-list">
-              <div v-for="notification in notifications" :key="notification.id" class="notification-item">
-                <div class="notification-icon">
-                  <i :class="notification.icon"></i>
-                </div>
-                <div class="notification-content">
-                  <div class="notification-title">{{ notification.title }}</div>
-                  <div class="notification-message">{{ notification.message }}</div>
-                </div>
-              </div>
-              <div v-if="notifications.length === 0" class="empty-notifications">
-                <i class="bi bi-check-circle"></i>
-                <span>Không có thông báo mới</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- ✅ ADMIN NOTIFICATION COMPONENT (VISIBLE) -->
+        <AdminNotificationComponent ref="notificationComponent" />
+        <!-- Dark Mode Toggle -->
+        <button @click="themeStore.toggleTheme" class="theme-toggle-btn" :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'">
+          <i :class="themeStore.isDarkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
+        </button>
+        
+
 
         <!-- Admin Profile -->
         <div class="user-menu dropdown" @mouseenter="handleUserDropdownHover" @mouseleave="handleUserDropdownLeave">
@@ -148,9 +123,6 @@
             <div class="user-info">
               <div class="user-name-row">
                 <span class="user-name">{{ adminInfo?.fullName || adminInfo?.username || 'Admin' }}</span>
-                <span v-if="notificationCount > 0" class="navbar-notification-badge">
-                  {{ notificationCount }}
-                </span>
               </div>
               <small class="user-status">Online</small>
             </div>
@@ -187,6 +159,11 @@
                 <i class="bi bi-gear"></i>
                 <span>Cài đặt</span>
               </RouterLink>
+              <button @click="showNotifications" class="user-dropdown-link">
+                <i class="bi bi-bell"></i>
+                <span>Thông báo</span>
+                <span v-if="notificationCount > 0" class="notification-badge">{{ notificationCount }}</span>
+              </button>
               <button @click="logout" class="user-dropdown-link logout-link">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Đăng xuất</span>
@@ -203,13 +180,15 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/utils/axios'
+import { useThemeStore } from '@/stores/theme'
+import AdminNotificationComponent from './AdminNotificationComponent.vue'
 
 const router = useRouter()
+const themeStore = useThemeStore()
 const adminInfo = ref(null)
-const notificationCount = ref(3)
 const reportCount = ref(5)
-const notifications = ref([])
-const showNotifications = ref(false)
+const notificationComponent = ref(null)
+const notificationCount = ref(0)
 
 // ✅ LẤY THÔNG TIN PROFILE VÀ AVATAR
 async function fetchUserProfile() {
@@ -242,6 +221,18 @@ async function fetchUserProfile() {
   }
 }
 
+// ✅ LOAD NOTIFICATION COUNT
+async function loadNotificationCount() {
+  try {
+    const response = await api.get('/notifications/unread/count')
+    notificationCount.value = response.data.count
+    console.log('🔔 Admin notification count loaded:', notificationCount.value)
+  } catch (error) {
+    console.error('Error loading notification count:', error)
+    notificationCount.value = 0
+  }
+}
+
 // Avatar URL computed
 const avatarUrl = computed(() => {
   if (adminInfo.value?.avatarUrl) {
@@ -262,9 +253,7 @@ const avatarUrl = computed(() => {
   return null
 })
 
-function toggleNotifications() {
-  showNotifications.value = !showNotifications.value
-}
+
 
 function handleLogoClick() {
   router.push('/')
@@ -272,6 +261,20 @@ function handleLogoClick() {
 
 function handleHomeClick() {
   router.push('/')
+}
+
+// ✅ SHOW NOTIFICATIONS
+const showNotifications = () => {
+  console.log('🔔 Show notifications clicked from Admin Header')
+  console.log('🔍 notificationComponent.value:', notificationComponent.value)
+  if (notificationComponent.value) {
+    console.log('🔍 notificationComponent methods:', Object.keys(notificationComponent.value))
+    // ✅ Trigger toggle panel trực tiếp
+    notificationComponent.value.toggleNotificationPanel()
+    console.log('✅ AdminNotificationComponent found and toggle called')
+  } else {
+    console.log('❌ AdminNotificationComponent not found')
+  }
 }
 
 function logout() {
@@ -434,35 +437,18 @@ const handleUserDropdownLeave = (event) => {
 const handleClickOutside = (event) => {
   if (!event.target.closest('.dropdown') && !event.target.closest('.user-menu') && !event.target.closest('.notification-dropdown')) {
     closeAllDropdowns()
-    showNotifications.value = false
+  
   }
 }
 
 onMounted(async () => {
   // Load admin info from multiple sources
   await loadAdminInfo()
+  await fetchUserProfile()
+  await loadNotificationCount()
   
-  // Mock notifications
-  notifications.value = [
-    {
-      id: 1,
-      title: 'Quiz mới được tạo',
-      message: 'Quiz "Toán học cơ bản" đã được tạo bởi user123',
-      icon: 'bi bi-journal-plus'
-    },
-    {
-      id: 2,
-      title: 'Báo cáo vi phạm',
-      message: 'Có báo cáo mới về quiz "Lịch sử Việt Nam"',
-      icon: 'bi bi-flag'
-    },
-    {
-      id: 3,
-      title: 'Người dùng mới',
-      message: 'User "john_doe" đã đăng ký tài khoản',
-      icon: 'bi bi-person-plus'
-    }
-  ]
+  // ✅ DEBUG: Check if notificationComponent is available
+  console.log('🔍 AdminNotificationComponent ref:', notificationComponent.value)
   
   // Add click outside listener
   document.addEventListener('click', handleClickOutside)
@@ -775,158 +761,39 @@ onUnmounted(() => {
   gap: 1rem;
 }
 
-/* Notifications */
-.notification-dropdown {
-  position: relative;
-}
-
-.notification-btn {
-  position: relative;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
-  padding: 0.75rem;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+/* THEME TOGGLE BUTTON */
+.theme-toggle-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.notification-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.notification-btn i {
-  font-size: 1.2rem;
-}
-
-.notification-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #dc3545;
-  color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
-}
-
-.notification-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.5rem;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  min-width: 320px;
-  z-index: 1000;
-  overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.notification-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #f1f3f4;
-  background: #f8f9fa;
-}
-
-.notification-header h6 {
-  margin: 0;
-  font-weight: 600;
-  color: #333;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background: #e9ecef;
-  color: #333;
-}
-
-.notification-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.notification-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #f1f3f4;
-  transition: background 0.2s ease;
-}
-
-.notification-item:hover {
-  background: #f8f9fa;
-}
-
-.notification-icon {
-  flex-shrink: 0;
   width: 40px;
   height: 40px;
-  background: linear-gradient(45deg, #667eea, #764ba2);
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
   color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.notification-content {
-  flex: 1;
+.theme-toggle-btn i {
+  font-size: 1.1rem;
+  transition: transform 0.3s ease;
 }
 
-.notification-title {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 0.25rem;
+.theme-toggle-btn:hover i {
+  transform: scale(1.1);
 }
 
-.notification-message {
-  font-size: 0.9rem;
-  color: #666;
-  line-height: 1.4;
-}
 
-.empty-notifications {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem 1.5rem;
-  color: #666;
-  text-align: center;
-}
-
-.empty-notifications i {
-  font-size: 2rem;
-  color: #28a745;
-  margin-bottom: 0.5rem;
-}
 
 /* USER MENU */
 .user-menu {
@@ -1011,6 +878,26 @@ onUnmounted(() => {
   border: 1px solid rgba(255, 255, 255, 0.9);
   animation: pulse 2s infinite;
   flex-shrink: 0;
+}
+
+/* ✅ DROPDOWN NOTIFICATION BADGE */
+.notification-badge {
+  background: linear-gradient(135deg, #ff4757, #ff3742);
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 8px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(255, 71, 87, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  animation: pulse 2s infinite;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .user-arrow {

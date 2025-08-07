@@ -29,18 +29,7 @@ public class JwtFilter extends OncePerRequestFilter {
     @Autowired
     private LoginService loginService;
 
-    private static final List<String> PUBLIC_ENDPOINT_PREFIXES = List.of(
-            "/api/login",
-            "/api/register",
-            "/api/image/quiz/",
-            "/api/user/avatars/",
-            "/api/upload/avatars/",
-            "/api/quiz-attempts/public/",
-            "/api/public/",
-            "/api/question/play/",
-            "/api/quiz/public",
-            "/api/quiz/detail",
-            "/api/result/submit");
+    // ✅ REMOVED unused PUBLIC_ENDPOINT_PREFIXES - logic moved inline for better maintainability
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -52,74 +41,88 @@ public class JwtFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         String authHeader = request.getHeader("Authorization");
 
-        System.out.println("🔍 JWT Filter - URI: " + requestURI);
-        System.out.println("🔍 JWT Filter - Method: " + method);
-        System.out.println("🔍 JWT Filter - Auth Header: " + (authHeader != null ? "✅ Present" : "❌ Not Present"));
+        System.out.println("🔍 JWT Filter - URI: " + requestURI + " | Method: " + method);
 
+        // ✅ BỎ QUA OPTIONS REQUEST
         if ("OPTIONS".equalsIgnoreCase(method)) {
             System.out.println("✅ Skipping OPTIONS request");
             filterChain.doFilter(request, response);
             return;
         }
 
-        // ✅ BỎ QUA PUBLIC ENDPOINTS
-        if (requestURI.startsWith("/api/login") ||
+        // ✅ DANH SÁCH PUBLIC ENDPOINTS - HOÀN TOÀN THỐNG NHẤT VỚI SECURITY CONFIG
+        boolean isPublicEndpoint = requestURI.startsWith("/api/login") ||
                 requestURI.startsWith("/api/register") ||
+                requestURI.equals("/api/admin/login") ||  // ✅ Admin login public
                 requestURI.startsWith("/api/image/quiz/") ||
-                // ✅ CHỈ BỎ QUA GET /api/categories, KHÔNG BỎ QUA POST/PUT/DELETE
-                (requestURI.startsWith("/api/categories") && "GET".equalsIgnoreCase(method)) ||
+                (requestURI.equals("/api/categories") && "GET".equalsIgnoreCase(method)) ||
                 requestURI.startsWith("/api/user/avatars/") ||
                 requestURI.startsWith("/api/upload/avatars/") ||
-                requestURI.startsWith("/api/quiz-attempts/public/") ||
-                requestURI.startsWith("/api/public/") ||
-                requestURI.startsWith("/api/quiz/") && requestURI.contains("/detail") ||
+                requestURI.startsWith("/api/quiz/join/") ||
+                requestURI.startsWith("/api/quiz/public/") ||  // ✅ Thêm "/" cuối
+                requestURI.startsWith("/api/quiz/detail/") || // ✅ Thêm "/" cuối  
                 requestURI.startsWith("/api/question/") ||
-                requestURI.startsWith("/api/quiz/public") ||
-                requestURI.startsWith("/api/quizzes/")) {
+                requestURI.startsWith("/api/quiz-attempts/public/") ||
+                (requestURI.startsWith("/api/quizzes/") && "GET".equalsIgnoreCase(method)) || // ✅ Only GET quizzes public
+                requestURI.equals("/api/result/submit");
 
+        if (isPublicEndpoint) {
             System.out.println("✅ JWT Filter - Skipping public endpoint: " + requestURI);
             filterChain.doFilter(request, response);
             return;
         }
 
+        // ✅ XỬ LÝ JWT TOKEN
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            if (jwtUtil.validateToken(token)) {
-                String username = jwtUtil.extractUsername(token);
-
-                if (username != null) {
-                    try {
+            System.out.println("🔍 Processing JWT token...");
+            
+            try {
+                if (jwtUtil.validateToken(token)) {
+                    String username = jwtUtil.extractUsername(token);
+                    
+                    if (username != null) {
                         User user = loginService.findByUsername(username);
                         List<SimpleGrantedAuthority> authorities;
 
                         if (user != null) {
-                            String role = user.getRole();
-                            String authority = "ADMIN".equalsIgnoreCase(role) ? "ROLE_ADMIN" : "ROLE_USER";
+                            String role = user.getRole().toUpperCase(); // ✅ ENSURE UPPERCASE
+                            String authority;
+                            
+                            // ✅ IMPROVED ROLE MAPPING - Support multiple admin roles
+                            if ("ADMIN".equals(role) || "ADMINISTRATOR".equals(role) || "MODERATOR".equals(role)) {
+                                authority = "ROLE_ADMIN";
+                            } else {
+                                authority = "ROLE_USER";
+                            }
+                            
                             authorities = List.of(new SimpleGrantedAuthority(authority));
                             System.out.println("🔐 User: " + username + " | Role: " + role + " | Authority: " + authority);
                         } else {
                             authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
                             System.out.println("⚠️ User not found: " + username + " | Default Authority: ROLE_USER");
                         }
-                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                                username, null, authorities);
 
+                        UsernamePasswordAuthenticationToken authentication = 
+                            new UsernamePasswordAuthenticationToken(username, null, authorities);
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        System.out.println("✅ Authenticated user: " + username);
-                    } catch (Exception e) {
-                        System.err.println("❌ JWT filter error: " + e.getMessage());
+                        
+                        System.out.println("✅ Authentication successful: " + username);
                     }
+                } else {
+                    System.out.println("❌ Invalid or expired token");
                 }
-            } else {
-                System.out.println("⚠️ Invalid or expired token");
+            } catch (Exception e) {
+                System.err.println("❌ JWT processing error: " + e.getMessage());
+                e.printStackTrace();
             }
+        } else {
+            System.out.println("❌ No Bearer token found for protected endpoint: " + requestURI);
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private boolean isPublicEndpoint(String uri) {
-        return PUBLIC_ENDPOINT_PREFIXES.stream().anyMatch(uri::startsWith);
-    }
+    // ✅ REMOVED unused isPublicEndpoint method - logic moved inline
 }

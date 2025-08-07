@@ -1,4 +1,5 @@
 import './assets/main.css'
+import './assets/vietnamese-fonts.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -9,10 +10,18 @@ import router from './router'
 // Import axios để setup interceptor
 import axios from 'axios'
 
+// Import theme store
+import { useThemeStore } from './stores/theme'
+
 const app = createApp(App)
 
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 app.use(router)
+
+// Initialize theme store
+const themeStore = useThemeStore()
+themeStore.initTheme()
 
 // ✅ SETUP AXIOS INTERCEPTOR ĐỂ TỰ ĐỘNG THÊM JWT TOKEN
 axios.interceptors.request.use(
