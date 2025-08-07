@@ -15,6 +15,7 @@ const countdown = ref(30)
 const isLoading = ref(true)
 const showNextAnimation = ref(false)
 const quizTitle = ref('')
+const startTime = ref(null) // Thêm thời gian bắt đầu
 let timer = null
 
 // Computed properties
@@ -33,6 +34,7 @@ const timeColor = computed(() => {
 function startTimer() {
   clearInterval(timer)
   countdown.value = currentTimeLimit.value // ✅ SỬ DỤNG TIMELIMIT TỪ QUESTION
+  startTime.value = Date.now() // Ghi lại thời gian bắt đầu
   timer = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
@@ -118,6 +120,10 @@ function prevQuestion() {
 async function submitQuiz() {
   clearInterval(timer)
 
+  // Tính thời gian làm quiz
+  const endTime = Date.now()
+  const timeTaken = startTime.value ? Math.round((endTime - startTime.value) / 1000) : 0
+
   const token = localStorage.getItem('token')
   const answerList = Object.entries(selectedAnswers.value).map(([questionId, answerId]) => ({
     questionId: parseInt(questionId),
@@ -128,14 +134,11 @@ async function submitQuiz() {
     quizId: parseInt(quizId),
     userId: parseInt(userId),
     answers: answerList,
+    timeTaken: timeTaken, // Thêm thời gian làm quiz
   }
 
   try {
-    const res = await api.post('http://localhost:8080/api/result/submit', payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    const res = await api.post('http://localhost:8080/api/result/submit', payload)
 
     localStorage.setItem('correctAnswers', JSON.stringify(res.data.correctAnswers))
     localStorage.setItem('selectedAnswers', JSON.stringify(answerList))

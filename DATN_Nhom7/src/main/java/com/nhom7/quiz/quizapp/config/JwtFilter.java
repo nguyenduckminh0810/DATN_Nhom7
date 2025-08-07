@@ -62,9 +62,14 @@ public class JwtFilter extends OncePerRequestFilter {
                 requestURI.startsWith("/api/quiz/public/") ||  // ✅ Thêm "/" cuối
                 requestURI.startsWith("/api/quiz/detail/") || // ✅ Thêm "/" cuối  
                 requestURI.startsWith("/api/question/") ||
+
                 requestURI.startsWith("/api/quiz-attempts/public/") ||
                 (requestURI.startsWith("/api/quizzes/") && "GET".equalsIgnoreCase(method)) || // ✅ Only GET quizzes public
                 requestURI.equals("/api/result/submit");
+
+                requestURI.startsWith("/api/quiz/public") ||
+                requestURI.startsWith("/api/leaderboard/")) {
+
 
         if (isPublicEndpoint) {
             System.out.println("✅ JWT Filter - Skipping public endpoint: " + requestURI);
@@ -97,7 +102,8 @@ public class JwtFilter extends OncePerRequestFilter {
                             }
                             
                             authorities = List.of(new SimpleGrantedAuthority(authority));
-                            System.out.println("🔐 User: " + username + " | Role: " + role + " | Authority: " + authority);
+                            System.out.println(
+                                    "🔐 User: " + username + " | Role: " + role + " | Authority: " + authority);
                         } else {
                             authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
                             System.out.println("⚠️ User not found: " + username + " | Default Authority: ROLE_USER");

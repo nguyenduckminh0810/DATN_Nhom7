@@ -4,6 +4,7 @@ import { useLogin } from './useLogin'
 import { useQuizCRUD } from './useQuizCRUD'
 import ListQuizPublic from './ListQuizPublic.vue'
 import ListUserQuiz from './ListUserQuiz.vue'
+import Leaderboard from './Leaderboard.vue'
 import { ref, onMounted, computed } from 'vue'
 import api from '@/utils/axios'
 
@@ -157,6 +158,11 @@ function handleAvatarError(event) {
         <div class="content-wrapper" style="position: relative; z-index: 3">
           <ListUserQuiz />
           <ListQuizPublic />
+          
+          <!-- Leaderboard Section -->
+          <div class="leaderboard-section">
+            <Leaderboard />
+          </div>
         </div>
       </div>
     </div>
@@ -652,6 +658,11 @@ function handleAvatarError(event) {
   }
 
   .quiz-lists-container {
+    padding: 0 15px;
+  }
+  
+  .leaderboard-section {
+    margin-top: 40px;
     padding: 0 15px;
   }
 }
