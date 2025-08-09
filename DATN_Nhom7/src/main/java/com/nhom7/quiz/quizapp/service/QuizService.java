@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.nhom7.quiz.quizapp.model.Answer;
 import com.nhom7.quiz.quizapp.model.Category;
 import com.nhom7.quiz.quizapp.model.Image;
+import com.nhom7.quiz.quizapp.model.Result;
 import com.nhom7.quiz.quizapp.model.Question;
 import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.User;
@@ -30,7 +30,6 @@ import com.nhom7.quiz.quizapp.model.dto.AnswerImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuestionImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuizImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuizDetailDTO;
-import com.nhom7.quiz.quizapp.model.dto.QuizAttemptSummaryDTO;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo; // ✅ THÊM IMPORT
 import com.nhom7.quiz.quizapp.repository.ImageRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
@@ -329,7 +328,9 @@ public class QuizService {
 
 		// Đặt tên file
 		String originalFilename = file.getOriginalFilename();
-		String extension = originalFilename.substring(originalFilename.lastIndexOf('.'));
+		String extension = (originalFilename != null && originalFilename.contains("."))
+				? originalFilename.substring(originalFilename.lastIndexOf('.'))
+				: ".jpg";
 		String filename = UUID.randomUUID().toString() + extension;
 
 		// Lưu file
@@ -472,12 +473,48 @@ public class QuizService {
 			detail.setTotalPoints(totalPoints);
 			detail.setTotalTime(totalTime);
 
-			// TODO: Thêm thống kê từ QuizAttempt khi có dữ liệu
-			detail.setTotalPlays(0);
-			detail.setAverageScore(0.0);
-			detail.setUniqueParticipants(0);
-			detail.setCompletionRate(0.0);
-			detail.setAverageTime(0);
+			// Thống kê từ kết quả/attempts nếu đã có dữ liệu
+			try {
+				// total plays = tổng số Result của quiz
+				List<Result> quizResults = resultService.getResultsByQuizId(quiz.getId());
+				int totalPlays = (quizResults != null) ? quizResults.size() : 0;
+				detail.setTotalPlays(totalPlays);
+
+				if (totalPlays > 0 && quizResults != null) {
+					double avgScore = quizResults.stream()
+							.mapToInt(r -> r.getScore())
+							.average().orElse(0.0);
+					detail.setAverageScore(Math.round(avgScore * 10.0) / 10.0);
+
+					long unique = quizResults.stream()
+							.map(r -> r.getUser().getId())
+							.distinct().count();
+					detail.setUniqueParticipants((int) unique);
+
+					// completionRate: % bài có điểm > 0
+					long completed = quizResults.stream().filter(r -> r.getScore() > 0)
+							.count();
+					detail.setCompletionRate(totalPlays > 0 ? (completed * 100.0 / totalPlays) : 0.0);
+
+					// average time (nếu có timeTaken), mặc định 0
+					double avgTime = quizResults.stream()
+							.filter(r -> r.getTimeTaken() != null)
+							.mapToInt(r -> r.getTimeTaken())
+							.average().orElse(0.0);
+					detail.setAverageTime((int) Math.round(avgTime));
+				} else {
+					detail.setAverageScore(0.0);
+					detail.setUniqueParticipants(0);
+					detail.setCompletionRate(0.0);
+					detail.setAverageTime(0);
+				}
+			} catch (Exception ignore) {
+				detail.setTotalPlays(0);
+				detail.setAverageScore(0.0);
+				detail.setUniqueParticipants(0);
+				detail.setCompletionRate(0.0);
+				detail.setAverageTime(0);
+			}
 
 			return detail;
 		});

@@ -30,7 +30,10 @@ const isAdmin = computed(() => {
 })
 
 const isUser = computed(() => {
-  const isRegularUser = userProfile.value?.role === 'user' || userProfile.value?.role === 'USER' || !userProfile.value?.role
+  const isRegularUser =
+    userProfile.value?.role === 'user' ||
+    userProfile.value?.role === 'USER' ||
+    !userProfile.value?.role
   console.log('🔍 isUser computed:', isRegularUser, 'userProfile:', userProfile.value)
   return isRegularUser
 })
@@ -42,32 +45,30 @@ const userMenuItems = computed(() => {
       label: 'Hồ sơ cá nhân',
       icon: 'bi bi-person',
       link: '/profile',
-      description: 'Xem và chỉnh sửa thông tin cá nhân'
+      description: 'Xem và chỉnh sửa thông tin cá nhân',
     },
     {
       label: 'Cài đặt',
       icon: 'bi bi-gear',
       link: '/settings',
-      description: 'Cài đặt tài khoản'
+      description: 'Cài đặt tài khoản',
     },
     {
       label: 'Thùng rác',
       icon: 'bi bi-trash3',
       link: '/trash',
-      description: 'Quiz đã xóa'
+      description: 'Quiz đã xóa',
     },
     {
       label: 'Thông báo',
       icon: 'bi bi-bell',
       action: 'notifications',
       description: 'Xem thông báo mới',
-      badge: notificationCount.value
-    }
+      badge: notificationCount.value,
+    },
   ]
   return items
 })
-
-
 
 // ✅ LẤY THÔNG TIN PROFILE VÀ AVATAR
 async function fetchUserProfile() {
@@ -171,14 +172,14 @@ const logoutForNavbar = () => {
   notificationCount.value = 0
   avatarUrl.value = null
   username.value = null
-  
+
   // ✅ Clear all localStorage completely
   localStorage.clear()
-  
+
   // ✅ Redirect to login page after logout
   router.push('/login')
   console.log('✅ Logout completed - redirected to login')
-  
+
   // ✅ Force refresh immediately
   window.location.reload()
 }
@@ -203,13 +204,16 @@ watch(isLoggedIn, (newVal) => {
 })
 
 // ✅ Watch for token changes
-watch(() => localStorage.getItem('token'), (newToken) => {
-  if (!newToken) {
-    // ✅ Reset profile khi token bị xóa
-    userProfile.value = null
-    console.log('✅ Token removed - reset user profile')
-  }
-})
+watch(
+  () => localStorage.getItem('token'),
+  (newToken) => {
+    if (!newToken) {
+      // ✅ Reset profile khi token bị xóa
+      userProfile.value = null
+      console.log('✅ Token removed - reset user profile')
+    }
+  },
+)
 
 // ✅ REFRESH PROFILE KHI ROUTE THAY ĐỔI (để load avatar mới)
 watch(
@@ -220,7 +224,7 @@ watch(
     if (isLoggedIn.value && token) {
       fetchUserProfile()
     }
-  }
+  },
 )
 
 // ✅ Lấy profile khi component mount nếu đã login
@@ -232,13 +236,13 @@ onMounted(() => {
     // ✅ Khởi tạo notification store
     notificationStore.initialize()
   }
-  
+
   // Add click outside listener
   document.addEventListener('click', handleClickOutside)
-  
+
   // Add mouse leave listeners for dropdowns
   const dropdowns = document.querySelectorAll('.nav-item.dropdown')
-  dropdowns.forEach(dropdown => {
+  dropdowns.forEach((dropdown) => {
     dropdown.addEventListener('mouseleave', () => {
       setTimeout(() => {
         const panel = dropdown.querySelector('.dropdown-panel')
@@ -256,10 +260,10 @@ onMounted(() => {
 onUnmounted(() => {
   // Remove click outside listener
   document.removeEventListener('click', handleClickOutside)
-  
+
   // Remove mouse leave listeners
   const dropdowns = document.querySelectorAll('.nav-item.dropdown')
-  dropdowns.forEach(dropdown => {
+  dropdowns.forEach((dropdown) => {
     dropdown.removeEventListener('mouseleave', () => {})
   })
 })
@@ -287,13 +291,13 @@ function goToHistory() {
 const handleDropdownClick = (event) => {
   event.preventDefault()
   event.stopPropagation()
-  
+
   const dropdown = event.currentTarget.closest('.dropdown')
   const panel = dropdown.querySelector('.dropdown-panel')
-  
+
   // Close all other dropdowns first
   closeAllDropdowns()
-  
+
   // Toggle current dropdown
   if (panel.style.visibility === 'visible') {
     panel.style.opacity = '0'
@@ -314,25 +318,25 @@ const closeAllDropdowns = () => {
   const dropdownItems = document.querySelectorAll('.nav-item.dropdown')
   const userDropdowns = document.querySelectorAll('.user-dropdown')
   const userMenus = document.querySelectorAll('.user-menu')
-  
-  dropdowns.forEach(panel => {
+
+  dropdowns.forEach((panel) => {
     panel.style.opacity = '0'
     panel.style.visibility = 'hidden'
     panel.style.transform = 'translateX(-50%) translateY(-10px)'
   })
-  
-  dropdownItems.forEach(item => {
+
+  dropdownItems.forEach((item) => {
     item.classList.remove('active')
   })
-  
-  userDropdowns.forEach(dropdown => {
+
+  userDropdowns.forEach((dropdown) => {
     dropdown.style.display = 'none'
   })
-  
-  userMenus.forEach(menu => {
+
+  userMenus.forEach((menu) => {
     menu.classList.remove('active')
   })
-  
+
   // ✅ KHÔNG Ẩn notification panel khi close dropdown
   // Notification panel sẽ được đóng bằng nút X hoặc click outside
 }
@@ -348,13 +352,13 @@ const handleClickOutside = (event) => {
 const handleUserDropdownClick = (event) => {
   event.preventDefault()
   event.stopPropagation()
-  
+
   const userMenu = event.currentTarget.closest('.user-menu')
   const userDropdown = userMenu.querySelector('.user-dropdown')
-  
+
   // Close all other dropdowns first
   closeAllDropdowns()
-  
+
   // Toggle user dropdown
   if (userDropdown.style.display === 'block') {
     userDropdown.style.display = 'none'
@@ -369,10 +373,10 @@ const handleUserDropdownClick = (event) => {
 const handleDropdownHover = (event) => {
   const dropdown = event.currentTarget.closest('.dropdown')
   const panel = dropdown.querySelector('.dropdown-panel')
-  
+
   // Close all other dropdowns first
   closeAllDropdowns()
-  
+
   // Show current dropdown
   panel.style.opacity = '1'
   panel.style.visibility = 'visible'
@@ -383,7 +387,7 @@ const handleDropdownHover = (event) => {
 const handleDropdownLeave = (event) => {
   const dropdown = event.currentTarget.closest('.dropdown')
   const panel = dropdown.querySelector('.dropdown-panel')
-  
+
   // Hide dropdown after delay
   setTimeout(() => {
     if (!dropdown.matches(':hover')) {
@@ -399,10 +403,10 @@ const handleDropdownLeave = (event) => {
 const handleUserDropdownHover = (event) => {
   const userMenu = event.currentTarget.closest('.user-menu')
   const userDropdown = userMenu.querySelector('.user-dropdown')
-  
+
   // Close all other dropdowns first
   closeAllDropdowns()
-  
+
   // Show user dropdown
   userDropdown.style.display = 'block'
   userDropdown.style.opacity = '1'
@@ -414,7 +418,7 @@ const handleUserDropdownHover = (event) => {
 const handleUserDropdownLeave = (event) => {
   const userMenu = event.currentTarget.closest('.user-menu')
   const userDropdown = userMenu.querySelector('.user-dropdown')
-  
+
   // Hide user dropdown after delay
   setTimeout(() => {
     if (!userMenu.matches(':hover')) {
@@ -450,7 +454,11 @@ const handleUserDropdownLeave = (event) => {
             </div>
           </div>
 
-          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
+          <div
+            class="nav-item dropdown"
+            @mouseenter="handleDropdownHover"
+            @mouseleave="handleDropdownLeave"
+          >
             <div class="nav-content" @click="handleDropdownClick">
               <i class="bi bi-puzzle"></i>
               <span>Quiz</span>
@@ -488,21 +496,34 @@ const handleUserDropdownLeave = (event) => {
             </div>
           </div>
 
-          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
+          <div
+            class="nav-item dropdown"
+            @mouseenter="handleDropdownHover"
+            @mouseleave="handleDropdownLeave"
+          >
             <div class="nav-content" @click="handleDropdownClick">
               <i class="bi bi-folder2"></i>
               <span>Danh mục</span>
               <i class="bi bi-chevron-down dropdown-arrow"></i>
             </div>
             <div class="dropdown-panel">
-              <RouterLink :to="{ name: 'CategoryView' }" class="dropdown-link" @click="closeAllDropdowns">
+              <RouterLink
+                :to="{ name: 'CategoryView' }"
+                class="dropdown-link"
+                @click="closeAllDropdowns"
+              >
                 <i class="bi bi-grid"></i>
                 <div class="link-content">
                   <span class="link-title">Xem danh mục</span>
                   <small class="link-desc">Duyệt theo chủ đề</small>
                 </div>
               </RouterLink>
-              <RouterLink v-if="isAdmin" :to="{ name: 'AdminCategories' }" class="dropdown-link" @click="closeAllDropdowns">
+              <RouterLink
+                v-if="isAdmin"
+                :to="{ name: 'AdminCategories' }"
+                class="dropdown-link"
+                @click="closeAllDropdowns"
+              >
                 <i class="bi bi-gear"></i>
                 <div class="link-content">
                   <span class="link-title">Quản lý</span>
@@ -519,10 +540,10 @@ const handleUserDropdownLeave = (event) => {
             </div>
           </a>
 
-          <RouterLink to="/contact" class="nav-item">
+          <RouterLink to="/leaderboard" class="nav-item">
             <div class="nav-content">
-              <i class="bi bi-envelope"></i>
-              <span>Liên hệ</span>
+              <i class="bi bi-trophy"></i>
+              <span>Bảng xếp hạng</span>
             </div>
           </RouterLink>
         </div>
@@ -531,10 +552,14 @@ const handleUserDropdownLeave = (event) => {
       <!-- User Section -->
       <div class="user-section">
         <!-- Dark Mode Toggle -->
-        <button @click="themeStore.toggleTheme" class="theme-toggle-btn" :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'">
+        <button
+          @click="themeStore.toggleTheme"
+          class="theme-toggle-btn"
+          :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'"
+        >
           <i :class="themeStore.isDarkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
         </button>
-        
+
         <div v-if="!isLoggedIn" class="auth-actions">
           <RouterLink to="/register" class="btn btn-ghost"> Đăng ký </RouterLink>
           <button @click="login" class="btn btn-primary">
@@ -545,8 +570,13 @@ const handleUserDropdownLeave = (event) => {
 
         <!-- ✅ NOTIFICATION COMPONENT (VISIBLE FOR TESTING) -->
         <NotificationComponent v-if="isLoggedIn" ref="notificationComponent" />
-        
-        <div v-if="isLoggedIn" class="user-menu dropdown" @mouseenter="handleUserDropdownHover" @mouseleave="handleUserDropdownLeave">
+
+        <div
+          v-if="isLoggedIn"
+          class="user-menu dropdown"
+          @mouseenter="handleUserDropdownHover"
+          @mouseleave="handleUserDropdownLeave"
+        >
           <div class="user-trigger" @click="handleUserDropdownClick">
             <div class="user-avatar">
               <img
@@ -595,9 +625,9 @@ const handleUserDropdownLeave = (event) => {
             <div v-if="userMenuItems && userMenuItems.length > 0">
               <!-- User Menu Items -->
               <template v-for="(item, index) in userMenuItems" :key="`user-item-${index}`">
-                <RouterLink 
+                <RouterLink
                   v-if="item.link"
-                  :to="item.link" 
+                  :to="item.link"
                   class="user-dropdown-link"
                   @click="closeAllDropdowns"
                 >
@@ -605,11 +635,11 @@ const handleUserDropdownLeave = (event) => {
                   <span>{{ item.label }}</span>
                   <span v-if="item.badge" class="notification-badge">{{ item.badge }}</span>
                 </RouterLink>
-                
-                <a 
+
+                <a
                   v-else-if="item.action"
-                  href="#" 
-                  class="user-dropdown-link" 
+                  href="#"
+                  class="user-dropdown-link"
                   @click.prevent="item.action === 'notifications' ? showNotifications() : null"
                 >
                   <i :class="item.icon"></i>
@@ -618,7 +648,7 @@ const handleUserDropdownLeave = (event) => {
                 </a>
               </template>
             </div>
-            
+
             <!-- Logout Button - Always show -->
             <div class="dropdown-divider"></div>
             <a href="#" class="user-dropdown-link logout-link" @click.prevent="logoutForNavbar">
@@ -627,7 +657,7 @@ const handleUserDropdownLeave = (event) => {
             </a>
           </div>
         </div>
-        
+
         <div v-else class="auth-buttons">
           <RouterLink to="/login" class="btn-login">
             <i class="bi bi-box-arrow-in-right"></i>

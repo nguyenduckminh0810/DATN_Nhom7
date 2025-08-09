@@ -3,7 +3,6 @@ package com.nhom7.quiz.quizapp.service;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,10 +31,11 @@ public class LeaderboardService {
                 .collect(Collectors.toList());
     }
 
-    // Xếp hạng tổng điểm theo tuần/tháng/all-time
-    public List<LeaderboardEntry> getGlobalLeaderboard(String period, int limit) {
+    // Xếp hạng tổng điểm theo tuần/tháng/all-time (hỗ trợ offset)
+    public List<LeaderboardEntry> getGlobalLeaderboard(String period, int limit, int offset) {
         LocalDateTime startDate = getStartDate(period);
-        List<Object[]> rawResults = resultRepo.getGlobalLeaderboard(startDate, PageRequest.of(0, limit));
+        int page = limit > 0 ? offset / limit : 0;
+        List<Object[]> rawResults = resultRepo.getGlobalLeaderboard(startDate, PageRequest.of(page, limit));
 
         List<LeaderboardEntry> entries = new ArrayList<>();
         int rank = 1;
@@ -62,6 +62,11 @@ public class LeaderboardService {
         }
 
         return entries;
+    }
+
+    // Overload để tương thích cũ
+    public List<LeaderboardEntry> getGlobalLeaderboard(String period, int limit) {
+        return getGlobalLeaderboard(period, limit, 0);
     }
 
     // Xếp hạng theo lớp (placeholder - có thể mở rộng sau)
@@ -120,7 +125,7 @@ public class LeaderboardService {
                     .sorted((r1, r2) -> Integer.compare(r1.getTimeTaken(), r2.getTimeTaken()))
                     .limit(3)
                     .toList();
-            
+
             if (!fastestResults.isEmpty() && fastestResults.get(0).getId().equals(result.getId())) {
                 badges.add(Badge.BadgeType.FASTEST_TIME.getDisplayName());
             }
@@ -131,7 +136,7 @@ public class LeaderboardService {
                 .sorted((r1, r2) -> Integer.compare(r2.getScore(), r1.getScore()))
                 .limit(3)
                 .toList();
-        
+
         if (top3ByScore.stream().anyMatch(r -> r.getId().equals(result.getId()))) {
             badges.add(Badge.BadgeType.TOP_3.getDisplayName());
         }

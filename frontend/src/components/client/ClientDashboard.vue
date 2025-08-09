@@ -4,7 +4,6 @@ import { useLogin } from './useLogin'
 import { useQuizCRUD } from './useQuizCRUD'
 import ListQuizPublic from './ListQuizPublic.vue'
 import ListUserQuiz from './ListUserQuiz.vue'
-import Leaderboard from './Leaderboard.vue'
 import { ref, onMounted, computed } from 'vue'
 import api from '@/utils/axios'
 
@@ -79,8 +78,13 @@ function handleAvatarError(e) {
           <!-- Welcome Section -->
           <div class="welcome-section">
             <div class="welcome-icon">
-              <img v-if="avatarUrl" :src="avatarUrl" alt="User Avatar" class="welcome-avatar"
-                @error="handleAvatarError" />
+              <img
+                v-if="avatarUrl"
+                :src="avatarUrl"
+                alt="User Avatar"
+                class="welcome-avatar"
+                @error="handleAvatarError"
+              />
               <i v-else class="bi bi-person-hearts"></i>
             </div>
             <div class="welcome-text">
@@ -120,8 +124,13 @@ function handleAvatarError(e) {
               <div class="btn-content">
                 <span class="btn-title">Tham gia bằng mã</span>
                 <div class="join-row">
-                  <input v-model="quizCodeInput" class="join-input" type="text"
-                    placeholder="Nhập mã quiz (ví dụ: ABC123)" @keyup.enter="joinQuizByCode" />
+                  <input
+                    v-model="quizCodeInput"
+                    class="join-input"
+                    type="text"
+                    placeholder="Nhập mã quiz (ví dụ: ABC123)"
+                    @keyup.enter="joinQuizByCode"
+                  />
                   <button class="join-btn" @click.stop="joinQuizByCode">
                     <i class="bi bi-arrow-right-circle"></i> Tham gia
                   </button>
@@ -134,9 +143,6 @@ function handleAvatarError(e) {
         <div class="content-wrapper" style="position: relative; z-index: 3">
           <ListUserQuiz />
           <ListQuizPublic />
-          <div class="leaderboard-section">
-            <Leaderboard />
-          </div>
         </div>
       </div>
     </div>
@@ -195,7 +201,10 @@ function handleAvatarError(e) {
   color: #fff;
   background: linear-gradient(45deg, #00d4ff, #00b8d4);
   box-shadow: 0 10px 24px rgba(0, 212, 255, 0.3);
-  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
   white-space: nowrap;
 }
 
@@ -238,9 +247,9 @@ function handleAvatarError(e) {
 .floating-element {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(45deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .1));
+  background: linear-gradient(45deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, .3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   animation: 6s ease-in-out infinite;
 }
 
@@ -271,46 +280,43 @@ function handleAvatarError(e) {
 }
 
 @keyframes float1 {
-
   0%,
   100% {
-    transform: translate(0, 0) rotate(0)
+    transform: translate(0, 0) rotate(0);
   }
 
   33% {
-    transform: translate(30px, -30px) rotate(120deg)
+    transform: translate(30px, -30px) rotate(120deg);
   }
 
   66% {
-    transform: translate(-20px, 20px) rotate(240deg)
+    transform: translate(-20px, 20px) rotate(240deg);
   }
 }
 
 @keyframes float2 {
-
   0%,
   100% {
-    transform: translate(0, 0) rotate(0)
+    transform: translate(0, 0) rotate(0);
   }
 
   50% {
-    transform: translate(-25px, 25px) rotate(180deg)
+    transform: translate(-25px, 25px) rotate(180deg);
   }
 }
 
 @keyframes float3 {
-
   0%,
   100% {
-    transform: translate(0, 0) rotate(0)
+    transform: translate(0, 0) rotate(0);
   }
 
   25% {
-    transform: translate(20px, -40px) rotate(90deg)
+    transform: translate(20px, -40px) rotate(90deg);
   }
 
   75% {
-    transform: translate(-30px, -10px) rotate(270deg)
+    transform: translate(-30px, -10px) rotate(270deg);
   }
 }
 
@@ -351,25 +357,24 @@ function handleAvatarError(e) {
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid rgba(255, 255, 255, .3);
-  transition: .3s;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  transition: 0.3s;
 }
 
 .welcome-avatar:hover {
   transform: scale(1.05);
-  border-color: rgba(255, 255, 255, .6);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, .3);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes welcomeIconPulse {
-
   0%,
   100% {
-    transform: scale(1)
+    transform: scale(1);
   }
 
   50% {
-    transform: scale(1.1)
+    transform: scale(1.1);
   }
 }
 
@@ -389,25 +394,25 @@ function handleAvatarError(e) {
 
 .greeting {
   color: #fff;
-  text-shadow: 3px 3px 6px rgba(0, 0, 0, .3);
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
   opacity: 0;
-  animation: slideInLeft 1s ease-out .5s forwards;
+  animation: slideInLeft 1s ease-out 0.5s forwards;
 }
 
 .username {
   background: linear-gradient(45deg, #ffd700, #ffed4e);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .3));
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
   opacity: 0;
   animation: slideInRight 1s ease-out 1s forwards;
 }
 
 .welcome-subtitle {
   font-size: 1.3rem;
-  color: rgba(255, 255, 255, .9);
+  color: rgba(255, 255, 255, 0.9);
   line-height: 1.6;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, .2);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
   opacity: 0;
   animation: fadeInUp 1s ease-out 1.5s forwards;
 }
@@ -421,46 +426,46 @@ function handleAvatarError(e) {
 }
 
 .action-btn {
-  background: rgba(255, 255, 255, .15);
+  background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(20px);
-  border: 3px solid rgba(255, 255, 255, .8);
+  border: 3px solid rgba(255, 255, 255, 0.8);
   border-radius: 25px;
   padding: 25px 30px;
   display: flex;
   align-items: center;
   gap: 25px;
   text-align: left;
-  transition: .4s cubic-bezier(.4, 0, .2, 1);
+  transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, .15);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
   opacity: 0;
   transform: translateY(30px);
 }
 
 .action-btn.primary {
-  animation: slideInUp .8s ease-out 2s forwards;
+  animation: slideInUp 0.8s ease-out 2s forwards;
 }
 
 .action-btn.secondary {
-  animation: slideInUp .8s ease-out 2.3s forwards;
+  animation: slideInUp 0.8s ease-out 2.3s forwards;
 }
 
 .action-btn:hover {
   transform: translateY(-5px);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, .25);
-  background: rgba(255, 255, 255, .25);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .action-btn.primary:hover {
   border-color: #00d4ff;
-  background: rgba(0, 212, 255, .1);
+  background: rgba(0, 212, 255, 0.1);
 }
 
 .action-btn.secondary:hover {
   border-color: #ff6b9d;
-  background: rgba(255, 107, 157, .1);
+  background: rgba(255, 107, 157, 0.1);
 }
 
 .btn-icon {
@@ -473,8 +478,8 @@ function handleAvatarError(e) {
   font-size: 1.8rem;
   color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, .2);
-  border: 2px solid rgba(255, 255, 255, .8);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.8);
 }
 
 .action-btn.primary .btn-icon {
@@ -500,82 +505,82 @@ function handleAvatarError(e) {
   font-size: 1.4rem;
   font-weight: 700;
   color: #fff;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, .3);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .btn-desc {
   font-size: 1rem;
-  color: rgba(255, 255, 255, .8);
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, .2);
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .btn-arrow {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, .2);
+  background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, .5);
+  border: 2px solid rgba(255, 255, 255, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
   color: #fff;
-  transition: .3s;
+  transition: 0.3s;
   flex-shrink: 0;
 }
 
 .action-btn:hover .btn-arrow {
-  background: rgba(255, 255, 255, .3);
-  border-color: rgba(255, 255, 255, .8);
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.8);
   transform: translateX(5px);
 }
 
 @keyframes slideInLeft {
   from {
     opacity: 0;
-    transform: translateX(-50px)
+    transform: translateX(-50px);
   }
 
   to {
     opacity: 1;
-    transform: none
+    transform: none;
   }
 }
 
 @keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translateX(50px)
+    transform: translateX(50px);
   }
 
   to {
     opacity: 1;
-    transform: none
+    transform: none;
   }
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(30px)
+    transform: translateY(30px);
   }
 
   to {
     opacity: 1;
-    transform: none
+    transform: none;
   }
 }
 
 @keyframes slideInUp {
   from {
     opacity: 0;
-    transform: translateY(30px)
+    transform: translateY(30px);
   }
 
   to {
     opacity: 1;
-    transform: none
+    transform: none;
   }
 }
 

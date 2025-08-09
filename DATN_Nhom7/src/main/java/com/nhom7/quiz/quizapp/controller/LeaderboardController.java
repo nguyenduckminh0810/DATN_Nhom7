@@ -109,10 +109,11 @@ public class LeaderboardController {
     @GetMapping("/global")
     public ResponseEntity<List<LeaderboardEntry>> getGlobalLeaderboard(
             @RequestParam(defaultValue = "weekly") String period,
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
 
         try {
-            List<LeaderboardEntry> leaderboard = leaderboardService.getGlobalLeaderboard(period, limit);
+            List<LeaderboardEntry> leaderboard = leaderboardService.getGlobalLeaderboard(period, limit, offset);
             return ResponseEntity.ok(leaderboard);
         } catch (Exception e) {
             System.err.println("❌ Error in getGlobalLeaderboard: " + e.getMessage());
