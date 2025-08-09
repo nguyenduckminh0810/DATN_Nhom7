@@ -7,12 +7,10 @@ const { username } = useLogin()
 const route = useRoute()
 const router = useRouter()
 
-const quizId = route.params.quizId
-const userId = route.params.userId
-const score = parseInt(route.query.score) || 0
-
-const correctAnswers = ref(JSON.parse(route.query.correctAnswers || '[]'))
-const selectedAnswers = ref(JSON.parse(route.query.selectedAnswers || '[]'))
+const resultId = route.params.resultId
+const score = ref(0)
+const correctAnswers = ref([])
+const selectedAnswers = ref([]) // không dùng nữa nếu BE trả đầy đủ, giữ tạm cho UI
 const questions = ref([])
 const isLoaded = ref(false)
 const review = ref({
@@ -23,10 +21,15 @@ const submitting = ref(false)
 const successMessage = ref('')
 
 onMounted(async () => {
-  correctAnswers.value = JSON.parse(localStorage.getItem('correctAnswers') || '[]')
-  selectedAnswers.value = JSON.parse(localStorage.getItem('selectedAnswers') || '[]')
+  // Tải dữ liệu kết quả an toàn từ BE bằng resultId
+  try {
+    const resResult = await api.get(`/result/${resultId}`)
+    score.value = resResult.data.score || 0
+  } catch (e) {
+    console.error('Không tải được kết quả:', e)
+  }
 
-  // Load questions data
+  // Load questions data (để hiển thị chi tiết đẹp; có thể bỏ nếu không cần)
   try {
     const res = await api.get(`/question/play/${quizId}`)
     const questionList = res.data
@@ -53,31 +56,31 @@ onMounted(async () => {
     isLoaded.value = true
   }, 500)
 
-  // Sau khi dùng xong thì xóa
-  localStorage.removeItem('correctAnswers')
-  localStorage.removeItem('selectedAnswers')
+  // Không đọc/xóa dữ liệu localStorage nữa
 })
 
 const radius = 85
 const circumference = 2 * Math.PI * radius
 
 const dashOffset = computed(() => {
-  const percent = Math.min(score, 100)
+  const percent = Math.min(score.value, 100)
   return circumference - (percent / 100) * circumference
 })
 
 const scoreColor = computed(() => {
-  if (score >= 80) return '#28a745'
-  if (score >= 60) return '#17a2b8'
-  if (score >= 40) return '#ffc107'
+  const s = score.value
+  if (s >= 80) return '#28a745'
+  if (s >= 60) return '#17a2b8'
+  if (s >= 40) return '#ffc107'
   return '#dc3545'
 })
 
 const performanceLevel = computed(() => {
-  if (score >= 90) return { text: 'Xuất sắc', icon: '🏆', class: 'excellent' }
-  if (score >= 80) return { text: 'Tốt', icon: '🎉', class: 'good' }
-  if (score >= 60) return { text: 'Khá', icon: '👍', class: 'fair' }
-  if (score >= 40) return { text: 'Trung bình', icon: '📈', class: 'average' }
+  const s = score.value
+  if (s >= 90) return { text: 'Xuất sắc', icon: '🏆', class: 'excellent' }
+  if (s >= 80) return { text: 'Tốt', icon: '🎉', class: 'good' }
+  if (s >= 60) return { text: 'Khá', icon: '👍', class: 'fair' }
+  if (s >= 40) return { text: 'Trung bình', icon: '📈', class: 'average' }
   return { text: 'Cần cải thiện', icon: '💪', class: 'poor' }
 })
 
@@ -133,8 +136,14 @@ function goBack() {
   router.push({ name: 'Home' })
 }
 
-function playAgain() {
-  router.push({ name: 'PlayQuiz', params: { quizId, userId } })
+async function playAgain() {
+  try {
+    const { quizAttemptService } = await import('@/services/quizAttemptService')
+    const resp = await quizAttemptService.startAttempt(quizId)
+    router.replace({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
+  } catch (e) {
+    console.error('Không thể bắt đầu attempt:', e)
+  }
 }
 
 function viewQuizzes() {

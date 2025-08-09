@@ -191,7 +191,7 @@ const joinQuiz = async () => {
 }
 
 // Bắt đầu làm bài
-const startQuiz = () => {
+const startQuiz = async () => {
   console.log('🎯 startQuiz called, quizInfo:', quizInfo.value)
   
   // ✅ SỬA: LẤY QUIZ ID TỪ BACKEND RESPONSE STRUCTURE
@@ -203,7 +203,13 @@ const startQuiz = () => {
   
   if (quizId) {
     console.log('✅ Navigating to quiz:', quizId, 'user:', userId)
-    router.push(`/quiz/${quizId}/${userId}/play`)
+    try {
+      const { quizAttemptService } = await import('@/services/quizAttemptService')
+      const resp = await quizAttemptService.startAttempt(quizId)
+      router.push({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
+    } catch (e) {
+      console.error('Không thể bắt đầu attempt:', e)
+    }
   } else {
     console.error('❌ No quiz ID found in quizInfo:', quizInfo.value)
     console.error('❌ quizInfo.quiz:', quizInfo.value?.quiz)

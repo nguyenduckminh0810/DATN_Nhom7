@@ -17,13 +17,9 @@ import java.util.List;
 @Service
 public class ExcelImportService {
 
-    // Kiểm tra quyền admin
+    // Kiểm tra quyền admin (đã mở public: luôn cho phép)
     private void checkAdminPermission() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
-            throw new AccessDeniedException("Chỉ admin mới có quyền import dữ liệu từ Excel");
-        }
+        // No-op: mở quyền import public cho mọi người dùng đã đăng nhập
     }
 
     // ✅ THÊM METHOD PREVIEW

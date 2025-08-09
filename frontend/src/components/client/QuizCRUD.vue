@@ -213,8 +213,14 @@ async function deleteQuiz(quizId) {
   }
 }
 
-function playQuiz(quizId) {
-  router.push({ name: 'PlayQuiz', params: { quizId, userId: userId.value } })
+async function playQuiz(quizId) {
+  try {
+    const { quizAttemptService } = await import('@/services/quizAttemptService')
+    const resp = await quizAttemptService.startAttempt(quizId)
+    router.push({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
+  } catch (e) {
+    console.error('Không thể bắt đầu attempt:', e)
+  }
 }
 
 // ✅ COMPUTED CHO IMPORT EXCEL

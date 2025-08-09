@@ -72,6 +72,37 @@ public class QuizAttemptService {
     }
 
     /**
+     * Bắt đầu attempt mới (trả về attemptId). Cho phép userId null đối với public practice
+     */
+     public Long startAttempt(Long quizId, Long userId) {
+        Quiz quiz = quizRepo.findById(quizId).orElseThrow(() -> new IllegalArgumentException("Quiz not found"));
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setQuiz(quiz);
+        if (userId != null) {
+            User user = userRepo.findById(userId).orElse(null);
+            attempt.setUser(user);
+        } else {
+            // Với public/anonymous, có thể gán user null nếu schema cho phép.
+            // Trong DB hiện tại user_id nullable=false, nên tạm thời gán user đầu tiên hoặc ném lỗi.
+            // Để an toàn: yêu cầu đăng nhập hoặc tạo user guest. Ở đây ném lỗi rõ ràng.
+            throw new IllegalArgumentException("Public startAttempt yêu cầu đăng nhập trong schema hiện tại");
+        }
+        attempt.setScore(0);
+         attempt.setAttemptedAt(LocalDateTime.now());
+        attempt.setTimeTaken(0);
+         attempt.setStatus(com.nhom7.quiz.quizapp.model.AttemptStatus.IN_PROGRESS);
+        QuizAttempt saved = quizAttemptRepo.save(attempt);
+        return saved.getId();
+    }
+
+    /**
+     * Trả về trạng thái attempt
+     */
+     public String getAttemptStatus(Long attemptId) {
+         return quizAttemptRepo.findById(attemptId).map(a -> a.getStatus().name()).orElse(null);
+    }
+
+    /**
      * Chuyển đổi QuizAttempt thành QuizAttemptDTO
      */
     private QuizAttemptDTO convertToDTO(QuizAttempt attempt) {

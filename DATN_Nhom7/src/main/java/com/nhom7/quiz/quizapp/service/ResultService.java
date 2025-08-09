@@ -24,6 +24,7 @@ import com.nhom7.quiz.quizapp.repository.ResultRepo;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
 import com.nhom7.quiz.quizapp.repository.QuizAttemptRepo;
 import com.nhom7.quiz.quizapp.model.QuizAttempt;
+import java.util.Optional;
 
 @Service
 public class ResultService {
@@ -174,6 +175,7 @@ System.out.println("✅ Created QuizAttempt: User " + user.getUsername() +
             System.err.println("❌ Error sending admin notification: " + e.getMessage());
         }
 
+<<<<<<< HEAD
         return new EvaluationResult(finalScore, correctAnswers);
     }
 
@@ -211,6 +213,9 @@ System.out.println("✅ Created QuizAttempt: User " + user.getUsername() +
         
         System.out.println("💰 Total Bonus Points: " + bonus);
         return bonus;
+=======
+        return new EvaluationResult(result.getId(), score, correctAnswers);
+>>>>>>> 00b97f38 (làm chức năng quên MK,điều hướng result, fix userImportExcel)
     }
 
     public List<Result> getResultsByQuizId(Long quizId) {
@@ -221,5 +226,19 @@ System.out.println("✅ Created QuizAttempt: User " + user.getUsername() +
     public void deleteResultsByQuizId(Long quizId) {
         checkAdminPermission();
         resultRepo.deleteByQuiz_Id(quizId);
+    }
+
+    // Trả chi tiết kết quả an toàn cho FE
+    public Optional<java.util.Map<String, Object>> getResultDetail(Long resultId) {
+        return resultRepo.findById(resultId).map(r -> {
+            java.util.Map<String, Object> dto = new java.util.HashMap<>();
+            dto.put("resultId", r.getId());
+            dto.put("quizId", r.getQuiz().getId());
+            dto.put("quizTitle", r.getQuiz().getTitle());
+            dto.put("score", r.getScore());
+            dto.put("completedAt", r.getCompletedAt());
+            // Không trả correctAnswers ở đây nếu không cần; có thể tính/ghi log riêng
+            return dto;
+        });
     }
 }

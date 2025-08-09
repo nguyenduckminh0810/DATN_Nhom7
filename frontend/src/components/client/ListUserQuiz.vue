@@ -175,8 +175,15 @@ const goToPage = (page) => {
   if (page >= 0 && page < totalPages.value) fetchQuizzes(page)
 }
 
-const playQuiz = (quizId) =>
-  router.push({ name: 'PlayQuiz', params: { quizId, userId: userId.value } })
+const playQuiz = async (quizId) => {
+  try {
+    const { quizAttemptService } = await import('@/services/quizAttemptService')
+    const resp = await quizAttemptService.startAttempt(quizId)
+    router.push({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
+  } catch (e) {
+    console.error('Không thể bắt đầu attempt:', e)
+  }
+}
 // Quiz Detail Modal
 const showDetailModal = ref(false)
 const selectedQuizId = ref(null)

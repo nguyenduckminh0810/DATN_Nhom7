@@ -25,11 +25,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtUtil jwtUtil;
-
     @Autowired
     private LoginService loginService;
-
-    // ✅ REMOVED unused PUBLIC_ENDPOINT_PREFIXES - logic moved inline for better maintainability
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -37,19 +34,17 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
-        String requestURI = request.getRequestURI();
+        String uri = request.getRequestURI();
         String method = request.getMethod();
         String authHeader = request.getHeader("Authorization");
 
-        System.out.println("🔍 JWT Filter - URI: " + requestURI + " | Method: " + method);
-
-        // ✅ BỎ QUA OPTIONS REQUEST
+        // 1) Bỏ qua OPTIONS
         if ("OPTIONS".equalsIgnoreCase(method)) {
-            System.out.println("✅ Skipping OPTIONS request");
             filterChain.doFilter(request, response);
             return;
         }
 
+<<<<<<< HEAD
         // ✅ DANH SÁCH PUBLIC ENDPOINTS - HOÀN TOÀN THỐNG NHẤT VỚI SECURITY CONFIG
         boolean isPublicEndpoint = requestURI.startsWith("/api/login") ||
                 requestURI.startsWith("/api/register") ||
@@ -83,13 +78,36 @@ public class JwtFilter extends OncePerRequestFilter {
             System.out.println("🔍 Processing JWT token...");
             
             try {
+=======
+        // 2) Danh sách endpoint cho phép truy cập không cần token
+        boolean isPublicEndpoint = uri.startsWith("/api/login") ||
+                uri.startsWith("/api/register") ||
+                uri.equals("/api/admin/login") ||
+                uri.startsWith("/api/image/quiz/") ||
+                (uri.equals("/api/categories") && "GET".equalsIgnoreCase(method)) ||
+                uri.startsWith("/api/user/avatars/") ||
+                uri.startsWith("/api/upload/avatars/") ||
+                uri.startsWith("/api/quiz/join/") ||
+                uri.startsWith("/api/quiz/public/") ||
+                uri.startsWith("/api/quiz/detail/") ||
+                uri.startsWith("/api/quiz-attempts/public/") ||
+                (uri.startsWith("/api/quizzes/") && "GET".equalsIgnoreCase(method)) ||
+                uri.equals("/api/result/submit") ||
+                uri.startsWith("/api/leaderboard/");
+        // CHÚ Ý: ĐÃ GỠ /api/question/** ra khỏi list public
+
+        try {
+            // 3) Nếu có token thì luôn parse và set Authentication,
+            // bất kể endpoint public hay không (không return sớm).
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+>>>>>>> 00b97f38 (làm chức năng quên MK,điều hướng result, fix userImportExcel)
                 if (jwtUtil.validateToken(token)) {
-                    String username = jwtUtil.extractUsername(token);
-                    
+String username = jwtUtil.extractUsername(token);
                     if (username != null) {
                         User user = loginService.findByUsername(username);
-                        List<SimpleGrantedAuthority> authorities;
 
+<<<<<<< HEAD
                         if (user != null) {
                             String role = user.getRole().toUpperCase(); // ✅ ENSURE UPPERCASE
                             String authority;
@@ -108,27 +126,31 @@ public class JwtFilter extends OncePerRequestFilter {
                             authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
                             System.out.println("⚠️ User not found: " + username + " | Default Authority: ROLE_USER");
                         }
+=======
+                        String role = (user != null ? user.getRole() : "USER");
+                        role = role == null ? "USER" : role.toUpperCase();
+>>>>>>> 00b97f38 (làm chức năng quên MK,điều hướng result, fix userImportExcel)
 
-                        UsernamePasswordAuthenticationToken authentication = 
-                            new UsernamePasswordAuthenticationToken(username, null, authorities);
+                        // Prepend ROLE_
+                        String authority = ("ADMIN".equals(role) || "ADMINISTRATOR".equals(role)
+                                || "MODERATOR".equals(role))
+                                        ? "ROLE_ADMIN"
+                                        : "ROLE_USER";
+
+                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                username, null, List.of(new SimpleGrantedAuthority(authority)));
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        
-                        System.out.println("✅ Authentication successful: " + username);
                     }
-                } else {
-                    System.out.println("❌ Invalid or expired token");
                 }
-            } catch (Exception e) {
-                System.err.println("❌ JWT processing error: " + e.getMessage());
-                e.printStackTrace();
             }
-        } else {
-            System.out.println("❌ No Bearer token found for protected endpoint: " + requestURI);
+        } catch (Exception e) {
+            // log lỗi nhưng KHÔNG chặn request tại filter này
+            e.printStackTrace();
         }
 
+        // 4) Cho request đi tiếp. Endpoint public sẽ pass nếu không có token;
+        // endpoint bảo vệ sẽ dùng context đã set ở trên.
         filterChain.doFilter(request, response);
     }
-
-    // ✅ REMOVED unused isPublicEndpoint method - logic moved inline
 }

@@ -607,7 +607,7 @@ const handleAvatarError = (event) => {
   event.target.src = '/img/default-avatar.png'
 }
 
-const playQuiz = () => {
+const playQuiz = async () => {
   if (quizDetail.value) {
     const userId = localStorage.getItem('userId')
     if (!userId) {
@@ -617,7 +617,13 @@ const playQuiz = () => {
       return
     }
     console.log('🎮 Playing quiz:', quizDetail.value.id, 'for user:', userId)
-    router.push({ name: 'PlayQuiz', params: { quizId: quizDetail.value.id, userId } })
+    try {
+      const { quizAttemptService } = await import('@/services/quizAttemptService')
+      const resp = await quizAttemptService.startAttempt(quizDetail.value.id)
+      router.push({ name: 'PlayAttempt', params: { attemptId: resp.attemptId || resp.attempt_id || resp?.attemptId } })
+    } catch (e) {
+      console.error('Không thể bắt đầu attempt:', e)
+    }
     closeModal()
   }
 }

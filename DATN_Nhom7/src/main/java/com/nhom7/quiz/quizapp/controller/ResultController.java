@@ -42,6 +42,14 @@ public class ResultController {
         }
     }
 
+    // Lấy chi tiết kết quả theo resultId (để FE hiển thị, tránh dùng score trên URL)
+    @GetMapping("/{resultId}")
+    public ResponseEntity<?> getResultById(@PathVariable Long resultId) {
+        return resultService.getResultDetail(resultId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     // Xem kết quả của user - chỉ admin hoặc user sở hữu
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('ADMIN') or @resultService.checkUserPermission(#userId, authentication.principal)")

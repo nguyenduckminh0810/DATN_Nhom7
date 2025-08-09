@@ -27,8 +27,12 @@ public class QuizAttempt {
     @Column(nullable = false)
     private int score;
 
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "status", length = 20, nullable = false)
+    private AttemptStatus status = AttemptStatus.IN_PROGRESS;
+
     @Column(name = "attempted_at", nullable = false)
-    private LocalDateTime attemptedAt;
+    private LocalDateTime attemptedAt = LocalDateTime.now();
 
     @Column(name = "time_taken", nullable = false)
     private int timeTaken; // đơn vị giây
@@ -65,13 +69,7 @@ public class QuizAttempt {
 		this.score = score;
 	}
 
-	public LocalDateTime getAttemptedAt() {
-		return attemptedAt;
-	}
-
-	public void setAttemptedAt(LocalDateTime attemptedAt) {
-		this.attemptedAt = attemptedAt;
-	}
+    
 
 	public int getTimeTaken() {
 		return timeTaken;
@@ -81,13 +79,19 @@ public class QuizAttempt {
 		this.timeTaken = timeTaken;
 	}
 
-	public QuizAttempt(Long id, User user, Quiz quiz, int score, LocalDateTime attemptedAt, int timeTaken) {
+    public AttemptStatus getStatus() { return status; }
+    public void setStatus(AttemptStatus status) { this.status = status; }
+
+    public LocalDateTime getAttemptedAt() { return attemptedAt; }
+    public void setAttemptedAt(LocalDateTime attemptedAt) { this.attemptedAt = attemptedAt; }
+
+    public QuizAttempt(Long id, User user, Quiz quiz, int score, LocalDateTime attemptedAt, int timeTaken) {
 		super();
 		this.id = id;
 		this.user = user;
 		this.quiz = quiz;
 		this.score = score;
-		this.attemptedAt = attemptedAt;
+        this.attemptedAt = attemptedAt;
 		this.timeTaken = timeTaken;
 	}
 

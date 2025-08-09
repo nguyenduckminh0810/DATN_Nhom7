@@ -36,6 +36,9 @@ import Home from '@/components/client/Home.vue'
 import ListUserQuiz from '@/components/client/ListUserQuiz.vue'
 import ListQuizPublic from '@/components/client/ListQuizPublic.vue'
 import ImportExcel from '@/components/client/ImportExcel.vue'
+import ForgotPassword from '@/components/client/ForgotPassword.vue'
+import ResetPassword from '@/components/client/ResetPassword.vue'
+import { quizAttemptService } from '@/services/quizAttemptService'
 
 const routes = [
   // ✅ PUBLIC ROUTES
@@ -61,6 +64,16 @@ const routes = [
         path: 'register',
         name: 'Register',
         component: Register,
+      },
+      {
+        path: 'forgot-password',
+        name: 'ForgotPassword',
+        component: ForgotPassword,
+      },
+      {
+        path: 'reset-password',
+        name: 'ResetPassword',
+        component: ResetPassword,
       },
       {
         path: 'contact',
@@ -95,13 +108,19 @@ const routes = [
         meta: { requiresAuth: true, requiresUser: true },
       },
       {
+        path: 'attempt/:attemptId/play',
+        name: 'PlayAttempt',
+        component: PlayQuiz,
+        meta: { requiresAuth: true, requiresUser: true },
+      },
+      {
         path: 'quiz-crud/edit/:userId/:quizId',
         name: 'EditQuiz',
         component: EditQuiz,
         meta: { requiresAuth: true, requiresUser: true },
       },
       {
-        path: 'quiz/:quizId/:userId/result',
+        path: 'result/:resultId',
         name: 'QuizResult',
         component: QuizResult,
         meta: { requiresAuth: true, requiresUser: true },
@@ -246,7 +265,24 @@ const router = createRouter({
 })
 
 // ✅ NAVIGATION GUARDS
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+  // Chặn quay lại trang Play của attempt vừa hoàn thành (client-side)
+  if (to.name === 'PlayQuiz') {
+    const quizId = to.params.quizId
+    const userIdParam = to.params.userId
+    const completedKey = `quiz_completed_${quizId}_${userIdParam}`
+    try {
+      // Cho phép bypass khi có retake=1
+      if (to.query && (to.query.retake === '1' || to.query.retake === 1)) {
+        localStorage.removeItem(completedKey)
+        return next()
+      }
+      const done = localStorage.getItem(completedKey) === '1'
+      if (done) {
+        return next({ name: 'QuizResult', params: { quizId, userId: userIdParam } })
+      }
+    } catch {}
+  }
   const token = localStorage.getItem('token')
   const adminUser = localStorage.getItem('admin_user')
   const userInfo = localStorage.getItem('user')
@@ -269,6 +305,18 @@ router.beforeEach((to, from, next) => {
     return next({ name: 'Login' })
   }
   
+  // ✅ ATTEMPT ROUTE CHECK (PlayAttempt): chặn vào attempt đã hoàn tất
+  if (to.name === 'PlayAttempt') {
+    try {
+      const { status } = await quizAttemptService.getAttemptStatus(to.params.attemptId)
+      if (['SUBMITTED', 'COMPLETED', 'CANCELLED', 'EXPIRED'].includes(status)) {
+        return next({ name: 'Home' })
+      }
+    } catch (e) {
+      return next({ name: 'Home' })
+    }
+  }
+
   // ✅ ADMIN ROUTES CHECK
   if (to.meta.requiresAdmin === true) {
     const isAdmin = adminUser || (userRole === 'admin' || userRole === 'ADMIN')
