@@ -25,6 +25,8 @@ import com.nhom7.quiz.quizapp.repository.UserRepo;
 import com.nhom7.quiz.quizapp.repository.QuizAttemptRepo;
 import com.nhom7.quiz.quizapp.model.QuizAttempt;
 import java.util.Optional;
+import org.springframework.data.domain.PageRequest;
+
 
 @Service
 public class ResultService {
@@ -130,38 +132,37 @@ public class ResultService {
             throw new IllegalArgumentException("User hoặc Quiz không tồn tại.");
         }
 
-User user = userOpt.get();
-Quiz quiz = quizOpt.get();
+        User user = userOpt.get();
+        Quiz quiz = quizOpt.get();
 
-// Tính bonus điểm
-int bonusPoints = calculateBonusPoints(submission.getQuizId(), submission.getUserId(), baseScore);
-int finalScore = baseScore + bonusPoints;
+        // Tính bonus điểm
+        int bonusPoints = calculateBonusPoints(submission.getQuizId(), submission.getUserId(), baseScore);
+        int finalScore = baseScore + bonusPoints;
 
-Result result = new Result();
-result.setUser(user);
-result.setQuiz(quiz);
-result.setScore(finalScore);
-result.setCompletedAt(LocalDateTime.now());
-result.setTimeTaken(submission.getTimeTaken()); // Thêm thời gian làm quiz
+        Result result = new Result();
+        result.setUser(user);
+        result.setQuiz(quiz);
+        result.setScore(finalScore);
+        result.setCompletedAt(LocalDateTime.now());
+        result.setTimeTaken(submission.getTimeTaken());
 
-resultRepo.save(result);
+        resultRepo.save(result);
 
-// ✅ TẠO QUIZ ATTEMPT ĐỂ CẬP NHẬT HISTORY
-QuizAttempt attempt = new QuizAttempt();
-attempt.setUser(user);
-attempt.setQuiz(quiz);
-attempt.setScore(finalScore);
-attempt.setAttemptedAt(LocalDateTime.now());
-attempt.setTimeTaken(submission.getTimeTaken() != null ? submission.getTimeTaken() : 0);
-
-quizAttemptRepo.save(attempt);
-System.out.println("✅ Created QuizAttempt: User " + user.getUsername() + 
-                  " -> Quiz " + quiz.getTitle() + " (Score: " + finalScore + "%)");
+        // Lưu attempt lịch sử (nếu cần giữ)
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setUser(user);
+        attempt.setQuiz(quiz);
+        attempt.setScore(finalScore);
+        attempt.setAttemptedAt(LocalDateTime.now());
+        attempt.setTimeTaken(submission.getTimeTaken() != null ? submission.getTimeTaken() : 0);
+        quizAttemptRepo.save(attempt);
+        System.out.println("✅ Created QuizAttempt: User " + user.getUsername() +
+                " -> Quiz " + quiz.getTitle() + " (Score: " + finalScore + "%)");
 
 
         // ✅ GỬI NOTIFICATION CHO USER
         try {
-            notificationService.sendQuizResultNotification(user.getId(), quiz.getId(), quiz.getTitle(), score);
+            notificationService.sendQuizResultNotification(user.getId(), quiz.getId(), quiz.getTitle(), finalScore);
             System.out.println("✅ Sent quiz result notification to user: " + user.getUsername());
         } catch (Exception e) {
             System.err.println("❌ Error sending notification: " + e.getMessage());
@@ -169,14 +170,13 @@ System.out.println("✅ Created QuizAttempt: User " + user.getUsername() +
 
         // ✅ GỬI NOTIFICATION CHO ADMIN
         try {
-            notificationService.sendQuizCompletedNotification(quiz.getId(), quiz.getTitle(), user.getUsername(), score);
+            notificationService.sendQuizCompletedNotification(quiz.getId(), quiz.getTitle(), user.getUsername(), finalScore);
             System.out.println("✅ Sent quiz completed notification to admins");
         } catch (Exception e) {
             System.err.println("❌ Error sending admin notification: " + e.getMessage());
         }
 
-<<<<<<< HEAD
-        return new EvaluationResult(finalScore, correctAnswers);
+        return new EvaluationResult(result.getId(), finalScore, correctAnswers);
     }
 
     // Tính toán bonus điểm cho leaderboard
@@ -213,9 +213,6 @@ System.out.println("✅ Created QuizAttempt: User " + user.getUsername() +
         
         System.out.println("💰 Total Bonus Points: " + bonus);
         return bonus;
-=======
-        return new EvaluationResult(result.getId(), score, correctAnswers);
->>>>>>> 00b97f38 (làm chức năng quên MK,điều hướng result, fix userImportExcel)
     }
 
     public List<Result> getResultsByQuizId(Long quizId) {

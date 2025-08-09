@@ -154,39 +154,16 @@ function prevQuestion() {
 async function submitQuiz() {
   clearInterval(timer)
 
-<<<<<<< HEAD
   // Tính thời gian làm quiz
   const endTime = Date.now()
   const timeTaken = startTime.value ? Math.round((endTime - startTime.value) / 1000) : 0
 
   const token = localStorage.getItem('token')
-=======
->>>>>>> 00b97f38 (làm chức năng quên MK,điều hướng result, fix userImportExcel)
   const answerList = Object.entries(selectedAnswers.value).map(([questionId, answerId]) => ({
     questionId: parseInt(questionId),
     answerId: parseInt(answerId),
   }))
 
-<<<<<<< HEAD
-  const payload = {
-    quizId: parseInt(quizId),
-    userId: parseInt(userId),
-    answers: answerList,
-    timeTaken: timeTaken, // Thêm thời gian làm quiz
-  }
-
-  try {
-    const res = await api.post('http://localhost:8080/api/result/submit', payload)
-
-    localStorage.setItem('correctAnswers', JSON.stringify(res.data.correctAnswers))
-    localStorage.setItem('selectedAnswers', JSON.stringify(answerList))
-
-    router.push({
-      name: 'QuizResult',
-      params: { quizId, userId },
-      query: { score: res.data.score },
-    })
-=======
   try {
     let resultId
     if (attemptId) {
@@ -201,12 +178,7 @@ async function submitQuiz() {
       resultId = res.data.resultId
       try { localStorage.setItem(`quiz_completed_${quizId}_${userId}`, '1') } catch {}
     }
-    if (!userId) {
-  alert('Thiếu userId. Vui lòng đăng nhập lại.')
-  return
-}
     router.replace({ name: 'QuizResult', params: { resultId: String(resultId) } })
->>>>>>> 00b97f38 (làm chức năng quên MK,điều hướng result, fix userImportExcel)
   } catch (err) {
     console.error('Lỗi khi gửi kết quả:', err)
     alert('Có lỗi xảy ra khi nộp bài. Vui lòng thử lại!')
