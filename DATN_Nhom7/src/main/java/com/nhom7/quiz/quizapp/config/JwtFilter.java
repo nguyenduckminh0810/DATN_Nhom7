@@ -43,8 +43,6 @@ public class JwtFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
-        // 2) Danh sách endpoint cho phép truy cập không cần token
         boolean isPublicEndpoint = uri.startsWith("/api/login") ||
                 uri.startsWith("/api/register") ||
                 uri.equals("/api/admin/login") ||
@@ -59,20 +57,17 @@ public class JwtFilter extends OncePerRequestFilter {
                 (uri.startsWith("/api/quizzes/") && "GET".equalsIgnoreCase(method)) ||
                 uri.equals("/api/result/submit") ||
                 uri.startsWith("/api/leaderboard/");
-        // CHÚ Ý: ĐÃ GỠ /api/question/** ra khỏi list public
-
         try {
-            // 3) Nếu có token thì luôn parse và set Authentication,
-            // bất kể endpoint public hay không (không return sớm).
+            // Nếu có token thì parse và set Authentication (không phụ thuộc public/private)
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
                 if (jwtUtil.validateToken(token)) {
                     String username = jwtUtil.extractUsername(token);
                     if (username != null) {
                         User user = loginService.findByUsername(username);
-
                         String role = (user != null ? user.getRole() : "USER");
                         role = role == null ? "USER" : role.toUpperCase();
+
 
                         // Prepend ROLE_
                         String authority = ("ADMIN".equals(role) || "ADMINISTRATOR".equals(role)
@@ -91,9 +86,9 @@ public class JwtFilter extends OncePerRequestFilter {
             // log lỗi nhưng KHÔNG chặn request tại filter này
             e.printStackTrace();
         }
-
         // 4) Cho request đi tiếp. Endpoint public sẽ pass nếu không có token;
         // endpoint bảo vệ sẽ dùng context đã set ở trên.
         filterChain.doFilter(request, response);
     }
 }
+

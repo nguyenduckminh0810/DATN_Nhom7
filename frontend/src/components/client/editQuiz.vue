@@ -599,8 +599,14 @@ function goBack() {
   router.push({ name: 'Dashboard', params: { userId } })
 }
 
-function previewQuiz() {
-  router.push({ name: 'PlayQuiz', params: { quizId, userId } })
+async function previewQuiz() {
+  try {
+    const { quizAttemptService } = await import('@/services/quizAttemptService')
+    const resp = await quizAttemptService.startAttempt(quizId)
+    router.push({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
+  } catch (e) {
+    console.error('Không thể bắt đầu attempt:', e)
+  }
 }
 
 // Tab switching function

@@ -245,16 +245,15 @@ async function deleteQuiz(quizId) {
   }
 }
 
-// ✅ Chặn Play nếu chưa có question
-function playQuiz(quizId) {
-  const quiz = quizzes.value.find(q => q.id === quizId)
-  if (getQuestionCount(quiz) === 0) {
-    message.value = 'Quiz này chưa có question. Vui lòng thêm question trước khi chơi!'
-    messageType.value = 'error'
-    setTimeout(() => (message.value = ''), 3000)
-    return
+
+async function playQuiz(quizId) {
+  try {
+    const { quizAttemptService } = await import('@/services/quizAttemptService')
+    const resp = await quizAttemptService.startAttempt(quizId)
+    router.push({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
+  } catch (e) {
+    console.error('Không thể bắt đầu attempt:', e)
   }
-  router.push({ name: 'PlayQuiz', params: { quizId, userId: userId.value } })
 }
 
 // ✅ COMPUTED CHO IMPORT EXCEL

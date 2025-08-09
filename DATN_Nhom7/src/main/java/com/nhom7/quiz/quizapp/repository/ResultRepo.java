@@ -16,6 +16,9 @@ public interface ResultRepo extends JpaRepository<Result, Long> {
 
     List<Result> findByUser_Id(Long userId);
 
+    // ResultRepo.java
+    List<Result> findTop3ByQuizIdOrderByTimeTakenAsc(Long quizId);
+
     // Thêm method để xóa results theo quiz_id
     List<Result> findByQuiz_Id(Long quizId);
 

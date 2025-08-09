@@ -2,12 +2,22 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/utils/axios'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
 
-const quizId = route.params.quizId
-const userId = route.params.userId
+const attemptId = route.params.attemptId
+let quizId = route.params.quizId
+
+const userStore = useUserStore()
+let userId = route.params.userId
+  || userStore?.user?.id
+  || (() => {
+       try { return JSON.parse(localStorage.getItem('user') || '{}')?.id }
+       catch { return null }
+     })()
+  || localStorage.getItem('userId')
 const questions = ref([])
 const currentQuestionIndex = ref(0)
 const selectedAnswers = ref({})
@@ -46,11 +56,35 @@ function startTimer() {
 
 onMounted(async () => {
   try {
-    // Get quiz info
+    // Nếu đang ở flow attemptId thì lấy câu hỏi theo attempt
+    if (attemptId) {
+      const { quizAttemptService } = await import('@/services/quizAttemptService')
+      const resp = await quizAttemptService.getAttemptQuestions(attemptId)
+      quizId = resp.quizId
+      quizTitle.value = resp.quizTitle || 'Quiz'
+      const questionList = resp.questions || []
+
+      const enrichedQuestions = await Promise.all(
+        questionList.map(async (question) => {
+          try {
+            const ansRes = await api.get(`/answer/${question.id}`)
+            return { ...question, answers: ansRes.data || [] }
+          } catch (err) {
+            console.error(`Lỗi khi lấy answers cho câu hỏi ID ${question.id}:`, err)
+            return { ...question, answers: [] }
+          }
+        }),
+      )
+
+      questions.value = enrichedQuestions
+      isLoading.value = false
+      startTimer()
+      return
+    }
+
+    // Fallback: flow cũ theo quizId
     const quizRes = await api.get(`/quiz/${quizId}`)
     quizTitle.value = quizRes.data.title || 'Quiz'
-
-    // Get questions for playing
     const res = await api.get(`/question/play/${quizId}`)
     const questionList = res.data
 
@@ -130,24 +164,21 @@ async function submitQuiz() {
     answerId: parseInt(answerId),
   }))
 
-  const payload = {
-    quizId: parseInt(quizId),
-    userId: parseInt(userId),
-    answers: answerList,
-    timeTaken: timeTaken, // Thêm thời gian làm quiz
-  }
-
   try {
-    const res = await api.post('http://localhost:8080/api/result/submit', payload)
-
-    localStorage.setItem('correctAnswers', JSON.stringify(res.data.correctAnswers))
-    localStorage.setItem('selectedAnswers', JSON.stringify(answerList))
-
-    router.push({
-      name: 'QuizResult',
-      params: { quizId, userId },
-      query: { score: res.data.score },
-    })
+    let resultId
+    if (attemptId) {
+      const { quizAttemptService } = await import('@/services/quizAttemptService')
+      const resp = await quizAttemptService.submitAttempt(attemptId, answerList, currentQuestionIndex.value + 1)
+      resultId = resp.resultId
+    } else {
+      // Fallback flow cũ
+      const token = localStorage.getItem('token')
+      const payload = { quizId: parseInt(quizId), userId: parseInt(userId), answers: answerList }
+      const res = await api.post('http://localhost:8080/api/result/submit', payload, { headers: { Authorization: `Bearer ${token}` } })
+      resultId = res.data.resultId
+      try { localStorage.setItem(`quiz_completed_${quizId}_${userId}`, '1') } catch {}
+    }
+    router.replace({ name: 'QuizResult', params: { resultId: String(resultId) } })
   } catch (err) {
     console.error('Lỗi khi gửi kết quả:', err)
     alert('Có lỗi xảy ra khi nộp bài. Vui lòng thử lại!')

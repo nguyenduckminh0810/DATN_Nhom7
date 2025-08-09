@@ -24,6 +24,9 @@ import com.nhom7.quiz.quizapp.repository.ResultRepo;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
 import com.nhom7.quiz.quizapp.repository.QuizAttemptRepo;
 import com.nhom7.quiz.quizapp.model.QuizAttempt;
+import java.util.Optional;
+import org.springframework.data.domain.PageRequest;
+
 
 @Service
 public class ResultService {
@@ -131,7 +134,6 @@ public class ResultService {
 
         User user = userOpt.get();
         Quiz quiz = quizOpt.get();
-
         // Tính bonus điểm
         int bonusPoints = calculateBonusPoints(submission.getQuizId(), submission.getUserId(), baseScore);
         int finalScore = baseScore + bonusPoints;
@@ -141,17 +143,21 @@ public class ResultService {
         result.setQuiz(quiz);
         result.setScore(finalScore);
         result.setCompletedAt(LocalDateTime.now());
-        result.setTimeTaken(submission.getTimeTaken()); // Thêm thời gian làm quiz
+        result.setTimeTaken(submission.getTimeTaken());
 
         resultRepo.save(result);
 
-        // ✅ TẠO QUIZ ATTEMPT ĐỂ CẬP NHẬT HISTORY
+        // Lưu attempt lịch sử (nếu cần giữ)
         QuizAttempt attempt = new QuizAttempt();
         attempt.setUser(user);
         attempt.setQuiz(quiz);
         attempt.setScore(finalScore);
         attempt.setAttemptedAt(LocalDateTime.now());
         attempt.setTimeTaken(submission.getTimeTaken() != null ? submission.getTimeTaken() : 0);
+
+        quizAttemptRepo.save(attempt);
+        System.out.println("✅ Created QuizAttempt: User " + user.getUsername() +
+                " -> Quiz " + quiz.getTitle() + " (Score: " + finalScore + "%)");
 
         quizAttemptRepo.save(attempt);
         System.out.println("✅ Created QuizAttempt: User " + user.getUsername() +
@@ -167,14 +173,14 @@ public class ResultService {
 
         // ✅ GỬI NOTIFICATION CHO ADMIN
         try {
-            notificationService.sendQuizCompletedNotification(quiz.getId(), quiz.getTitle(), user.getUsername(),
-                    finalScore);
+
+            notificationService.sendQuizCompletedNotification(quiz.getId(), quiz.getTitle(), user.getUsername(), finalScore);
             System.out.println("✅ Sent quiz completed notification to admins");
         } catch (Exception e) {
             System.err.println("❌ Error sending admin notification: " + e.getMessage());
         }
 
-        return new EvaluationResult(finalScore, correctAnswers);
+        return new EvaluationResult(result.getId(), finalScore, correctAnswers);
     }
 
     // Tính toán bonus điểm cho leaderboard
@@ -222,5 +228,19 @@ public class ResultService {
     public void deleteResultsByQuizId(Long quizId) {
         checkAdminPermission();
         resultRepo.deleteByQuiz_Id(quizId);
+    }
+
+    // Trả chi tiết kết quả an toàn cho FE
+    public Optional<java.util.Map<String, Object>> getResultDetail(Long resultId) {
+        return resultRepo.findById(resultId).map(r -> {
+            java.util.Map<String, Object> dto = new java.util.HashMap<>();
+            dto.put("resultId", r.getId());
+            dto.put("quizId", r.getQuiz().getId());
+            dto.put("quizTitle", r.getQuiz().getTitle());
+            dto.put("score", r.getScore());
+            dto.put("completedAt", r.getCompletedAt());
+            // Không trả correctAnswers ở đây nếu không cần; có thể tính/ghi log riêng
+            return dto;
+        });
     }
 }

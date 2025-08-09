@@ -90,7 +90,7 @@ function goToPage(page) {
   }
 }
 
-function playQuiz(quizId) {
+async function playQuiz(quizId) {
   const userId = localStorage.getItem('userId')
   if (!userId) {
     console.error('❌ Missing userId - user not logged in')
@@ -99,7 +99,13 @@ function playQuiz(quizId) {
     return
   }
   console.log('🎮 Playing quiz:', quizId, 'for user:', userId)
-  router.push({ name: 'PlayQuiz', params: { quizId, userId } })
+  try {
+    const { quizAttemptService } = await import('@/services/quizAttemptService')
+    const resp = await quizAttemptService.startAttempt(quizId)
+    router.push({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
+  } catch (e) {
+    console.error('Không thể bắt đầu attempt:', e)
+  }
 }
 
 function goToQuizDetail(quizId) {

@@ -51,74 +51,119 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        // PUBLIC
-                        .requestMatchers(
-                                "/api/login",
-                                "/api/register",
-                                "/api/admin/login",
-                                "/api/quiz/public/**",
-                                "/api/quiz/detail/**",
-                                "/api/quiz/join/**",
-                                "/api/quiz-attempts/public/**",
-                                "/api/image/quiz/**",
-                                "/api/user/avatars/**",
-                                "/api/upload/avatars/**",
-                                "/ws/**", "/topic/**", "/queue/**",
-                                "/api/leaderboard/**")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/quizzes/**").permitAll()
 
-                        // BẢO VỆ (USER/ADMIN)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // ✅ PUBLIC ENDPOINTS - Không cần authentication
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll() // ✅ CHỈ GET categories
+                        .requestMatchers(
+                                "/api/login", 
+                                "/api/register",
+                                "/api/auth/forgot-password-code",
+                                "/api/auth/verify-reset-code",
+                                "/api/admin/login",  // ✅ Admin login phải public
+                                "/api/image/quiz/**", 
+                                "/api/user/avatars/**", 
+                                "/api/upload/avatars/**", 
+                                "/api/quiz/join/**",
+                                "/api/quiz/public/**", 
+                                "/api/quiz/detail/**", 
+                                "/api/question/**",
+                                "/api/quiz-attempts/public/**",
+                                "/api/result/submit",
+                                "/ws/**",  // ✅ WEBSOCKET ENDPOINTS
+                                "/topic/**",  // ✅ WEBSOCKET TOPICS
+                                "/queue/**"   // ✅ WEBSOCKET QUEUES
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/quizzes/**").permitAll() // ✅ GET quizzes public
+                        .requestMatchers(HttpMethod.POST, "/api/quizzes/*/review").hasAnyRole("USER", "ADMIN") // ✅ Review requires auth
+                        
+                        // ✅ ADMIN-ONLY ENDPOINTS (trừ login)
+                        .requestMatchers("/api/admin/dashboard/**", "/api/admin/users/**", "/api/admin/quizzes/**", 
+                                        "/api/admin/reports/**", "/api/admin/analytics/**", "/api/admin/attempts/**").hasRole("ADMIN")
+                        .requestMatchers("/api/categories/**").hasRole("ADMIN")  // ✅ POST/PUT/DELETE categories cần ADMIN
+                        
+                        // ✅ USER ENDPOINTS - Cần authentication
                         .requestMatchers(
                                 "/api/user/**",
                                 "/api/quiz/user/**",
                                 "/api/quiz-attempts/**",
-                                "/api/quiz/create-quiz-with-image",
+                                "/api/quiz/create-quiz-with-image",  // ✅ Tạo quiz cần auth
                                 "/api/answer/**",
-                                "/api/result/**")
-                        .hasAnyRole("USER", "ADMIN")
-
-                        // CHỈNH Ở ĐÂY: endpoint câu hỏi phải có token (USER/ADMIN)
-                        .requestMatchers("/api/question/**").hasAnyRole("USER", "ADMIN")
-
-                        // REVIEW của quiz: cần đăng nhập
-                        .requestMatchers(HttpMethod.POST, "/api/quizzes/*/review").hasAnyRole("USER", "ADMIN")
-
-                        // ADMIN
-                        .requestMatchers(
-                                "/api/admin/dashboard/**",
-                                "/api/admin/users/**",
-                                "/api/admin/quizzes/**",
-                                "/api/admin/reports/**",
-                                "/api/admin/analytics/**",
-                                "/api/admin/attempts/**",
-                                "/api/categories/**")
-                        .hasRole("ADMIN")
-
-                        .anyRequest().authenticated())
-                // Sửa mã trả về:
-                // - Thiếu/invalid token => 401 (trước đây bạn trả 403 nên gây hiểu nhầm)
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, e) -> {
-                            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
-                            res.setContentType("application/json;charset=UTF-8");
-                            String json = """
-                                        {"error":"UNAUTHORIZED","message":"Bạn cần đăng nhập để truy cập endpoint này"}
-                                    """;
-                            res.getWriter().write(json);
+                                "/api/result/**"
+                        ).hasAnyRole("USER", "ADMIN")
+                        
+                        // ✅ DEFAULT - Tất cả request khác cần authentication
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            System.out.println("🚨 Authentication Required: " + authException.getMessage());
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            response.setCharacterEncoding("UTF-8");
+                            
+                            String jsonResponse = """
+                                {
+                                    "error": "AUTHENTICATION_REQUIRED",
+                                    "message": "Bạn cần đăng nhập để truy cập endpoint này",
+                                    "userRole": "ROLE_ANONYMOUS",
+                                    "endpoint": "%s",
+                                    "method": "%s",
+                                    "timestamp": "%s"
+                                }
+                                """.formatted(
+                                    request.getRequestURI(),
+                                    request.getMethod(),
+                                    new java.util.Date()
+                                );
+                            
+                            response.getWriter().write(jsonResponse);
                         })
-                        // - Có token nhưng không đủ quyền => 403
-                        .accessDeniedHandler((req, res, e) -> {
-                            res.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
-                            res.setContentType("application/json;charset=UTF-8");
-                            String json = """
-                                        {"error":"FORBIDDEN","message":"Bạn không có quyền truy cập tài nguyên này"}
-                                    """;
-                            res.getWriter().write(json);
-                        }))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            System.out.println("🚨 Access Denied: " + accessDeniedException.getMessage());
+                            
+                            // ✅ Lấy thông tin user từ SecurityContext
+                            String userRole = "ROLE_ANONYMOUS";
+                            String username = "anonymous";
+                            
+                            var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                            if (authentication != null && authentication.isAuthenticated() && 
+                                !authentication.getName().equals("anonymousUser")) {
+                                username = authentication.getName();
+                                var authorities = authentication.getAuthorities();
+                                if (!authorities.isEmpty()) {
+                                    userRole = authorities.iterator().next().getAuthority();
+                                }
+                            }
+                            
+                            System.out.println("🚨 Access Denied for user: " + username + " with role: " + userRole);
+                            
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            response.setCharacterEncoding("UTF-8");
+                            
+                            String jsonResponse = """
+                                {
+                                    "error": "ACCESS_DENIED",
+                                    "message": "Bạn không có quyền truy cập endpoint này. Cần quyền ADMIN.",
+                                    "username": "%s",
+                                    "userRole": "%s",
+                                    "endpoint": "%s",
+                                    "method": "%s",
+                                    "timestamp": "%s"
+                                }
+                                """.formatted(
+                                    username,
+                                    userRole,
+                                    request.getRequestURI(),
+                                    request.getMethod(),
+                                    new java.util.Date()
+                                );
+                            
+                            response.getWriter().write(jsonResponse);
+                        })
+                )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
