@@ -36,6 +36,7 @@ import Home from '@/components/client/Home.vue'
 import ListUserQuiz from '@/components/client/ListUserQuiz.vue'
 import ListQuizPublic from '@/components/client/ListQuizPublic.vue'
 import ImportExcel from '@/components/client/ImportExcel.vue'
+import Leaderboard from '@/components/client/Leaderboard.vue'
 
 const routes = [
   // ✅ PUBLIC ROUTES
@@ -63,11 +64,16 @@ const routes = [
         component: Register,
       },
       {
+        path: 'leaderboard',
+        name: 'Leaderboard',
+        component: Leaderboard,
+      },
+      {
         path: 'contact',
         name: 'Contact',
         component: Home, // TODO: Create Contact component
       },
-    ]
+    ],
   },
 
   // ✅ USER ROUTES (requires authentication)
@@ -166,7 +172,7 @@ const routes = [
         component: QuizHistoryModern,
         meta: { requiresAuth: true, requiresUser: true },
       },
-    ]
+    ],
   },
 
   // ✅ ADMIN ROUTES (requires admin authentication)
@@ -229,7 +235,7 @@ const routes = [
         component: CategoryTrash,
         meta: { requiresAuth: true, requiresAdmin: true },
       },
-    ]
+    ],
   },
 
   // ✅ CATCH-ALL ROUTE
@@ -251,28 +257,35 @@ router.beforeEach((to, from, next) => {
   const adminUser = localStorage.getItem('admin_user')
   const userInfo = localStorage.getItem('user')
   const userRole = userInfo ? JSON.parse(userInfo).role : null
-  
+
   console.log('🔍 Navigation guard - Route:', to.path)
   console.log('🔍 Token exists:', !!token)
   console.log('🔍 Admin user exists:', !!adminUser)
   console.log('🔍 User role:', userRole)
-  
+
   // ✅ PUBLIC ROUTES - Always accessible
   if (!to.meta.requiresAuth) {
     console.log('✅ Public route - allowing access')
     return next()
   }
-  
+
   // ✅ AUTHENTICATION CHECK
   if (!token && !adminUser) {
     console.log('❌ No authentication - redirecting to login')
     return next({ name: 'Login' })
   }
-  
+
   // ✅ ADMIN ROUTES CHECK
   if (to.meta.requiresAdmin === true) {
-    const isAdmin = adminUser || (userRole === 'admin' || userRole === 'ADMIN')
-    console.log('🔍 Admin check - adminUser:', !!adminUser, 'userRole:', userRole, 'isAdmin:', isAdmin)
+    const isAdmin = adminUser || userRole === 'admin' || userRole === 'ADMIN'
+    console.log(
+      '🔍 Admin check - adminUser:',
+      !!adminUser,
+      'userRole:',
+      userRole,
+      'isAdmin:',
+      isAdmin,
+    )
     console.log('🔍 Route meta:', to.meta)
     console.log('🔍 RequiresAdmin:', to.meta.requiresAdmin)
     if (!isAdmin) {
@@ -282,7 +295,7 @@ router.beforeEach((to, from, next) => {
     console.log('✅ Admin route - allowing access')
     return next()
   }
-  
+
   // ✅ USER ROUTES CHECK
   if (to.meta.requiresUser) {
     if (!token) {
@@ -292,22 +305,21 @@ router.beforeEach((to, from, next) => {
     console.log('✅ User route - allowing access')
     return next()
   }
-  
+
   // ✅ GENERAL AUTHENTICATED ROUTES
   if (to.meta.requiresAuth && (token || adminUser)) {
     console.log('✅ Authenticated route - allowing access')
     return next()
   }
-  
+
   // ✅ LOGIN REDIRECT LOGIC - Allow access to login page even if logged in
   if (to.name === 'Login') {
     console.log('✅ Login page - allowing access')
     return next()
   }
-  
+
   console.log('✅ Default case - allowing access')
   next()
 })
 
 export default router
-

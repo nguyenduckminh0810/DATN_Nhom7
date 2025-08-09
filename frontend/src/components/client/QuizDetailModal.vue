@@ -21,8 +21,13 @@
             <div class="row mb-4">
               <div class="col-md-4">
                 <div class="quiz-image-container">
-                  <img :src="quizImageUrl" :alt="quizDetail?.title || 'Quiz image'" class="quiz-image"
-                    @error="handleImageError" />
+                  <img
+                    :src="quizImageUrl"
+                    :alt="quizDetail.title"
+                    class="quiz-image"
+                    @error="handleImageError"
+                  />
+                  <!-- Ẩn nhãn công khai/riêng tư theo yêu cầu -->
                 </div>
               </div>
 
@@ -278,37 +283,6 @@
               </div>
             </div>
 
-            <!-- Difficulty Analysis -->
-            <div class="row mb-4">
-              <div class="col-12">
-                <h5 class="section-title">
-                  <i class="bi bi-speedometer2 text-danger"></i>
-                  Phân tích độ khó
-                </h5>
-
-                <div class="difficulty-analysis">
-                  <div class="difficulty-item">
-                    <div class="difficulty-label">Độ khó:</div>
-                    <div class="difficulty-value" :class="getDifficultyClass(quizStats.averageScore)">
-                      {{ getDifficultyText(quizStats.averageScore) }}
-                    </div>
-                  </div>
-
-                  <div class="difficulty-item">
-                    <div class="difficulty-label">Tỷ lệ hoàn thành:</div>
-                    <div class="difficulty-value">{{ quizStats.completionRate }}%</div>
-                  </div>
-
-                  <div class="difficulty-item">
-                    <div class="difficulty-label">Thời gian trung bình:</div>
-                    <div class="difficulty-value">
-                      {{ formatTime(quizStats.averageTime) }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <!-- Leaderboard Section -->
             <div class="row mb-4">
               <div class="col-12">
@@ -372,6 +346,16 @@ const quizImageUrl = computed(() => {
 // Reactive data
 const loading = ref(false)
 const quizDetail = ref(null)
+// Normalize quiz image to absolute URL
+const quizImageUrl = computed(() => {
+  const img = quizDetail.value?.image
+  const id = quizDetail.value?.id
+  if (img && img.startsWith('http')) return img
+  if (img && img.startsWith('/uploads/')) return `http://localhost:8080${img}`
+  // Nếu có id thì ưu tiên endpoint image-by-quiz
+  if (id) return `http://localhost:8080/api/image/quiz/${id}`
+  return '/img/default-quiz.jpg'
+})
 const questions = ref([])
 const recentAttempts = ref([])
 const showAllQuestions = ref(false)
@@ -525,19 +509,7 @@ const getScoreClass = (score) => {
   return 'score-poor'
 }
 
-const getDifficultyClass = (averageScore) => {
-  if (averageScore >= 80) return 'difficulty-easy'
-  if (averageScore >= 60) return 'difficulty-medium'
-  if (averageScore >= 40) return 'difficulty-hard'
-  return 'difficulty-very-hard'
-}
-
-const getDifficultyText = (averageScore) => {
-  if (averageScore >= 80) return 'Dễ'
-  if (averageScore >= 60) return 'Trung bình'
-  if (averageScore >= 40) return 'Khó'
-  return 'Rất khó'
-}
+// Difficulty helpers removed with analysis section
 
 const handleImageError = (event) => {
   event.target.src = '/img/default-quiz.jpg'
