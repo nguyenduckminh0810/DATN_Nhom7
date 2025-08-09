@@ -60,25 +60,15 @@ public class QuizService {
 
 	@Autowired
 	private AnswerService answerService;
-	
+
 	@Autowired
 	private ResultService resultService;
 
 	// ✅ OWNERSHIP VALIDATION METHOD
 	public boolean isOwner(Long quizId, String username) {
-		try {
-			Optional<Quiz> quizOpt = quizRepo.findById(quizId);
-			if (quizOpt.isPresent()) {
-				Quiz quiz = quizOpt.get();
-				User user = loginService.findByUsername(username);
-				return user != null && quiz.getUser() != null && 
-					   user.getId().equals(quiz.getUser().getId());
-			}
+		if (quizId == null || username == null || username.isBlank())
 			return false;
-		} catch (Exception e) {
-			System.err.println("❌ Error checking ownership: " + e.getMessage());
-			return false;
-		}
+		return quizRepo.existsByIdAndUser_Username(quizId, username);
 	}
 
 	// Lấy tất cả quiz
@@ -97,15 +87,15 @@ public class QuizService {
 			System.out.println("📝 Quiz IsPublic: " + quiz.isPublic());
 
 			quiz.setCreatedAt(LocalDateTime.now());
-			
+
 			// ✅ LƯU QUIZ TRƯỚC
 			Quiz savedQuiz = quizRepo.save(quiz);
-			
+
 			// ✅ TẠO CODE SAU KHI ĐÃ CÓ ID
 			String quizCode = generateQuizCode(savedQuiz.getId());
 			savedQuiz.setQuizCode(quizCode);
 			savedQuiz.setCodeCreatedAt(LocalDateTime.now());
-			
+
 			// ✅ LƯU LẠI VỚI CODE
 			Quiz finalQuiz = quizRepo.save(savedQuiz);
 
@@ -126,28 +116,28 @@ public class QuizService {
 		// Tạo code 6 ký tự: 3 chữ cái + 3 số
 		String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		String numbers = "0123456789";
-		
+
 		StringBuilder code = new StringBuilder();
 		Random random = new Random();
-		
+
 		// Tạo 3 chữ cái ngẫu nhiên
 		for (int i = 0; i < 3; i++) {
 			code.append(letters.charAt(random.nextInt(letters.length())));
 		}
-		
+
 		// Tạo 3 số ngẫu nhiên
 		for (int i = 0; i < 3; i++) {
 			code.append(numbers.charAt(random.nextInt(numbers.length())));
 		}
-		
+
 		String generatedCode = code.toString();
-		
+
 		// Kiểm tra xem code đã tồn tại chưa
 		if (quizRepo.existsByQuizCode(generatedCode)) {
 			// Nếu đã tồn tại, tạo lại
 			return generateQuizCode(quizId);
 		}
-		
+
 		return generatedCode;
 	}
 
@@ -229,7 +219,7 @@ public class QuizService {
 					Quiz quiz = quizOpt.get();
 					quiz.setDeleted(true); // ✅ SỬA: Sử dụng Boolean.TRUE
 					quiz.setDeletedAt(LocalDateTime.now());
-					
+
 					// Set user who deleted (nếu cần)
 					if (deletedByUserId != null) {
 						User deletedBy = loginService.findById(deletedByUserId);
@@ -237,7 +227,7 @@ public class QuizService {
 							quiz.setDeletedBy(deletedBy);
 						}
 					}
-					
+
 					quizRepo.save(quiz);
 					System.out.println("✅ Quiz soft deleted successfully");
 					return true;
@@ -287,11 +277,11 @@ public class QuizService {
 					System.out.println("🗑️ Deleting image: " + image.getUrl());
 					imageRepo.delete(image);
 				}
-				
+
 				// 2. Xóa results trước (vì results reference đến quiz)
 				System.out.println("🗑️ Deleting results for quiz: " + id);
 				resultService.deleteResultsByQuizId(id);
-				
+
 				// 3. Lấy questions của quiz
 				List<Question> questions = questionService.getQuestionsByQuizId(id);
 				System.out.println("🗑️ Found " + (questions != null ? questions.size() : 0) + " questions to delete");
@@ -301,14 +291,14 @@ public class QuizService {
 						System.out.println("🗑️ Deleting answers for question: " + question.getId());
 						answerService.deleteByQuestionId(question.getId());
 					}
-					
+
 					// 5. Xóa questions
 					for (Question question : questions) {
 						System.out.println("🗑️ Deleting question: " + question.getId());
 						questionService.deleteQuestion(question.getId());
 					}
 				}
-				
+
 				// 6. Cuối cùng xóa quiz
 				System.out.println("🗑️ Deleting quiz: " + id);
 				quizRepo.deleteById(id);

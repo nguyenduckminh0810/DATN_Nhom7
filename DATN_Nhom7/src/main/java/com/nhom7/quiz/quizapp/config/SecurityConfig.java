@@ -1,27 +1,26 @@
 package com.nhom7.quiz.quizapp.config;
 
-import java.util.List;
-
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.lang.NonNull;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.http.HttpMethod;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.lang.NonNull;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -31,53 +30,48 @@ public class SecurityConfig {
     @Autowired
     private JwtFilter jwtFilter;
 
+    // CORS
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(List.of("Authorization"));
+        CorsConfiguration cfg = new CorsConfiguration();
+        // cho phép FE vite mặc định
+        cfg.setAllowedOrigins(List.of("http://localhost:5173"));
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setExposedHeaders(List.of("Authorization"));
+        cfg.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", cfg);
         return source;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        System.out.println("🔐 Configuring Security Filter Chain with Role-Based Access");
-
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        // PUBLIC
                         .requestMatchers(
                                 "/api/login",
                                 "/api/register",
                                 "/api/admin/login",
+                                "/api/quiz/public/**",
+                                "/api/quiz/detail/**",
+                                "/api/quiz/join/**",
+                                "/api/quiz-attempts/public/**",
                                 "/api/image/quiz/**",
                                 "/api/user/avatars/**",
                                 "/api/upload/avatars/**",
-                                "/api/quiz/join/**",
-                                "/api/quiz/public/**",
-                                "/api/quiz/detail/**",
-                                "/api/question/**",
-                                "/api/quiz-attempts/public/**",
-                                "/api/result/submit",
-                                "/ws/**",
-                                "/topic/**",
-                                "/queue/**", "/api/leaderboard/**")
+                                "/ws/**", "/topic/**", "/queue/**",
+                                "/api/leaderboard/**")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/quizzes/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/quizzes/*/review").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(
-                                "/api/admin/dashboard/**", "/api/admin/users/**", "/api/admin/quizzes/**",
-                                "/api/admin/reports/**", "/api/admin/analytics/**", "/api/admin/attempts/**")
-                        .hasRole("ADMIN")
-                        .requestMatchers("/api/categories/**").hasRole("ADMIN")
+
+                        // BẢO VỆ (USER/ADMIN)
                         .requestMatchers(
                                 "/api/user/**",
                                 "/api/quiz/user/**",
@@ -86,66 +80,44 @@ public class SecurityConfig {
                                 "/api/answer/**",
                                 "/api/result/**")
                         .hasAnyRole("USER", "ADMIN")
+
+                        // CHỈNH Ở ĐÂY: endpoint câu hỏi phải có token (USER/ADMIN)
+                        .requestMatchers("/api/question/**").hasAnyRole("USER", "ADMIN")
+
+                        // REVIEW của quiz: cần đăng nhập
+                        .requestMatchers(HttpMethod.POST, "/api/quizzes/*/review").hasAnyRole("USER", "ADMIN")
+
+                        // ADMIN
+                        .requestMatchers(
+                                "/api/admin/dashboard/**",
+                                "/api/admin/users/**",
+                                "/api/admin/quizzes/**",
+                                "/api/admin/reports/**",
+                                "/api/admin/analytics/**",
+                                "/api/admin/attempts/**",
+                                "/api/categories/**")
+                        .hasRole("ADMIN")
+
                         .anyRequest().authenticated())
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.setContentType("application/json");
-                            response.setCharacterEncoding("UTF-8");
-
-                            String jsonResponse = """
-                                    {
-                                        "error": "AUTHENTICATION_REQUIRED",
-                                        "message": "Bạn cần đăng nhập để truy cập endpoint này",
-                                        "userRole": "ROLE_ANONYMOUS",
-                                        "endpoint": "%s",
-                                        "method": "%s",
-                                        "timestamp": "%s"
-                                    }
-                                    """.formatted(
-                                    request.getRequestURI(),
-                                    request.getMethod(),
-                                    new java.util.Date());
-
-                            response.getWriter().write(jsonResponse);
+                // Sửa mã trả về:
+                // - Thiếu/invalid token => 401 (trước đây bạn trả 403 nên gây hiểu nhầm)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) -> {
+                            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+                            res.setContentType("application/json;charset=UTF-8");
+                            String json = """
+                                        {"error":"UNAUTHORIZED","message":"Bạn cần đăng nhập để truy cập endpoint này"}
+                                    """;
+                            res.getWriter().write(json);
                         })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            String userRole = "ROLE_ANONYMOUS";
-                            String username = "anonymous";
-
-                            var authentication = org.springframework.security.core.context.SecurityContextHolder
-                                    .getContext().getAuthentication();
-                            if (authentication != null && authentication.isAuthenticated() &&
-                                    !authentication.getName().equals("anonymousUser")) {
-                                username = authentication.getName();
-                                var authorities = authentication.getAuthorities();
-                                if (!authorities.isEmpty()) {
-                                    userRole = authorities.iterator().next().getAuthority();
-                                }
-                            }
-
-                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.setContentType("application/json");
-                            response.setCharacterEncoding("UTF-8");
-
-                            String jsonResponse = """
-                                    {
-                                        "error": "ACCESS_DENIED",
-                                        "message": "Bạn không có quyền truy cập endpoint này. Cần quyền ADMIN.",
-                                        "username": "%s",
-                                        "userRole": "%s",
-                                        "endpoint": "%s",
-                                        "method": "%s",
-                                        "timestamp": "%s"
-                                    }
-                                    """.formatted(
-                                    username,
-                                    userRole,
-                                    request.getRequestURI(),
-                                    request.getMethod(),
-                                    new java.util.Date());
-
-                            response.getWriter().write(jsonResponse);
+                        // - Có token nhưng không đủ quyền => 403
+                        .accessDeniedHandler((req, res, e) -> {
+                            res.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
+                            res.setContentType("application/json;charset=UTF-8");
+                            String json = """
+                                        {"error":"FORBIDDEN","message":"Bạn không có quyền truy cập tài nguyên này"}
+                                    """;
+                            res.getWriter().write(json);
                         }))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -157,18 +129,9 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // phục vụ ảnh tĩnh uploads/**
     @Configuration
     public static class WebConfig implements WebMvcConfigurer {
-        @Override
-        public void addCorsMappings(@NonNull CorsRegistry registry) {
-            registry.addMapping("/api/**")
-                    .allowedOrigins("http://localhost:5173")
-                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                    .allowedHeaders("*")
-                    .allowCredentials(false)
-                    .maxAge(3600);
-        }
-
         @Override
         public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
             registry.addResourceHandler("/uploads/**")

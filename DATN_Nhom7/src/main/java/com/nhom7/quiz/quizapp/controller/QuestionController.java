@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.security.core.parameters.P;
 
 @RestController
 @RequestMapping("/api/question")
@@ -165,10 +166,9 @@ public class QuestionController {
 
     // Tạo câu hỏi - chỉ chủ sở hữu quiz hoặc admin
     @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#question.quiz.id, authentication.principal)")
-    public ResponseEntity<Question> createQuestion(@RequestBody Question question) {
-        Question createdQuestion = questionService.createQuestion(question);
-        return ResponseEntity.status(201).body(createdQuestion);
+    @PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#question.quiz.id, authentication.name)")
+    public ResponseEntity<Question> createQuestion(@RequestBody @P("question") Question question) {
+        Question created = questionService.createQuestion(question);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
-
 }

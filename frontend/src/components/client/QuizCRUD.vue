@@ -44,6 +44,30 @@ const showCodeModal = ref(false)
 const quizCode = ref('')
 const quizInfo = ref(null)
 
+// ✅ HELPER: LẤY SỐ CÂU HỎI CỦA QUIZ (support nhiều field khác nhau)
+const getQuestionCount = (q) => {
+  return q?.questionCount ?? q?.totalQuestions ?? q?.numQuestions ??
+    (Array.isArray(q?.questions) ? q.questions.length : 0) ?? 0
+}
+
+//điều hướng về edit quiz
+const goToEditAfterCreate = () => {
+  const qid = quizInfo.value?.quizId
+  const uid = userId.value
+  if (!qid || !uid) {
+    // fallback: chỉ đóng modal nếu không có đủ dữ liệu
+    showCodeModal.value = false
+    return
+  }
+  router.push({
+    name: 'EditQuiz',
+    params: {
+      userId: String(uid),
+      quizId: String(qid),
+    },
+  })
+}
+
 function handleImageUpload(event) {
   const file = event.target.files[0]
   if (file) {
@@ -93,7 +117,7 @@ async function fetchQuizzes() {
     console.log('🔍 Fetch quizzes response:', response.data)
     quizzes.value = response.data.quizzes || response.data
     console.log('✅ Quizzes loaded:', quizzes.value.length)
-    
+
     // ✅ DEBUG: Kiểm tra từng quiz
     quizzes.value.forEach((quiz, index) => {
       console.log(`📝 Quiz ${index + 1}:`, {
@@ -101,7 +125,8 @@ async function fetchQuizzes() {
         title: quiz.title,
         isPublic: quiz.isPublic,
         deleted: quiz.deleted,
-        deletedAt: quiz.deletedAt
+        deletedAt: quiz.deletedAt,
+        questionCount: getQuestionCount(quiz)
       })
     })
   } catch (error) {
@@ -110,7 +135,6 @@ async function fetchQuizzes() {
 }
 
 // Tạo quiz
-
 async function createQuiz() {
   if (isCreating.value) return
 
@@ -145,12 +169,12 @@ async function createQuiz() {
 
     message.value = 'Tạo quiz thành công!'
     messageType.value = 'success'
-    
+
     // ✅ HIỂN THỊ QUIZ CODE VÀ LƯU QUIZ INFO
     if (quizCode) {
       showQuizCode(quizCode, quizId)
     }
-    
+
     resetForm()
     await fetchQuizzes()
   } catch (error) {
@@ -165,20 +189,25 @@ async function createQuiz() {
   }
 }
 
-
 function editQuiz(quizId) {
   const quiz = quizzes.value.find((q) => q.id === quizId)
-  if (quiz && quiz.user) {
-    const userId = quiz.user.id
-    const username = quiz.user.username || 'unknown'
-    router.push({
-      name: 'EditQuiz',
-      params: {
-        userId,
-        quizId,
-      },
-    })
+  if (!quiz) return
+
+  // ✅ Nhắc nếu chưa có question (nhưng vẫn cho vào trang Sửa)
+  if (getQuestionCount(quiz) === 0) {
+    message.value = 'Quiz này chưa có question — hãy thêm question sau khi vào trang Sửa.'
+    messageType.value = 'error'
+    setTimeout(() => (message.value = ''), 2500)
   }
+
+  const uid = quiz.user?.id ?? userId.value
+  router.push({
+    name: 'EditQuiz',
+    params: {
+      userId: uid,
+      quizId,
+    },
+  })
 }
 
 async function deleteQuiz(quizId) {
@@ -188,8 +217,10 @@ async function deleteQuiz(quizId) {
 
       if (response.status === 200 && response.data && response.data.success) {
         message.value = response.data.message || 'Xóa quiz thành công!'
+        messageType.value = 'success'
       } else {
         message.value = 'Xóa quiz thất bại: Quiz không tồn tại!'
+        messageType.value = 'error'
       }
 
       await fetchQuizzes()
@@ -206,6 +237,7 @@ async function deleteQuiz(quizId) {
         console.error('Lỗi khi xóa quiz:', error)
         message.value = 'Xóa quiz thất bại!'
       }
+      messageType.value = 'error'
       setTimeout(() => {
         message.value = ''
       }, 3000)
@@ -213,7 +245,15 @@ async function deleteQuiz(quizId) {
   }
 }
 
+// ✅ Chặn Play nếu chưa có question
 function playQuiz(quizId) {
+  const quiz = quizzes.value.find(q => q.id === quizId)
+  if (getQuestionCount(quiz) === 0) {
+    message.value = 'Quiz này chưa có question. Vui lòng thêm question trước khi chơi!'
+    messageType.value = 'error'
+    setTimeout(() => (message.value = ''), 3000)
+    return
+  }
   router.push({ name: 'PlayQuiz', params: { quizId, userId: userId.value } })
 }
 
@@ -226,66 +266,58 @@ const canImport = computed(() => {
 const downloadTemplate = () => {
   // Tạo file Excel template thực sự với thư viện xlsx
   const sampleData = [
-    { 
-      'Câu hỏi': 'Thủ đô của Việt Nam là gì?', 
-      'Đáp án A': 'Hà Nội', 
-      'Đáp án B': 'TP.HCM', 
-      'Đáp án C': 'Đà Nẵng', 
-      'Đáp án D': 'Huế', 
-      'Đáp án đúng': 'A', 
-      'Thời gian (giây)': 30 
+    {
+      'Câu hỏi': 'Thủ đô của Việt Nam là gì?',
+      'Đáp án A': 'Hà Nội',
+      'Đáp án B': 'TP.HCM',
+      'Đáp án C': 'Đà Nẵng',
+      'Đáp án D': 'Huế',
+      'Đáp án đúng': 'A',
+      'Thời gian (giây)': 30
     },
-    { 
-      'Câu hỏi': '1 + 1 = ?', 
-      'Đáp án A': '1', 
-      'Đáp án B': '2', 
-      'Đáp án C': '3', 
-      'Đáp án D': '4', 
-      'Đáp án đúng': 'B', 
-      'Thời gian (giây)': 20 
+    {
+      'Câu hỏi': '1 + 1 = ?',
+      'Đáp án A': '1',
+      'Đáp án B': '2',
+      'Đáp án C': '3',
+      'Đáp án D': '4',
+      'Đáp án đúng': 'B',
+      'Thời gian (giây)': 20
     },
-    { 
-      'Câu hỏi': 'Màu của lá cây thường là gì?', 
-      'Đáp án A': 'Đỏ', 
-      'Đáp án B': 'Vàng', 
-      'Đáp án C': 'Xanh', 
-      'Đáp án D': 'Trắng', 
-      'Đáp án đúng': 'C', 
-      'Thời gian (giây)': 25 
+    {
+      'Câu hỏi': 'Màu của lá cây thường là gì?',
+      'Đáp án A': 'Đỏ',
+      'Đáp án B': 'Vàng',
+      'Đáp án C': 'Xanh',
+      'Đáp án D': 'Trắng',
+      'Đáp án đúng': 'C',
+      'Thời gian (giây)': 25
     },
-    { 
-      'Câu hỏi': 'Con vật nào có 4 chân?', 
-      'Đáp án A': 'Cá', 
-      'Đáp án B': 'Chim', 
-      'Đáp án C': 'Chó', 
-      'Đáp án D': 'Rắn', 
-      'Đáp án đúng': 'C', 
-      'Thời gian (giây)': 15 
+    {
+      'Câu hỏi': 'Con vật nào có 4 chân?',
+      'Đáp án A': 'Cá',
+      'Đáp án B': 'Chim',
+      'Đáp án C': 'Chó',
+      'Đáp án D': 'Rắn',
+      'Đáp án đúng': 'C',
+      'Thời gian (giây)': 15
     },
-    { 
-      'Câu hỏi': 'Nước nào lớn nhất thế giới?', 
-      'Đáp án A': 'Trung Quốc', 
-      'Đáp án B': 'Mỹ', 
-      'Đáp án C': 'Nga', 
-      'Đáp án D': 'Canada', 
-      'Đáp án đúng': 'C', 
-      'Thời gian (giây)': 60 
+    {
+      'Câu hỏi': 'Nước nào lớn nhất thế giới?',
+      'Đáp án A': 'Trung Quốc',
+      'Đáp án B': 'Mỹ',
+      'Đáp án C': 'Nga',
+      'Đáp án D': 'Canada',
+      'Đáp án đúng': 'C',
+      'Thời gian (giây)': 60
     }
   ];
 
   try {
-    // Tạo worksheet từ dữ liệu
     const worksheet = XLSX.utils.json_to_sheet(sampleData);
-    
-    // Tạo workbook mới
     const workbook = XLSX.utils.book_new();
-    
-    // Thêm worksheet vào workbook
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Câu hỏi');
-    
-    // Ghi file Excel thực sự
     XLSX.writeFile(workbook, 'quiz-template.xlsx');
-    
     console.log('✅ Excel template downloaded successfully');
   } catch (error) {
     console.error('❌ Error creating Excel template:', error);
@@ -361,14 +393,14 @@ const importQuiz = async () => {
     if (response.data.success) {
       message.value = 'Import quiz thành công!'
       messageType.value = 'success'
-      
+
       // ✅ HIỂN THỊ QUIZ CODE CHO IMPORT
-      if (response.data.quiz && response.data.quiz.quizCode) {
-        showQuizCode(response.data.quiz.quizCode)
-      } else if (response.data.quizCode) {
-        showQuizCode(response.data.quizCode)
+      if (response.data.quiz?.quizCode) {
+        showQuizCode(response.data.quiz.quizCode, response.data.quiz.id)
+      } else if (response.data.quizCode && response.data.id) {
+        showQuizCode(response.data.quizCode, response.data.id)
       }
-      
+
       // Reset form và refresh quiz list
       setTimeout(() => {
         resetImportForm()
@@ -457,7 +489,7 @@ const shareCode = async () => {
     const quizId = quizInfo.value?.quizId
     const shareUrl = `${window.location.origin}/quiz/${quizId}/${userId}/play`
     const shareText = `Tham gia quiz với mã code: ${quizCode.value}\nLink trực tiếp: ${shareUrl}`
-    
+
     if (navigator.share) {
       await navigator.share({
         title: 'Tham gia Quiz',
@@ -892,8 +924,7 @@ const resetForm = () => {
                     <!-- Import Result - Compact -->
                     <div v-if="importResult"
                       :class="['import-result-compact', importResult.success ? 'success' : 'error']">
-                      <i :class="importResult.success ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'
-                        "></i>
+                      <i :class="importResult.success ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i>
                       <div>
                         <strong>{{ importResult.success ? 'Thành công!' : 'Thất bại!' }}</strong>
                         <p class="mb-0">{{ importResult.message }}</p>
@@ -960,6 +991,11 @@ const resetForm = () => {
                           <i :class="quiz.public ? 'bi bi-globe2' : 'bi bi-lock'"></i>
                           {{ quiz.public ? 'Công khai' : 'Riêng tư' }}
                         </span>
+
+                        <!-- 🔔 Badge cảnh báo nếu chưa có question -->
+                        <span v-if="getQuestionCount(quiz) === 0" class="status-badge-empty">
+                          <i class="bi bi-exclamation-triangle"></i> Chưa có question
+                        </span>
                       </div>
                     </div>
 
@@ -972,7 +1008,8 @@ const resetForm = () => {
 
                       <div class="quiz-actions-enhanced">
                         <button class="action-btn-enhanced play-btn-enhanced" @click="playQuiz(quiz.id)"
-                          title="Chơi quiz">
+                          :disabled="getQuestionCount(quiz) === 0"
+                          :title="getQuestionCount(quiz) === 0 ? 'Quiz chưa có question' : 'Chơi quiz'">
                           <i class="bi bi-play-fill"></i>
                           <span>Chơi</span>
                         </button>
@@ -998,16 +1035,15 @@ const resetForm = () => {
     </div>
 
     <!-- Enhanced Toast Notification -->
-    <div v-if="message" :class="['toast-notification-enhanced', message.includes('thành công') ? 'success' : 'error']">
+    <div v-if="message" :class="['toast-notification-enhanced', messageType === 'success' ? 'success' : 'error']">
       <div class="toast-icon">
-        <i :class="message.includes('thành công')
+        <i :class="messageType === 'success'
           ? 'bi bi-check-circle-fill'
-          : 'bi bi-exclamation-triangle-fill'
-          "></i>
+          : 'bi bi-exclamation-triangle-fill'"></i>
       </div>
       <div class="toast-content">
         <strong class="toast-title">
-          {{ message.includes('thành công') ? 'Thành công!' : 'Lỗi!' }}
+          {{ messageType === 'success' ? 'Thành công!' : 'Thông báo' }}
         </strong>
         <span class="toast-message">{{ message }}</span>
       </div>
@@ -1029,7 +1065,7 @@ const resetForm = () => {
           <i class="bi bi-x-lg"></i>
         </button>
       </div>
-      
+
       <div class="modal-body">
         <div class="code-section">
           <h4>Mã code để tham gia quiz:</h4>
@@ -1047,7 +1083,7 @@ const resetForm = () => {
                 </button>
               </div>
             </div>
-            
+
             <!-- ✅ QR CODE CHO LOCALHOST -->
             <div class="qr-section">
               <h5>QR Code để tham gia</h5>
@@ -1060,7 +1096,7 @@ const resetForm = () => {
               </div>
             </div>
           </div>
-          
+
           <div class="code-info">
             <div class="info-item">
               <i class="bi bi-info-circle"></i>
@@ -1072,9 +1108,9 @@ const resetForm = () => {
             </div>
           </div>
         </div>
-        
+
         <div class="modal-actions">
-          <button @click="showCodeModal = false" class="btn btn-secondary">
+          <button @click="goToEditAfterCreate" class="btn btn-secondary">
             <i class="bi bi-check"></i>
             Hoàn thành
           </button>
@@ -1288,6 +1324,8 @@ const resetForm = () => {
   border-top-color: #5f27cd;
   animation-delay: 0.5s;
 }
+
+spinner-ring:nth-child(3) {}
 
 .spinner-ring:nth-child(3) {
   width: 60%;
@@ -1822,9 +1860,7 @@ const resetForm = () => {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
-  transition:
-    width 0.6s,
-    height 0.6s;
+  transition: width 0.6s, height 0.6s;
 }
 
 .btn-create-quiz-enhanced:active .btn-ripple {
@@ -1905,10 +1941,7 @@ const resetForm = () => {
 
 .skeleton-image {
   height: 200px;
-  background: linear-gradient(90deg,
-      rgba(255, 255, 255, 0.1) 25%,
-      rgba(255, 255, 255, 0.2) 50%,
-      rgba(255, 255, 255, 0.1) 75%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -1919,10 +1952,7 @@ const resetForm = () => {
 
 .skeleton-line {
   height: 1rem;
-  background: linear-gradient(90deg,
-      rgba(255, 255, 255, 0.1) 25%,
-      rgba(255, 255, 255, 0.2) 50%,
-      rgba(255, 255, 255, 0.1) 75%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
   border-radius: 0.5rem;
@@ -2123,6 +2153,23 @@ const resetForm = () => {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
+/* 🔔 Badge cảnh báo chưa có question */
+.status-badge-empty {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  margin-left: 8px;
+  padding: 0.5rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+  background: rgba(245, 101, 101, 0.9);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(245, 101, 101, 0.35);
+}
+
 .quiz-content-enhanced {
   padding: 2rem;
   height: calc(100% - 220px);
@@ -2223,6 +2270,13 @@ const resetForm = () => {
   background: linear-gradient(135deg, #e53e3e, #c53030);
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(245, 101, 101, 0.5);
+}
+
+/* Disabled state for action buttons */
+.action-btn-enhanced[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(0.15);
 }
 
 /* === ENHANCED TOAST NOTIFICATION === */
@@ -3023,7 +3077,8 @@ const resetForm = () => {
   gap: 10px;
 }
 
-.copy-btn, .share-btn {
+.copy-btn,
+.share-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;

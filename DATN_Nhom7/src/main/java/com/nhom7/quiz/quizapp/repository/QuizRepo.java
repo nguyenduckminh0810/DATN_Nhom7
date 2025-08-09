@@ -15,6 +15,8 @@ import com.nhom7.quiz.quizapp.model.Quiz;
 
 @Repository
 public interface QuizRepo extends JpaRepository<Quiz, Long> {
+      boolean existsByIdAndUser_Username(Long id, String username);
+
       // ✅ CÁC METHOD HIỆN TẠI - CHỈ LẤY QUIZ CHƯA BỊ XÓA
       @Query("SELECT q FROM Quiz q WHERE q.user.id = :userId AND (q.deleted IS NULL OR q.deleted = false)")
       Page<Quiz> findByUserIdAndDeletedFalse(@Param("userId") Long userId, Pageable pageable);
@@ -22,7 +24,7 @@ public interface QuizRepo extends JpaRepository<Quiz, Long> {
       // ✅ SỬA: Query để xử lý đúng trường hợp deleted = null
       @Query("SELECT q FROM Quiz q WHERE q.isPublic = :isPublic AND (q.deleted IS NULL OR q.deleted = false)")
       Page<Quiz> findByIsPublicAndDeletedFalse(@Param("isPublic") Boolean isPublic, Pageable pageable);
-      
+
       long countByIsPublicFalseAndDeletedFalse();
 
       List<Quiz> findByIsPublicFalseAndDeletedFalseOrderByCreatedAtDesc();
@@ -33,6 +35,7 @@ public interface QuizRepo extends JpaRepository<Quiz, Long> {
 
       // ✅ THÊM CÁC METHOD CHO DEBUG
       long countByUserId(Long userId);
+
       long countByUserIdAndDeletedFalse(Long userId);
 
       @Query("""
@@ -56,16 +59,16 @@ public interface QuizRepo extends JpaRepository<Quiz, Long> {
       // ✅ THÊM CÁC METHOD CHO SOFT DELETE
       // Lấy tất cả quiz (kể cả đã xóa) - cho admin
       Page<Quiz> findByUserId(Long userId, Pageable pageable);
-      
+
       // Lấy quiz đã bị xóa mềm
       Page<Quiz> findByUserIdAndDeletedTrue(Long userId, Pageable pageable);
-      
+
       // Kiểm tra quiz có tồn tại và chưa bị xóa
       boolean existsByIdAndDeletedFalse(Long id);
-      
+
       // Lấy quiz theo ID (chưa bị xóa)
       Quiz findByIdAndDeletedFalse(Long id);
-      
+
       // Restore quiz (đặt lại deleted = false)
       @Modifying
       @Query("UPDATE Quiz q SET q.deleted = false, q.deletedAt = null, q.deletedBy = null WHERE q.id = :id")

@@ -9,84 +9,65 @@ import { ref, onMounted, computed } from 'vue'
 import api from '@/utils/axios'
 
 const router = useRouter()
-const { username, userId, logout, getUserId } = useLogin()
+const { username, userId, getUserId } = useLogin()
 const { toQuizCRUD } = useQuizCRUD()
 
-// ✅ LẤY THÔNG TIN USER VÀ AVATAR
-const userProfile = ref(null)
-
-// Avatar URL computed
-const avatarUrl = computed(() => {
-  if (userProfile.value?.avatarUrl) {
-    // Nếu avatarUrl bắt đầu bằng /api/ hoặc /uploads/
-    if (
-      userProfile.value.avatarUrl.startsWith('/api/') ||
-      userProfile.value.avatarUrl.startsWith('/uploads/')
-    ) {
-      return `http://localhost:8080${userProfile.value.avatarUrl}`
-    }
-    // Nếu là URL đầy đủ
-    if (userProfile.value.avatarUrl.startsWith('http')) {
-      return userProfile.value.avatarUrl
-    }
-    // Nếu là đường dẫn tương đối
-    return `http://localhost:8080${userProfile.value.avatarUrl}`
+// Join by code
+const quizCodeInput = ref('')
+const joinQuizByCode = () => {
+  const code = quizCodeInput.value.trim()
+  if (!code) {
+    alert('Vui lòng nhập mã quiz!')
+    return
   }
-  return null
+  router.push({ name: 'JoinQuiz', query: { code } })
+}
+
+// Profile & avatar
+const userProfile = ref(null)
+const avatarUrl = computed(() => {
+  const url = userProfile.value?.avatarUrl
+  if (!url) return null
+  if (url.startsWith('http')) return url
+  // chuẩn hoá cho /api/* | /uploads/* | relative
+  const base = 'http://localhost:8080'
+  return url.startsWith('/api/') || url.startsWith('/uploads/') ? `${base}${url}` : `${base}${url}`
 })
 
-// ✅ LẤY THÔNG TIN PROFILE VÀ AVATAR
 async function fetchUserProfile() {
   try {
     const token = localStorage.getItem('token')
     if (!token) return
-
-    const response = await api.get('/user/profile', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const { data } = await api.get('/user/profile', {
+      headers: { Authorization: `Bearer ${token}` },
     })
-
-    userProfile.value = response.data
-  } catch (error) {
-    console.error('Error fetching user profile in dashboard:', error)
+    userProfile.value = data
+  } catch (err) {
+    console.error('Error fetching user profile in dashboard:', err)
   }
 }
 
 function toQuizHistory() {
-  if (!userId.value) {
-    return getUserId().then(() => {
-      if (userId.value) {
-        router.push({ name: 'QuizHistory', params: { userId: userId.value } })
-      } else {
-        alert('Không thể lấy thông tin người dùng.')
-      }
-    })
+  if (userId.value) {
+    router.push({ name: 'QuizHistory', params: { userId: userId.value } })
+    return
   }
-  router.push({ name: 'QuizHistory', params: { userId: userId.value } })
+  getUserId().then(() => {
+    if (userId.value) router.push({ name: 'QuizHistory', params: { userId: userId.value } })
+    else alert('Không thể lấy thông tin người dùng.')
+  })
 }
 
-function logoutForClientDashboard() {
-  logout()
-  router.push('/login')
-}
+onMounted(fetchUserProfile)
 
-// ✅ LOAD PROFILE KHI COMPONENT MOUNT
-onMounted(() => {
-  fetchUserProfile()
-})
-
-// ✅ XỬ LÝ LỖI AVATAR
-function handleAvatarError(event) {
-  event.target.style.display = 'none'
-  // Icon sẽ hiển thị tự động vì v-else
+function handleAvatarError(e) {
+  e.target.style.display = 'none'
 }
 </script>
 
 <template>
   <div class="gradient-bg-with-floating">
     <div class="dashboard-container">
-      <!-- Hero Dashboard Section -->
       <div class="dashboard-hero">
         <div class="hero-background">
           <div class="floating-element element-1"></div>
@@ -116,50 +97,43 @@ function handleAvatarError(event) {
           <!-- Action Buttons -->
           <div class="action-buttons">
             <button class="action-btn primary" @click="toQuizCRUD">
-              <div class="btn-icon">
-                <i class="bi bi-puzzle"></i>
-              </div>
+              <div class="btn-icon"><i class="bi bi-puzzle"></i></div>
               <div class="btn-content">
                 <span class="btn-title">Quản lý Quiz</span>
                 <span class="btn-desc">Tạo và chỉnh sửa quiz</span>
               </div>
-              <div class="btn-arrow">
-                <i class="bi bi-arrow-right"></i>
-              </div>
+              <div class="btn-arrow"><i class="bi bi-arrow-right"></i></div>
             </button>
 
             <button class="action-btn secondary" @click="toQuizHistory">
-              <div class="btn-icon">
-                <i class="bi bi-clock-history"></i>
-              </div>
+              <div class="btn-icon"><i class="bi bi-clock-history"></i></div>
               <div class="btn-content">
                 <span class="btn-title">Lịch sử làm Quiz</span>
                 <span class="btn-desc">Xem kết quả các bài đã làm</span>
               </div>
-              <div class="btn-arrow">
-                <i class="bi bi-arrow-right"></i>
-              </div>
+              <div class="btn-arrow"><i class="bi bi-arrow-right"></i></div>
             </button>
 
-            <button class="action-btn danger" @click="logoutForClientDashboard">
-              <div class="btn-icon">
-                <i class="bi bi-box-arrow-right"></i>
-              </div>
+            <!-- Join Quiz By Code (card đồng bộ kích thước) -->
+            <div class="action-btn join">
+              <div class="btn-icon"><i class="bi bi-key"></i></div>
               <div class="btn-content">
-                <span class="btn-title">Đăng xuất</span>
-                <span class="btn-desc">Thoát khỏi tài khoản</span>
+                <span class="btn-title">Tham gia bằng mã</span>
+                <div class="join-row">
+                  <input v-model="quizCodeInput" class="join-input" type="text"
+                    placeholder="Nhập mã quiz (ví dụ: ABC123)" @keyup.enter="joinQuizByCode" />
+                  <button class="join-btn" @click.stop="joinQuizByCode">
+                    <i class="bi bi-arrow-right-circle"></i> Tham gia
+                  </button>
+                </div>
               </div>
-              <div class="btn-arrow">
-                <i class="bi bi-arrow-right"></i>
-              </div>
-            </button>
+            </div>
           </div>
         </div>
+
         <div class="content-wrapper" style="position: relative; z-index: 3">
           <ListUserQuiz />
           <ListQuizPublic />
-          
-          <!-- Leaderboard Section -->
           <div class="leaderboard-section">
             <Leaderboard />
           </div>
@@ -170,6 +144,67 @@ function handleAvatarError(event) {
 </template>
 
 <style scoped>
+/* === JOIN (đồng bộ kích thước với các action-btn) === */
+.action-buttons .action-btn {
+  min-height: 120px;
+}
+
+/* Join card khớp style & animation (nút thứ 3) */
+.action-btn.join {
+  animation: slideInUp 0.8s ease-out 2.6s forwards;
+}
+
+.action-btn.join:hover {
+  border-color: #00d4ff;
+  background: rgba(0, 212, 255, 0.1);
+}
+
+/* Hàng nhập mã + nút trong card */
+.join-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.join-input {
+  flex: 1;
+  height: 42px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  padding: 0 12px;
+  font-size: 1rem;
+  background: #fff;
+  outline: none;
+}
+
+.join-input:focus {
+  border-color: #00d4ff;
+}
+
+.join-btn {
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  color: #fff;
+  background: linear-gradient(45deg, #00d4ff, #00b8d4);
+  box-shadow: 0 10px 24px rgba(0, 212, 255, 0.3);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+  white-space: nowrap;
+}
+
+.join-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(45deg, #00b8d4, #0288d1);
+}
+
+/* ====== Phần sẵn có giữ nguyên từ đây ====== */
 .gradient-bg-with-floating {
   position: relative;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -180,10 +215,7 @@ function handleAvatarError(event) {
 .gradient-bg-with-floating::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background:
     radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
@@ -192,81 +224,24 @@ function handleAvatarError(event) {
   z-index: 1;
 }
 
-.floating-icon {
-  position: absolute;
-  font-size: 2rem;
-  opacity: 0.1;
-  animation: float 6s ease-in-out infinite;
-  z-index: 2;
-}
-
-.floating-icon:nth-child(1) {
-  top: 20%;
-  left: 10%;
-  animation-delay: 0s;
-}
-
-.floating-icon:nth-child(2) {
-  top: 60%;
-  right: 15%;
-  animation-delay: 2s;
-}
-
-.floating-icon:nth-child(3) {
-  bottom: 20%;
-  left: 20%;
-  animation-delay: 4s;
-}
-
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-20px);
-  }
-}
-
-/* === DASHBOARD CONTAINER === */
 .dashboard-container {
   min-height: 100vh;
   background: transparent;
 }
 
-/* === HERO DASHBOARD SECTION === */
 .dashboard-hero {
   position: relative;
   padding: 60px 20px 80px;
   overflow: hidden;
 }
 
-/* .hero-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border-radius: 0 0 50px 50px;
-    border: 3px solid rgba(255, 255, 255, 0.8);
-    border-top: none;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-} */
-
-/* Floating Elements Animation */
 .floating-element {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(45deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  background: linear-gradient(45deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .1));
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  animation-duration: 6s;
-  animation-iteration-count: infinite;
-  animation-timing-function: ease-in-out;
+  border: 2px solid rgba(255, 255, 255, .3);
+  animation: 6s ease-in-out infinite;
 }
 
 .element-1 {
@@ -299,15 +274,15 @@ function handleAvatarError(event) {
 
   0%,
   100% {
-    transform: translate(0, 0) rotate(0deg);
+    transform: translate(0, 0) rotate(0)
   }
 
   33% {
-    transform: translate(30px, -30px) rotate(120deg);
+    transform: translate(30px, -30px) rotate(120deg)
   }
 
   66% {
-    transform: translate(-20px, 20px) rotate(240deg);
+    transform: translate(-20px, 20px) rotate(240deg)
   }
 }
 
@@ -315,11 +290,11 @@ function handleAvatarError(event) {
 
   0%,
   100% {
-    transform: translate(0, 0) rotate(0deg);
+    transform: translate(0, 0) rotate(0)
   }
 
   50% {
-    transform: translate(-25px, 25px) rotate(180deg);
+    transform: translate(-25px, 25px) rotate(180deg)
   }
 }
 
@@ -327,19 +302,18 @@ function handleAvatarError(event) {
 
   0%,
   100% {
-    transform: translate(0, 0) rotate(0deg);
+    transform: translate(0, 0) rotate(0)
   }
 
   25% {
-    transform: translate(20px, -40px) rotate(90deg);
+    transform: translate(20px, -40px) rotate(90deg)
   }
 
   75% {
-    transform: translate(-30px, -10px) rotate(270deg);
+    transform: translate(-30px, -10px) rotate(270deg)
   }
 }
 
-/* === HERO CONTENT === */
 .hero-content {
   max-width: 1000px;
   margin: 0 auto;
@@ -347,7 +321,6 @@ function handleAvatarError(event) {
   z-index: 2;
 }
 
-/* === WELCOME SECTION === */
 .welcome-section {
   text-align: center;
   margin-bottom: 60px;
@@ -360,17 +333,17 @@ function handleAvatarError(event) {
 .welcome-icon {
   width: 100px;
   height: 100px;
-  background: linear-gradient(45deg, #ff6b9d, #ff3d71);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #fff;
   font-size: 3rem;
+  background: linear-gradient(45deg, #ff6b9d, #ff3d71);
   box-shadow: 0 15px 40px rgba(255, 107, 157, 0.4);
   border: 4px solid rgba(255, 255, 255, 0.9);
-  animation: welcomeIconPulse 3s ease-in-out infinite;
   overflow: hidden;
+  animation: welcomeIconPulse 3s ease-in-out infinite;
 }
 
 .welcome-avatar {
@@ -378,25 +351,25 @@ function handleAvatarError(event) {
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
+  border: 4px solid rgba(255, 255, 255, .3);
+  transition: .3s;
 }
 
 .welcome-avatar:hover {
   transform: scale(1.05);
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, .6);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, .3);
 }
 
 @keyframes welcomeIconPulse {
 
   0%,
   100% {
-    transform: scale(1);
+    transform: scale(1)
   }
 
   50% {
-    transform: scale(1.1);
+    transform: scale(1.1)
   }
 }
 
@@ -415,32 +388,30 @@ function handleAvatarError(event) {
 }
 
 .greeting {
-  color: white;
-  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+  color: #fff;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, .3);
   opacity: 0;
-  animation: slideInLeft 1s ease-out 0.5s forwards;
+  animation: slideInLeft 1s ease-out .5s forwards;
 }
 
 .username {
   background: linear-gradient(45deg, #ffd700, #ffed4e);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .3));
   opacity: 0;
   animation: slideInRight 1s ease-out 1s forwards;
 }
 
 .welcome-subtitle {
   font-size: 1.3rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, .9);
   line-height: 1.6;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, .2);
   opacity: 0;
   animation: fadeInUp 1s ease-out 1.5s forwards;
 }
 
-/* === ACTION BUTTONS === */
 .action-buttons {
   display: flex;
   flex-direction: column;
@@ -450,58 +421,48 @@ function handleAvatarError(event) {
 }
 
 .action-btn {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, .15);
   backdrop-filter: blur(20px);
-  border: 3px solid rgba(255, 255, 255, 0.8);
+  border: 3px solid rgba(255, 255, 255, .8);
   border-radius: 25px;
   padding: 25px 30px;
   display: flex;
   align-items: center;
   gap: 25px;
   text-align: left;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: .4s cubic-bezier(.4, 0, .2, 1);
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, .15);
   opacity: 0;
   transform: translateY(30px);
 }
 
 .action-btn.primary {
-  animation: slideInUp 0.8s ease-out 2s forwards;
+  animation: slideInUp .8s ease-out 2s forwards;
 }
 
 .action-btn.secondary {
-  animation: slideInUp 0.8s ease-out 2.3s forwards;
-}
-
-.action-btn.danger {
-  animation: slideInUp 0.8s ease-out 2.6s forwards;
+  animation: slideInUp .8s ease-out 2.3s forwards;
 }
 
 .action-btn:hover {
   transform: translateY(-5px);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
-  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, .25);
+  background: rgba(255, 255, 255, .25);
 }
 
 .action-btn.primary:hover {
   border-color: #00d4ff;
-  background: rgba(0, 212, 255, 0.1);
+  background: rgba(0, 212, 255, .1);
 }
 
 .action-btn.secondary:hover {
   border-color: #ff6b9d;
-  background: rgba(255, 107, 157, 0.1);
+  background: rgba(255, 107, 157, .1);
 }
 
-.action-btn.danger:hover {
-  border-color: #ff4757;
-  background: rgba(255, 71, 87, 0.1);
-}
-
-/* Button Components */
 .btn-icon {
   width: 60px;
   height: 60px;
@@ -510,10 +471,10 @@ function handleAvatarError(event) {
   align-items: center;
   justify-content: center;
   font-size: 1.8rem;
-  color: white;
+  color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, .2);
+  border: 2px solid rgba(255, 255, 255, .8);
 }
 
 .action-btn.primary .btn-icon {
@@ -524,8 +485,8 @@ function handleAvatarError(event) {
   background: linear-gradient(45deg, #ff6b9d, #ff3d71);
 }
 
-.action-btn.danger .btn-icon {
-  background: linear-gradient(45deg, #ff4757, #ff3742);
+.action-btn.join .btn-icon {
+  background: linear-gradient(45deg, #00d4ff, #00b8d4);
 }
 
 .btn-content {
@@ -538,88 +499,87 @@ function handleAvatarError(event) {
 .btn-title {
   font-size: 1.4rem;
   font-weight: 700;
-  color: white;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, .3);
 }
 
 .btn-desc {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.8);
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, .8);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, .2);
 }
 
 .btn-arrow {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, .2);
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(255, 255, 255, .5);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
-  color: white;
-  transition: all 0.3s ease;
+  color: #fff;
+  transition: .3s;
   flex-shrink: 0;
 }
 
 .action-btn:hover .btn-arrow {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, .3);
+  border-color: rgba(255, 255, 255, .8);
   transform: translateX(5px);
 }
 
-/* === ANIMATIONS === */
 @keyframes slideInLeft {
   from {
     opacity: 0;
-    transform: translateX(-50px);
+    transform: translateX(-50px)
   }
 
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: none
   }
 }
 
 @keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translateX(50px);
+    transform: translateX(50px)
   }
 
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: none
   }
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(30px)
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none
   }
 }
 
 @keyframes slideInUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(30px)
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none
   }
 }
 
-/* === RESPONSIVE DESIGN === */
+/* Responsive */
 @media (max-width: 768px) {
   .dashboard-hero {
     padding: 40px 15px 60px;
@@ -660,10 +620,19 @@ function handleAvatarError(event) {
   .quiz-lists-container {
     padding: 0 15px;
   }
-  
+
   .leaderboard-section {
     margin-top: 40px;
     padding: 0 15px;
+  }
+
+  .join-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .join-btn {
+    width: 100%;
   }
 }
 
