@@ -56,12 +56,11 @@
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             <i class="bi bi-x-circle me-1"></i>Hủy
           </button>
-          <button type="button" class="btn btn-warning" @click="submitReport"
-            :disabled="loading || !reportReason.trim() || !confirmReport">
-            <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
-            <i v-else class="bi bi-flag me-1"></i>
-            {{ loading ? 'Đang gửi...' : 'Gửi báo cáo' }}
+          <button class="btn btn-warning" :disabled="loading || isOwner" @click="submitReport">
+            Gửi báo cáo
           </button>
+          <span v-if="isOwner" class="text-danger ms-2">Không thể tự báo cáo quiz của bạn</span>
+
         </div>
       </div>
     </div>
@@ -69,7 +68,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, nextTick } from 'vue' // ✅ THÊM reactive
+import { ref, reactive, nextTick, computed } from 'vue'
 import { useLogin } from './useLogin'
 import api from '@/utils/axios'
 
@@ -80,7 +79,11 @@ const emit = defineEmits(['reported'])
 const quizState = reactive({
   currentQuizData: null,
 })
-
+const isOwner = computed(() => {
+  const q = quizState.currentQuizData
+  if (!q || !userId.value) return false
+  return Number(q.ownerId) === Number(userId.value)
+})
 const reportReason = ref('')
 const confirmReport = ref(false)
 const loading = ref(false)
@@ -105,7 +108,10 @@ async function openModal(quizData) {
       return
     }
   }
-
+  if (quizData?.ownerId && Number(quizData.ownerId) === Number(userId.value)) {
+    error.value = 'Bạn không thể báo cáo quiz do chính bạn tạo.'
+    return
+  }
   const modal = document.getElementById('reportModal')
   if (typeof bootstrap !== 'undefined' && modal) {
     const modalInstance = bootstrap.Modal.getOrCreateInstance(modal)
@@ -119,6 +125,10 @@ async function submitReport() {
   if (!quizData) {
     const stored = localStorage.getItem('reportQuizData')
     quizData = stored ? JSON.parse(stored) : null
+  }
+  if (quizData?.ownerId && Number(quizData.ownerId) === Number(userId.value)) {
+    error.value = 'Bạn không thể báo cáo quiz do chính bạn tạo.'
+    return
   }
 
   if (!quizData) {

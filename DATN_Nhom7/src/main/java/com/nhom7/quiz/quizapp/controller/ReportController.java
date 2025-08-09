@@ -21,11 +21,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.Report;
+import com.nhom7.quiz.quizapp.model.User;
 import com.nhom7.quiz.quizapp.model.dto.ReportDTO;
 import com.nhom7.quiz.quizapp.repository.ReportRepo;
+import com.nhom7.quiz.quizapp.service.QuizService;
 import com.nhom7.quiz.quizapp.service.ReportService;
 import com.nhom7.quiz.quizapp.service.AdminService.adminservice;
+import com.nhom7.quiz.quizapp.service.userService.LoginService;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -33,32 +38,54 @@ public class ReportController {
 
     @Autowired
     private ReportService reportService;
+    @Autowired
+    private LoginService userService;
+    @Autowired
+    private QuizService quizService;
+
+    private User authUser(Authentication authentication) {
+        return userService.findByUsername(authentication.getName());
+    }
 
     // Tạo báo cáo - ai cũng có thể tạo
     @PostMapping
-    public ResponseEntity<?> createReport(@RequestBody ReportDTO reportDTO) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> createReport(@RequestBody ReportDTO reportDTO, Authentication authentication) {
         try {
+            // Lấy user đang đăng nhập (reporter)
+            User reporter = authUser(authentication);
+
+            // Lấy quiz và owner
+            Quiz quiz = quizService.findById(reportDTO.getQuizId());
+
+            // ❌ Không cho tự report quiz của mình
+            if (quiz.getUser().getId().equals(reporter.getId())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("status", "ERROR", "message", "Bạn không thể báo cáo quiz do chính bạn tạo."));
+            }
+
+            // (Khuyến nghị) chặn report trùng
+            if (reportService.hasUserReportedQuiz(reporter.getId(), quiz.getId())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("status", "ERROR", "message", "Bạn đã báo cáo quiz này rồi."));
+            }
+
+            // Tạo report – ép dùng reporterId từ BE để tránh giả mạo
             Report report = reportService.createQuizReport(
-                    reportDTO.getUserId(),
-                    reportDTO.getQuizId(),
+                    reporter.getId(),
+                    quiz.getId(),
                     reportDTO.getReason());
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "SUCCESS");
-            response.put("message", "Báo cáo đã được gửi thành công");
-            response.put("reportId", report.getId());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "status", "SUCCESS",
+                    "message", "Báo cáo đã được gửi thành công",
+                    "reportId", report.getId()));
         } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("status", "ERROR");
-            errorResponse.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
+            return ResponseEntity.badRequest().body(Map.of("status", "ERROR", "message", e.getMessage()));
         } catch (Exception e) {
             e.printStackTrace();
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("status", "ERROR");
-            errorResponse.put("message", "Có lỗi xảy ra khi tạo báo cáo");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "ERROR", "message", "Có lỗi xảy ra khi tạo báo cáo"));
         }
     }
 

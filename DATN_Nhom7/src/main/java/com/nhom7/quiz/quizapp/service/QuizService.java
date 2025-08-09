@@ -63,6 +63,10 @@ public class QuizService {
 	@Autowired
 	private ResultService resultService;
 
+	public Quiz findById(Long id) {
+		return quizRepo.findById(id).orElse(null);
+	}
+
 	// ✅ OWNERSHIP VALIDATION METHOD
 	public boolean isOwner(Long quizId, String username) {
 		if (quizId == null || username == null || username.isBlank())
