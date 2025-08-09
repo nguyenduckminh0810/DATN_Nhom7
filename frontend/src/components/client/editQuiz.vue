@@ -596,7 +596,7 @@ function showNotification(message, type = 'info') {
 }
 
 function goBack() {
-  router.push({ name: 'QuizCRUD', params: { quizId, userId } })
+  router.push({ name: 'Dashboard', params: { userId } })
 }
 
 async function previewQuiz() {

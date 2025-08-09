@@ -296,33 +296,10 @@ onMounted(async () => {
 
 <template>
   <div class="user-quiz-container">
-    <!-- Header Section -->
-    <div class="section-header">
-      <div class="header-content">
-        <div class="header-icon">
-          <i class="bi bi-person-workspace"></i>
-        </div>
-        <div class="header-text">
-          <h2 class="section-title">Quiz Của Bạn</h2>
-          <p class="section-subtitle">Quản lý và theo dõi các quiz bạn đã tạo</p>
-        </div>
-      </div>
-      <div class="header-actions">
-        <button class="create-btn" @click="router.push('/quiz-crud')">
-          <i class="bi bi-plus-circle"></i>
-          Tạo Quiz Mới
-        </button>
-      </div>
-    </div>
 
     <!-- Filter & Search -->
     <div class="filter-bar">
-      <input
-        v-model="search"
-        @input="applyFilters"
-        class="search-input"
-        placeholder="Tìm kiếm quiz theo tiêu đề..."
-      />
+      <input v-model="search" @input="applyFilters" class="search-input" placeholder="Tìm kiếm quiz theo tiêu đề..." />
       <select v-model="filterPublic" @change="applyFilters" class="filter-select">
         <option value="all">Tất cả</option>
         <option value="public">Công khai</option>
@@ -374,21 +351,12 @@ onMounted(async () => {
 
     <!-- Quiz Grid -->
     <div v-else class="quiz-grid">
-      <div
-        class="quiz-card"
-        v-for="quiz in quizzes"
-        :key="quiz.quiz_id"
-        @mouseenter="hoveredQuiz = quiz.quiz_id"
-        @mouseleave="hoveredQuiz = null"
-      >
+      <div class="quiz-card" v-for="quiz in quizzes" :key="quiz.quiz_id" @mouseenter="hoveredQuiz = quiz.quiz_id"
+        @mouseleave="hoveredQuiz = null">
         <!-- Card Image -->
         <div class="quiz-image">
-          <img
-            :src="getQuizImageUrl(quiz.quiz_id)"
-            alt="Quiz Image"
-            @error="handleImageError"
-            @load="handleImageLoad"
-          />
+          <img :src="getQuizImageUrl(quiz.quiz_id)" alt="Quiz Image" @error="handleImageError"
+            @load="handleImageLoad" />
         </div>
         <!-- Card Header -->
         <div class="card-header">
@@ -396,10 +364,7 @@ onMounted(async () => {
             <i class="bi bi-tag"></i>
             <span>{{ quiz.categoryName }}</span>
           </div>
-          <div
-            class="visibility-badge"
-            :class="{ public: quiz.publicQuiz, private: !quiz.publicQuiz }"
-          >
+          <div class="visibility-badge" :class="{ public: quiz.publicQuiz, private: !quiz.publicQuiz }">
             <i :class="quiz.publicQuiz ? 'bi bi-globe' : 'bi bi-lock'"></i>
             <span>{{ quiz.publicQuiz ? 'Công khai' : 'Riêng tư' }}</span>
           </div>
@@ -420,12 +385,8 @@ onMounted(async () => {
             </div>
           </div>
           <div class="quiz-extra">
-            <span class="badge play-count"
-              ><i class="bi bi-controller"></i> {{ quiz.playCount }} lượt chơi</span
-            >
-            <span class="badge created-at"
-              ><i class="bi bi-calendar"></i> {{ formatDate(quiz.createdAt) }}</span
-            >
+            <span class="badge play-count"><i class="bi bi-controller"></i> {{ quiz.playCount }} lượt chơi</span>
+            <span class="badge created-at"><i class="bi bi-calendar"></i> {{ formatDate(quiz.createdAt) }}</span>
           </div>
         </div>
 
@@ -462,11 +423,7 @@ onMounted(async () => {
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="pagination-container">
       <div class="pagination-wrapper">
-        <button
-          class="page-btn prev"
-          :disabled="currentPage === 0"
-          @click="goToPage(currentPage - 1)"
-        >
+        <button class="page-btn prev" :disabled="currentPage === 0" @click="goToPage(currentPage - 1)">
           <i class="bi bi-chevron-left"></i>
           <span>Trước</span>
         </button>
@@ -477,11 +434,7 @@ onMounted(async () => {
           <span class="total-pages">{{ totalPages }}</span>
         </div>
 
-        <button
-          class="page-btn next"
-          :disabled="currentPage === totalPages - 1"
-          @click="goToPage(currentPage + 1)"
-        >
+        <button class="page-btn next" :disabled="currentPage === totalPages - 1" @click="goToPage(currentPage + 1)">
           <span>Sau</span>
           <i class="bi bi-chevron-right"></i>
         </button>
@@ -491,23 +444,17 @@ onMounted(async () => {
     <!-- Toast Notification -->
     <transition name="slide-up">
       <div v-if="toast.show" :class="['toast', toast.type]">
-        <i
-          :class="{
-            'bi bi-check-circle-fill': toast.type === 'success',
-            'bi bi-x-circle-fill': toast.type === 'error',
-            'bi bi-info-circle-fill': toast.type === 'info',
-          }"
-        ></i>
+        <i :class="{
+          'bi bi-check-circle-fill': toast.type === 'success',
+          'bi bi-x-circle-fill': toast.type === 'error',
+          'bi bi-info-circle-fill': toast.type === 'info',
+        }"></i>
         <span>{{ toast.message }}</span>
       </div>
     </transition>
 
     <!-- Quiz Detail Modal -->
-    <QuizDetailModal
-      :show-modal="showDetailModal"
-      :quiz-id="selectedQuizId"
-      @close="closeDetailModal"
-    />
+    <QuizDetailModal :show-modal="showDetailModal" :quiz-id="selectedQuizId" @close="closeDetailModal" />
   </div>
 
   <!-- ✅ QUIZ CODE MODAL -->
@@ -878,12 +825,10 @@ onMounted(async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(0, 0, 0, 0.85) 0%,
-    rgba(255, 107, 157, 0.9) 50%,
-    rgba(255, 61, 113, 0.9) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(0, 0, 0, 0.85) 0%,
+      rgba(255, 107, 157, 0.9) 50%,
+      rgba(255, 61, 113, 0.9) 100%);
   backdrop-filter: blur(15px);
   display: flex;
   align-items: center;
@@ -1068,6 +1013,7 @@ onMounted(async () => {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;

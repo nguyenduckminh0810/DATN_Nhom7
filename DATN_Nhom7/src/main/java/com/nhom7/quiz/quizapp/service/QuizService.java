@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.nhom7.quiz.quizapp.model.Answer;
 import com.nhom7.quiz.quizapp.model.Category;
 import com.nhom7.quiz.quizapp.model.Image;
+import com.nhom7.quiz.quizapp.model.Result;
 import com.nhom7.quiz.quizapp.model.Question;
 import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.User;
@@ -30,7 +30,6 @@ import com.nhom7.quiz.quizapp.model.dto.AnswerImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuestionImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuizImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuizDetailDTO;
-import com.nhom7.quiz.quizapp.model.dto.QuizAttemptSummaryDTO;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo; // ✅ THÊM IMPORT
 import com.nhom7.quiz.quizapp.repository.ImageRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
@@ -60,25 +59,19 @@ public class QuizService {
 
 	@Autowired
 	private AnswerService answerService;
-	
+
 	@Autowired
 	private ResultService resultService;
 
+	public Quiz findById(Long id) {
+		return quizRepo.findById(id).orElse(null);
+	}
+
 	// ✅ OWNERSHIP VALIDATION METHOD
 	public boolean isOwner(Long quizId, String username) {
-		try {
-			Optional<Quiz> quizOpt = quizRepo.findById(quizId);
-			if (quizOpt.isPresent()) {
-				Quiz quiz = quizOpt.get();
-				User user = loginService.findByUsername(username);
-				return user != null && quiz.getUser() != null && 
-					   user.getId().equals(quiz.getUser().getId());
-			}
+		if (quizId == null || username == null || username.isBlank())
 			return false;
-		} catch (Exception e) {
-			System.err.println("❌ Error checking ownership: " + e.getMessage());
-			return false;
-		}
+		return quizRepo.existsByIdAndUser_Username(quizId, username);
 	}
 
 	// Lấy tất cả quiz
@@ -97,15 +90,15 @@ public class QuizService {
 			System.out.println("📝 Quiz IsPublic: " + quiz.isPublic());
 
 			quiz.setCreatedAt(LocalDateTime.now());
-			
+
 			// ✅ LƯU QUIZ TRƯỚC
 			Quiz savedQuiz = quizRepo.save(quiz);
-			
+
 			// ✅ TẠO CODE SAU KHI ĐÃ CÓ ID
 			String quizCode = generateQuizCode(savedQuiz.getId());
 			savedQuiz.setQuizCode(quizCode);
 			savedQuiz.setCodeCreatedAt(LocalDateTime.now());
-			
+
 			// ✅ LƯU LẠI VỚI CODE
 			Quiz finalQuiz = quizRepo.save(savedQuiz);
 
@@ -126,28 +119,28 @@ public class QuizService {
 		// Tạo code 6 ký tự: 3 chữ cái + 3 số
 		String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		String numbers = "0123456789";
-		
+
 		StringBuilder code = new StringBuilder();
 		Random random = new Random();
-		
+
 		// Tạo 3 chữ cái ngẫu nhiên
 		for (int i = 0; i < 3; i++) {
 			code.append(letters.charAt(random.nextInt(letters.length())));
 		}
-		
+
 		// Tạo 3 số ngẫu nhiên
 		for (int i = 0; i < 3; i++) {
 			code.append(numbers.charAt(random.nextInt(numbers.length())));
 		}
-		
+
 		String generatedCode = code.toString();
-		
+
 		// Kiểm tra xem code đã tồn tại chưa
 		if (quizRepo.existsByQuizCode(generatedCode)) {
 			// Nếu đã tồn tại, tạo lại
 			return generateQuizCode(quizId);
 		}
-		
+
 		return generatedCode;
 	}
 
@@ -229,7 +222,7 @@ public class QuizService {
 					Quiz quiz = quizOpt.get();
 					quiz.setDeleted(true); // ✅ SỬA: Sử dụng Boolean.TRUE
 					quiz.setDeletedAt(LocalDateTime.now());
-					
+
 					// Set user who deleted (nếu cần)
 					if (deletedByUserId != null) {
 						User deletedBy = loginService.findById(deletedByUserId);
@@ -237,7 +230,7 @@ public class QuizService {
 							quiz.setDeletedBy(deletedBy);
 						}
 					}
-					
+
 					quizRepo.save(quiz);
 					System.out.println("✅ Quiz soft deleted successfully");
 					return true;
@@ -287,11 +280,11 @@ public class QuizService {
 					System.out.println("🗑️ Deleting image: " + image.getUrl());
 					imageRepo.delete(image);
 				}
-				
+
 				// 2. Xóa results trước (vì results reference đến quiz)
 				System.out.println("🗑️ Deleting results for quiz: " + id);
 				resultService.deleteResultsByQuizId(id);
-				
+
 				// 3. Lấy questions của quiz
 				List<Question> questions = questionService.getQuestionsByQuizId(id);
 				System.out.println("🗑️ Found " + (questions != null ? questions.size() : 0) + " questions to delete");
@@ -301,14 +294,14 @@ public class QuizService {
 						System.out.println("🗑️ Deleting answers for question: " + question.getId());
 						answerService.deleteByQuestionId(question.getId());
 					}
-					
+
 					// 5. Xóa questions
 					for (Question question : questions) {
 						System.out.println("🗑️ Deleting question: " + question.getId());
 						questionService.deleteQuestion(question.getId());
 					}
 				}
-				
+
 				// 6. Cuối cùng xóa quiz
 				System.out.println("🗑️ Deleting quiz: " + id);
 				quizRepo.deleteById(id);
@@ -339,7 +332,9 @@ public class QuizService {
 
 		// Đặt tên file
 		String originalFilename = file.getOriginalFilename();
-		String extension = originalFilename.substring(originalFilename.lastIndexOf('.'));
+		String extension = (originalFilename != null && originalFilename.contains("."))
+				? originalFilename.substring(originalFilename.lastIndexOf('.'))
+				: ".jpg";
 		String filename = UUID.randomUUID().toString() + extension;
 
 		// Lưu file
@@ -482,12 +477,48 @@ public class QuizService {
 			detail.setTotalPoints(totalPoints);
 			detail.setTotalTime(totalTime);
 
-			// TODO: Thêm thống kê từ QuizAttempt khi có dữ liệu
-			detail.setTotalPlays(0);
-			detail.setAverageScore(0.0);
-			detail.setUniqueParticipants(0);
-			detail.setCompletionRate(0.0);
-			detail.setAverageTime(0);
+			// Thống kê từ kết quả/attempts nếu đã có dữ liệu
+			try {
+				// total plays = tổng số Result của quiz
+				List<Result> quizResults = resultService.getResultsByQuizId(quiz.getId());
+				int totalPlays = (quizResults != null) ? quizResults.size() : 0;
+				detail.setTotalPlays(totalPlays);
+
+				if (totalPlays > 0 && quizResults != null) {
+					double avgScore = quizResults.stream()
+							.mapToInt(r -> r.getScore())
+							.average().orElse(0.0);
+					detail.setAverageScore(Math.round(avgScore * 10.0) / 10.0);
+
+					long unique = quizResults.stream()
+							.map(r -> r.getUser().getId())
+							.distinct().count();
+					detail.setUniqueParticipants((int) unique);
+
+					// completionRate: % bài có điểm > 0
+					long completed = quizResults.stream().filter(r -> r.getScore() > 0)
+							.count();
+					detail.setCompletionRate(totalPlays > 0 ? (completed * 100.0 / totalPlays) : 0.0);
+
+					// average time (nếu có timeTaken), mặc định 0
+					double avgTime = quizResults.stream()
+							.filter(r -> r.getTimeTaken() != null)
+							.mapToInt(r -> r.getTimeTaken())
+							.average().orElse(0.0);
+					detail.setAverageTime((int) Math.round(avgTime));
+				} else {
+					detail.setAverageScore(0.0);
+					detail.setUniqueParticipants(0);
+					detail.setCompletionRate(0.0);
+					detail.setAverageTime(0);
+				}
+			} catch (Exception ignore) {
+				detail.setTotalPlays(0);
+				detail.setAverageScore(0.0);
+				detail.setUniqueParticipants(0);
+				detail.setCompletionRate(0.0);
+				detail.setAverageTime(0);
+			}
 
 			return detail;
 		});
