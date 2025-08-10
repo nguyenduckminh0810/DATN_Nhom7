@@ -78,13 +78,8 @@ function handleAvatarError(e) {
           <!-- Welcome Section -->
           <div class="welcome-section">
             <div class="welcome-icon">
-              <img
-                v-if="avatarUrl"
-                :src="avatarUrl"
-                alt="User Avatar"
-                class="welcome-avatar"
-                @error="handleAvatarError"
-              />
+              <img v-if="avatarUrl" :src="avatarUrl" alt="User Avatar" class="welcome-avatar"
+                @error="handleAvatarError" />
               <i v-else class="bi bi-person-hearts"></i>
             </div>
             <div class="welcome-text">
@@ -92,9 +87,6 @@ function handleAvatarError(e) {
                 <span class="greeting">Chào mừng,</span>
                 <span class="username">{{ userProfile?.fullName || username }}!</span>
               </h1>
-              <p class="welcome-subtitle">
-                Chọn một hành động để bắt đầu quản lý và theo dõi quiz của bạn.
-              </p>
             </div>
           </div>
 
@@ -124,13 +116,8 @@ function handleAvatarError(e) {
               <div class="btn-content">
                 <span class="btn-title">Tham gia bằng mã</span>
                 <div class="join-row">
-                  <input
-                    v-model="quizCodeInput"
-                    class="join-input"
-                    type="text"
-                    placeholder="Nhập mã quiz (ví dụ: ABC123)"
-                    @keyup.enter="joinQuizByCode"
-                  />
+                  <input v-model="quizCodeInput" class="join-input" type="text"
+                    placeholder="Nhập mã quiz (ví dụ: ABC123)" @keyup.enter="joinQuizByCode" />
                   <button class="join-btn" @click.stop="joinQuizByCode">
                     <i class="bi bi-arrow-right-circle"></i> Tham gia
                   </button>
@@ -240,7 +227,7 @@ function handleAvatarError(e) {
 
 .dashboard-hero {
   position: relative;
-  padding: 60px 20px 80px;
+  padding: 10px 20px 80px;
   overflow: hidden;
 }
 
@@ -280,6 +267,7 @@ function handleAvatarError(e) {
 }
 
 @keyframes float1 {
+
   0%,
   100% {
     transform: translate(0, 0) rotate(0);
@@ -295,6 +283,7 @@ function handleAvatarError(e) {
 }
 
 @keyframes float2 {
+
   0%,
   100% {
     transform: translate(0, 0) rotate(0);
@@ -306,6 +295,7 @@ function handleAvatarError(e) {
 }
 
 @keyframes float3 {
+
   0%,
   100% {
     transform: translate(0, 0) rotate(0);
@@ -329,7 +319,7 @@ function handleAvatarError(e) {
 
 .welcome-section {
   text-align: center;
-  margin-bottom: 60px;
+  margin-bottom: 35px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -368,6 +358,7 @@ function handleAvatarError(e) {
 }
 
 @keyframes welcomeIconPulse {
+
   0%,
   100% {
     transform: scale(1);

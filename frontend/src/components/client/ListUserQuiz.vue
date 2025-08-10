@@ -296,7 +296,15 @@ onMounted(async () => {
 
 <template>
   <div class="user-quiz-container">
+    <div class="hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <i class="bi bi-list-check "></i>
+          Quiz Của Bạn
+        </h1>
 
+      </div>
+    </div>
     <!-- Filter & Search -->
     <div class="filter-bar">
       <input v-model="search" @input="applyFilters" class="search-input" placeholder="Tìm kiếm quiz theo tiêu đề..." />
@@ -517,6 +525,53 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.hero-title i {
+  margin-right: 15px;
+  color: #ffd700;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+}
+
+.hero-subtitle {
+  font-size: 1.3rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0;
+  font-weight: 400;
+  animation: fadeInUp 1s ease-out 0.2s both;
+}
+
+.hero-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 20px;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: fadeInUp 1s ease-out;
+}
+
+.hero-section {
+  position: relative;
+  padding-top: 35px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
 /* --- BẮT ĐẦU STYLE ĐẦY ĐỦ CHO QUIZ CARD --- */
 .user-quiz-container {
   margin: 60px 0;

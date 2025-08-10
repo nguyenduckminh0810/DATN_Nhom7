@@ -608,17 +608,6 @@ const handleUserDropdownLeave = (event) => {
             </a>
           </div>
         </div>
-
-        <div v-else class="auth-buttons">
-          <RouterLink to="/login" class="btn-login">
-            <i class="bi bi-box-arrow-in-right"></i>
-            <span>Đăng nhập</span>
-          </RouterLink>
-          <RouterLink to="/register" class="btn-register">
-            <i class="bi bi-person-plus"></i>
-            <span>Đăng ký</span>
-          </RouterLink>
-        </div>
       </div>
     </div>
   </header>
@@ -1180,6 +1169,17 @@ const handleUserDropdownLeave = (event) => {
   animation: pulse 2s infinite;
   min-width: 18px;
   text-align: center;
+}
+
+.nav-group .nav-item {
+  flex: 0 0 auto;
+  /* tắt shrink */
+}
+
+/* Giữ chữ nằm trên một dòng */
+.nav-group .nav-item .nav-content {
+  white-space: nowrap;
+  /* no-wrap */
 }
 
 @keyframes pulse {
