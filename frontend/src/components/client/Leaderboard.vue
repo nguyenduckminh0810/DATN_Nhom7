@@ -1,375 +1,494 @@
 <template>
-  <section class="lb">
-    <!-- Header -->
-    <header class="lb__header">
-      <div class="lb__title">
-        <i class="bi bi-trophy-fill"></i>
-        <span>{{ isQuizSpecific ? 'Bảng xếp hạng Quiz' : 'Bảng xếp hạng Toàn cầu' }}</span>
+  <div class="leaderboard">
+    <!-- Loading State -->
+    <div v-if="loading && leaderboardData.length === 0" class="text-center py-3">
+      <div class="spinner-border spinner-border-sm text-primary" role="status">
+        <span class="visually-hidden">Đang tải...</span>
       </div>
+      <small class="text-muted d-block mt-2">Đang tải bảng xếp hạng...</small>
+    </div>
 
-      <!-- Period selector (global only) -->
-      <div v-if="!isQuizSpecific" class="lb__period" role="tablist" aria-label="Chọn mốc thời gian">
-        <button
-          v-for="period in periods"
-          :key="period.value"
-          class="pill"
-          :class="{ 'is-active': selectedPeriod === period.value }"
-          role="tab"
-          :aria-selected="selectedPeriod === period.value"
-          @click="selectPeriod(period.value)"
-        >
-          {{ period.label }}
-        </button>
-      </div>
-    </header>
-
-    <!-- Loading / Error -->
-    <div v-if="loading" class="lb__state">Đang tải…</div>
-    <div v-else-if="error" class="lb__state error">{{ error }}</div>
+    <!-- Error State -->
+    <div v-else-if="error" class="alert alert-danger" role="alert">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      {{ error }}
+    </div>
 
     <!-- Content -->
-    <div v-else class="lb__body">
-      <!-- Empty -->
-      <div v-if="leaderboardData.length === 0" class="lb__empty">
-        <p class="m-0 text-muted">Chưa có dữ liệu xếp hạng</p>
+    <div v-else-if="leaderboardData.length > 0" class="leaderboard-content">
+      <!-- Header -->
+      <div class="leaderboard-header d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0">
+          <i class="bi bi-trophy text-warning me-2"></i>
+          Bảng xếp hạng Quiz
+        </h6>
+        <span class="badge bg-primary">{{ total }} người chơi</span>
       </div>
 
-      <!-- Podium Top 3 -->
-      <div v-else class="lb__podium" aria-label="Top 3">
+      <!-- Leaderboard List -->
+      <div class="leaderboard-list">
         <div
-          v-for="(p, idx) in podiumThree"
-          :key="p.userId"
-          :class="['podium', { 'podium--center': idx === 1 }]"
+          v-for="(entry, index) in visibleEntries"
+          :key="entry.userId"
+          :class="['leaderboard-item', { 'my-rank': entry.userId === currentUserId }]"
+          :data-rank="index + 1"
         >
-          <div class="podium__rank">{{ idx === 1 ? 1 : idx === 0 ? 2 : 3 }}</div>
-          <img
-            class="podium__avatar"
-            :src="p.avatarUrl || '/img/default-avatar.png'"
-            :alt="p.fullName || p.username"
-            loading="lazy"
-          />
-          <div class="podium__name" :title="p.fullName || p.username">
-            {{ p.fullName || p.username }}
+          <!-- Rank -->
+          <div class="rank-badge">
+            <span v-if="index < 3" class="rank-medal">
+              <i :class="getMedalIcon(index)"></i>
+            </span>
+            <span v-else class="rank-number">{{ index + 1 }}</span>
           </div>
-          <div class="podium__score">
-            <strong>{{ p.score }}</strong> điểm
+
+          <!-- User Info -->
+          <div class="user-info">
+            <img
+              :src="entry.avatarUrl || '/img/default-avatar.png'"
+              :alt="entry.fullName || entry.username"
+              class="user-avatar"
+              loading="lazy"
+            />
+            <div class="user-details">
+              <div class="user-name">{{ entry.fullName || entry.username }}</div>
+              <small class="text-muted">{{ formatTimeAgo(entry.attemptedAt) }}</small>
+            </div>
+          </div>
+
+          <!-- Score & Time -->
+          <div class="score-info">
+            <div class="score-value">{{ entry.score }}%</div>
+            <div v-if="entry.timeTaken" class="time-taken">
+              <i class="bi bi-clock me-1"></i>
+              {{ formatTime(entry.timeTaken) }}
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- List -->
-      <ul class="lb__list" v-if="rest.length">
-        <li v-for="(entry, idx) in rest" :key="entry.userId" class="rowitem">
-          <div class="rowitem__rank">{{ idx + podiumCount + 1 }}</div>
-          <img
-            class="rowitem__avatar"
-            :src="entry.avatarUrl || '/img/default-avatar.png'"
-            :alt="entry.fullName || entry.username"
-            loading="lazy"
-          />
-          <div class="rowitem__main">
-            <div class="rowitem__name">{{ entry.fullName || entry.username }}</div>
-          </div>
-          <div class="rowitem__meta">
-            <div class="score">
-              <span class="score__val">{{ entry.score }}</span>
-              <span class="score__label">điểm</span>
-            </div>
-            <div v-if="entry.timeTaken" class="time">
-              <i class="bi bi-clock"></i> {{ formatTime(entry.timeTaken) }}
-            </div>
-          </div>
-        </li>
-      </ul>
-
-      <!-- Load more / Collapse -->
-      <div class="lb__more" v-if="canLoadMore || isExpanded">
+      <!-- Expand/Collapse Controls -->
+      <div v-if="leaderboardData.length > 5" class="expand-controls text-center mt-3">
         <button
-          v-if="canLoadMore && !isExpanded"
-          class="btn btn-primary btn-sm px-3"
-          @click="loadMore"
+          v-if="!isExpanded"
+          @click="expandLeaderboard"
+          class="btn btn-outline-primary btn-sm"
         >
-          Xem thêm
+          <i class="bi bi-chevron-down me-1"></i>
+          Xem thêm ({{ leaderboardData.length - 5 }} người)
         </button>
-        <button
-          v-if="isExpanded"
-          class="btn btn-outline-secondary btn-sm ms-2 px-3"
-          @click="collapseList"
-        >
+        <button v-else @click="collapseLeaderboard" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-chevron-up me-1"></i>
           Thu gọn
         </button>
       </div>
+
+      <!-- Pagination Controls (only show if more than 10 people) -->
+      <div v-if="leaderboardData.length > 10 && isExpanded" class="pagination-controls mt-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="pagination-info">
+            <small class="text-muted">
+              Hiển thị {{ currentPage * pageSize - pageSize + 1 }}-{{
+                Math.min(currentPage * pageSize, total)
+              }}
+              trong tổng số {{ total }} người chơi
+            </small>
+          </div>
+
+          <div class="pagination-buttons">
+            <button
+              class="btn btn-outline-primary btn-sm me-2"
+              @click="previousPage"
+              :disabled="currentPage === 1"
+            >
+              <i class="bi bi-chevron-left"></i> Trước
+            </button>
+
+            <span class="page-info mx-2"> Trang {{ currentPage }} / {{ totalPages }} </span>
+
+            <button
+              class="btn btn-outline-primary btn-sm ms-2"
+              @click="nextPage"
+              :disabled="currentPage >= totalPages"
+            >
+              Sau <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-  </section>
+
+    <!-- Empty State -->
+    <div v-else class="text-center py-4">
+      <i class="bi bi-info-circle text-muted" style="font-size: 2rem"></i>
+      <p class="text-muted mt-2 mb-1">Chưa có dữ liệu xếp hạng</p>
+      <small class="text-muted">Hãy là người đầu tiên thử sức với quiz này!</small>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import axios from '@/utils/axios'
+import { useUserStore } from '@/stores/user'
 
 defineOptions({ name: 'QuizLeaderboard' })
 
 /* Props */
 const props = defineProps({
-  quizId: { type: Number, default: null },
-  limit: { type: Number, default: 10 },
+  quizId: {
+    type: [Number, String],
+    required: true,
+  },
+  limit: {
+    type: Number,
+    default: 10,
+  },
 })
+
+/* Stores */
+const userStore = useUserStore()
 
 /* State */
 const loading = ref(false)
 const error = ref(null)
 const leaderboardData = ref([])
-const selectedPeriod = ref('all')
-const offset = ref(0)
-const total = ref(null)
-const pageSize = computed(() => props.limit)
+const pageSize = ref(5) // Hiển thị 5 người ban đầu
+const currentPage = ref(1)
+const isExpanded = ref(false)
+const currentUserId = computed(() => userStore.getUserId())
 
-/* UI: periods */
-const periods = [
-  { value: 'weekly', label: 'Tuần này' },
-  { value: 'monthly', label: 'Tháng này' },
-  { value: 'all', label: 'Tất cả thời gian' },
-]
+/* Computed */
+const total = computed(() => leaderboardData.value.length)
+const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 
-const isQuizSpecific = computed(() => props.quizId !== null)
-
-/* Derived */
-const podiumCount = 3
-const podiumFiltered = computed(() => leaderboardData.value.slice(0, podiumCount).filter(Boolean))
-// Đặt #1 ở giữa: [2nd, 1st, 3rd]
-const podiumThree = computed(() => {
-  const p = podiumFiltered.value
-  return p.length >= 3 ? [p[1], p[0], p[2]] : p
-})
-const rest = computed(() => leaderboardData.value.slice(podiumCount))
-
-const lastBatchLength = ref(0)
-const canLoadMore = computed(() => {
-  if (total.value != null) return leaderboardData.value.length < total.value
-  return lastBatchLength.value === pageSize.value
+// Chỉ hiển thị 5 người đầu tiên khi chưa expand
+const visibleEntries = computed(() => {
+  if (isExpanded.value) {
+    // Khi đã expand, hiển thị theo phân trang
+    const start = (currentPage.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    return leaderboardData.value.slice(start, end)
+  } else {
+    // Khi chưa expand, chỉ hiển thị 5 người đầu
+    return leaderboardData.value.slice(0, 5)
+  }
 })
 
-// Allow collapsing back to initial size when expanded
-const initialSize = computed(() => props.limit)
-const isExpanded = computed(() => leaderboardData.value.length > initialSize.value)
+/* Methods */
+async function fetchLeaderboard() {
+  if (loading.value) return
 
-/* Fetch */
-async function fetchLeaderboard(opts = { append: false }) {
   loading.value = true
   error.value = null
+
   try {
     // dùng relative path để axios ghép với baseURL "/api"
     const base = 'leaderboard'
-    const url = isQuizSpecific.value ? `${base}/quiz/${props.quizId}` : `${base}/global`
-    const params = { limit: pageSize.value, offset: offset.value }
-    if (!isQuizSpecific.value) params.period = selectedPeriod.value
+    const url = `${base}/quiz/${props.quizId}`
+    const params = { limit: 50, offset: 0 } // Lấy tối đa 50 người để có thể expand
 
+    console.log('🔍 Calling leaderboard API:', url, params)
     const res = await axios.get(url, { params })
-    const data = Array.isArray(res.data?.items)
-      ? res.data.items
-      : Array.isArray(res.data)
-        ? res.data
-        : []
-    lastBatchLength.value = data.length
-    if (typeof res.data?.total === 'number') total.value = res.data.total
-    leaderboardData.value = opts.append ? [...leaderboardData.value, ...data] : data
-  } catch (e) {
-    console.error('fetchLeaderboard error:', e?.response?.status, e?.response?.data || e)
-    error.value = 'Không thể tải bảng xếp hạng. Vui lòng thử lại sau.'
+    console.log('✅ Leaderboard response:', res.data)
+
+    // Backend trả về trực tiếp List<LeaderboardEntry>, không có wrapper success
+    const data = res.data || []
+
+    // Cập nhật dữ liệu
+    leaderboardData.value = data
+    currentPage.value = 1
+    isExpanded.value = false
+  } catch (err) {
+    console.error('❌ Error fetching leaderboard:', err)
+    error.value = 'Lỗi khi tải bảng xếp hạng'
   } finally {
     loading.value = false
   }
 }
 
-function selectPeriod(val) {
-  if (selectedPeriod.value === val) return
-  selectedPeriod.value = val
+function expandLeaderboard() {
+  isExpanded.value = true
+  currentPage.value = 1
 }
 
-function loadMore() {
-  offset.value += pageSize.value
-  fetchLeaderboard({ append: true })
+function collapseLeaderboard() {
+  isExpanded.value = false
+  currentPage.value = 1
 }
 
-function collapseList() {
-  // Reset to initial state
-  offset.value = 0
-  total.value = null
-  fetchLeaderboard({ append: false })
+function previousPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+
+function getMedalIcon(index) {
+  const icons = [
+    'bi bi-trophy-fill text-warning', // 1st place - gold
+    'bi bi-award-fill text-secondary', // 2nd place - silver
+    'bi bi-award-fill text-bronze', // 3rd place - bronze
+  ]
+  return icons[index] || 'bi bi-award'
 }
 
 function formatTime(seconds) {
-  if (!seconds && seconds !== 0) return ''
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return m > 0 ? `${m}:${s.toString().padStart(2, '0')}` : `${s}s`
+  if (!seconds) return ''
+
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+
+  if (minutes > 0) {
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+  return `${remainingSeconds}s`
+}
+
+function formatTimeAgo(dateString) {
+  if (!dateString) return ''
+
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now - date) / 1000)
+
+  if (diffInSeconds < 60) return 'Vừa xong'
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`
+  return `${Math.floor(diffInSeconds / 86400)} ngày trước`
 }
 
 /* Watchers */
-watch(selectedPeriod, () => {
-  if (!isQuizSpecific.value) {
-    offset.value = 0
-    fetchLeaderboard()
-  }
-})
+watch(
+  leaderboardData,
+  () => {
+    // Reset pagination when data changes
+    currentPage.value = 1
+    isExpanded.value = false
+  },
+  { deep: true },
+)
 
 /* Init */
-onMounted(() => {
-  fetchLeaderboard()
+onMounted(async () => {
+  await fetchLeaderboard()
 })
 </script>
 
 <style scoped>
 /* ===== Theme tokens ===== */
 :root {
-  --c-bg: #ffffff;
-  --c-card: #ffffff;
-  --c-border: rgba(0, 0, 0, 0.08);
-  --c-text: #1f2937;
-  --c-muted: #6b7280;
-  --c-success: #16a34a;
-  --c-accent-1: #667eea;
-  --c-accent-2: #764ba2;
+  --bg: #ffffff;
+  --card: #ffffff;
+  --border: rgba(0, 0, 0, 0.08);
+  --text: #1f2937;
+  --muted: #6b7280;
+  --success: #16a34a;
+  --accent1: #667eea;
+  --accent2: #764ba2;
+
+  --gold1: #ffe98a;
+  --gold2: #f59e0b;
+  --silver1: #e5e7eb;
+  --silver2: #9ca3af;
+  --bronze1: #ffd1a3;
+  --bronze2: #c08457;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --c-bg: #0b0f19;
-    --c-card: #0f1525;
-    --c-border: rgba(255, 255, 255, 0.08);
-    --c-text: #e5e7eb;
-    --c-muted: #9ca3af;
+    --bg: #0b0f19;
+    --card: #0f1525;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #e5e7eb;
+    --muted: #9ca3af;
   }
 }
 
+/* Utility (để dùng cho icon đồng) */
+.text-bronze {
+  color: var(--bronze2);
+}
+
 /* ===== Container ===== */
-.lb {
+.leaderboard {
   width: 100%;
   max-width: 1100px;
   margin: 16px auto;
-  background: transparent; /* tránh dải trắng */
+  background: transparent;
+  color: var(--text);
 }
 
 /* ===== Header ===== */
-.lb__header {
-  display: flex;
-  justify-content: space-between;
+.leaderboard-header {
+  padding: 10px 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.leaderboard-header h6 {
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+/* ===== List wrapper ===== */
+.leaderboard-list {
+  margin-top: 12px;
+}
+
+/* ===== Row item ===== */
+.leaderboard-item {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
   align-items: center;
   gap: 12px;
-  padding: 10px 6px 8px;
-  border-bottom: 1px solid var(--c-border);
-  background: transparent; /* không phủ nền */
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  transition:
+    box-shadow 0.18s ease,
+    transform 0.15s ease;
 }
-.lb__title {
+.leaderboard-item:hover {
+  transform: translateX(2px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+/* Rank badge (1–3 = medal, còn lại là số) */
+.rank-badge {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-weight: 800;
+}
+.rank-medal {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.9rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+.rank-number {
+  font-weight: 900;
+  color: var(--muted);
+}
+
+/* User info */
+.user-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  min-width: 0; /* enable ellipsis */
+}
+.user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+.user-details {
+  min-width: 0;
+}
+.user-name {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-details small {
+  color: var(--muted);
+}
+
+/* Score block */
+.score-info {
+  text-align: right;
+  min-width: 120px;
+}
+.score-value {
   font-weight: 900;
-  letter-spacing: 0.3px;
-  color: var(--c-text);
-  font-size: 1.15rem;
+  font-size: 1.05rem;
+  color: var(--success);
 }
-.lb__title .bi {
-  color: #f59e0b;
-}
-.lb__period {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.pill {
-  border: 1px solid var(--c-border);
-  background: color-mix(in srgb, var(--c-card) 85%, #fff);
-  color: var(--c-text);
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-.pill.is-active {
-  background: linear-gradient(135deg, var(--c-accent-1), var(--c-accent-2));
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.35);
+.time-taken {
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 
-/* ===== States ===== */
-.lb__state {
-  padding: 24px 8px;
-  text-align: center;
-  color: var(--c-muted);
+/* ===== My rank highlight ===== */
+.leaderboard-item.my-rank {
+  border-left: 4px solid var(--accent1);
+  background: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.1),
+    rgba(59, 130, 246, 0.05),
+    rgba(59, 130, 246, 0.1)
+  );
+  animation: pulse 0.6s ease-in-out;
 }
-.lb__state.error {
-  color: #dc2626;
+@keyframes pulse {
+  50% {
+    transform: scale(1.01);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
+  }
 }
 
-/* ===== Body ===== */
-.lb__body {
-  padding: 12px 0 16px;
-}
-.lb__empty {
-  padding: 20px 8px;
-  text-align: center;
+/* ===== Expand / Pagination ===== */
+.expand-controls,
+.pagination-controls {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 10px 12px;
 }
 
-/* ===== Podium ===== */
-.lb__podium {
+/* ===== Podium (nếu bạn render Top 3 riêng ở trên list) ===== */
+.leaderboard .podium-wrap {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr;
+  grid-template-columns: 1fr 1.2fr 1fr; /* 2–1–3 */
   gap: 16px;
-  padding: 8px 0 16px;
-  position: relative;
+  margin: 8px 0 14px;
 }
-
-.lb__podium::before {
-  content: '';
-  position: absolute;
-  inset: -12px 0 -8px 0;
-  background: radial-gradient(60% 80% at 50% 0%, rgba(255, 255, 255, 0.08), transparent 70%);
-  pointer-events: none;
-}
-
-/* Subtle background pattern (SVG) + gradient ring for top-1 via ::before mask */
-.podium {
+.podium-card {
   position: relative;
   display: grid;
   place-items: center;
   padding: 14px 12px;
   border-radius: 16px;
-  border: 1px solid var(--c-border);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--c-card) 90%, transparent),
-      color-mix(in srgb, var(--c-card) 70%, transparent)
-    ),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%23838bab' stroke-opacity='0.10' stroke-width='1'%3E%3Cpath d='M80 0v160M0 80h160'/%3E%3Ccircle cx='80' cy='80' r='18'/%3E%3C/g%3E%3C/svg%3E");
-  background-size:
-    auto,
-    180px 180px;
-  background-position:
-    0 0,
-    center;
-  background-repeat: no-repeat;
+  border: 1px solid var(--border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 92%, transparent),
+    color-mix(in srgb, var(--card) 72%, transparent)
+  );
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(8px);
 }
-.podium--center {
-  transform: translateY(-8px) scale(1.05);
+.podium-card.center {
+  transform: translateY(-8px) scale(1.04);
 }
-.podium--center::before {
+.podium-card.center::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 16px;
-  padding: 2px; /* độ dày viền */
-  background: linear-gradient(135deg, var(--c-accent-1), var(--c-accent-2));
+  padding: 2px;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
-  mask-composite: exclude; /* chỉ giữ phần viền */
+  mask-composite: exclude;
 }
-.podium__rank {
+.podium-rank {
   position: absolute;
   top: 8px;
   left: 8px;
@@ -378,123 +497,58 @@ onMounted(() => {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-weight: 800;
   color: #fff;
-  font-size: 0.9rem;
+  font-weight: 800;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
+/* màu huy hiệu podium 2-1-3 theo thứ tự cột */
+.podium-wrap .podium-card:nth-child(2) .podium-rank {
+  background: radial-gradient(circle at 30% 30%, var(--gold1), var(--gold2));
+}
+.podium-wrap .podium-card:nth-child(1) .podium-rank {
+  background: radial-gradient(circle at 30% 30%, var(--silver1), var(--silver2));
+}
+.podium-wrap .podium-card:nth-child(3) .podium-rank {
+  background: radial-gradient(circle at 30% 30%, var(--bronze1), var(--bronze2));
+}
 
-/* Gold/Silver/Bronze medals according to visual order [2,1,3] */
-.lb__podium .podium:nth-child(2) .podium__rank {
-  /* #1 center */
-  background: radial-gradient(circle at 30% 30%, #ffe98a, #f59e0b);
-}
-.lb__podium .podium:nth-child(1) .podium__rank {
-  /* #2 left */
-  background: radial-gradient(circle at 30% 30%, #e5e7eb, #9ca3af);
-}
-.lb__podium .podium:nth-child(3) .podium__rank {
-  /* #3 right */
-  background: radial-gradient(circle at 30% 30%, #ffd1a3, #c08457);
-}
-.podium__avatar {
+.podium-avatar {
   width: 78px;
   height: 78px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid color-mix(in srgb, var(--c-card) 75%, #fff);
+  border: 3px solid color-mix(in srgb, var(--card) 75%, #fff);
   margin: 8px 0;
 }
-.lb__podium .podium:nth-child(2) .podium__avatar {
-  /* center bigger */
+.podium-card.center .podium-avatar {
   width: 92px;
   height: 92px;
   border-width: 4px;
 }
-.podium__name {
+.podium-name {
   font-weight: 800;
-  text-align: center;
   max-width: 220px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--c-text);
 }
-.podium__score {
-  color: var(--c-muted);
+.podium-score {
+  color: var(--muted);
   font-size: 0.95rem;
-}
-
-/* ===== List rows ===== */
-.lb__list {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-  /* Bỏ thanh cuộn để tránh hiện 2 scrollbar khi hover */
-  max-height: none;
-  overflow: visible;
-}
-.rowitem {
-  display: grid;
-  grid-template-columns: 40px 48px 1fr auto;
-  gap: 10px;
-  align-items: center;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid var(--c-border);
-  background: color-mix(in srgb, var(--c-card) 88%, transparent);
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.2s ease;
-  margin-bottom: 8px;
-}
-.rowitem:hover {
-  transform: translateX(2px);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
-}
-.rowitem__rank {
-  font-weight: 800;
-  color: var(--c-muted);
-  text-align: center;
-}
-.rowitem__avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--c-border);
-}
-.rowitem__name {
-  font-weight: 700;
-  color: var(--c-text);
-}
-.rowitem__meta {
-  text-align: right;
-  min-width: 120px;
-}
-.score__val {
-  font-weight: 900;
-  font-size: 1.1rem;
-  color: var(--c-success);
-}
-.score__label {
-  display: block;
-  font-size: 0.72rem;
-  color: var(--c-muted);
-  letter-spacing: 0.4px;
-  margin-top: 2px;
 }
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .lb__header {
-    flex-direction: column;
-    align-items: flex-start;
+  .leaderboard-item {
+    grid-template-columns: 38px 1fr auto;
   }
-  .lb__podium {
+  .score-info {
+    min-width: 96px;
+  }
+  .leaderboard .podium-wrap {
     grid-template-columns: 1fr;
   }
-  .podium--center {
+  .podium-card.center {
     transform: none;
   }
 }

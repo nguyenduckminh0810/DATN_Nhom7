@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
 
 @Service
 public class QuizAttemptService {
@@ -72,25 +73,23 @@ public class QuizAttemptService {
     }
 
     /**
-     * Bắt đầu attempt mới (trả về attemptId). Cho phép userId null đối với public practice
+     * Bắt đầu một quiz attempt mới
      */
-     public Long startAttempt(Long quizId, Long userId) {
-        Quiz quiz = quizRepo.findById(quizId).orElseThrow(() -> new IllegalArgumentException("Quiz not found"));
-        QuizAttempt attempt = new QuizAttempt();
-        attempt.setQuiz(quiz);
-        if (userId != null) {
-            User user = userRepo.findById(userId).orElse(null);
-            attempt.setUser(user);
-        } else {
-            // Với public/anonymous, có thể gán user null nếu schema cho phép.
-            // Trong DB hiện tại user_id nullable=false, nên tạm thời gán user đầu tiên hoặc ném lỗi.
-            // Để an toàn: yêu cầu đăng nhập hoặc tạo user guest. Ở đây ném lỗi rõ ràng.
-            throw new IllegalArgumentException("Public startAttempt yêu cầu đăng nhập trong schema hiện tại");
+    public Long startAttempt(Long quizId, Long userId) {
+        User user = userRepo.findById(userId).orElse(null);
+        Quiz quiz = quizRepo.findById(quizId).orElse(null);
+        
+        if (user == null || quiz == null) {
+            return null;
         }
+        
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setUser(user);
+        attempt.setQuiz(quiz);
         attempt.setScore(0);
-         attempt.setAttemptedAt(LocalDateTime.now());
+        attempt.setAttemptedAt(LocalDateTime.now());
         attempt.setTimeTaken(0);
-         attempt.setStatus(com.nhom7.quiz.quizapp.model.AttemptStatus.IN_PROGRESS);
+        
         QuizAttempt saved = quizAttemptRepo.save(attempt);
         return saved.getId();
     }
@@ -99,7 +98,7 @@ public class QuizAttemptService {
      * Trả về trạng thái attempt
      */
      public String getAttemptStatus(Long attemptId) {
-         return quizAttemptRepo.findById(attemptId).map(a -> a.getStatus().name()).orElse(null);
+         return "COMPLETED"; // Vì không có status field, trả về mặc định
     }
 
     /**
@@ -133,25 +132,93 @@ public class QuizAttemptService {
      * Lấy recent attempts cho một quiz cụ thể
      */
     public List<QuizAttemptSummaryDTO> getRecentAttemptsForQuiz(Long quizId) {
-        List<QuizAttempt> attempts = quizAttemptRepo.findByQuizIdOrderByAttemptedAtDesc(quizId);
-
-        return attempts.stream()
-                .limit(5) // Chỉ lấy 5 attempts gần nhất
-                .map(this::convertToSummaryDTO)
-                .collect(Collectors.toList());
+        try {
+            System.out.println("🔍 QuizAttemptService.getRecentAttemptsForQuiz() - Quiz ID: " + quizId);
+            
+            // Kiểm tra quizId
+            if (quizId == null) {
+                System.err.println("❌ Quiz ID is null!");
+                return new ArrayList<>();
+            }
+            
+            // Lấy attempts từ repository
+            System.out.println("📊 Fetching attempts from repository...");
+            List<QuizAttempt> attempts = quizAttemptRepo.findByQuizIdOrderByAttemptedAtDesc(quizId);
+            System.out.println("📊 Found " + attempts.size() + " attempts for quiz " + quizId);
+            
+            if (attempts.isEmpty()) {
+                System.out.println("ℹ️ No attempts found for quiz " + quizId + ". Returning empty list.");
+                return new ArrayList<>();
+            }
+            
+            // Convert to DTOs
+            System.out.println("🔄 Converting attempts to DTOs...");
+            List<QuizAttemptSummaryDTO> result = attempts.stream()
+                    .limit(5) // Chỉ lấy 5 attempts gần nhất
+                    .map(attempt -> {
+                        try {
+                            System.out.println("🔄 Converting attempt ID: " + attempt.getId());
+                            return convertToSummaryDTO(attempt);
+                        } catch (Exception e) {
+                            System.err.println("❌ Error converting attempt " + attempt.getId() + ": " + e.getMessage());
+                            e.printStackTrace();
+                            return null;
+                        }
+                    })
+                    .filter(dto -> dto != null) // Loại bỏ null DTOs
+                    .collect(Collectors.toList());
+            
+            System.out.println("✅ Successfully converted " + result.size() + " DTOs");
+            return result;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error in getRecentAttemptsForQuiz: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 
     /**
      * Chuyển đổi QuizAttempt thành QuizAttemptSummaryDTO
      */
     private QuizAttemptSummaryDTO convertToSummaryDTO(QuizAttempt attempt) {
-        return new QuizAttemptSummaryDTO(
-                attempt.getId(),
-                attempt.getUser().getFullName() != null ? attempt.getUser().getFullName()
-                        : attempt.getUser().getUsername(),
-                attempt.getScore(),
-                attempt.getTimeTaken(),
-                attempt.getAttemptedAt());
+        try {
+            System.out.println("🔄 Converting attempt ID: " + attempt.getId());
+            
+            // Kiểm tra null safety
+            if (attempt == null) {
+                System.err.println("❌ Attempt is null!");
+                return null;
+            }
+            
+            if (attempt.getUser() == null) {
+                System.err.println("❌ User is null for attempt ID: " + attempt.getId());
+                return null;
+            }
+            
+            String displayName = attempt.getUser().getFullName();
+            if (displayName == null || displayName.trim().isEmpty()) {
+                displayName = attempt.getUser().getUsername();
+            }
+            
+            if (displayName == null || displayName.trim().isEmpty()) {
+                displayName = "Unknown User";
+            }
+            
+            System.out.println("✅ Converted attempt ID: " + attempt.getId() + " for user: " + displayName);
+            
+            return new QuizAttemptSummaryDTO(
+                    attempt.getId(),
+                    displayName,
+                    attempt.getScore(),
+                    attempt.getTimeTaken(),
+                    attempt.getAttemptedAt());
+                    
+        } catch (Exception e) {
+            System.err.println("❌ Error in convertToSummaryDTO for attempt ID " + (attempt != null ? attempt.getId() : "null") + ": " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**

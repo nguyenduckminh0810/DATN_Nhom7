@@ -27,7 +27,6 @@ import com.nhom7.quiz.quizapp.model.QuizAttempt;
 import java.util.Optional;
 import org.springframework.data.domain.PageRequest;
 
-
 @Service
 public class ResultService {
 
@@ -174,7 +173,8 @@ public class ResultService {
         // ✅ GỬI NOTIFICATION CHO ADMIN
         try {
 
-            notificationService.sendQuizCompletedNotification(quiz.getId(), quiz.getTitle(), user.getUsername(), finalScore);
+            notificationService.sendQuizCompletedNotification(quiz.getId(), quiz.getTitle(), user.getUsername(),
+                    finalScore);
             System.out.println("✅ Sent quiz completed notification to admins");
         } catch (Exception e) {
             System.err.println("❌ Error sending admin notification: " + e.getMessage());
@@ -242,5 +242,11 @@ public class ResultService {
             // Không trả correctAnswers ở đây nếu không cần; có thể tính/ghi log riêng
             return dto;
         });
+    }
+
+    // Method công khai để lấy thống kê quiz (không cần quyền admin)
+    public List<Result> getResultsByQuizIdPublic(Long quizId) {
+        // Không cần kiểm tra quyền - ai cũng có thể xem thống kê công khai
+        return resultRepo.findByQuiz_Id(quizId);
     }
 }

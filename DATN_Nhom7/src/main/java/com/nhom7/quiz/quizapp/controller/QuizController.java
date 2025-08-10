@@ -24,8 +24,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.User;
 import com.nhom7.quiz.quizapp.model.Category;
+import com.nhom7.quiz.quizapp.model.Result;
 import com.nhom7.quiz.quizapp.service.QuizService;
 import com.nhom7.quiz.quizapp.service.ExcelImportService;
+import com.nhom7.quiz.quizapp.service.ResultService;
 import com.nhom7.quiz.quizapp.model.dto.QuizImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuizDetailDTO;
 import com.nhom7.quiz.quizapp.config.JwtUtil;
@@ -59,6 +61,9 @@ public class QuizController {
 
 	@Autowired
 	private CategoryRepo categoryRepo;
+
+	@Autowired
+	private ResultService resultService;
 
 	@GetMapping
 	public List<Quiz> getAllQuizzes() {
@@ -660,6 +665,84 @@ public class QuizController {
 			System.err.println("❌ Error debugging user quizzes: " + e.getMessage());
 			response.put("error", e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
+
+	@GetMapping("/public/stats/{id}")
+	public ResponseEntity<Map<String, Object>> getPublicQuizStats(@PathVariable Long id) {
+		System.out.println("🔍 Requesting public quiz stats for ID: " + id);
+		try {
+			Optional<Quiz> quizOpt = quizService.getQuizById(id);
+			if (quizOpt.isEmpty()) {
+				System.out.println("❌ Quiz not found for ID: " + id);
+				return ResponseEntity.notFound().build();
+			}
+
+			Quiz quiz = quizOpt.get();
+
+			// Chỉ trả về thống kê cho quiz công khai
+			if (!quiz.isPublic()) {
+				System.out.println("❌ Quiz is private, cannot show stats");
+				return ResponseEntity.status(HttpStatus.FORBIDDEN)
+						.body(Map.of("error", "Quiz này là riêng tư"));
+			}
+
+			// Lấy thống kê cơ bản
+			Map<String, Object> stats = new HashMap<>();
+			stats.put("totalQuestions", quiz.getQuestions().size());
+			stats.put("totalPoints", quiz.getQuestions().stream()
+					.mapToInt(q -> q.getPoint()).sum());
+			stats.put("totalTime", quiz.getQuestions().stream()
+					.mapToInt(q -> q.getTimeLimit()).sum());
+
+			// Lấy thống kê từ kết quả (nếu có)
+			try {
+				List<Result> quizResults = resultService.getResultsByQuizIdPublic(id);
+				int totalPlays = (quizResults != null) ? quizResults.size() : 0;
+				stats.put("totalPlays", totalPlays);
+
+				if (totalPlays > 0 && quizResults != null) {
+					double avgScore = quizResults.stream()
+							.mapToInt(r -> r.getScore())
+							.average().orElse(0.0);
+					stats.put("averageScore", Math.round(avgScore * 10.0) / 10.0);
+
+					long unique = quizResults.stream()
+							.map(r -> r.getUser().getId())
+							.distinct().count();
+					stats.put("uniqueParticipants", (int) unique);
+
+					long completed = quizResults.stream()
+							.filter(r -> r.getScore() > 0)
+							.count();
+					stats.put("completionRate", totalPlays > 0 ? (completed * 100.0 / totalPlays) : 0.0);
+
+					double avgTime = quizResults.stream()
+							.filter(r -> r.getTimeTaken() != null)
+							.mapToInt(r -> r.getTimeTaken())
+							.average().orElse(0.0);
+					stats.put("averageTime", (int) Math.round(avgTime));
+				} else {
+					stats.put("averageScore", 0.0);
+					stats.put("uniqueParticipants", 0);
+					stats.put("completionRate", 0.0);
+					stats.put("averageTime", 0);
+				}
+			} catch (Exception ignore) {
+				stats.put("totalPlays", 0);
+				stats.put("averageScore", 0.0);
+				stats.put("uniqueParticipants", 0);
+				stats.put("completionRate", 0.0);
+				stats.put("averageTime", 0);
+			}
+
+			System.out.println("✅ Public quiz stats: " + stats);
+			return ResponseEntity.ok(stats);
+
+		} catch (Exception e) {
+			System.err.println("❌ Error getting public quiz stats: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
 }

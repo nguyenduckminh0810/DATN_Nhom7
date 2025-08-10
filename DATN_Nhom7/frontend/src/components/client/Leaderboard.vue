@@ -135,16 +135,26 @@ export default {
           ? `/api/leaderboard/quiz/${props.quizId}?limit=${props.limit}`
           : `/api/leaderboard/global?period=${currentPeriod.value}&limit=${props.limit}`;
 
+        console.log("🔍 Calling leaderboard API:", url);
         const response = await axios.get(url);
-        leaderboard.value = response.data;
+        console.log("✅ Leaderboard response:", response.data);
+
+        // Backend trả về trực tiếp List<LeaderboardEntry>, không có wrapper
+        leaderboard.value = response.data || [];
 
         // Load user rank if not quiz-specific
         if (!props.quizId) {
           await loadUserRank();
         }
       } catch (err) {
-        error.value = "Không thể tải bảng xếp hạng. Vui lòng thử lại.";
-        console.error("Leaderboard error:", err);
+        console.error("❌ Leaderboard error:", err);
+        if (err.response?.status === 500) {
+          error.value = "Lỗi server. Vui lòng thử lại sau.";
+        } else if (err.response?.status === 404) {
+          error.value = "Không tìm thấy dữ liệu xếp hạng.";
+        } else {
+          error.value = "Không thể tải bảng xếp hạng. Vui lòng thử lại.";
+        }
       } finally {
         loading.value = false;
       }

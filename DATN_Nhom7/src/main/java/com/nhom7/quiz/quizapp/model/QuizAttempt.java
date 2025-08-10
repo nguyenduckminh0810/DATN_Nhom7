@@ -1,4 +1,5 @@
 package com.nhom7.quiz.quizapp.model;
+
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -9,36 +10,33 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+
 @Entity
 @Table(name = "quiz_attempts")
 public class QuizAttempt {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+	@ManyToOne
+	@JoinColumn(name = "user_id", nullable = false)
+	private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "quiz_id", nullable = false)
-    private Quiz quiz;
+	@ManyToOne
+	@JoinColumn(name = "quiz_id", nullable = false)
+	private Quiz quiz;
 
-    @Column(nullable = false)
-    private int score;
+	@Column(nullable = false)
+	private int score;
 
-    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
-    @Column(name = "status", length = 20, nullable = false)
-    private AttemptStatus status = AttemptStatus.IN_PROGRESS;
+	@Column(name = "attempted_at", nullable = false)
+	private LocalDateTime attemptedAt = LocalDateTime.now();
 
-    @Column(name = "attempted_at", nullable = false)
-    private LocalDateTime attemptedAt = LocalDateTime.now();
-
-    @Column(name = "time_taken", nullable = false)
-    private int timeTaken; // đơn vị giây
+	@Column(name = "time_taken", nullable = false)
+	private int timeTaken; // đơn vị giây
 
 	public Long getId() {
-		return id;
+		return this.id;
 	}
 
 	public void setId(Long id) {
@@ -46,7 +44,7 @@ public class QuizAttempt {
 	}
 
 	public User getUser() {
-		return user;
+		return this.user;
 	}
 
 	public void setUser(User user) {
@@ -54,7 +52,7 @@ public class QuizAttempt {
 	}
 
 	public Quiz getQuiz() {
-		return quiz;
+		return this.quiz;
 	}
 
 	public void setQuiz(Quiz quiz) {
@@ -62,42 +60,40 @@ public class QuizAttempt {
 	}
 
 	public int getScore() {
-		return score;
+		return this.score;
 	}
 
 	public void setScore(int score) {
 		this.score = score;
 	}
 
-    
-
 	public int getTimeTaken() {
-		return timeTaken;
+		return this.timeTaken;
 	}
 
 	public void setTimeTaken(int timeTaken) {
 		this.timeTaken = timeTaken;
 	}
 
-    public AttemptStatus getStatus() { return status; }
-    public void setStatus(AttemptStatus status) { this.status = status; }
+	public LocalDateTime getAttemptedAt() {
+		return this.attemptedAt;
+	}
 
-    public LocalDateTime getAttemptedAt() { return attemptedAt; }
-    public void setAttemptedAt(LocalDateTime attemptedAt) { this.attemptedAt = attemptedAt; }
+	public void setAttemptedAt(LocalDateTime attemptedAt) {
+		this.attemptedAt = attemptedAt;
+	}
 
-    public QuizAttempt(Long id, User user, Quiz quiz, int score, LocalDateTime attemptedAt, int timeTaken) {
+	public QuizAttempt(Long id, User user, Quiz quiz, int score, LocalDateTime attemptedAt, int timeTaken) {
 		super();
 		this.id = id;
 		this.user = user;
 		this.quiz = quiz;
 		this.score = score;
-        this.attemptedAt = attemptedAt;
+		this.attemptedAt = attemptedAt;
 		this.timeTaken = timeTaken;
 	}
 
 	public QuizAttempt() {
 		super();
 	}
-    
 }
-

@@ -540,7 +540,7 @@ const handleUserDropdownLeave = (event) => {
             </div>
           </a>
 
-          <RouterLink to="/leaderboard" class="nav-item">
+          <RouterLink to="/global-leaderboard" class="nav-item">
             <div class="nav-content">
               <i class="bi bi-trophy"></i>
               <span>Bảng xếp hạng</span>

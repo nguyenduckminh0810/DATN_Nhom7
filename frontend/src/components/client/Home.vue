@@ -16,8 +16,8 @@
           </h1>
 
           <p class="hero-description">
-            Tham gia hàng ngàn quiz thú vị, thử thách kiến thức và cải thiện kỹ năng của bạn.
-            Từ khoa học đến nghệ thuật, chúng tôi có tất cả!
+            Tham gia hàng ngàn quiz thú vị, thử thách kiến thức và cải thiện kỹ năng của bạn. Từ
+            khoa học đến nghệ thuật, chúng tôi có tất cả!
           </p>
 
           <div class="hero-actions">
@@ -106,29 +106,23 @@
               <i class="bi bi-people"></i>
             </div>
             <h3 class="feature-title">Cộng đồng lớn</h3>
-            <p class="feature-description">
-              Tham gia cộng đồng hơn 50,000 người dùng active.
-            </p>
+            <p class="feature-description">Tham gia cộng đồng hơn 50,000 người dùng active.</p>
           </div>
 
-          <div class="feature-card">
+          <RouterLink to="/global-leaderboard" class="feature-card">
             <div class="feature-icon">
               <i class="bi bi-trophy"></i>
             </div>
             <h3 class="feature-title">Bảng xếp hạng</h3>
-            <p class="feature-description">
-              Cạnh tranh lành mạnh với bảng xếp hạng realtime.
-            </p>
-          </div>
+            <p class="feature-description">Cạnh tranh lành mạnh với bảng xếp hạng realtime.</p>
+          </RouterLink>
 
           <div class="feature-card">
             <div class="feature-icon">
               <i class="bi bi-graph-up"></i>
             </div>
             <h3 class="feature-title">Theo dõi tiến độ</h3>
-            <p class="feature-description">
-              Thống kê chi tiết để theo dõi quá trình học tập.
-            </p>
+            <p class="feature-description">Thống kê chi tiết để theo dõi quá trình học tập.</p>
           </div>
 
           <div class="feature-card">
@@ -136,9 +130,7 @@
               <i class="bi bi-device-tablet"></i>
             </div>
             <h3 class="feature-title">Đa nền tảng</h3>
-            <p class="feature-description">
-              Sử dụng mọi lúc mọi nơi trên mọi thiết bị.
-            </p>
+            <p class="feature-description">Sử dụng mọi lúc mọi nơi trên mọi thiết bị.</p>
           </div>
         </div>
       </div>
@@ -149,9 +141,7 @@
       <div class="cta-container">
         <div class="cta-content">
           <h2 class="cta-title">Sẵn sàng thử thách bản thân?</h2>
-          <p class="cta-description">
-            Tham gia ngay hôm nay và khám phá tiềm năng vô hạn của bạn!
-          </p>
+          <p class="cta-description">Tham gia ngay hôm nay và khám phá tiềm năng vô hạn của bạn!</p>
           <div class="cta-actions">
             <RouterLink to="/register" class="cta-btn primary">
               <i class="bi bi-person-plus"></i>
@@ -194,10 +184,7 @@ onMounted(() => {
   padding: 120px 20px 60px;
   position: relative;
   /* Add subtle overlay for better text contrast */
-  background: linear-gradient(135deg,
-    rgba(102, 126, 234, 0.95) 0%,
-    rgba(118, 75, 162, 0.95) 100%
-  );
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
 }
 
 .hero-container {
@@ -267,7 +254,8 @@ onMounted(() => {
   animation: fadeInUp 0.6s ease-out 0.6s both;
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -453,6 +441,9 @@ onMounted(() => {
   position: relative;
   overflow: hidden;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  display: block;
+  color: inherit;
 }
 
 .feature-card:hover {
@@ -579,23 +570,43 @@ onMounted(() => {
 }
 
 @keyframes float1 {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(2deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(2deg);
+  }
 }
 
 @keyframes float2 {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-15px) rotate(-2deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(-2deg);
+  }
 }
 
 @keyframes float3 {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-25px) rotate(1deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-25px) rotate(1deg);
+  }
 }
 
 @keyframes float4 {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-18px) rotate(-1deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-18px) rotate(-1deg);
+  }
 }
 
 /* Responsive Design */
