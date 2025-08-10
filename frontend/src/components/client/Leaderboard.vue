@@ -57,7 +57,7 @@
 
           <!-- Score & Time -->
           <div class="score-info">
-            <div class="score-value">{{ entry.score }}%</div>
+            <div class="score-value">{{ entry.score }} điểm</div>
             <div v-if="entry.timeTaken" class="time-taken">
               <i class="bi bi-clock me-1"></i>
               {{ formatTime(entry.timeTaken) }}
