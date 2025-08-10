@@ -23,45 +23,67 @@ public class LeaderboardService {
 
     // Xếp hạng theo quiz cụ thể
     public List<LeaderboardEntry> getQuizLeaderboard(Long quizId, int limit) {
-        List<Result> results = resultRepo.findTopByQuizIdOrderByScoreDescTimeTakenAsc(
-                quizId, PageRequest.of(0, limit));
+        try {
+            System.out.println("🔍 Getting quiz leaderboard for quizId: " + quizId + ", limit: " + limit);
 
-        return results.stream()
-                .map(this::convertToLeaderboardEntry)
-                .collect(Collectors.toList());
+            List<Result> results = resultRepo.findTopByQuizIdOrderByScoreDescTimeTakenAsc(
+                    quizId, PageRequest.of(0, limit));
+
+            System.out.println("✅ Found " + results.size() + " results for quiz " + quizId);
+
+            return results.stream()
+                    .map(this::convertToLeaderboardEntry)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("❌ Error in getQuizLeaderboard: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>(); // Trả về list rỗng thay vì null
+        }
     }
 
     // Xếp hạng tổng điểm theo tuần/tháng/all-time (hỗ trợ offset)
     public List<LeaderboardEntry> getGlobalLeaderboard(String period, int limit, int offset) {
-        LocalDateTime startDate = getStartDate(period);
-        int page = limit > 0 ? offset / limit : 0;
-        List<Object[]> rawResults = resultRepo.getGlobalLeaderboard(startDate, PageRequest.of(page, limit));
+        try {
+            LocalDateTime startDate = getStartDate(period);
+            int page = limit > 0 ? offset / limit : 0;
+            List<Object[]> rawResults = resultRepo.getGlobalLeaderboard(startDate, PageRequest.of(page, limit));
 
-        List<LeaderboardEntry> entries = new ArrayList<>();
-        int rank = 1;
+            List<LeaderboardEntry> entries = new ArrayList<>();
+            int rank = 1;
 
-        for (Object[] row : rawResults) {
-            Long userId = (Long) row[0];
-            String username = (String) row[1];
-            String fullName = (String) row[2];
-            String avatarUrl = (String) row[3];
-            // ✅ Sửa lỗi cast - chuyển Long thành Integer
-            Long totalScoreLong = (Long) row[4];
-            Integer totalScore = totalScoreLong != null ? totalScoreLong.intValue() : 0;
-            Long attemptCount = (Long) row[5];
+            for (Object[] row : rawResults) {
+                try {
+                    Long userId = (Long) row[0];
+                    String username = (String) row[1];
+                    String fullName = (String) row[2];
+                    String avatarUrl = (String) row[3];
+                    // ✅ Sửa lỗi cast - chuyển Long thành Integer
+                    Long totalScoreLong = (Long) row[4];
+                    Integer totalScore = totalScoreLong != null ? totalScoreLong.intValue() : 0;
+                    Long attemptCount = (Long) row[5];
 
-            List<String> badges = calculateBadges(totalScore, attemptCount);
+                    List<String> badges = calculateBadges(totalScore, attemptCount);
 
-            LeaderboardEntry entry = new LeaderboardEntry(
-                    userId, username, fullName, avatarUrl,
-                    totalScore, 0, rank, badges,
-                    LocalDateTime.now(), null, null);
+                    LeaderboardEntry entry = new LeaderboardEntry(
+                            userId, username, fullName, avatarUrl,
+                            totalScore, 0, rank, badges,
+                            LocalDateTime.now(), null, null);
 
-            entries.add(entry);
-            rank++;
+                    entries.add(entry);
+                    rank++;
+                } catch (Exception e) {
+                    System.err.println("❌ Error processing row " + rank + ": " + e.getMessage());
+                    // Tiếp tục với row tiếp theo thay vì dừng toàn bộ
+                    continue;
+                }
+            }
+
+            return entries;
+        } catch (Exception e) {
+            System.err.println("❌ Error in getGlobalLeaderboard: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>(); // Trả về list rỗng thay vì null
         }
-
-        return entries;
     }
 
     // Overload để tương thích cũ
@@ -92,18 +114,24 @@ public class LeaderboardService {
     private List<String> calculateBadges(int totalScore, Long attemptCount) {
         List<String> badges = new ArrayList<>();
 
-        if (totalScore >= 1000) {
-            badges.add(Badge.BadgeType.MASTER_QUIZ.getDisplayName());
-        } else if (totalScore >= 500) {
-            badges.add(Badge.BadgeType.EXPERT_QUIZ.getDisplayName());
-        } else if (totalScore >= 200) {
-            badges.add("🥈 Advanced");
-        }
+        try {
+            if (totalScore >= 1000) {
+                badges.add("🏆 Master");
+            } else if (totalScore >= 500) {
+                badges.add("🥇 Expert");
+            } else if (totalScore >= 200) {
+                badges.add("🥈 Advanced");
+            }
 
-        if (attemptCount >= 50) {
-            badges.add(Badge.BadgeType.DEDICATED_LEARNER.getDisplayName());
-        } else if (attemptCount >= 20) {
-            badges.add(Badge.BadgeType.ACTIVE_LEARNER.getDisplayName());
+            if (attemptCount != null && attemptCount >= 50) {
+                badges.add("📚 Dedicated");
+            } else if (attemptCount != null && attemptCount >= 20) {
+                badges.add("📖 Active");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error calculating badges: " + e.getMessage());
+            // Trả về badge mặc định nếu có lỗi
+            badges.add("🎯 New Player");
         }
 
         return badges;
@@ -113,38 +141,44 @@ public class LeaderboardService {
     private List<String> calculateQuizBadges(Result result, List<Result> allQuizResults) {
         List<String> badges = new ArrayList<>();
 
-        // 100% chính xác
-        if (result.getScore() >= 100) {
-            badges.add(Badge.BadgeType.PERFECT_SCORE.getDisplayName());
-        }
+        try {
+            // 100% chính xác
+            if (result.getScore() >= 100) {
+                badges.add("💯 Perfect Score");
+            }
 
-        // Nhanh nhất (có timeTaken)
-        if (result.getTimeTaken() != null) {
-            List<Result> fastestResults = allQuizResults.stream()
-                    .filter(r -> r.getTimeTaken() != null)
-                    .sorted((r1, r2) -> Integer.compare(r1.getTimeTaken(), r2.getTimeTaken()))
+            // Nhanh nhất (có timeTaken)
+            if (result.getTimeTaken() != null) {
+                List<Result> fastestResults = allQuizResults.stream()
+                        .filter(r -> r.getTimeTaken() != null)
+                        .sorted((r1, r2) -> Integer.compare(r1.getTimeTaken(), r2.getTimeTaken()))
+                        .limit(3)
+                        .toList();
+
+                if (!fastestResults.isEmpty() && fastestResults.get(0).getId().equals(result.getId())) {
+                    badges.add("⚡ Speed Demon");
+                }
+            }
+
+            // Top 3 theo điểm
+            List<Result> top3ByScore = allQuizResults.stream()
+                    .sorted((r1, r2) -> Integer.compare(r2.getScore(), r1.getScore()))
                     .limit(3)
                     .toList();
 
-            if (!fastestResults.isEmpty() && fastestResults.get(0).getId().equals(result.getId())) {
-                badges.add(Badge.BadgeType.FASTEST_TIME.getDisplayName());
+            if (top3ByScore.stream().anyMatch(r -> r.getId().equals(result.getId()))) {
+                badges.add("🥉 Top 3");
             }
-        }
 
-        // Top 3 theo điểm
-        List<Result> top3ByScore = allQuizResults.stream()
-                .sorted((r1, r2) -> Integer.compare(r2.getScore(), r1.getScore()))
-                .limit(3)
-                .toList();
-
-        if (top3ByScore.stream().anyMatch(r -> r.getId().equals(result.getId()))) {
-            badges.add(Badge.BadgeType.TOP_3.getDisplayName());
-        }
-
-        // Streak badge (3+ quizzes today)
-        long todayAttempts = resultRepo.countByUserIdAndCompletedAtToday(result.getUser().getId());
-        if (todayAttempts >= 3) {
-            badges.add("🔥 Streak Master");
+            // Streak badge (3+ quizzes today)
+            long todayAttempts = resultRepo.countByUserIdAndCompletedAtToday(result.getUser().getId());
+            if (todayAttempts >= 3) {
+                badges.add("🔥 Streak Master");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error calculating quiz badges: " + e.getMessage());
+            // Trả về badge mặc định nếu có lỗi
+            badges.add("🎯 Quiz Player");
         }
 
         return badges;
@@ -152,21 +186,46 @@ public class LeaderboardService {
 
     // Chuyển đổi Result thành LeaderboardEntry
     private LeaderboardEntry convertToLeaderboardEntry(Result result) {
-        List<Result> allQuizResults = resultRepo.findByQuiz_Id(result.getQuiz().getId());
-        List<String> badges = calculateQuizBadges(result, allQuizResults);
+        try {
+            System.out.println("🔍 Converting result for user: " + result.getUser().getUsername() + ", score: "
+                    + result.getScore());
 
-        return new LeaderboardEntry(
-                result.getUser().getId(),
-                result.getUser().getUsername(),
-                result.getUser().getFullName(),
-                result.getUser().getAvatarUrl(),
-                result.getScore(),
-                result.getTimeTaken() != null ? result.getTimeTaken() : 0, // Sử dụng timeTaken thực tế
-                0, // rank sẽ được set sau
-                badges,
-                result.getCompletedAt(),
-                result.getQuiz().getId(),
-                result.getQuiz().getTitle());
+            List<Result> allQuizResults = resultRepo.findByQuiz_Id(result.getQuiz().getId());
+            List<String> badges = calculateQuizBadges(result, allQuizResults);
+
+            LeaderboardEntry entry = new LeaderboardEntry(
+                    result.getUser().getId(),
+                    result.getUser().getUsername(),
+                    result.getUser().getFullName(),
+                    result.getUser().getAvatarUrl(),
+                    result.getScore(),
+                    result.getTimeTaken() != null ? result.getTimeTaken() : 0, // Sử dụng timeTaken thực tế
+                    0, // rank sẽ được set sau
+                    badges,
+                    result.getCompletedAt(),
+                    result.getQuiz().getId(),
+                    result.getQuiz().getTitle());
+
+            System.out.println("✅ Converted to LeaderboardEntry: " + entry.getUsername() + " - " + entry.getScore());
+            return entry;
+        } catch (Exception e) {
+            System.err.println("❌ Error converting result to LeaderboardEntry: " + e.getMessage());
+            e.printStackTrace();
+
+            // Trả về entry mặc định nếu có lỗi
+            return new LeaderboardEntry(
+                    result.getId(), // Fallback to result ID
+                    "Unknown User",
+                    "Unknown User",
+                    null,
+                    0,
+                    0,
+                    0,
+                    List.of("🎯 Player"),
+                    LocalDateTime.now(),
+                    null,
+                    "Unknown Quiz");
+        }
     }
 
     // Lấy ngày bắt đầu theo period

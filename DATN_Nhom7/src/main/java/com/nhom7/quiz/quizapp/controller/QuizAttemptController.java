@@ -16,6 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
+import java.util.HashMap;
+import com.nhom7.quiz.quizapp.repository.QuizRepo;
 
 @RestController
 @RequestMapping("/api/quiz-attempts")
@@ -34,6 +37,9 @@ public class QuizAttemptController {
     @Autowired
     private QuestionService questionService;
 
+    @Autowired
+    private QuizRepo quizRepo;
+
     /**
      * Bắt đầu một attempt mới (public/practice cũng hỗ trợ)
      * POST /api/quiz-attempts/start?quizId=123
@@ -44,12 +50,12 @@ public class QuizAttemptController {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             User currentUser = null;
             if (authentication != null && authentication.isAuthenticated()
-                && authentication.getName() != null && !"anonymousUser".equals(authentication.getName())) {
+                    && authentication.getName() != null && !"anonymousUser".equals(authentication.getName())) {
                 currentUser = loginService.findByUsername(authentication.getName());
             }
             Long userId = currentUser != null ? currentUser.getId() : null;
             Long attemptId = quizAttemptService.startAttempt(quizId, userId);
-            return ResponseEntity.ok(java.util.Map.of("attemptId", attemptId, "status", com.nhom7.quiz.quizapp.model.AttemptStatus.IN_PROGRESS.name()));
+            return ResponseEntity.ok(java.util.Map.of("attemptId", attemptId, "status", "IN_PROGRESS"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(java.util.Map.of("error", e.getMessage()));
@@ -63,7 +69,8 @@ public class QuizAttemptController {
     @GetMapping("/{attemptId}/status")
     public ResponseEntity<?> getAttemptStatus(@PathVariable Long attemptId) {
         String status = quizAttemptService.getAttemptStatus(attemptId);
-        if (status == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        if (status == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         return ResponseEntity.ok(java.util.Map.of("status", status));
     }
 
@@ -74,15 +81,18 @@ public class QuizAttemptController {
     @GetMapping("/{attemptId}/questions")
     public ResponseEntity<?> getAttemptQuestions(@PathVariable Long attemptId) {
         QuizAttempt attempt = quizAttemptService.findById(attemptId);
-        if (attempt == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        if (attempt == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
         // Kiểm tra quyền: user hiện tại phải là chủ sở hữu hoặc admin
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getName() == null || "anonymousUser".equals(authentication.getName())) {
+        if (authentication == null || authentication.getName() == null
+                || "anonymousUser".equals(authentication.getName())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         User currentUser = loginService.findByUsername(authentication.getName());
-        boolean isAdmin = currentUser != null && currentUser.getRole() != null && ("ADMIN".equalsIgnoreCase(currentUser.getRole()) || "admin".equalsIgnoreCase(currentUser.getRole()));
+        boolean isAdmin = currentUser != null && currentUser.getRole() != null
+                && ("ADMIN".equalsIgnoreCase(currentUser.getRole()) || "admin".equalsIgnoreCase(currentUser.getRole()));
         if (!isAdmin && (attempt.getUser() == null || !attempt.getUser().getId().equals(currentUser.getId()))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
@@ -107,10 +117,14 @@ public class QuizAttemptController {
             // Tái sử dụng ResultService evaluateAndSave hiện có theo quizId/userId
             // Lấy attempt -> từ đó lấy quizId, userId
             QuizAttempt attempt = quizAttemptService.findById(attemptId);
-            if (attempt == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            if (attempt.getStatus() != com.nhom7.quiz.quizapp.model.AttemptStatus.IN_PROGRESS) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of("error","Attempt not in progress"));
-            }
+            if (attempt == null)
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
+            // Vì không có status field, luôn cho phép submit
+            // if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
+            // return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            // .body(java.util.Map.of("error", "Attempt not in progress"));
+            // }
 
             // Build QuizSubmissionDTO từ attempt
             com.nhom7.quiz.quizapp.model.dto.QuizSubmissionDTO dto = new com.nhom7.quiz.quizapp.model.dto.QuizSubmissionDTO();
@@ -121,8 +135,7 @@ public class QuizAttemptController {
 
             com.nhom7.quiz.quizapp.model.dto.EvaluationResult eval = resultService.evaluateAndSave(dto);
 
-            // Update trạng thái attempt
-            attempt.setStatus(com.nhom7.quiz.quizapp.model.AttemptStatus.COMPLETED);
+            // Update attempt (không cần set status nữa)
             attempt.setAttemptedAt(java.time.LocalDateTime.now());
             quizAttemptService.saveQuizAttempt(attempt);
 
@@ -148,16 +161,18 @@ public class QuizAttemptController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
         User currentUser = loginService.findByUsername(currentUsername);
-        
+
         System.out.println("🔍 QuizAttempt Request:");
-        System.out.println("  📋 Current user: " + currentUsername + " (ID: " + currentUser.getId() + ", Role: " + currentUser.getRole() + ")");
-        System.out.println("  📋 Request params - userId: " + userId + ", quizId: " + quizId + ", page: " + page + ", size: " + size);
+        System.out.println("  📋 Current user: " + currentUsername + " (ID: " + currentUser.getId() + ", Role: "
+                + currentUser.getRole() + ")");
+        System.out.println("  📋 Request params - userId: " + userId + ", quizId: " + quizId + ", page: " + page
+                + ", size: " + size);
 
         // Phân quyền: User thường chỉ xem được lịch sử của chính mình
         // Fix: Handle both "admin" and "ADMIN" role formats
         String userRole = currentUser.getRole();
         boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole) || "admin".equalsIgnoreCase(userRole);
-        
+
         if (!isAdmin) {
             userId = currentUser.getId(); // Ghi đè userId bằng ID của user hiện tại
             System.out.println("  🔒 Non-admin user, filtering to own attempts only (userId: " + userId + ")");
@@ -167,8 +182,9 @@ public class QuizAttemptController {
 
         // Gọi service để lấy dữ liệu
         Page<QuizAttemptDTO> attempts = quizAttemptService.findQuizAttempts(userId, quizId, page, size);
-        
-        System.out.println("  📊 Query result: " + attempts.getTotalElements() + " total attempts, " + attempts.getContent().size() + " in current page");
+
+        System.out.println("  📊 Query result: " + attempts.getTotalElements() + " total attempts, "
+                + attempts.getContent().size() + " in current page");
 
         return ResponseEntity.ok(attempts);
     }
@@ -221,6 +237,49 @@ public class QuizAttemptController {
     }
 
     /**
+     * Debug endpoint để kiểm tra quiz attempts cho quiz cụ thể
+     * GET /api/quiz-attempts/debug/quiz/{quizId}
+     */
+    @GetMapping("/debug/quiz/{quizId}")
+    public ResponseEntity<Map<String, Object>> debugQuizAttempts(@PathVariable Long quizId) {
+        System.out.println("🔍 Debug: Checking quiz attempts for quiz ID: " + quizId);
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Kiểm tra database
+            long totalAttempts = quizAttemptService.getTotalCount();
+            response.put("totalAttempts", totalAttempts);
+
+            // Kiểm tra quiz có tồn tại không
+            boolean quizExists = quizRepo.existsById(quizId);
+            response.put("quizExists", quizExists);
+
+            if (quizExists) {
+                // Lấy attempts cho quiz cụ thể
+                List<QuizAttemptSummaryDTO> attempts = quizAttemptService.getRecentAttemptsForQuiz(quizId);
+                response.put("attemptsCount", attempts.size());
+                response.put("attempts", attempts);
+            }
+
+            response.put("status", "success");
+            response.put("message", "Debug completed successfully");
+
+            System.out.println("✅ Debug completed: " + response);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            System.err.println("❌ Debug failed: " + e.getMessage());
+            e.printStackTrace();
+
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            response.put("errorType", e.getClass().getSimpleName());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
      * Debug endpoint để tạo sample data
      * POST /api/quiz-attempts/debug/create-sample
      */
@@ -250,13 +309,60 @@ public class QuizAttemptController {
                 return ResponseEntity.badRequest().build();
             }
 
+            // ✅ DEBUG: Kiểm tra database trước
+            long totalAttempts = quizAttemptService.getTotalCount();
+            System.out.println("🔍 Total quiz attempts in database: " + totalAttempts);
+
             List<QuizAttemptSummaryDTO> recentAttempts = quizAttemptService.getRecentAttemptsForQuiz(quizId);
             System.out.println("✅ Found " + recentAttempts.size() + " recent attempts for quiz " + quizId);
+
+            // ✅ Trả về empty list nếu không có attempts (không phải lỗi)
             return ResponseEntity.ok(recentAttempts);
         } catch (Exception e) {
             System.err.println("❌ Error getting recent attempts for quiz " + quizId + ": " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Test endpoint để kiểm tra quiz attempts API
+     * GET /api/quiz-attempts/test/quiz/{quizId}
+     */
+    @GetMapping("/test/quiz/{quizId}")
+    public ResponseEntity<Map<String, Object>> testQuizAttempts(@PathVariable Long quizId) {
+        System.out.println("🧪 Testing quiz attempts for quiz ID: " + quizId);
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Kiểm tra database
+            long totalAttempts = quizAttemptService.getTotalCount();
+            response.put("totalAttempts", totalAttempts);
+
+            // Kiểm tra quiz có tồn tại không
+            boolean quizExists = quizRepo.existsById(quizId);
+            response.put("quizExists", quizExists);
+
+            // Lấy attempts cho quiz cụ thể
+            List<QuizAttemptSummaryDTO> attempts = quizAttemptService.getRecentAttemptsForQuiz(quizId);
+            response.put("attemptsCount", attempts.size());
+            response.put("attempts", attempts);
+
+            response.put("status", "success");
+            response.put("message", "Test completed successfully");
+
+            System.out.println("✅ Test completed: " + response);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            System.err.println("❌ Test failed: " + e.getMessage());
+            e.printStackTrace();
+
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            response.put("errorType", e.getClass().getSimpleName());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }

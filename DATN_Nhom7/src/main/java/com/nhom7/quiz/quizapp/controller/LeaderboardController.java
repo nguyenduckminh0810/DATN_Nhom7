@@ -23,6 +23,32 @@ public class LeaderboardController {
     @Autowired
     private LeaderboardService leaderboardService;
 
+    // ✅ MAIN ENDPOINT - Xử lý request chính từ frontend
+    @GetMapping("")
+    public ResponseEntity<List<LeaderboardEntry>> getLeaderboard(
+            @RequestParam(defaultValue = "global") String type,
+            @RequestParam(defaultValue = "weekly") String period,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(required = false) Long quizId) {
+
+        try {
+            List<LeaderboardEntry> leaderboard;
+
+            if ("quiz".equals(type) && quizId != null) {
+                leaderboard = leaderboardService.getQuizLeaderboard(quizId, limit);
+            } else {
+                leaderboard = leaderboardService.getGlobalLeaderboard(period, limit, offset);
+            }
+
+            return ResponseEntity.ok(leaderboard);
+        } catch (Exception e) {
+            System.err.println("❌ Error in getLeaderboard: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of()); // Trả về list rỗng thay vì lỗi
+        }
+    }
+
     // 🔍 TEST ENDPOINT - Để debug
     @GetMapping("/test")
     public ResponseEntity<Map<String, Object>> testEndpoint() {
@@ -31,6 +57,27 @@ public class LeaderboardController {
                 "timestamp", System.currentTimeMillis(),
                 "status", "SUCCESS",
                 "endpoint", "/api/leaderboard/test"));
+    }
+
+    // 🔍 TEST ENDPOINT - Kiểm tra kết nối database
+    @GetMapping("/test-db")
+    public ResponseEntity<Map<String, Object>> testDatabaseConnection() {
+        try {
+            // Test kết nối database đơn giản
+            int totalUsers = leaderboardService.getTotalUsers();
+            int totalQuizzes = leaderboardService.getTotalQuizzes();
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Database connection test successful!",
+                    "totalUsers", totalUsers,
+                    "totalQuizzes", totalQuizzes,
+                    "status", "SUCCESS"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of(
+                    "message", "Database connection test failed",
+                    "error", e.getMessage(),
+                    "status", "ERROR"));
+        }
     }
 
     // 🔍 TEST ENDPOINT 2 - Test global

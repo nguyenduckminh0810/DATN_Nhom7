@@ -42,6 +42,7 @@ import ResetPassword from '@/components/client/ResetPassword.vue'
 import { quizAttemptService } from '@/services/quizAttemptService'
 
 import Leaderboard from '@/components/client/Leaderboard.vue'
+import GlobalLeaderboardPage from '@/components/client/GlobalLeaderboardPage.vue'
 
 const routes = [
   // ✅ PUBLIC ROUTES
@@ -69,7 +70,6 @@ const routes = [
         component: Register,
       },
       {
-
         path: 'forgot-password',
         name: 'ForgotPassword',
         component: ForgotPassword,
@@ -78,11 +78,16 @@ const routes = [
         path: 'reset-password',
         name: 'ResetPassword',
         component: ResetPassword,
-
+      },
+      {
         path: 'leaderboard',
         name: 'Leaderboard',
         component: Leaderboard,
-
+      },
+      {
+        path: 'global-leaderboard',
+        name: 'GlobalLeaderboard',
+        component: GlobalLeaderboardPage,
       },
       {
         path: 'contact',
@@ -314,7 +319,6 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Login' })
   }
 
-  
   // ✅ ATTEMPT ROUTE CHECK (PlayAttempt): chặn vào attempt đã hoàn tất
   if (to.name === 'PlayAttempt') {
     try {
@@ -326,7 +330,6 @@ router.beforeEach(async (to, from, next) => {
       return next({ name: 'Home' })
     }
   }
-
 
   // ✅ ADMIN ROUTES CHECK
   if (to.meta.requiresAdmin === true) {
