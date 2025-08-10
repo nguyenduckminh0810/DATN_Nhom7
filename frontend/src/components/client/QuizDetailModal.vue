@@ -250,7 +250,7 @@
                       <div class="activity-time">{{ formatTimeAgo(attempt.attemptedAt) }}</div>
                     </div>
                     <div class="activity-score" :class="getScoreClass(attempt.score)">
-                      {{ attempt.score }}%
+                      {{ attempt.score }} điểm
                     </div>
                   </div>
                 </div>
@@ -301,9 +301,6 @@
                           ></i>
                         </div>
                       </div>
-                    </div>
-                    <div class="activity-score" :class="getScoreClass(comment.score)">
-                      {{ comment.score }}%
                     </div>
                   </div>
 
