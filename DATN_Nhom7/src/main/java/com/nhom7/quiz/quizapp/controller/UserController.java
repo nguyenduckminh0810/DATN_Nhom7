@@ -22,6 +22,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nhom7.quiz.quizapp.config.JwtUtil;
 import com.nhom7.quiz.quizapp.model.User;
+import com.nhom7.quiz.quizapp.model.dto.BoolResponeDTO;
+import com.nhom7.quiz.quizapp.model.dto.ChangePasswordRequestDTO;
+import com.nhom7.quiz.quizapp.model.dto.VerifyPasswordRequestDTO;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 import com.nhom7.quiz.quizapp.service.userService.ReginService;
@@ -415,4 +418,20 @@ public class UserController {
 		}
 	}
 
+	@PostMapping("/verify-password")
+	public ResponseEntity<BoolResponeDTO> verifyPassword(Authentication authentication,
+			@RequestBody VerifyPasswordRequestDTO req) {
+		String username = authentication.getName(); // lấy từ JWT đã auth
+		boolean ok = loginService.verifyCurrentPassword(username, req.getCurrentPassword());
+		return ResponseEntity.ok(new BoolResponeDTO(ok));
+	}
+
+	// Đổi mật khẩu
+	@PutMapping("/change-password")
+	public ResponseEntity<?> changePassword(Authentication authentication,
+			@RequestBody ChangePasswordRequestDTO req) {
+		String username = authentication.getName();
+		loginService.changePassword(username, req.getCurrentPassword(), req.getNewPassword());
+		return ResponseEntity.ok().build();
+	}
 }

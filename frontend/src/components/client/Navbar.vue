@@ -48,12 +48,6 @@ const userMenuItems = computed(() => {
       description: 'Xem và chỉnh sửa thông tin cá nhân',
     },
     {
-      label: 'Cài đặt',
-      icon: 'bi bi-gear',
-      link: '/settings',
-      description: 'Cài đặt tài khoản',
-    },
-    {
       label: 'Thùng rác',
       icon: 'bi bi-trash3',
       link: '/trash',
@@ -264,7 +258,7 @@ onUnmounted(() => {
   // Remove mouse leave listeners
   const dropdowns = document.querySelectorAll('.nav-item.dropdown')
   dropdowns.forEach((dropdown) => {
-    dropdown.removeEventListener('mouseleave', () => {})
+    dropdown.removeEventListener('mouseleave', () => { })
   })
 })
 
@@ -454,11 +448,7 @@ const handleUserDropdownLeave = (event) => {
             </div>
           </div>
 
-          <div
-            class="nav-item dropdown"
-            @mouseenter="handleDropdownHover"
-            @mouseleave="handleDropdownLeave"
-          >
+          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
             <div class="nav-content" @click="handleDropdownClick">
               <i class="bi bi-puzzle"></i>
               <span>Quiz</span>
@@ -496,34 +486,22 @@ const handleUserDropdownLeave = (event) => {
             </div>
           </div>
 
-          <div
-            class="nav-item dropdown"
-            @mouseenter="handleDropdownHover"
-            @mouseleave="handleDropdownLeave"
-          >
+          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
             <div class="nav-content" @click="handleDropdownClick">
               <i class="bi bi-folder2"></i>
               <span>Danh mục</span>
               <i class="bi bi-chevron-down dropdown-arrow"></i>
             </div>
             <div class="dropdown-panel">
-              <RouterLink
-                :to="{ name: 'CategoryView' }"
-                class="dropdown-link"
-                @click="closeAllDropdowns"
-              >
+              <RouterLink :to="{ name: 'CategoryView' }" class="dropdown-link" @click="closeAllDropdowns">
                 <i class="bi bi-grid"></i>
                 <div class="link-content">
                   <span class="link-title">Xem danh mục</span>
                   <small class="link-desc">Duyệt theo chủ đề</small>
                 </div>
               </RouterLink>
-              <RouterLink
-                v-if="isAdmin"
-                :to="{ name: 'AdminCategories' }"
-                class="dropdown-link"
-                @click="closeAllDropdowns"
-              >
+              <RouterLink v-if="isAdmin" :to="{ name: 'AdminCategories' }" class="dropdown-link"
+                @click="closeAllDropdowns">
                 <i class="bi bi-gear"></i>
                 <div class="link-content">
                   <span class="link-title">Quản lý</span>
@@ -552,11 +530,8 @@ const handleUserDropdownLeave = (event) => {
       <!-- User Section -->
       <div class="user-section">
         <!-- Dark Mode Toggle -->
-        <button
-          @click="themeStore.toggleTheme"
-          class="theme-toggle-btn"
-          :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'"
-        >
+        <button @click="themeStore.toggleTheme" class="theme-toggle-btn"
+          :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'">
           <i :class="themeStore.isDarkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
         </button>
 
@@ -571,21 +546,11 @@ const handleUserDropdownLeave = (event) => {
         <!-- ✅ NOTIFICATION COMPONENT (VISIBLE FOR TESTING) -->
         <NotificationComponent v-if="isLoggedIn" ref="notificationComponent" />
 
-        <div
-          v-if="isLoggedIn"
-          class="user-menu dropdown"
-          @mouseenter="handleUserDropdownHover"
-          @mouseleave="handleUserDropdownLeave"
-        >
+        <div v-if="isLoggedIn" class="user-menu dropdown" @mouseenter="handleUserDropdownHover"
+          @mouseleave="handleUserDropdownLeave">
           <div class="user-trigger" @click="handleUserDropdownClick">
             <div class="user-avatar">
-              <img
-                v-if="avatarUrl"
-                :src="avatarUrl"
-                alt="Avatar"
-                class="avatar-image"
-                @error="handleAvatarError"
-              />
+              <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="avatar-image" @error="handleAvatarError" />
               <i v-else class="bi bi-person-circle"></i>
             </div>
             <div class="user-info">
@@ -594,7 +559,7 @@ const handleUserDropdownLeave = (event) => {
                 <!-- ✅ NOTIFICATION BADGE BÊN NGOÀI -->
                 <span v-if="notificationCount > 0" class="navbar-notification-badge">{{
                   notificationCount
-                }}</span>
+                  }}</span>
               </div>
               <small class="user-status">Online</small>
             </div>
@@ -604,13 +569,8 @@ const handleUserDropdownLeave = (event) => {
           <div class="user-dropdown">
             <div class="user-profile-header">
               <div class="profile-avatar">
-                <img
-                  v-if="avatarUrl"
-                  :src="avatarUrl"
-                  alt="Avatar"
-                  class="profile-avatar-image"
-                  @error="handleAvatarError"
-                />
+                <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="profile-avatar-image"
+                  @error="handleAvatarError" />
                 <i v-else class="bi bi-person-circle"></i>
               </div>
               <div class="profile-info">
@@ -625,23 +585,14 @@ const handleUserDropdownLeave = (event) => {
             <div v-if="userMenuItems && userMenuItems.length > 0">
               <!-- User Menu Items -->
               <template v-for="(item, index) in userMenuItems" :key="`user-item-${index}`">
-                <RouterLink
-                  v-if="item.link"
-                  :to="item.link"
-                  class="user-dropdown-link"
-                  @click="closeAllDropdowns"
-                >
+                <RouterLink v-if="item.link" :to="item.link" class="user-dropdown-link" @click="closeAllDropdowns">
                   <i :class="item.icon"></i>
                   <span>{{ item.label }}</span>
                   <span v-if="item.badge" class="notification-badge">{{ item.badge }}</span>
                 </RouterLink>
 
-                <a
-                  v-else-if="item.action"
-                  href="#"
-                  class="user-dropdown-link"
-                  @click.prevent="item.action === 'notifications' ? showNotifications() : null"
-                >
+                <a v-else-if="item.action" href="#" class="user-dropdown-link"
+                  @click.prevent="item.action === 'notifications' ? showNotifications() : null">
                   <i :class="item.icon"></i>
                   <span>{{ item.label }}</span>
                   <span v-if="item.badge" class="notification-badge">{{ item.badge }}</span>

@@ -1,11 +1,10 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useLogin } from './useLogin'
 import api from '@/utils/axios'
 
 const router = useRouter()
-const route = useRoute()
 const { username, userId, getUserId, logout } = useLogin()
 
 // Active tab management
@@ -89,6 +88,21 @@ const passwordStrength = computed(() => {
     return Math.min(strength, 5)
 })
 
+// ✅ checklist & flag cho “mật khẩu mới”
+const newPasswordHints = computed(() => {
+    const p = passwordForm.value.newPassword || ''
+    return {
+        tooShort8: p.length < 8,
+        lower: !/[a-z]/.test(p),
+        upper: !/[A-Z]/.test(p),
+        digit: !/[0-9]/.test(p),
+        special: !/[^A-Za-z0-9]/.test(p),
+    }
+})
+const newPasswordInvalid = computed(() => {
+    return (passwordForm.value.newPassword?.length || 0) < 8 || passwordStrength.value < 3
+})
+
 const passwordMatch = computed(() => {
     if (!passwordForm.value.confirmPassword) return null
     return passwordForm.value.newPassword === passwordForm.value.confirmPassword
@@ -120,14 +134,8 @@ const getPasswordStrengthText = (strength) => {
 onMounted(async () => {
     isLoading.value = true
     try {
-        // ✅ Đảm bảo có userId trước khi fetch data
         if (!userId.value) await getUserId()
-
-        await Promise.all([
-            fetchUserData(),
-            fetchQuizHistory(),
-            fetchRecentActivities()
-        ])
+        await Promise.all([fetchUserData(), fetchQuizHistory(), fetchRecentActivities()])
     } finally {
         isLoading.value = false
     }
@@ -137,12 +145,11 @@ const fetchUserData = async () => {
     try {
         const token = localStorage.getItem('token')
 
-        // ✅ Lấy thông tin user cơ bản
         const userRes = await api.get('/user/profile', {
             headers: { Authorization: `Bearer ${token}` }
         })
 
-        // ✅ Lấy danh sách quiz đã tạo
+        // quizzes
         let totalQuizzes = 0
         try {
             if (userId.value) {
@@ -155,7 +162,7 @@ const fetchUserData = async () => {
             console.error('Error fetching user quizzes:', error)
         }
 
-        // ✅ Lấy lịch sử làm bài
+        // attempts
         let quizAttempts = []
         let totalAttempts = 0
         try {
@@ -176,7 +183,6 @@ const fetchUserData = async () => {
             bestScore: calculateBestScore(quizAttempts)
         }
 
-        // Update edit form
         editForm.value = {
             fullName: userData.value.fullName,
             bio: userData.value.bio,
@@ -192,7 +198,7 @@ const fetchQuizHistory = async () => {
     try {
         if (!userId.value) return
         const res = await api.get(`/result/user/${userId.value}`)
-        quizHistory.value = res.data.slice(0, 10) // Latest 10 attempts
+        quizHistory.value = res.data.slice(0, 10)
     } catch (error) {
         console.error('Error fetching quiz history:', error)
     }
@@ -200,7 +206,7 @@ const fetchQuizHistory = async () => {
 
 const fetchRecentActivities = async () => {
     try {
-        // Mock recent activities - in real app, this would be an API call
+        // mock
         recentActivities.value = [
             { id: 1, type: 'quiz_created', message: 'Bạn đã tạo quiz "JavaScript Basics"', time: '2 giờ trước', icon: 'bi-plus-circle' },
             { id: 2, type: 'quiz_completed', message: 'Hoàn thành quiz "Vue.js Advanced" với điểm 95', time: '1 ngày trước', icon: 'bi-check-circle' },
@@ -295,27 +301,25 @@ const changePassword = async () => {
         showMessage('Mật khẩu xác nhận không khớp', 'error')
         return
     }
-
     if (passwordStrength.value < 3) {
         showMessage('Mật khẩu cần đạt mức độ mạnh trở lên', 'error')
         return
     }
+    if (!canSubmit.value) return
 
     isChangingPassword.value = true
     try {
         const token = localStorage.getItem('token')
-        await api.put('/user/change-password', {
+        await api.put('/change-password', {
             currentPassword: passwordForm.value.currentPassword,
             newPassword: passwordForm.value.newPassword
         }, {
             headers: { Authorization: `Bearer ${token}` }
         })
 
-        passwordForm.value = {
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: ''
-        }
+        passwordForm.value = { currentPassword: '', newPassword: '', confirmPassword: '' }
+        isCurrentPasswordValid.value = false
+        currentPasswordMsg.value = ''
         showMessage('Đổi mật khẩu thành công!', 'success')
     } catch (error) {
         showMessage(error.response?.data?.message || 'Không thể đổi mật khẩu', 'error')
@@ -327,23 +331,16 @@ const changePassword = async () => {
 const showMessage = (text, type = 'success') => {
     message.value = text
     messageType.value = type
-    setTimeout(() => {
-        message.value = ''
-    }, 5000)
+    setTimeout(() => { message.value = '' }, 5000)
 }
 
-const setActiveTab = (tab) => {
-    activeTab.value = tab
-}
+const setActiveTab = (tab) => { activeTab.value = tab }
 
 const deleteAccount = async () => {
     if (confirm('Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.')) {
         try {
             const token = localStorage.getItem('token')
-            await api.delete('/user/account', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-
+            await api.delete('/user/account', { headers: { Authorization: `Bearer ${token}` } })
             logout()
             router.push('/login')
             showMessage('Tài khoản đã được xóa', 'info')
@@ -364,6 +361,57 @@ const getScoreClass = (score) => {
     if (score >= 60) return 'good'
     return 'average'
 }
+
+// ===== XÁC MINH MẬT KHẨU HIỆN TẠI =====
+const isVerifyingCurrent = ref(false)
+const isCurrentPasswordValid = ref(false)
+const currentPasswordMsg = ref('')
+
+// debounce nhẹ
+let verifyTimer = null
+const debounce = (fn, delay = 500) => (...args) => {
+    clearTimeout(verifyTimer)
+    verifyTimer = setTimeout(() => fn(...args), delay)
+}
+
+// Gọi API xác minh mật khẩu hiện tại
+const verifyCurrentPassword = async () => {
+    const pwd = passwordForm.value.currentPassword?.trim()
+    if (!pwd) {
+        isCurrentPasswordValid.value = false
+        currentPasswordMsg.value = ''
+        return
+    }
+    try {
+        isVerifyingCurrent.value = true
+        const token = localStorage.getItem('token')
+        const res = await api.post('/verify-password', { currentPassword: pwd }, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        isCurrentPasswordValid.value = !!res.data?.valid
+        currentPasswordMsg.value = isCurrentPasswordValid.value
+            ? 'Mật khẩu hiện tại chính xác'
+            : 'Mật khẩu hiện tại không đúng'
+    } catch (e) {
+        isCurrentPasswordValid.value = false
+        currentPasswordMsg.value = 'Không thể xác minh mật khẩu'
+    } finally {
+        isVerifyingCurrent.value = false
+    }
+}
+
+// Tự xác minh sau khi dừng gõ 500ms
+watch(() => passwordForm.value.currentPassword, debounce(() => {
+    verifyCurrentPassword()
+}, 500))
+
+// Điều kiện bật nút Đổi mật khẩu
+const canSubmit = computed(() =>
+    isCurrentPasswordValid.value &&
+    passwordMatch.value === true &&
+    passwordStrength.value >= 3 &&
+    !isChangingPassword.value
+)
 </script>
 
 <template>
@@ -632,6 +680,7 @@ const getScoreClass = (score) => {
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
@@ -689,6 +738,7 @@ const getScoreClass = (score) => {
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
@@ -707,7 +757,6 @@ const getScoreClass = (score) => {
                                 </div>
                             </div>
                             <div class="card-body">
-                                <!-- Earned Achievements -->
                                 <div class="achievement-section">
                                     <h4 class="section-title">🏆 Đã đạt được</h4>
                                     <div class="achievements-grid">
@@ -728,7 +777,6 @@ const getScoreClass = (score) => {
                                     </div>
                                 </div>
 
-                                <!-- Pending Achievements -->
                                 <div class="achievement-section">
                                     <h4 class="section-title">🎯 Chưa đạt được</h4>
                                     <div class="achievements-grid">
@@ -745,6 +793,7 @@ const getScoreClass = (score) => {
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     </div>
@@ -752,7 +801,6 @@ const getScoreClass = (score) => {
                     <!-- Settings Tab -->
                     <div v-if="activeTab === 'settings'" class="tab-panel settings-panel">
                         <div class="row">
-                            <!-- Security Settings -->
                             <div class="col-lg-8">
                                 <div class="content-card">
                                     <div class="card-header">
@@ -763,6 +811,7 @@ const getScoreClass = (score) => {
                                     </div>
                                     <div class="card-body">
                                         <form @submit.prevent="changePassword">
+                                            <!-- Current password -->
                                             <div class="form-group">
                                                 <label class="form-label">Mật khẩu hiện tại</label>
                                                 <div class="password-input">
@@ -776,13 +825,20 @@ const getScoreClass = (score) => {
                                                             :class="{ 'eye-hidden': showCurrentPassword }"></div>
                                                     </button>
                                                 </div>
+                                                <div class="verify-hint"
+                                                    :class="{ ok: isCurrentPasswordValid, err: currentPasswordMsg && !isCurrentPasswordValid }">
+                                                    <span v-if="isVerifyingCurrent">Đang xác minh...</span>
+                                                    <span v-else-if="currentPasswordMsg">{{ currentPasswordMsg }}</span>
+                                                </div>
                                             </div>
 
+                                            <!-- New password -->
                                             <div class="form-group">
                                                 <label class="form-label">Mật khẩu mới</label>
                                                 <div class="password-input">
                                                     <input :type="showNewPassword ? 'text' : 'password'"
                                                         v-model="passwordForm.newPassword" class="form-input"
+                                                        :class="{ 'input-error': passwordForm.newPassword && newPasswordInvalid }"
                                                         placeholder="Nhập mật khẩu mới" required minlength="8" />
                                                     <button type="button" @click="showNewPassword = !showNewPassword"
                                                         class="password-toggle">
@@ -791,21 +847,33 @@ const getScoreClass = (score) => {
                                                     </button>
                                                 </div>
 
-                                                <!-- Password Strength -->
+                                                <!-- Strength -->
                                                 <div v-if="passwordForm.newPassword" class="password-strength">
                                                     <div class="strength-bar">
-                                                        <div class="strength-fill" :style="{
-                                                            width: (passwordStrength * 20) + '%',
-                                                            backgroundColor: getPasswordStrengthColor(passwordStrength)
-                                                        }"></div>
+                                                        <div class="strength-fill"
+                                                            :style="{ width: (passwordStrength * 20) + '%', backgroundColor: getPasswordStrengthColor(passwordStrength) }">
+                                                        </div>
                                                     </div>
                                                     <span class="strength-text"
                                                         :style="{ color: getPasswordStrengthColor(passwordStrength) }">
                                                         {{ getPasswordStrengthText(passwordStrength) }}
                                                     </span>
                                                 </div>
+
+                                                <!-- ✅ checklist điều kiện -->
+                                                <ul v-if="passwordForm.newPassword" class="hint-list">
+                                                    <li :class="{ ok: !newPasswordHints.tooShort8 }">Tối thiểu 8 ký tự
+                                                    </li>
+                                                    <li :class="{ ok: !newPasswordHints.lower }">Có chữ thường (a–z)
+                                                    </li>
+                                                    <li :class="{ ok: !newPasswordHints.upper }">Có chữ hoa (A–Z)</li>
+                                                    <li :class="{ ok: !newPasswordHints.digit }">Có số (0–9)</li>
+                                                    <li :class="{ ok: !newPasswordHints.special }">Có ký tự đặc biệt
+                                                        (@#$%...)</li>
+                                                </ul>
                                             </div>
 
+                                            <!-- Confirm password -->
                                             <div class="form-group">
                                                 <label class="form-label">Xác nhận mật khẩu mới</label>
                                                 <div class="password-input">
@@ -813,7 +881,8 @@ const getScoreClass = (score) => {
                                                         v-model="passwordForm.confirmPassword" class="form-input"
                                                         :class="{
                                                             'match-success': passwordMatch === true,
-                                                            'match-error': passwordMatch === false
+                                                            'match-error': passwordMatch === false,
+                                                            'input-error': passwordForm.confirmPassword && passwordMatch === false
                                                         }" placeholder="Nhập lại mật khẩu mới" required />
                                                     <button type="button"
                                                         @click="showConfirmPassword = !showConfirmPassword"
@@ -824,18 +893,21 @@ const getScoreClass = (score) => {
                                                 </div>
 
                                                 <div v-if="passwordForm.confirmPassword" class="password-match">
-                                                    <i :class="[
-                                                        passwordMatch ? 'bi bi-check-lg' : 'bi bi-x-lg',
-                                                        passwordMatch ? 'text-success' : 'text-danger'
-                                                    ]"></i>
+                                                    <i
+                                                        :class="[passwordMatch ? 'bi bi-check-lg' : 'bi bi-x-lg', passwordMatch ? 'text-success' : 'text-danger']"></i>
                                                     <span :class="passwordMatch ? 'text-success' : 'text-danger'">
                                                         {{ passwordMatch ? 'Mật khẩu khớp' : 'Mật khẩu không khớp' }}
                                                     </span>
                                                 </div>
+
+                                                <!-- lỗi ngắn gọn -->
+                                                <p v-if="passwordForm.confirmPassword && passwordMatch === false"
+                                                    class="field-error">
+                                                    Vui lòng nhập lại cho khớp mật khẩu mới.
+                                                </p>
                                             </div>
 
-                                            <button type="submit" class="change-password-btn"
-                                                :disabled="isChangingPassword || !passwordMatch || passwordStrength < 3">
+                                            <button type="submit" class="change-password-btn" :disabled="!canSubmit">
                                                 <div v-if="isChangingPassword" class="btn-loading">
                                                     <div class="spinner"></div>
                                                     <span>Đang thay đổi...</span>
@@ -850,60 +922,9 @@ const getScoreClass = (score) => {
                                 </div>
                             </div>
 
-                            <!-- Account Settings -->
-                            <div class="col-lg-4">
-                                <div class="content-card">
-                                    <div class="card-header">
-                                        <h3 class="card-title">
-                                            <i class="bi bi-gear"></i>
-                                            Cài đặt tài khoản
-                                        </h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="settings-list">
-                                            <div class="setting-item">
-                                                <div class="setting-info">
-                                                    <h5>Thông báo email</h5>
-                                                    <p>Nhận thông báo về hoạt động</p>
-                                                </div>
-                                                <div class="setting-control">
-                                                    <label class="toggle-switch">
-                                                        <input type="checkbox" checked />
-                                                        <span class="slider"></span>
-                                                    </label>
-                                                </div>
-                                            </div>
-
-                                            <div class="setting-item">
-                                                <div class="setting-info">
-                                                    <h5>Hồ sơ công khai</h5>
-                                                    <p>Cho phép người khác xem hồ sơ</p>
-                                                </div>
-                                                <div class="setting-control">
-                                                    <label class="toggle-switch">
-                                                        <input type="checkbox" checked />
-                                                        <span class="slider"></span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="danger-zone">
-                                            <h4 class="danger-title">
-                                                <i class="bi bi-exclamation-triangle"></i>
-                                                Vùng nguy hiểm
-                                            </h4>
-                                            <p class="danger-desc">Những hành động này không thể hoàn tác</p>
-                                            <button @click="deleteAccount" class="delete-account-btn">
-                                                <i class="bi bi-trash3"></i>
-                                                Xóa tài khoản
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -932,6 +953,13 @@ const getScoreClass = (score) => {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     position: relative;
     overflow: hidden;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
 }
 
 /* === ANIMATED BACKGROUND === */
@@ -989,15 +1017,15 @@ const getScoreClass = (score) => {
 
     0%,
     100% {
-        transform: translateY(0px) rotate(0deg) scale(1);
+        transform: translateY(0) rotate(0) scale(1)
     }
 
     33% {
-        transform: translateY(-25px) rotate(3deg) scale(1.05);
+        transform: translateY(-25px) rotate(3deg) scale(1.05)
     }
 
     66% {
-        transform: translateY(15px) rotate(-3deg) scale(0.95);
+        transform: translateY(15px) rotate(-3deg) scale(0.95)
     }
 }
 
@@ -1039,7 +1067,7 @@ const getScoreClass = (score) => {
     top: 7.5%;
     left: 7.5%;
     border-top-color: #5f27cd;
-    animation-delay: 0.6s;
+    animation-delay: .6s;
 }
 
 .spinner-ring:nth-child(3) {
@@ -1054,20 +1082,16 @@ const getScoreClass = (score) => {
 .loading-text {
     font-size: 1.8rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin-bottom: .5rem;
 }
 
 .loading-subtitle {
-    opacity: 0.8;
+    opacity: .8;
     font-size: 1.1rem;
 }
 
 @keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
+    to {
         transform: rotate(360deg);
     }
 }
@@ -1109,7 +1133,7 @@ const getScoreClass = (score) => {
     border-radius: 50%;
     object-fit: cover;
     border: 4px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
 }
 
 .avatar-status {
@@ -1133,7 +1157,7 @@ const getScoreClass = (score) => {
 .user-name {
     font-size: 2.5rem;
     font-weight: 800;
-    margin-bottom: 0.5rem;
+    margin-bottom: .5rem;
     background: linear-gradient(45deg, #fff, #00d4ff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1142,13 +1166,13 @@ const getScoreClass = (score) => {
 
 .user-username {
     font-size: 1.2rem;
-    opacity: 0.8;
+    opacity: .8;
     margin-bottom: 1rem;
 }
 
 .user-bio {
     font-size: 1.1rem;
-    opacity: 0.9;
+    opacity: .9;
     margin-bottom: 1rem;
     max-width: 400px;
     line-height: 1.6;
@@ -1162,9 +1186,9 @@ const getScoreClass = (score) => {
 .meta-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.95rem;
-    opacity: 0.8;
+    gap: .5rem;
+    font-size: .95rem;
+    opacity: .8;
 }
 
 .user-stats {
@@ -1181,13 +1205,13 @@ const getScoreClass = (score) => {
     display: flex;
     align-items: center;
     gap: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, .2);
+    transition: all .3s ease;
 }
 
 .stat-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, .2);
 }
 
 .stat-icon {
@@ -1225,12 +1249,12 @@ const getScoreClass = (score) => {
     display: block;
     font-size: 1.8rem;
     font-weight: 700;
-    margin-bottom: 0.25rem;
+    margin-bottom: .25rem;
 }
 
 .stat-label {
-    font-size: 0.9rem;
-    opacity: 0.8;
+    font-size: .9rem;
+    opacity: .8;
 }
 
 /* === NAVIGATION TABS === */
@@ -1243,34 +1267,34 @@ const getScoreClass = (score) => {
 
 .nav-tabs {
     display: flex;
-    gap: 0.5rem;
+    gap: .5rem;
 }
 
 .nav-tab {
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, .7);
     padding: 1rem 2rem;
     border-radius: 15px;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: .75rem;
     font-weight: 600;
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all .3s ease;
 }
 
 .nav-tab:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, .1);
     color: white;
     transform: translateY(-2px);
 }
 
 .nav-tab.active {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, .2);
     color: white;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, .2);
 }
 
 /* === TAB CONTENT === */
@@ -1279,7 +1303,7 @@ const getScoreClass = (score) => {
 }
 
 .tab-panel {
-    animation: fadeIn 0.5s ease;
+    animation: fadeIn .5s ease;
 }
 
 @keyframes fadeIn {
@@ -1301,8 +1325,13 @@ const getScoreClass = (score) => {
     border-radius: 25px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.3);
-    margin-bottom: 2rem;
+    margin: 0 auto 2rem;
+    max-width: 1000px;
     overflow: hidden;
+}
+
+.tab-panel .row {
+    justify-content: center;
 }
 
 .card-header {
@@ -1320,7 +1349,7 @@ const getScoreClass = (score) => {
     color: #1a202c;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: .75rem;
     margin: 0;
 }
 
@@ -1337,7 +1366,7 @@ const getScoreClass = (score) => {
     display: block;
     font-weight: 700;
     color: #1a202c;
-    margin-bottom: 0.75rem;
+    margin-bottom: .75rem;
     font-size: 1rem;
 }
 
@@ -1350,15 +1379,15 @@ const getScoreClass = (score) => {
     font-size: 1rem;
     font-weight: 500;
     color: #1a202c;
-    background: rgba(255, 255, 255, 0.9);
-    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, .9);
+    transition: all .3s ease;
 }
 
 .form-input:focus,
 .form-textarea:focus {
     outline: none;
     border-color: #00d4ff;
-    box-shadow: 0 0 0 0.3rem rgba(0, 212, 255, 0.2);
+    box-shadow: 0 0 0 .3rem rgba(0, 212, 255, .2);
     background: white;
     transform: translateY(-2px);
 }
@@ -1370,16 +1399,16 @@ const getScoreClass = (score) => {
 
 .char-count {
     text-align: right;
-    font-size: 0.9rem;
+    font-size: .9rem;
     color: #718096;
-    margin-top: 0.5rem;
+    margin-top: .5rem;
 }
 
 /* === PROFILE VIEW/EDIT === */
 .profile-view .info-group {
     margin-bottom: 2rem;
     padding-bottom: 1.5rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
 }
 
 .profile-view .info-group:last-child {
@@ -1390,10 +1419,10 @@ const getScoreClass = (score) => {
 .info-label {
     font-weight: 700;
     color: #4a5568;
-    font-size: 0.9rem;
+    font-size: .9rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.5rem;
+    letter-spacing: .5px;
+    margin-bottom: .5rem;
 }
 
 .info-value {
@@ -1407,19 +1436,19 @@ const getScoreClass = (score) => {
     background: linear-gradient(45deg, #00d4ff, #5f27cd);
     color: white;
     border: none;
-    padding: 0.75rem 1.5rem;
+    padding: .75rem 1.5rem;
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all .3s ease;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: .5rem;
 }
 
 .edit-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(95, 39, 205, 0.4);
+    box-shadow: 0 8px 25px rgba(95, 39, 205, .4);
 }
 
 /* === AVATAR UPLOAD === */
@@ -1451,30 +1480,30 @@ const getScoreClass = (score) => {
     background: linear-gradient(45deg, #00d4ff, #5f27cd);
     color: white;
     border: none;
-    padding: 0.75rem 1.5rem;
+    padding: .75rem 1.5rem;
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all .3s ease;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: .5rem;
 }
 
 .upload-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(95, 39, 205, 0.4);
+    box-shadow: 0 8px 25px rgba(95, 39, 205, .4);
 }
 
 .clear-btn {
     background: #ff4757;
     color: white;
     border: none;
-    padding: 0.5rem 1rem;
+    padding: .5rem 1rem;
     border-radius: 8px;
-    font-size: 0.9rem;
+    font-size: .9rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all .3s ease;
 }
 
 .clear-btn:hover {
@@ -1497,34 +1526,34 @@ const getScoreClass = (score) => {
     border-radius: 15px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all .3s ease;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: .75rem;
 }
 
 .save-btn:hover:not(:disabled) {
     transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(46, 213, 115, 0.4);
+    box-shadow: 0 12px 30px rgba(46, 213, 115, .4);
 }
 
 .save-btn:disabled {
-    opacity: 0.7;
+    opacity: .7;
     cursor: not-allowed;
 }
 
 .cancel-btn {
-    background: rgba(255, 71, 87, 0.1);
+    background: rgba(255, 71, 87, .1);
     color: #ff4757;
     border: 2px solid #ff4757;
     padding: 1rem 2rem;
     border-radius: 15px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all .3s ease;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: .75rem;
 }
 
 .cancel-btn:hover {
@@ -1543,12 +1572,12 @@ const getScoreClass = (score) => {
     right: 15px;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, .1);
+    border: 1px solid rgba(255, 255, 255, .2);
     border-radius: 8px;
-    color: rgba(0, 0, 0, 0.6);
+    color: rgba(0, 0, 0, .6);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all .3s ease;
     z-index: 100;
     width: 36px;
     height: 36px;
@@ -1559,12 +1588,11 @@ const getScoreClass = (score) => {
 }
 
 .password-toggle:hover {
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 212, 255, .1);
     border-color: #00d4ff;
     color: #00d4ff;
 }
 
-/* Eye Icon */
 .eye-icon {
     position: relative;
     width: 18px;
@@ -1591,7 +1619,7 @@ const getScoreClass = (score) => {
     height: 4px;
     background: currentColor;
     border-radius: 50%;
-    transition: all 0.2s ease;
+    transition: all .2s ease;
 }
 
 .eye-icon.eye-hidden::before {
@@ -1602,7 +1630,7 @@ const getScoreClass = (score) => {
     border: 2px solid currentColor;
     border-radius: 16px;
     background: transparent;
-    opacity: 0.6;
+    opacity: .6;
 }
 
 .eye-icon.eye-hidden::after {
@@ -1612,42 +1640,70 @@ const getScoreClass = (score) => {
     height: 20px;
     background: currentColor;
     transform: rotate(45deg);
-    opacity: 0.8;
+    opacity: .8;
 }
 
 .password-strength {
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-top: 0.75rem;
+    margin-top: .75rem;
 }
 
 .strength-bar {
     flex: 1;
     height: 8px;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, .1);
     border-radius: 4px;
     overflow: hidden;
 }
 
 .strength-fill {
     height: 100%;
-    transition: all 0.3s ease;
+    transition: all .3s ease;
     border-radius: 4px;
 }
 
 .strength-text {
-    font-size: 0.9rem;
+    font-size: .9rem;
     font-weight: 600;
     min-width: 80px;
+}
+
+/* ✅ bổ sung hiển thị lỗi & checklist */
+.input-error {
+    border-color: #ff4757 !important;
+    box-shadow: 0 0 0 .2rem rgba(255, 71, 87, .15) !important;
+}
+
+.hint-list {
+    margin: .5rem 0 0;
+    padding-left: 1.2rem;
+    font-size: .9rem;
+    color: #718096;
+}
+
+.hint-list li {
+    margin: .15rem 0;
+    list-style: disc;
+}
+
+.hint-list li.ok {
+    color: #2ed573;
+}
+
+.field-error {
+    margin-top: .5rem;
+    font-size: .9rem;
+    color: #ff4757;
 }
 
 .password-match {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-    font-size: 0.95rem;
+    gap: .5rem;
+    margin-top: .75rem;
+    font-size: .95rem;
     font-weight: 500;
 }
 
@@ -1675,20 +1731,20 @@ const getScoreClass = (score) => {
     border-radius: 15px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all .3s ease;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: .75rem;
     margin-top: 1rem;
 }
 
 .change-password-btn:hover:not(:disabled) {
     transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(95, 39, 205, 0.4);
+    box-shadow: 0 12px 30px rgba(95, 39, 205, .4);
 }
 
 .change-password-btn:disabled {
-    opacity: 0.7;
+    opacity: .7;
     cursor: not-allowed;
 }
 
@@ -1704,9 +1760,9 @@ const getScoreClass = (score) => {
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(102, 126, 234, .05);
     border-radius: 15px;
-    border: 1px solid rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, .1);
 }
 
 .quick-stat .stat-icon {
@@ -1725,7 +1781,7 @@ const getScoreClass = (score) => {
 }
 
 .quick-stat .stat-label {
-    font-size: 0.9rem;
+    font-size: .9rem;
     color: #718096;
 }
 
@@ -1763,25 +1819,25 @@ const getScoreClass = (score) => {
     color: white;
     font-size: 1.2rem;
     z-index: 1;
-    box-shadow: 0 5px 20px rgba(95, 39, 205, 0.3);
+    box-shadow: 0 5px 20px rgba(95, 39, 205, .3);
 }
 
 .timeline-content {
     flex: 1;
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(102, 126, 234, .05);
     padding: 1.5rem;
     border-radius: 15px;
-    border: 1px solid rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, .1);
 }
 
 .timeline-message {
-    margin: 0 0 0.5rem;
+    margin: 0 0 .5rem;
     color: #1a202c;
     font-weight: 500;
 }
 
 .timeline-time {
-    font-size: 0.9rem;
+    font-size: .9rem;
     color: #718096;
 }
 
@@ -1794,16 +1850,16 @@ const getScoreClass = (score) => {
 
 .history-item {
     padding: 1rem;
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(102, 126, 234, .05);
     border-radius: 12px;
-    border: 1px solid rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, .1);
 }
 
 .quiz-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: .5rem;
 }
 
 .quiz-title {
@@ -1814,9 +1870,9 @@ const getScoreClass = (score) => {
 }
 
 .quiz-score {
-    padding: 0.25rem 0.75rem;
+    padding: .25rem .75rem;
     border-radius: 20px;
-    font-size: 0.9rem;
+    font-size: .9rem;
     font-weight: 700;
 }
 
@@ -1836,7 +1892,7 @@ const getScoreClass = (score) => {
 }
 
 .quiz-time {
-    font-size: 0.9rem;
+    font-size: .9rem;
     color: #718096;
 }
 
@@ -1873,29 +1929,29 @@ const getScoreClass = (score) => {
 }
 
 .achievement-card {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, .8);
     border-radius: 20px;
     padding: 2rem;
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    transition: all 0.3s ease;
+    transition: all .3s ease;
     border: 2px solid transparent;
 }
 
 .achievement-card.earned {
-    border-color: rgba(46, 213, 115, 0.3);
-    box-shadow: 0 10px 30px rgba(46, 213, 115, 0.1);
+    border-color: rgba(46, 213, 115, .3);
+    box-shadow: 0 10px 30px rgba(46, 213, 115, .1);
 }
 
 .achievement-card.earned:hover {
     transform: translateY(-5px);
-    box-shadow: 0 15px 40px rgba(46, 213, 115, 0.2);
+    box-shadow: 0 15px 40px rgba(46, 213, 115, .2);
 }
 
 .achievement-card.pending {
-    opacity: 0.6;
-    border-color: rgba(0, 0, 0, 0.1);
+    opacity: .6;
+    border-color: rgba(0, 0, 0, .1);
 }
 
 .achievement-card .achievement-icon {
@@ -1924,165 +1980,25 @@ const getScoreClass = (score) => {
     font-size: 1.2rem;
     font-weight: 700;
     color: #1a202c;
-    margin-bottom: 0.5rem;
+    margin-bottom: .5rem;
 }
 
 .achievement-desc {
     color: #718096;
-    margin-bottom: 0.5rem;
+    margin-bottom: .5rem;
     line-height: 1.4;
 }
 
 .achievement-date {
-    font-size: 0.9rem;
+    font-size: .9rem;
     color: #2ed573;
     font-weight: 600;
 }
 
 .achievement-hint {
-    font-size: 0.9rem;
+    font-size: .9rem;
     color: #a0aec0;
     font-style: italic;
-}
-
-/* === SETTINGS === */
-.settings-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-}
-
-.setting-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    background: rgba(102, 126, 234, 0.05);
-    border-radius: 15px;
-    border: 1px solid rgba(102, 126, 234, 0.1);
-}
-
-.setting-info h5 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #1a202c;
-    margin-bottom: 0.25rem;
-}
-
-.setting-info p {
-    color: #718096;
-    margin: 0;
-    font-size: 0.95rem;
-}
-
-.toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 28px;
-}
-
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 28px;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 22px;
-    width: 22px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-}
-
-input:checked+.slider {
-    background: linear-gradient(45deg, #00d4ff, #5f27cd);
-}
-
-input:checked+.slider:before {
-    transform: translateX(22px);
-}
-
-.danger-zone {
-    padding: 2rem;
-    background: rgba(255, 71, 87, 0.05);
-    border-radius: 15px;
-    border: 2px solid rgba(255, 71, 87, 0.2);
-}
-
-.danger-title {
-    color: #ff4757;
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.danger-desc {
-    color: #718096;
-    margin-bottom: 1.5rem;
-}
-
-.delete-account-btn {
-    background: #ff4757;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.delete-account-btn:hover {
-    background: #ff3838;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
-}
-
-/* === LOADING STATES === */
-.btn-loading {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.btn-content {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: white;
-    animation: spin 1s linear infinite;
 }
 
 /* === TOAST MESSAGE === */
@@ -2090,17 +2006,17 @@ input:checked+.slider:before {
     position: fixed;
     top: 2rem;
     right: 2rem;
-    background: rgba(255, 255, 255, 0.98);
+    background: rgba(255, 255, 255, .98);
     backdrop-filter: blur(20px);
     border-radius: 15px;
     padding: 1rem 1.5rem;
     display: flex;
     align-items: center;
     gap: 1rem;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, .15);
+    border: 2px solid rgba(255, 255, 255, .3);
     z-index: 1000;
-    animation: slideInRight 0.4s ease;
+    animation: slideInRight .4s ease;
     min-width: 300px;
 }
 
@@ -2127,17 +2043,17 @@ input:checked+.slider:before {
 }
 
 .success .toast-icon {
-    background: rgba(46, 213, 115, 0.1);
+    background: rgba(46, 213, 115, .1);
     color: #2ed573;
 }
 
 .error .toast-icon {
-    background: rgba(255, 71, 87, 0.1);
+    background: rgba(255, 71, 87, .1);
     color: #ff4757;
 }
 
 .info .toast-icon {
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 212, 255, .1);
     color: #00d4ff;
 }
 
@@ -2152,13 +2068,13 @@ input:checked+.slider:before {
     border: none;
     color: #a0aec0;
     cursor: pointer;
-    padding: 0.25rem;
+    padding: .25rem;
     border-radius: 4px;
-    transition: all 0.3s ease;
+    transition: all .3s ease;
 }
 
 .toast-close:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, .1);
     color: #718096;
 }
 
@@ -2172,11 +2088,6 @@ input:checked+.slider:before {
         transform: translateX(0);
         opacity: 1;
     }
-}
-
-/* === UTILITY FUNCTIONS === */
-.getScoreClass {
-    /* This will be handled by JavaScript */
 }
 
 /* === RESPONSIVE DESIGN === */
@@ -2232,8 +2143,8 @@ input:checked+.slider:before {
     }
 
     .nav-tab {
-        padding: 0.75rem 1rem;
-        font-size: 0.9rem;
+        padding: .75rem 1rem;
+        font-size: .9rem;
     }
 
     .card-header,
@@ -2292,13 +2203,12 @@ input:checked+.slider:before {
 /* === ACCESSIBILITY === */
 @media (prefers-reduced-motion: reduce) {
     * {
-        animation-duration: 0.01ms !important;
+        animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+        transition-duration: .01ms !important;
     }
 }
 
-/* Focus styles for keyboard navigation */
 .nav-tab:focus,
 .edit-btn:focus,
 .save-btn:focus,
@@ -2308,5 +2218,19 @@ input:checked+.slider:before {
 .delete-account-btn:focus {
     outline: 2px solid #00d4ff;
     outline-offset: 2px;
+}
+
+.verify-hint {
+    margin-top: .5rem;
+    font-size: .9rem;
+    color: #718096;
+}
+
+.verify-hint.ok {
+    color: #2ed573;
+}
+
+.verify-hint.err {
+    color: #ff4757;
 }
 </style>
