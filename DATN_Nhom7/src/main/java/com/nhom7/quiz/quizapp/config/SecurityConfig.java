@@ -57,113 +57,114 @@ public class SecurityConfig {
                         // ✅ PUBLIC ENDPOINTS - Không cần authentication
                         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll() // ✅ CHỈ GET categories
                         .requestMatchers(
-                                "/api/login", 
+                                "/api/login",
                                 "/api/register",
                                 "/api/auth/forgot-password-code",
                                 "/api/auth/verify-reset-code",
-                                "/api/admin/login",  // ✅ Admin login phải public
-                                "/api/image/quiz/**", 
-                                "/api/user/avatars/**", 
-                                "/api/upload/avatars/**", 
+                                "/api/admin/login", // ✅ Admin login phải public
+                                "/api/image/quiz/**",
+                                "/api/user/avatars/**",
+                                "/api/upload/avatars/**",
                                 "/api/quiz/join/**",
-                                "/api/quiz/public/**", 
-                                "/api/quiz/detail/**", 
+                                "/api/quiz/public/**",
+                                "/api/quiz/detail/**",
                                 "/api/question/**",
                                 "/api/quiz-attempts/public/**",
                                 "/api/result/submit",
-                                "/ws/**",  // ✅ WEBSOCKET ENDPOINTS
-                                "/topic/**",  // ✅ WEBSOCKET TOPICS
-                                "/queue/**"   // ✅ WEBSOCKET QUEUES
+                                "/ws/**", // ✅ WEBSOCKET ENDPOINTS
+                                "/topic/**", // ✅ WEBSOCKET TOPICS
+                                "/queue/**" // ✅ WEBSOCKET QUEUES
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/quizzes/**").permitAll() // ✅ GET quizzes public
-                        .requestMatchers(HttpMethod.POST, "/api/quizzes/*/review").hasAnyRole("USER", "ADMIN") // ✅ Review requires auth
-                        
+                        .requestMatchers(HttpMethod.POST, "/api/quizzes/*/review", "/api/user/change-password",
+                                "/api/user/verify-password")
+                        .hasAnyRole("USER", "ADMIN") // ✅ Review requires auth
+
                         // ✅ ADMIN-ONLY ENDPOINTS (trừ login)
-                        .requestMatchers("/api/admin/dashboard/**", "/api/admin/users/**", "/api/admin/quizzes/**", 
-                                        "/api/admin/reports/**", "/api/admin/analytics/**", "/api/admin/attempts/**").hasRole("ADMIN")
-                        .requestMatchers("/api/categories/**").hasRole("ADMIN")  // ✅ POST/PUT/DELETE categories cần ADMIN
-                        
+                        .requestMatchers("/api/admin/dashboard/**", "/api/admin/users/**", "/api/admin/quizzes/**",
+                                "/api/admin/reports/**", "/api/admin/analytics/**", "/api/admin/attempts/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers("/api/categories/**").hasRole("ADMIN") // ✅ POST/PUT/DELETE categories cần
+                                                                                // ADMIN
+
                         // ✅ USER ENDPOINTS - Cần authentication
                         .requestMatchers(
                                 "/api/user/**",
                                 "/api/quiz/user/**",
                                 "/api/quiz-attempts/**",
-                                "/api/quiz/create-quiz-with-image",  // ✅ Tạo quiz cần auth
+                                "/api/quiz/create-quiz-with-image", // ✅ Tạo quiz cần auth
                                 "/api/answer/**",
-                                "/api/result/**"
-                        ).hasAnyRole("USER", "ADMIN")
-                        
+                                "/api/result/**")
+                        .hasAnyRole("USER", "ADMIN")
+
                         // ✅ DEFAULT - Tất cả request khác cần authentication
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
                             System.out.println("🚨 Authentication Required: " + authException.getMessage());
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType("application/json");
                             response.setCharacterEncoding("UTF-8");
-                            
+
                             String jsonResponse = """
-                                {
-                                    "error": "AUTHENTICATION_REQUIRED",
-                                    "message": "Bạn cần đăng nhập để truy cập endpoint này",
-                                    "userRole": "ROLE_ANONYMOUS",
-                                    "endpoint": "%s",
-                                    "method": "%s",
-                                    "timestamp": "%s"
-                                }
-                                """.formatted(
+                                    {
+                                        "error": "AUTHENTICATION_REQUIRED",
+                                        "message": "Bạn cần đăng nhập để truy cập endpoint này",
+                                        "userRole": "ROLE_ANONYMOUS",
+                                        "endpoint": "%s",
+                                        "method": "%s",
+                                        "timestamp": "%s"
+                                    }
+                                    """.formatted(
                                     request.getRequestURI(),
                                     request.getMethod(),
-                                    new java.util.Date()
-                                );
-                            
+                                    new java.util.Date());
+
                             response.getWriter().write(jsonResponse);
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             System.out.println("🚨 Access Denied: " + accessDeniedException.getMessage());
-                            
+
                             // ✅ Lấy thông tin user từ SecurityContext
                             String userRole = "ROLE_ANONYMOUS";
                             String username = "anonymous";
-                            
-                            var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-                            if (authentication != null && authentication.isAuthenticated() && 
-                                !authentication.getName().equals("anonymousUser")) {
+
+                            var authentication = org.springframework.security.core.context.SecurityContextHolder
+                                    .getContext().getAuthentication();
+                            if (authentication != null && authentication.isAuthenticated() &&
+                                    !authentication.getName().equals("anonymousUser")) {
                                 username = authentication.getName();
                                 var authorities = authentication.getAuthorities();
                                 if (!authorities.isEmpty()) {
                                     userRole = authorities.iterator().next().getAuthority();
                                 }
                             }
-                            
+
                             System.out.println("🚨 Access Denied for user: " + username + " with role: " + userRole);
-                            
+
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType("application/json");
                             response.setCharacterEncoding("UTF-8");
-                            
+
                             String jsonResponse = """
-                                {
-                                    "error": "ACCESS_DENIED",
-                                    "message": "Bạn không có quyền truy cập endpoint này. Cần quyền ADMIN.",
-                                    "username": "%s",
-                                    "userRole": "%s",
-                                    "endpoint": "%s",
-                                    "method": "%s",
-                                    "timestamp": "%s"
-                                }
-                                """.formatted(
+                                    {
+                                        "error": "ACCESS_DENIED",
+                                        "message": "Bạn không có quyền truy cập endpoint này. Cần quyền ADMIN.",
+                                        "username": "%s",
+                                        "userRole": "%s",
+                                        "endpoint": "%s",
+                                        "method": "%s",
+                                        "timestamp": "%s"
+                                    }
+                                    """.formatted(
                                     username,
                                     userRole,
                                     request.getRequestURI(),
                                     request.getMethod(),
-                                    new java.util.Date()
-                                );
-                            
+                                    new java.util.Date());
+
                             response.getWriter().write(jsonResponse);
-                        })
-                )
+                        }))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

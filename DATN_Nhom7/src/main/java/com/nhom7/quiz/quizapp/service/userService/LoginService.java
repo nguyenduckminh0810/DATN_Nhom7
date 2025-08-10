@@ -9,6 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.nhom7.quiz.quizapp.model.User;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
 
+import jakarta.transaction.Transactional;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -76,10 +78,11 @@ public class LoginService {
     public User findByUsername(String username) {
         return userRepo.findByUsername(username).orElse(null);
     }
-   
+
     public User save(User user) {
         return userRepo.save(user);
     }
+
     // Lưu người dùng
     public void saveUser(User user) {
         userRepo.save(user);
@@ -95,4 +98,21 @@ public class LoginService {
         return userRepo.findById(id).orElse(null);
     }
 
+    public boolean verifyCurrentPassword(String username, String rawCurrentPassword) {
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return passwordEncoder.matches(rawCurrentPassword, user.getPassword());
+    }
+
+    @Transactional
+    public void changePassword(String username, String rawCurrentPassword, String rawNewPassword) {
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(rawCurrentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không đúng");
+        }
+        user.setPassword(passwordEncoder.encode(rawNewPassword));
+        userRepo.save(user);
+    }
 }

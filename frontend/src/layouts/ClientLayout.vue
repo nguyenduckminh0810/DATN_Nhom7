@@ -26,7 +26,7 @@ useLogin()
 
 
 .content-container {
-    padding-top: 0;
+    padding-top: 100px;
     flex: 1;
 }
 
