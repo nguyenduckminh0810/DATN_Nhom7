@@ -51,6 +51,10 @@ public class Quiz {
 	@Column(name = "code_created_at")
 	private LocalDateTime codeCreatedAt;
 
+    // ✅ Trường tạm để trả về số lượt chơi (không lưu DB)
+    @Transient
+    private Long playCount;
+
 	@JsonIgnore
 	@OneToMany(mappedBy = "quiz")
 	private Set<QuizTag> quizTags;
@@ -180,6 +184,14 @@ public class Quiz {
 	public void setCodeCreatedAt(LocalDateTime codeCreatedAt) {
 		this.codeCreatedAt = codeCreatedAt;
 	}
+
+    public Long getPlayCount() {
+        return playCount;
+    }
+
+    public void setPlayCount(Long playCount) {
+        this.playCount = playCount;
+    }
 
 	public Quiz(Long id, String title, User user, Category category, boolean isPublic, LocalDateTime createdAt,
 			Set<QuizTag> quizTags, String image) {

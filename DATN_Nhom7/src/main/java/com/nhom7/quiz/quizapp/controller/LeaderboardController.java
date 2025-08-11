@@ -3,6 +3,7 @@ package com.nhom7.quiz.quizapp.controller;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -138,17 +139,44 @@ public class LeaderboardController {
 
     // ✅ USER ENDPOINTS - Xếp hạng công khai cho user
     @GetMapping("/quiz/{quizId}")
-    public ResponseEntity<List<LeaderboardEntry>> getQuizLeaderboard(
+    public ResponseEntity<Map<String, Object>> getQuizLeaderboard(
             @PathVariable Long quizId,
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
         try {
-            List<LeaderboardEntry> leaderboard = leaderboardService.getQuizLeaderboard(quizId, limit);
-            return ResponseEntity.ok(leaderboard);
+            System.out.println("🔍 Getting quiz leaderboard for quizId: " + quizId + ", page: " + page + ", size: " + size);
+            
+            // Sử dụng Pageable để phân trang
+            org.springframework.data.domain.Page<LeaderboardEntry> leaderboardPage = 
+                leaderboardService.getQuizLeaderboardPaginated(quizId, page, size);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", leaderboardPage.getContent());
+            response.put("totalElements", leaderboardPage.getTotalElements());
+            response.put("totalPages", leaderboardPage.getTotalPages());
+            response.put("currentPage", leaderboardPage.getNumber());
+            response.put("size", leaderboardPage.getSize());
+            response.put("first", leaderboardPage.isFirst());
+            response.put("last", leaderboardPage.isLast());
+            
+            System.out.println("✅ Returning paginated leaderboard: " + leaderboardPage.getContent().size() + 
+                             " entries, total: " + leaderboardPage.getTotalElements() + 
+                             ", pages: " + leaderboardPage.getTotalPages());
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("❌ Error in getQuizLeaderboard: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.ok(List.of()); // Trả về list rỗng thay vì lỗi
+            return ResponseEntity.ok(Map.of(
+                "content", List.of(),
+                "totalElements", 0L,
+                "totalPages", 0,
+                "currentPage", page,
+                "size", size,
+                "first", true,
+                "last", true
+            ));
         }
     }
 

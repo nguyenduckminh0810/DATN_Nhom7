@@ -276,10 +276,10 @@ public class QuizController {
 			@RequestParam(defaultValue = "6") int size) {
 
 		Page<Quiz> quizPage = quizService.getDeletedQuizzesByUserPaginated(userId, page, size);
-		List<Quiz> quizzes = quizPage.getContent();
+        List<Quiz> quizzes = quizPage.getContent();
 
 		Map<String, Object> response = new HashMap<>();
-		response.put("quizzes", quizzes);
+        response.put("quizzes", quizzes);
 		response.put("currentPage", quizPage.getNumber());
 		response.put("totalPages", quizPage.getTotalPages());
 		response.put("totalItems", quizPage.getTotalElements());
@@ -378,7 +378,7 @@ public class QuizController {
 				var question = quizData.getQuestions().get(i);
 				Map<String, Object> questionPreview = new HashMap<>();
 				questionPreview.put("content", question.getContent());
-				questionPreview.put("point", question.getPoint());
+                // Bỏ gửi điểm câu hỏi
 				questionPreview.put("timeLimit", question.getTimeLimit());
 				questionPreview.put("answers", question.getAnswers());
 				previewQuestions.add(questionPreview);
@@ -690,8 +690,8 @@ public class QuizController {
 			// Lấy thống kê cơ bản
 			Map<String, Object> stats = new HashMap<>();
 			stats.put("totalQuestions", quiz.getQuestions().size());
-			stats.put("totalPoints", quiz.getQuestions().stream()
-					.mapToInt(q -> q.getPoint()).sum());
+            // Bỏ thống kê tổng điểm câu hỏi
+            stats.put("totalPoints", 0);
 			stats.put("totalTime", quiz.getQuestions().stream()
 					.mapToInt(q -> q.getTimeLimit()).sum());
 

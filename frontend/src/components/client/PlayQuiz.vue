@@ -20,7 +20,13 @@ let userId = route.params.userId
   || localStorage.getItem('userId')
 const questions = ref([])
 const currentQuestionIndex = ref(0)
+// Chỉ số xa nhất đã đạt tới để khóa thanh tiến độ không lùi khi quay lại
+const furthestQuestionIndex = ref(0)
 const selectedAnswers = ref({})
+// Lưu deadline theo từng câu để thời gian tiếp tục trôi ngay cả khi rời câu
+const deadlineByQuestion = ref({}) // { [questionId]: timestampMillis }
+// Các câu hỏi đã bị khóa (hết giờ hoặc đã chuyển qua)
+const lockedQuestionIds = ref(new Set())
 const countdown = ref(30)
 const isLoading = ref(true)
 const showNextAnimation = ref(false)
@@ -30,9 +36,12 @@ let timer = null
 
 // Computed properties
 const currentQuestion = computed(() => questions.value[currentQuestionIndex.value])
-const progress = computed(() => ((currentQuestionIndex.value + 1) / questions.value.length) * 100)
-const currentTimeLimit = computed(() => currentQuestion.value?.timeLimit || 30) // ✅ LẤY TIMELIMIT TỪ QUESTION
-const timeProgress = computed(() => (countdown.value / currentTimeLimit.value) * 100) // ✅ SỬ DỤNG TIMELIMIT ĐỘNG
+const isCurrentLocked = computed(() => !!currentQuestion.value && lockedQuestionIds.value.has(currentQuestion.value.id))
+const progress = computed(() => ((furthestQuestionIndex.value + 1) / Math.max(questions.value.length, 1)) * 100)
+// Lấy timelimit; nếu câu đã bị khóa thì coi như không đếm (0)
+const currentTimeLimit = computed(() => (isCurrentLocked.value ? 0 : (currentQuestion.value?.timeLimit ?? 30)))
+// Tránh chia cho 0 khi không giới hạn
+const timeProgress = computed(() => (currentTimeLimit.value > 0 ? (countdown.value / currentTimeLimit.value) * 100 : 100))
 const timeColor = computed(() => {
   const halfTime = currentTimeLimit.value / 2
   const quarterTime = currentTimeLimit.value / 4
@@ -41,14 +50,42 @@ const timeColor = computed(() => {
   return '#ff4757'
 })
 
+// Ngưỡng cảnh báo linh hoạt: min(10s, max(3s, 30% thời gian))
+const warnThreshold = computed(() => {
+  if (currentTimeLimit.value <= 0) return 0
+  const percent = Math.ceil(currentTimeLimit.value * 0.3)
+  return Math.min(10, Math.max(3, percent))
+})
+
 function startTimer() {
   clearInterval(timer)
-  countdown.value = currentTimeLimit.value // ✅ SỬ DỤNG TIMELIMIT TỪ QUESTION
-  startTime.value = Date.now() // Ghi lại thời gian bắt đầu
+  // Không đếm khi không giới hạn hoặc câu đã khóa
+  if (currentTimeLimit.value <= 0 || isCurrentLocked.value) {
+    const qid = currentQuestion.value?.id
+    if (qid && deadlineByQuestion.value[qid]) {
+      const remaining = Math.ceil((deadlineByQuestion.value[qid] - Date.now()) / 1000)
+      countdown.value = Math.max(0, remaining)
+    } else {
+      countdown.value = 0
+    }
+    if (!startTime.value) startTime.value = Date.now()
+    return
+  }
+  const qid = currentQuestion.value?.id
+  // Khởi tạo deadline nếu chưa có
+  if (qid && !deadlineByQuestion.value[qid]) {
+    deadlineByQuestion.value[qid] = Date.now() + currentTimeLimit.value * 1000
+  }
+  const remaining = qid ? Math.ceil((deadlineByQuestion.value[qid] - Date.now()) / 1000) : currentTimeLimit.value
+  countdown.value = Math.max(0, remaining)
+  // Chỉ ghi lại thời điểm bắt đầu quiz một lần
+  if (!startTime.value) startTime.value = Date.now()
   timer = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
       clearInterval(timer)
+      // Khóa câu hiện tại vì đã hết giờ
+      if (currentQuestion.value?.id) lockedQuestionIds.value.add(currentQuestion.value.id)
       nextQuestion()
     }
   }, 1000)
@@ -114,6 +151,8 @@ onBeforeUnmount(() => {
 })
 
 function selectAnswer(questionId, answerId) {
+  // Không cho chọn nếu câu đã khóa
+  if (lockedQuestionIds.value.has(questionId)) return
   selectedAnswers.value[questionId] = answerId
 
   // Visual feedback
@@ -128,12 +167,9 @@ function selectAnswer(questionId, answerId) {
 
 function nextQuestion() {
   if (currentQuestionIndex.value < questions.value.length - 1) {
-    showNextAnimation.value = true
-    setTimeout(() => {
-      currentQuestionIndex.value++
-      showNextAnimation.value = false
-      startTimer()
-    }, 300)
+    // Khi chuyển câu, cũng khóa câu hiện tại để tránh quay lại sửa
+    if (currentQuestion.value?.id) lockedQuestionIds.value.add(currentQuestion.value.id)
+    goToQuestion(currentQuestionIndex.value + 1)
   } else {
     clearInterval(timer)
     submitQuiz()
@@ -142,13 +178,22 @@ function nextQuestion() {
 
 function prevQuestion() {
   if (currentQuestionIndex.value > 0) {
-    showNextAnimation.value = true
-    setTimeout(() => {
-      currentQuestionIndex.value--
-      showNextAnimation.value = false
-      startTimer()
-    }, 300)
+    goToQuestion(currentQuestionIndex.value - 1)
   }
+}
+
+function goToQuestion(newIndex) {
+  // Không cần lưu giây còn lại; deadline đã đảm bảo thời gian tiếp tục trôi
+  showNextAnimation.value = true
+  setTimeout(() => {
+    currentQuestionIndex.value = newIndex
+    if (newIndex > furthestQuestionIndex.value) {
+      furthestQuestionIndex.value = newIndex
+    }
+    showNextAnimation.value = false
+    // Nếu câu mới chưa khóa và có timer > 0 thì tiếp tục từ phần còn lại
+    startTimer()
+  }, 300)
 }
 
 async function submitQuiz() {
@@ -168,16 +213,20 @@ async function submitQuiz() {
     let resultId
     if (attemptId) {
       const { quizAttemptService } = await import('@/services/quizAttemptService')
-      const resp = await quizAttemptService.submitAttempt(attemptId, answerList, currentQuestionIndex.value + 1)
+      const resp = await quizAttemptService.submitAttempt(attemptId, answerList, timeTaken)
       resultId = resp.resultId
     } else {
       // Fallback flow cũ
       const token = localStorage.getItem('token')
-      const payload = { quizId: parseInt(quizId), userId: parseInt(userId), answers: answerList }
+      const payload = { quizId: parseInt(quizId), userId: parseInt(userId), answers: answerList, timeTaken }
       const res = await api.post('http://localhost:8080/api/result/submit', payload, { headers: { Authorization: `Bearer ${token}` } })
       resultId = res.data.resultId
       try { localStorage.setItem(`quiz_completed_${quizId}_${userId}`, '1') } catch {}
     }
+    // ✅ Lưu selections để Result page có thể đọc nếu BE không trả lại
+    try {
+      localStorage.setItem(`result_selected_${resultId}`, JSON.stringify(selectedAnswers.value || {}))
+    } catch {}
     router.replace({ name: 'QuizResult', params: { resultId: String(resultId) } })
   } catch (err) {
     console.error('Lỗi khi gửi kết quả:', err)
@@ -225,8 +274,8 @@ async function submitQuiz() {
         </div>
       </div>
 
-      <!-- Timer Section -->
-      <div class="timer-section">
+      <!-- Timer Section: ẩn nếu không giới hạn -->
+      <div class="timer-section" v-if="currentTimeLimit > 0">
         <div class="timer-container">
           <div class="timer-circle">
             <svg width="120" height="120" class="timer-svg" viewBox="0 0 120 120">
@@ -259,7 +308,7 @@ async function submitQuiz() {
               <div class="timer-label">giây</div>
             </div>
           </div>
-          <div class="timer-warning" v-if="countdown <= 10">
+          <div class="timer-warning" v-if="currentTimeLimit > 0 && countdown <= warnThreshold">
             <i class="bi bi-exclamation-triangle"></i>
             Sắp hết thời gian!
           </div>
@@ -274,10 +323,7 @@ async function submitQuiz() {
               <i class="bi bi-lightbulb"></i>
               <span>Câu hỏi {{ currentQuestionIndex + 1 }}</span>
             </div>
-            <div class="question-points">
-              <i class="bi bi-star-fill"></i>
-              <span>{{ currentQuestion?.point || 1 }} điểm</span>
-            </div>
+            <!-- Bỏ hiển thị điểm câu hỏi -->
           </div>
 
           <div class="question-content">
@@ -300,14 +346,15 @@ async function submitQuiz() {
               'option-c': index === 2,
               'option-d': index === 3,
             }"
-            @click="selectAnswer(currentQuestion.id, answer.id)"
+            @click="!isCurrentLocked && selectAnswer(currentQuestion.id, answer.id)"
           >
             <input
               type="radio"
               :id="`answer-${answer.id}`"
               :name="`question-${currentQuestion.id}`"
               :value="answer.id"
-              :checked="selectedAnswers[currentQuestion.id] === answer.id"
+               :checked="selectedAnswers[currentQuestion.id] === answer.id"
+               :disabled="isCurrentLocked"
               style="display: none"
             />
             <div class="answer-label">
@@ -331,9 +378,9 @@ async function submitQuiz() {
       <!-- Navigation Section -->
       <div class="navigation-section">
         <div class="nav-buttons">
-          <button
+           <button
             class="nav-btn prev-btn"
-            :disabled="currentQuestionIndex === 0"
+             :disabled="currentQuestionIndex === 0"
             @click="prevQuestion"
           >
             <i class="bi bi-arrow-left"></i>
@@ -349,12 +396,7 @@ async function submitQuiz() {
                 active: index === currentQuestionIndex,
                 answered: selectedAnswers[question.id],
               }"
-              @click="
-                () => {
-                  currentQuestionIndex = index
-                  startTimer()
-                }
-              "
+               @click="() => { currentQuestionIndex = index; if (!isCurrentLocked) startTimer() }"
             >
               {{ index + 1 }}
             </div>

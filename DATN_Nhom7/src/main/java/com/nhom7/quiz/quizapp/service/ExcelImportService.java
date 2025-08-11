@@ -115,8 +115,8 @@ public class ExcelImportService {
             if (timeCell != null && timeCell.getCellType() == CellType.NUMERIC) {
                 timeLimit = (int) timeCell.getNumericCellValue();
                 
-                // Kiểm tra range thời gian (5-300 giây)
-                if (timeLimit < 5) {
+                // Kiểm tra range thời gian: 0 (không giới hạn) hoặc 5-300 giây
+                if (timeLimit != 0 && timeLimit < 5) {
                     throw new IllegalArgumentException("Thời gian phải từ 5 giây trở lên ở dòng " + (row.getRowNum() + 1) + " (hiện tại: " + timeLimit + "s)");
                 }
                 if (timeLimit > 300) {
@@ -191,7 +191,7 @@ public class ExcelImportService {
             }
 
             // ✅ VALIDATE THỜI GIAN
-            if (question.getTimeLimit() < 5) {
+            if (question.getTimeLimit() != 0 && question.getTimeLimit() < 5) {
                 throw new IllegalArgumentException("Thời gian của câu hỏi " + (i + 1) + " phải từ 5 giây trở lên (hiện tại: " + question.getTimeLimit() + "s)");
             }
             if (question.getTimeLimit() > 300) {
