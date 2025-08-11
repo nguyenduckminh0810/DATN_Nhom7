@@ -319,15 +319,44 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Login' })
   }
 
-  // ✅ ATTEMPT ROUTE CHECK (PlayAttempt): chặn vào attempt đã hoàn tất
+  // ✅ ATTEMPT ROUTE CHECK (PlayAttempt): chặn vào attempt đã hoàn thành
   if (to.name === 'PlayAttempt') {
     try {
-      const { status } = await quizAttemptService.getAttemptStatus(to.params.attemptId)
-      if (['SUBMITTED', 'COMPLETED', 'CANCELLED', 'EXPIRED'].includes(status)) {
+      console.log('🔍 Checking PlayAttempt status for attemptId:', to.params.attemptId)
+      
+      // Kiểm tra xem attemptId có hợp lệ không
+      if (!to.params.attemptId) {
+        console.log('❌ No attemptId provided, redirecting to Home')
         return next({ name: 'Home' })
       }
+      
+      // Thêm timeout để tránh chờ quá lâu
+      const statusPromise = quizAttemptService.getAttemptStatus(to.params.attemptId)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      )
+      
+      const { status } = await Promise.race([statusPromise, timeoutPromise])
+      console.log('🔍 Attempt status:', status)
+      
+      if (['SUBMITTED', 'COMPLETED', 'CANCELLED', 'EXPIRED'].includes(status)) {
+        console.log('❌ Attempt already completed, redirecting to Home')
+        return next({ name: 'Home' })
+      }
+      
+      console.log('✅ Attempt status valid, allowing access')
     } catch (e) {
-      return next({ name: 'Home' })
+      console.error('❌ Error checking attempt status:', e)
+      
+      // Nếu có lỗi khi kiểm tra status, kiểm tra xem có phải lỗi network không
+      if (e.code === 'NETWORK_ERROR' || e.message?.includes('Network Error') || e.message?.includes('Timeout')) {
+        console.log('⚠️ Network error or timeout, allowing access to avoid infinite redirect')
+        return next()
+      }
+      
+      // Nếu là lỗi khác, vẫn cho phép vào để tránh redirect vô hạn
+      console.log('⚠️ Allowing access despite status check error')
+      return next()
     }
   }
 
