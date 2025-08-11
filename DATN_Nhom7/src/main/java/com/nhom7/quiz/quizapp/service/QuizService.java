@@ -197,6 +197,12 @@ public class QuizService {
 		return quizRepo.findByIsPublicAndDeletedFalse(isPublic, pageable);
 	}
 
+	// ✅ THÊM METHOD LẤY QUIZ PUBLIC THEO CATEGORY
+	public Page<Quiz> getPublicQuizzesByCategory(Long categoryId, int page, int size) {
+		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+		return quizRepo.findPublicByCategory(categoryId, pageable);
+	}
+
 	// ✅ THÊM CÁC METHOD CHO SOFT DELETE
 	// Lấy tất cả quiz của user (kể cả đã xóa) - cho admin
 	public Page<Quiz> getAllQuizzesByUserPaginated(Long userId, int page, int size) {
