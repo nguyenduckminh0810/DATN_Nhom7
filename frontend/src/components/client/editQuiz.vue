@@ -45,7 +45,7 @@ const filteredQuestions = computed(() => {
   return questions.value.filter((item) => item.content?.toLowerCase().includes(q))
 })
 
-const totalPoints = computed(() => questions.value.reduce((s, q) => s + (q.point || 0), 0))
+
 const totalTime = computed(() => questions.value.reduce((s, q) => s + (q.timeLimit || 30), 0))
 
 const quizStats = computed(() => ({
@@ -1009,8 +1009,8 @@ watch(newQuestion, () => {
               <i class="bi bi-clock"></i>
               Thời gian (giây) cho tất cả câu hỏi
             </label>
-           <input type="number" class="form-control" v-model="globalTimeLimit" min="0" max="300" placeholder="30" />
-           <small class="form-text">0 (không giới hạn) hoặc 5–300 giây</small>
+            <input type="number" class="form-control" v-model="globalTimeLimit" min="0" max="300" placeholder="30" />
+            <small class="form-text">0 (không giới hạn) hoặc 5–300 giây</small>
           </div>
           <div class="alert alert-info">
             <i class="bi bi-info-circle"></i>
