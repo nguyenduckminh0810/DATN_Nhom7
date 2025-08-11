@@ -19,10 +19,12 @@
           </div>
           <div class="title-text">
             <h1>{{ isAdmin ? 'Quản lý lịch sử làm bài' : 'Lịch sử làm bài của tôi' }}</h1>
-            <p>{{ isAdmin ? 'Theo dõi và phân tích kết quả của tất cả người dùng' : 'Theo dõi tiến trình học tập và phân tích kết quả cá nhân' }}</p>
+            <p>{{ isAdmin ? 'Theo dõi và phân tích kết quả của tất cả người dùng' : 'Theo dõi tiến trình học tập và' +
+              'phân'
+              + 'tích kết quả cá nhân' }}</p>
           </div>
         </div>
-        
+
         <div class="header-controls">
           <button @click="refreshData" class="refresh-btn" :disabled="loading">
             <i class="bi bi-arrow-clockwise" :class="{ 'spinning': loading }"></i>
@@ -168,12 +170,8 @@
         <div class="search-container">
           <div class="search-box">
             <i class="bi bi-search"></i>
-            <input 
-              v-model="searchQuery" 
-              type="text" 
-              :placeholder="isAdmin ? 'Tìm kiếm quiz hoặc người dùng...' : 'Tìm kiếm quiz...'"
-              class="search-input"
-            />
+            <input v-model="searchQuery" type="text"
+              :placeholder="isAdmin ? 'Tìm kiếm quiz hoặc người dùng...' : 'Tìm kiếm quiz...'" class="search-input" />
             <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search">
               <i class="bi bi-x"></i>
             </button>
@@ -219,31 +217,18 @@
         <div class="section-header">
           <h2>{{ isAdmin ? 'Lịch sử làm bài' : 'Lịch sử của tôi' }}</h2>
           <div class="view-toggle">
-            <button 
-              @click="viewMode = 'card'" 
-              :class="{ active: viewMode === 'card' }"
-              class="view-btn"
-            >
+            <button @click="viewMode = 'card'" :class="{ active: viewMode === 'card' }" class="view-btn">
               <i class="bi bi-grid-3x3-gap"></i>
             </button>
-            <button 
-              @click="viewMode = 'list'" 
-              :class="{ active: viewMode === 'list' }"
-              class="view-btn"
-            >
+            <button @click="viewMode = 'list'" :class="{ active: viewMode === 'list' }" class="view-btn">
               <i class="bi bi-list"></i>
             </button>
           </div>
         </div>
 
         <div class="history-grid" :class="{ 'list-view': viewMode === 'list' }">
-          <div 
-            v-for="(attempt, index) in paginatedAttempts" 
-            :key="attempt.id"
-            class="history-card"
-            :class="getScoreClass(attempt.score)"
-            :style="{ 'animation-delay': `${index * 0.1}s` }"
-          >
+          <div v-for="(attempt, index) in paginatedAttempts" :key="attempt.id" class="history-card"
+            :class="getScoreClass(attempt.score)" :style="{ 'animation-delay': `${index * 0.1}s` }">
             <div class="card-header">
               <div class="quiz-info">
                 <h3 class="quiz-title">{{ attempt.quizTitle }}</h3>
@@ -271,11 +256,8 @@
                   <span>{{ attempt.score }}/100</span>
                 </div>
                 <div class="progress-bar">
-                  <div 
-                    class="progress-fill" 
-                    :class="getScoreClass(attempt.score)"
-                    :style="{ width: `${attempt.score}%` }"
-                  ></div>
+                  <div class="progress-fill" :class="getScoreClass(attempt.score)"
+                    :style="{ width: `${attempt.score}%` }"></div>
                 </div>
               </div>
 
@@ -296,10 +278,6 @@
                 <i class="bi bi-eye"></i>
                 Chi tiết
               </button>
-              <button class="action-btn primary">
-                <i class="bi bi-arrow-repeat"></i>
-                Làm lại
-              </button>
             </div>
           </div>
         </div>
@@ -307,49 +285,29 @@
         <!-- Pagination -->
         <div v-if="totalPages > 1" class="pagination-section">
           <div class="pagination-info">
-            Hiển thị {{ ((currentPage - 1) * pageSize) + 1 }} - {{ Math.min(currentPage * pageSize, filteredAttempts.length) }} 
+            Hiển thị {{ ((currentPage - 1) * pageSize) + 1 }} - {{ Math.min(currentPage * pageSize,
+              filteredAttempts.length) }}
             trong tổng số {{ filteredAttempts.length }} kết quả
           </div>
           <div class="pagination-controls">
-            <button 
-              @click="changePage(1)" 
-              :disabled="currentPage === 1"
-              class="page-btn"
-            >
+            <button @click="changePage(1)" :disabled="currentPage === 1" class="page-btn">
               <i class="bi bi-chevron-double-left"></i>
             </button>
-            <button 
-              @click="changePage(currentPage - 1)" 
-              :disabled="currentPage === 1"
-              class="page-btn"
-            >
+            <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="page-btn">
               <i class="bi bi-chevron-left"></i>
             </button>
-            
+
             <div class="page-numbers">
-              <button 
-                v-for="page in visiblePages" 
-                :key="page"
-                @click="changePage(page)"
-                :class="{ active: page === currentPage }"
-                class="page-number"
-              >
+              <button v-for="page in visiblePages" :key="page" @click="changePage(page)"
+                :class="{ active: page === currentPage }" class="page-number">
                 {{ page }}
               </button>
             </div>
-            
-            <button 
-              @click="changePage(currentPage + 1)" 
-              :disabled="currentPage === totalPages"
-              class="page-btn"
-            >
+
+            <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages" class="page-btn">
               <i class="bi bi-chevron-right"></i>
             </button>
-            <button 
-              @click="changePage(totalPages)" 
-              :disabled="currentPage === totalPages"
-              class="page-btn"
-            >
+            <button @click="changePage(totalPages)" :disabled="currentPage === totalPages" class="page-btn">
               <i class="bi bi-chevron-double-right"></i>
             </button>
           </div>
@@ -487,7 +445,7 @@ const visiblePages = computed(() => {
   const pages = []
   const total = totalPages.value
   const current = currentPage.value
-  
+
   if (total <= 7) {
     for (let i = 1; i <= total; i++) {
       pages.push(i)
@@ -509,7 +467,7 @@ const visiblePages = computed(() => {
       pages.push(total)
     }
   }
-  
+
   return pages
 })
 
@@ -546,8 +504,8 @@ const averagePercentage = computed(() => attempts.value.length > 0 ? (averageCou
 const poorPercentage = computed(() => attempts.value.length > 0 ? (poorCount.value / attempts.value.length) * 100 : 0)
 
 const hasFilters = computed(() => {
-  return searchQuery.value || scoreFilter.value !== 'all' || 
-         (isAdmin.value && filters.value.userId) || filters.value.quizId
+  return searchQuery.value || scoreFilter.value !== 'all' ||
+    (isAdmin.value && filters.value.userId) || filters.value.quizId
 })
 
 const currentUserName = computed(() => {
@@ -563,7 +521,7 @@ const loadData = async () => {
       size: 1000,
       ...(filters.value.quizId && { quizId: filters.value.quizId })
     }
-    
+
     // Nếu là admin và có chọn userId, thì lọc theo userId
     if (isAdmin.value && filters.value.userId) {
       params.userId = filters.value.userId
@@ -571,7 +529,7 @@ const loadData = async () => {
       // Nếu không phải admin, chỉ lấy dữ liệu của người dùng hiện tại
       params.userId = userStore.user?.id
     }
-    
+
     const response = await quizAttemptService.getQuizAttempts(params)
     attempts.value = response.content || []
     totalElements.value = response.totalElements || 0
@@ -701,22 +659,27 @@ onMounted(() => {
 .pattern-grid {
   width: 100%;
   height: 100%;
-  background-image: 
-    radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px),
-    radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
   background-size: 50px 50px;
   animation: drift 20s linear infinite;
 }
 
 .dark-theme .pattern-grid {
-  background-image: 
-    radial-gradient(circle at 25% 25%, rgba(255,255,255,0.05) 1px, transparent 1px),
-    radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
 }
 
 @keyframes drift {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(50px, 50px); }
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(50px, 50px);
+  }
 }
 
 .floating-shapes {
@@ -757,7 +720,14 @@ onMounted(() => {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-30px) rotate(180deg); }
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-30px) rotate(180deg);
+  }
 }
 </style>
