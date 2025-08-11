@@ -35,11 +35,8 @@ const auth = { headers: { Authorization: `Bearer ${token}` } }
 const authJson = { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
 const authMultipart = { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
 
-function notify(message, type = 'info') {
-  if (type === 'success') alert('✅ ' + message)
-  else if (type === 'error') alert('❌ ' + message)
-  else alert('ℹ️ ' + message)
-}
+// Bỏ cơ chế tổng điểm câu hỏi
+const totalPoints = computed(() => 0)
 
 // ===== Computed =====
 const filteredQuestions = computed(() => {
@@ -53,8 +50,9 @@ const totalTime = computed(() => questions.value.reduce((s, q) => s + (q.timeLim
 
 const quizStats = computed(() => ({
   totalQuestions: questions.value.length,
-  totalPoints: totalPoints.value,
-  avgPoints: questions.value.length ? Math.round(totalPoints.value / questions.value.length) : 0,
+  // Bỏ tổng điểm/điểm trung bình
+  totalPoints: 0,
+  avgPoints: 0,
   avgTime: questions.value.length ? Math.round(totalTime.value / questions.value.length) : 30,
   hasAnswers: questions.value.every((q) => (answersMap.value[q.id]?.length || 0) >= 2),
 }))
@@ -62,10 +60,23 @@ const quizStats = computed(() => ({
 // ===== Validation =====
 const validateQuestion = (question) => {
   const errors = {}
-  if (!question.content?.trim()) errors.content = 'Nội dung câu hỏi không được để trống'
-  if (!question.point || question.point < 1) errors.point = 'Điểm phải lớn hơn 0'
-  if (!question.timeLimit || question.timeLimit < 5 || question.timeLimit > 300)
-    errors.timeLimit = 'Thời gian phải từ 5-300 giây'
+
+
+  if (!question.content?.trim()) {
+    errors.content = 'Nội dung câu hỏi không được để trống'
+  }
+
+  // Bỏ validate point
+
+  // ✅ THÊM VALIDATION CHO TIMELIMIT
+  if (
+    question.timeLimit === undefined ||
+    question.timeLimit === null ||
+    (question.timeLimit !== 0 && (question.timeLimit < 5 || question.timeLimit > 300))
+  ) {
+    errors.timeLimit = 'Thời gian phải là 0 (không giới hạn) hoặc từ 5-300 giây'
+  }
+
 
   const answers = question.answers || []
   const correctCount = answers.filter((a) => a.correct).length
@@ -77,10 +88,22 @@ const validateQuestion = (question) => {
 
 const validateEditQuestion = (question) => {
   const errors = {}
-  if (!question.content?.trim()) errors.content = 'Nội dung câu hỏi không được để trống'
-  if (!question.point || question.point < 1) errors.point = 'Điểm phải lớn hơn 0'
-  if (!question.timeLimit || question.timeLimit < 5 || question.timeLimit > 300)
-    errors.timeLimit = 'Thời gian phải từ 5-300 giây'
+  if (!question.content?.trim()) {
+    errors.content = 'Nội dung câu hỏi không được để trống'
+  }
+
+  // Bỏ validate point
+
+  // ✅ THÊM VALIDATION CHO TIMELIMIT
+  if (
+    question.timeLimit === undefined ||
+    question.timeLimit === null ||
+    (question.timeLimit !== 0 && (question.timeLimit < 5 || question.timeLimit > 300))
+  ) {
+    errors.timeLimit = 'Thời gian phải là 0 (không giới hạn) hoặc từ 5-300 giây'
+  }
+
+
   return errors
 }
 
@@ -253,8 +276,9 @@ async function updateQuestion(question) {
     const payload = {
       id: question.id,
       content: question.content,
-      point: question.point,
-      timeLimit: question.timeLimit,
+      // point: question.point,
+      timeLimit: question.timeLimit, // ✅ THÊM TIMELIMIT
+
       quiz: { id: quizId },
       image: null,
     }
@@ -344,9 +368,15 @@ function selectAllQuestions() {
 function duplicateQuestion(question) {
   const duplicated = {
     content: question.content + ' (Copy)',
-    point: question.point,
-    timeLimit: question.timeLimit || 30,
-    answers: (answersMap.value[question.id] || []).map((a) => ({ content: a.content, correct: a.correct })),
+
+    // point: question.point,
+    timeLimit: question.timeLimit || 30, // ✅ THÊM TIMELIMIT
+    answers:
+      answersMap.value[question.id]?.map((a) => ({
+        content: a.content,
+        correct: a.correct,
+      })) || [],
+
   }
   newQuestion.value = duplicated
   activeTab.value = 'add-question'
@@ -407,17 +437,63 @@ async function saveAllChanges() {
 function openSetTimeModal() { showSetTimeModal.value = true; globalTimeLimit.value = 30 }
 
 async function setTimeForAllQuestions() {
-  const t = +globalTimeLimit.value
-  if (!t || t < 5 || t > 300) return notify('Thời gian phải từ 5-300 giây!', 'error')
+
+  console.log('Setting time for all questions:', globalTimeLimit.value)
+  if (
+    globalTimeLimit.value === undefined ||
+    globalTimeLimit.value === null ||
+    (globalTimeLimit.value !== 0 && (globalTimeLimit.value < 5 || globalTimeLimit.value > 300))
+  ) {
+    showNotification('Thời gian phải từ 5-300 giây!', 'error')
+    return
+  }
 
   isSaving.value = true
   try {
-    await Promise.all(
-      questions.value.map((q) =>
-        api.put(`/question/update/${q.id}`, {
-          id: q.id, content: q.content, point: q.point, timeLimit: t, quiz: { id: quizId }, image: null,
-        }, authJson),
-      ),
+    console.log('Bắt đầu cập nhật', questions.value.length, 'câu hỏi...')
+
+    // Cập nhật tất cả câu hỏi với time limit mới
+    const updatePromises = questions.value.map(async (question, index) => {
+      const payload = {
+        id: question.id,
+        content: question.content,
+        // point: question.point,
+        timeLimit: globalTimeLimit.value,
+        quiz: { id: quizId },
+        image: null,
+      }
+
+      console.log(`Cập nhật câu hỏi ${index + 1}:`, payload)
+
+      const response = await api.put(
+        `/question/update/${question.id}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      )
+
+      console.log(`Câu hỏi ${index + 1} cập nhật thành công:`, response.data)
+
+      // Cập nhật local state
+      question.timeLimit = globalTimeLimit.value
+      console.log(`Local state câu hỏi ${index + 1} đã cập nhật:`, question.timeLimit)
+    })
+
+    await Promise.all(updatePromises)
+
+    console.log('Tất cả câu hỏi đã được cập nhật, reloading data...')
+
+    // ✅ RELOAD DATA SAU KHI CẬP NHẬT
+    await fetchQuestionsByQuizId()
+
+    showNotification(
+      `Đã cập nhật thời gian ${globalTimeLimit.value}s cho ${questions.value.length} câu hỏi!`,
+      'success',
+
     )
     await fetchQuestionsByQuizId()
     notify(`Đã cập nhật thời gian ${t}s cho ${questions.value.length} câu hỏi!`, 'success')
@@ -462,10 +538,7 @@ watch(newQuestion, () => {
                   <i class="bi bi-question-circle"></i>
                   {{ quizStats.totalQuestions }} câu hỏi
                 </span>
-                <span class="meta-item">
-                  <i class="bi bi-star"></i>
-                  {{ quizStats.totalPoints }} điểm
-                </span>
+                <!-- Bỏ tổng điểm trong header -->
                 <span class="meta-item" :class="{
                   'text-success': quizStats.hasAnswers,
                   'text-warning': !quizStats.hasAnswers,
@@ -664,10 +737,10 @@ watch(newQuestion, () => {
                             <span class="checkmark"></span>
                           </label>
                           <span class="question-number">Câu {{ index + 1 }}</span>
-                          <span class="question-points">{{ question.point }} điểm</span>
+                          <!-- Bỏ hiển thị điểm tại danh sách câu hỏi -->
                           <span class="question-time">
                             <i class="bi bi-clock"></i>
-                            {{ question.timeLimit || 30 }}s
+                            {{ question.timeLimit === 0 ? '∞' : ((question.timeLimit ?? 30) + 's') }}
                           </span>
                         </div>
                         <div class="question-actions">
@@ -732,14 +805,7 @@ watch(newQuestion, () => {
                             </div>
                           </div>
 
-                          <div class="form-group">
-                            <label class="form-label">Điểm</label>
-                            <input type="number" class="form-control" :class="{ 'is-invalid': validationErrors.point }"
-                              v-model="editingQuestion.point" min="1" />
-                            <div v-if="validationErrors.point" class="invalid-feedback">
-                              {{ validationErrors.point }}
-                            </div>
-                          </div>
+                          <!-- Bỏ input điểm khi sửa câu hỏi -->
 
                           <div class="form-group">
                             <label class="form-label">
@@ -748,11 +814,11 @@ watch(newQuestion, () => {
                             </label>
                             <input type="number" class="form-control"
                               :class="{ 'is-invalid': validationErrors.timeLimit }" v-model="editingQuestion.timeLimit"
-                              min="5" max="300" placeholder="30" />
+                              min="0" max="300" placeholder="30" />
                             <div v-if="validationErrors.timeLimit" class="invalid-feedback">
                               {{ validationErrors.timeLimit }}
                             </div>
-                            <small class="form-text">Range: 5-300 giây</small>
+                            <small class="form-text">0 (không giới hạn) hoặc 5–300 giây</small>
                           </div>
 
                           <div class="form-actions">
@@ -814,14 +880,7 @@ watch(newQuestion, () => {
                       </div>
                     </div>
 
-                    <div class="form-group">
-                      <label class="form-label">Điểm *</label>
-                      <input type="number" class="form-control" :class="{ 'is-invalid': validationErrors.point }"
-                        v-model="newQuestion.point" min="1" placeholder="1" />
-                      <div v-if="validationErrors.point" class="invalid-feedback">
-                        {{ validationErrors.point }}
-                      </div>
-                    </div>
+                    <!-- Bỏ input điểm khi thêm câu hỏi -->
 
                     <div class="form-group">
                       <label class="form-label">
@@ -829,11 +888,11 @@ watch(newQuestion, () => {
                         Thời gian (giây) *
                       </label>
                       <input type="number" class="form-control" :class="{ 'is-invalid': validationErrors.timeLimit }"
-                        v-model="newQuestion.timeLimit" min="5" max="300" placeholder="30" />
+                        v-model="newQuestion.timeLimit" min="0" max="300" placeholder="30" />
                       <div v-if="validationErrors.timeLimit" class="invalid-feedback">
                         {{ validationErrors.timeLimit }}
                       </div>
-                      <small class="form-text">Range: 5-300 giây</small>
+                      <small class="form-text">0 (không giới hạn) hoặc 5–300 giây</small>
                     </div>
 
                     <div class="form-actions">
@@ -873,24 +932,7 @@ watch(newQuestion, () => {
                     <div class="stat-label">Câu hỏi</div>
                   </div>
                 </div>
-                <div class="stat-item">
-                  <div class="stat-icon">
-                    <i class="bi bi-star"></i>
-                  </div>
-                  <div class="stat-content">
-                    <div class="stat-number">{{ quizStats.totalPoints }}</div>
-                    <div class="stat-label">Tổng điểm</div>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-icon">
-                    <i class="bi bi-graph-up"></i>
-                  </div>
-                  <div class="stat-content">
-                    <div class="stat-number">{{ quizStats.avgPoints }}</div>
-                    <div class="stat-label">Điểm TB/câu</div>
-                  </div>
-                </div>
+                <!-- Bỏ các thống kê về điểm -->
                 <div class="stat-item">
                   <div class="stat-icon">
                     <i class="bi bi-clock"></i>
@@ -967,8 +1009,8 @@ watch(newQuestion, () => {
               <i class="bi bi-clock"></i>
               Thời gian (giây) cho tất cả câu hỏi
             </label>
-            <input type="number" class="form-control" v-model="globalTimeLimit" min="5" max="300" placeholder="30" />
-            <small class="form-text">Range: 5-300 giây</small>
+           <input type="number" class="form-control" v-model="globalTimeLimit" min="0" max="300" placeholder="30" />
+           <small class="form-text">0 (không giới hạn) hoặc 5–300 giây</small>
           </div>
           <div class="alert alert-info">
             <i class="bi bi-info-circle"></i>

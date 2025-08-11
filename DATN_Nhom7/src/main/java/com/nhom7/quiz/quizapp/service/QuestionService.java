@@ -98,7 +98,7 @@ public class QuestionService {
         System.out.println("TimeLimit mới: " + updatedQuestion.getTimeLimit());
 
         existing.setContent(updatedQuestion.getContent());
-        existing.setPoint(updatedQuestion.getPoint());
+        // Bỏ cập nhật điểm câu hỏi
         // ✅ THÊM CẬP NHẬT TIMELIMIT
         existing.setTimeLimit(updatedQuestion.getTimeLimit());
 

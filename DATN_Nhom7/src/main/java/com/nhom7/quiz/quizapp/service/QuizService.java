@@ -33,6 +33,7 @@ import com.nhom7.quiz.quizapp.model.dto.QuizDetailDTO;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo; // ✅ THÊM IMPORT
 import com.nhom7.quiz.quizapp.repository.ImageRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
+import com.nhom7.quiz.quizapp.repository.ResultRepo;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
 
 @Service
@@ -62,6 +63,9 @@ public class QuizService {
 
 	@Autowired
 	private ResultService resultService;
+
+    @Autowired
+    private ResultRepo resultRepo;
 
 	public Quiz findById(Long id) {
 		return quizRepo.findById(id).orElse(null);
@@ -189,12 +193,21 @@ public class QuizService {
 	// Lấy danh sách quiz theo userId có phân trang
 	public Page<Quiz> getQuizzesByUserPaginated(Long userId, int page, int size) {
 		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-		return quizRepo.findByUserIdAndDeletedFalse(userId, pageable);
+        Page<Quiz> pageRes = quizRepo.findByUserIdAndDeletedFalse(userId, pageable);
+        // Nạp playCount tạm thời dựa trên Result
+        for (Quiz q : pageRes.getContent()) {
+            try {
+                long plays = resultRepo.countByQuiz_Id(q.getId());
+                q.setPlayCount(plays);
+            } catch (Exception ignore) {}
+        }
+        return pageRes;
 	}
 
 	public Page<Quiz> getPublicQuizzes(Boolean isPublic, int page, int size) {
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-		return quizRepo.findByIsPublicAndDeletedFalse(isPublic, pageable);
+        Page<Quiz> pageRes = quizRepo.findByIsPublicAndDeletedFalse(isPublic, pageable);
+        return pageRes;
 	}
 
 	// ✅ THÊM METHOD LẤY QUIZ PUBLIC THEO CATEGORY
@@ -392,7 +405,7 @@ public class QuizService {
 		for (QuestionImportDto questionDto : quizData.getQuestions()) {
 			Question question = new Question();
 			question.setContent(questionDto.getContent());
-			question.setPoint(questionDto.getPoint());
+            // Bỏ dùng điểm câu hỏi: không set point từ dữ liệu import
 			question.setTimeLimit(questionDto.getTimeLimit()); // ✅ SỬ DỤNG TIMELIMIT TỪ EXCEL
 			question.setQuiz(savedQuiz); // ✅ SỬA: setQuiz thay vì setQuizId
 
@@ -472,15 +485,14 @@ public class QuizService {
 
 			// Thống kê câu hỏi
 			int totalQuestions = quiz.getQuestions().size();
-			int totalPoints = quiz.getQuestions().stream()
-					.mapToInt(q -> q.getPoint())
-					.sum();
+            // Bỏ thống kê tổng điểm câu hỏi
+            int totalPoints = 0;
 			int totalTime = quiz.getQuestions().stream()
 					.mapToInt(q -> q.getTimeLimit())
 					.sum();
 
 			detail.setTotalQuestions(totalQuestions);
-			detail.setTotalPoints(totalPoints);
+            detail.setTotalPoints(totalPoints); // giữ field cho tương thích UI, giá trị 0
 			detail.setTotalTime(totalTime);
 
 			// Thống kê từ kết quả/attempts nếu đã có dữ liệu
