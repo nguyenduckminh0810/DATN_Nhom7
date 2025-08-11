@@ -518,11 +518,6 @@ const canSubmit = computed(() =>
                             <i class="bi bi-activity"></i>
                             <span>Hoạt động</span>
                         </button>
-                        <button :class="['nav-tab', { active: activeTab === 'achievements' }]"
-                            @click="setActiveTab('achievements')">
-                            <i class="bi bi-award"></i>
-                            <span>Thành tựu</span>
-                        </button>
                         <button :class="['nav-tab', { active: activeTab === 'settings' }]"
                             @click="setActiveTab('settings')">
                             <i class="bi bi-gear"></i>
@@ -685,35 +680,16 @@ const canSubmit = computed(() =>
                     </div>
 
                     <!-- Activity Tab -->
+                    <!-- Activity Tab -->
                     <div v-if="activeTab === 'activity'" class="tab-panel activity-panel">
                         <div class="row">
                             <div class="col-lg-8">
-                                <div class="content-card">
-                                    <div class="card-header">
-                                        <h3 class="card-title">
-                                            <i class="bi bi-clock-history"></i>
-                                            Hoạt động gần đây
-                                        </h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="activity-timeline">
-                                            <div v-for="activity in recentActivities" :key="activity.id"
-                                                class="timeline-item">
-                                                <div class="timeline-icon">
-                                                    <i :class="activity.icon"></i>
-                                                </div>
-                                                <div class="timeline-content">
-                                                    <p class="timeline-message">{{ activity.message }}</p>
-                                                    <span class="timeline-time">{{ activity.time }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- ... (nội dung khác nếu có) -->
                             </div>
 
-                            <div class="col-lg-4">
-                                <div class="content-card">
+                            <!-- trước: <div class="col-lg-4"> -->
+                            <div class="col-lg-4 history-col">
+                                <div class="content-card history-card">
                                     <div class="card-header">
                                         <h3 class="card-title">
                                             <i class="bi bi-list-ol"></i>
@@ -738,65 +714,10 @@ const canSubmit = computed(() =>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
 
-                    <!-- Achievements Tab -->
-                    <div v-if="activeTab === 'achievements'" class="tab-panel achievements-panel">
-                        <div class="content-card">
-                            <div class="card-header">
-                                <h3 class="card-title">
-                                    <i class="bi bi-trophy"></i>
-                                    Thành tựu của bạn
-                                </h3>
-                                <div class="achievement-stats">
-                                    <span class="earned-count">{{ earnedAchievements.length }}</span>
-                                    /
-                                    <span class="total-count">{{ achievements.length }}</span> đã đạt được
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="achievement-section">
-                                    <h4 class="section-title">🏆 Đã đạt được</h4>
-                                    <div class="achievements-grid">
-                                        <div v-for="achievement in earnedAchievements" :key="achievement.id"
-                                            class="achievement-card earned">
-                                            <div class="achievement-icon">
-                                                <i :class="achievement.icon"></i>
-                                            </div>
-                                            <div class="achievement-info">
-                                                <h5 class="achievement-name">{{ achievement.name }}</h5>
-                                                <p class="achievement-desc">{{ achievement.description }}</p>
-                                                <span class="achievement-date">
-                                                    Đạt được ngày {{ new
-                                                        Date(achievement.earnedAt).toLocaleDateString('vi-VN') }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <div class="achievement-section">
-                                    <h4 class="section-title">🎯 Chưa đạt được</h4>
-                                    <div class="achievements-grid">
-                                        <div v-for="achievement in pendingAchievements" :key="achievement.id"
-                                            class="achievement-card pending">
-                                            <div class="achievement-icon">
-                                                <i :class="achievement.icon"></i>
-                                            </div>
-                                            <div class="achievement-info">
-                                                <h5 class="achievement-name">{{ achievement.name }}</h5>
-                                                <p class="achievement-desc">{{ achievement.description }}</p>
-                                                <span class="achievement-hint">Tiếp tục cố gắng để mở khóa!</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Settings Tab -->
                     <div v-if="activeTab === 'settings'" class="tab-panel settings-panel">
@@ -2232,5 +2153,54 @@ const canSubmit = computed(() =>
 
 .verify-hint.err {
     color: #ff4757;
+}
+
+/* === HISTORY: rộng hơn & giữ màn hình === */
+
+/* tăng bề ngang cột lịch sử (desktop) */
+.activity-panel .history-col {
+    /* ép chiều ngang lớn hơn col-lg-4 mặc định */
+    flex: 0 0 520px;
+    max-width: 520px;
+}
+
+/* card lịch sử dính (sticky) khi cuộn trong khu vực nội dung */
+.activity-panel .history-card {
+    position: sticky;
+    top: 96px;
+    /* chỉnh theo chiều cao header/navbar của bạn */
+    z-index: 5;
+}
+
+/* Nếu bạn muốn nó luôn cố định theo viewport (không chỉ sticky trong container),
+   bỏ sticky ở trên và dùng block dưới: */
+
+/* .activity-panel .history-card {
+    position: fixed;
+    right: calc((100vw - 1200px) / 2);
+    top: 96px;
+    width: 520px;
+    z-index: 10;
+} */
+
+
+/* làm item nhìn thoáng hơn khi rộng ra */
+.quiz-history .history-item {
+    padding: 1rem 1.25rem;
+}
+
+/* responsive: tablet trở xuống để full width và bỏ sticky/fixed */
+@media (max-width: 992px) {
+    .activity-panel .history-col {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+
+    .activity-panel .history-card {
+        position: static;
+        /* trở lại flow bình thường trên mobile/tablet */
+        width: 100%;
+        top: auto;
+    }
 }
 </style>

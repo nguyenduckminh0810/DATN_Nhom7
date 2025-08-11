@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.time.LocalDateTime;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -664,6 +665,67 @@ public class QuizController {
 		} catch (Exception e) {
 			System.err.println("❌ Error debugging user quizzes: " + e.getMessage());
 			response.put("error", e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
+
+	// ✅ THÊM ENDPOINT LẤY QUIZ PUBLIC THEO CATEGORY
+	@GetMapping("/public/category/{categoryId}")
+	public ResponseEntity<Map<String, Object>> getPublicQuizzesByCategory(
+			@PathVariable Long categoryId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "8") int size) {
+
+		Map<String, Object> response = new HashMap<>();
+
+		try {
+			System.out.println("🔍 Requesting public quizzes for category ID: " + categoryId);
+
+			// Kiểm tra category có tồn tại không
+			Optional<Category> categoryOpt = categoryRepo.findById(categoryId);
+			if (categoryOpt.isEmpty()) {
+				System.out.println("❌ Category not found for ID: " + categoryId);
+				response.put("success", false);
+				response.put("message", "Không tìm thấy danh mục này");
+				return ResponseEntity.notFound().build();
+			}
+
+			Category category = categoryOpt.get();
+			System.out.println("✅ Category found: " + category.getName());
+
+			// Lấy quiz public theo category
+			Page<Quiz> quizPage = quizService.getPublicQuizzesByCategory(categoryId, page, size);
+			List<Quiz> quizzes = quizPage.getContent();
+
+			// ✅ DEBUG: Kiểm tra quiz public theo category
+			System.out.println("🌍 Debug: Checking public quizzes for category " + category.getName());
+			for (Quiz quiz : quizzes) {
+				System.out.println("📝 Public Quiz ID: " + quiz.getId() +
+						", Title: " + quiz.getTitle() +
+						", IsPublic: " + quiz.isPublic() +
+						", Category: " + (quiz.getCategory() != null ? quiz.getCategory().getName() : "NULL") +
+						", Deleted: " + quiz.isDeleted() +
+						", Has Image: " + (quiz.getImage() != null));
+			}
+
+			response.put("success", true);
+			response.put("message", "Lấy danh sách quiz công khai theo danh mục thành công");
+			response.put("quizzes", quizzes);
+			response.put("category", Map.of(
+					"id", category.getId(),
+					"name", category.getName()));
+			response.put("currentPage", quizPage.getNumber());
+			response.put("totalPages", quizPage.getTotalPages());
+			response.put("totalItems", quizPage.getTotalElements());
+			response.put("pageSize", quizPage.getSize());
+
+			return ResponseEntity.ok(response);
+
+		} catch (Exception e) {
+			System.err.println("❌ Error getting public quizzes by category: " + e.getMessage());
+			e.printStackTrace();
+			response.put("success", false);
+			response.put("message", "Lỗi khi lấy danh sách quiz: " + e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
