@@ -39,6 +39,11 @@ public class ReginService {
             return new RegisterResult(RegisterStatus.FULL_NAME_REQUIRED, null);
         }
 
+        // Đảm bảo role mặc định là USER nếu không được chỉ định
+        if (user.getRole() == null || user.getRole().isEmpty()) {
+            user.setRole("USER");
+        }
+
         String encodedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encodedPassword);
         User savedUser = userRepo.save(user);

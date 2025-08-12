@@ -282,8 +282,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
-import axios from 'axios'
+import { ref, onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import api from '@/utils/axios'
 
@@ -423,12 +422,10 @@ function hideToast() {
   toast.value.show = false
 }
 
-
-
 async function fetchCategories() {
   isLoading.value = true
   try {
-    const res = await api.get('/admin/categories')
+    const res = await api.get('/categories')
     categories.value = res.data
   } catch (error) {
     console.error('Failed to load categories:', error)
@@ -446,7 +443,7 @@ async function addCategory() {
   isAdding.value = true
   try {
     const token = localStorage.getItem('token')
-    await api.post('/admin/categories', newCategory.value, {
+    await api.post('/categories', newCategory.value, {
       headers: { Authorization: `Bearer ${token}` }
     })
 
@@ -484,7 +481,7 @@ async function saveEdit(id) {
   isSaving.value = true
   try {
     const token = localStorage.getItem('token')
-    await api.put(`/admin/categories/${id}`, editCategory.value, {
+    await api.put(`/categories/${id}`, editCategory.value, {
       headers: { Authorization: `Bearer ${token}` }
     })
 
@@ -516,7 +513,7 @@ async function deleteCategory() {
   isDeleting.value = true
   try {
     const token = localStorage.getItem('token')
-    const response = await api.delete(`/admin/categories/${categoryToDelete.value.id}`, {
+    const response = await api.delete(`/categories/${categoryToDelete.value.id}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
 

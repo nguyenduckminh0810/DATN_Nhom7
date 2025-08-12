@@ -33,6 +33,7 @@ import JoinQuiz from '@/components/client/JoinQuiz.vue'
 import UserProfilePage from '@/components/client/UserProfilePage.vue'
 
 import Home from '@/components/client/Home.vue'
+import Contact from '@/components/client/Contact.vue'
 import ListUserQuiz from '@/components/client/ListUserQuiz.vue'
 import ListQuizPublic from '@/components/client/ListQuizPublic.vue'
 import ImportExcel from '@/components/client/ImportExcel.vue'
@@ -92,7 +93,7 @@ const routes = [
       {
         path: 'contact',
         name: 'Contact',
-        component: Home, // TODO: Create Contact component
+        component: Contact,
       },
     ],
   },
@@ -302,7 +303,7 @@ router.beforeEach(async (to, from, next) => {
       if (done) {
         return next({ name: 'QuizResult', params: { quizId, userId: userIdParam } })
       }
-    } catch { }
+    } catch {}
   }
   const token = localStorage.getItem('token')
   const adminUser = localStorage.getItem('admin_user')
@@ -340,7 +341,7 @@ router.beforeEach(async (to, from, next) => {
       // Thêm timeout để tránh chờ quá lâu
       const statusPromise = quizAttemptService.getAttemptStatus(to.params.attemptId)
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout')), 5000)
+        setTimeout(() => reject(new Error('Timeout')), 5000),
       )
 
       const { status } = await Promise.race([statusPromise, timeoutPromise])
@@ -356,7 +357,11 @@ router.beforeEach(async (to, from, next) => {
       console.error('❌ Error checking attempt status:', e)
 
       // Nếu có lỗi khi kiểm tra status, kiểm tra xem có phải lỗi network không
-      if (e.code === 'NETWORK_ERROR' || e.message?.includes('Network Error') || e.message?.includes('Timeout')) {
+      if (
+        e.code === 'NETWORK_ERROR' ||
+        e.message?.includes('Network Error') ||
+        e.message?.includes('Timeout')
+      ) {
         console.log('⚠️ Network error or timeout, allowing access to avoid infinite redirect')
         return next()
       }

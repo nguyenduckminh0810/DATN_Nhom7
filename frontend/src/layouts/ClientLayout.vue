@@ -1,7 +1,7 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import Navbar from '@/components/client/Navbar.vue'
-import Footer from '@/components/client/Footer.vue'
+import ClientFooter from '@/components/client/ClientFooter.vue'
 import { useLogin } from '@/components/client/useLogin'
 useLogin()
 </script>
@@ -12,7 +12,7 @@ useLogin()
     <div class="content-container">
       <RouterView />
     </div>
-    <Footer />
+    <ClientFooter />
   </div>
 </template>
 
@@ -25,8 +25,8 @@ useLogin()
 }
 
 .content-container {
-    padding-top: 100px;
-    flex: 1;
+  padding-top: 100px;
+  flex: 1;
 }
 
 @media (max-width: 991px) {

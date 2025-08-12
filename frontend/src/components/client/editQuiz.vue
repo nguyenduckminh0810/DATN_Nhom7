@@ -32,8 +32,12 @@ const globalTimeLimit = ref(30)
 
 // ===== Helpers =====
 const auth = { headers: { Authorization: `Bearer ${token}` } }
-const authJson = { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
-const authMultipart = { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+const authJson = {
+  headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+}
+const authMultipart = {
+  headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+}
 
 // Bỏ cơ chế tổng điểm câu hỏi
 const totalPoints = computed(() => 0)
@@ -44,7 +48,6 @@ const filteredQuestions = computed(() => {
   if (!q) return questions.value
   return questions.value.filter((item) => item.content?.toLowerCase().includes(q))
 })
-
 
 const totalTime = computed(() => questions.value.reduce((s, q) => s + (q.timeLimit || 30), 0))
 
@@ -61,7 +64,6 @@ const quizStats = computed(() => ({
 const validateQuestion = (question) => {
   const errors = {}
 
-
   if (!question.content?.trim()) {
     errors.content = 'Nội dung câu hỏi không được để trống'
   }
@@ -76,7 +78,6 @@ const validateQuestion = (question) => {
   ) {
     errors.timeLimit = 'Thời gian phải là 0 (không giới hạn) hoặc từ 5-300 giây'
   }
-
 
   const answers = question.answers || []
   const correctCount = answers.filter((a) => a.correct).length
@@ -103,7 +104,6 @@ const validateEditQuestion = (question) => {
     errors.timeLimit = 'Thời gian phải là 0 (không giới hạn) hoặc từ 5-300 giây'
   }
 
-
   return errors
 }
 
@@ -112,7 +112,8 @@ function handleImageFileSelect(e) {
   const file = e.target.files?.[0]
   if (!file) return
   if (!file.type.startsWith('image/')) return notify('Vui lòng chọn file hình ảnh!', 'error')
-  if (file.size > 5 * 1024 * 1024) return notify('Kích thước file không được vượt quá 5MB!', 'error')
+  if (file.size > 5 * 1024 * 1024)
+    return notify('Kích thước file không được vượt quá 5MB!', 'error')
 
   selectedImageFile.value = file
   const reader = new FileReader()
@@ -160,7 +161,7 @@ async function fetchAnswersForQuestion(questionId) {
   try {
     const { data } = await api.get(`/answer/${questionId}`, auth)
     answersMap.value[questionId] = data
-  } catch { }
+  } catch {}
 }
 
 async function fetchQuestionsByQuizId() {
@@ -243,7 +244,11 @@ async function createQuestion() {
       correct: a.correct,
       question: { id: createdQuestion.id },
     }))
-    const { data: createdAnswers } = await api.post(`/answer/create-multiple`, answersPayload, authJson)
+    const { data: createdAnswers } = await api.post(
+      `/answer/create-multiple`,
+      answersPayload,
+      authJson,
+    )
 
     questions.value.push(createdQuestion)
     answersMap.value[createdQuestion.id] = createdAnswers
@@ -252,7 +257,9 @@ async function createQuestion() {
       content: '',
       point: 1,
       timeLimit: 30,
-      answers: Array(4).fill().map((_, i) => ({ content: '', correct: i === 0 })),
+      answers: Array(4)
+        .fill()
+        .map((_, i) => ({ content: '', correct: i === 0 })),
     }
     validationErrors.value = {}
     notify('Thêm câu hỏi thành công!', 'success')
@@ -302,7 +309,10 @@ async function updateAnswers(questionId) {
   try {
     const answers = answersMap.value[questionId] || []
     const payload = answers.map((a) => ({
-      id: a.id, content: a.content, correct: a.correct, question: { id: questionId },
+      id: a.id,
+      content: a.content,
+      correct: a.correct,
+      question: { id: questionId },
     }))
     await api.put(`/answer/update`, payload, authJson)
     notify('Cập nhật câu trả lời thành công!', 'success')
@@ -330,10 +340,13 @@ async function deleteQuestion(questionId) {
 }
 
 async function deleteSelectedQuestions() {
-  if (!confirm(`Bạn có chắc chắn muốn xoá ${selectedQuestions.value.length} câu hỏi đã chọn?`)) return
+  if (!confirm(`Bạn có chắc chắn muốn xoá ${selectedQuestions.value.length} câu hỏi đã chọn?`))
+    return
   isSaving.value = true
   try {
-    await Promise.all(selectedQuestions.value.map((id) => api.delete(`/question/delete/${id}`, auth)))
+    await Promise.all(
+      selectedQuestions.value.map((id) => api.delete(`/question/delete/${id}`, auth)),
+    )
     questions.value = questions.value.filter((q) => !selectedQuestions.value.includes(q.id))
     selectedQuestions.value.forEach((id) => delete answersMap.value[id])
     selectedQuestions.value = []
@@ -354,8 +367,14 @@ function setCorrectAnswer(questionId, answerId) {
   if (!list) return
   list.forEach((a) => (a.correct = a.id === answerId))
 }
-function startEditQuestion(q) { editingQuestion.value = { ...q }; validationErrors.value = {} }
-function cancelEdit() { editingQuestion.value = null; validationErrors.value = {} }
+function startEditQuestion(q) {
+  editingQuestion.value = { ...q }
+  validationErrors.value = {}
+}
+function cancelEdit() {
+  editingQuestion.value = null
+  validationErrors.value = {}
+}
 function toggleQuestionSelection(id) {
   const i = selectedQuestions.value.indexOf(id)
   if (i > -1) selectedQuestions.value.splice(i, 1)
@@ -363,7 +382,9 @@ function toggleQuestionSelection(id) {
 }
 function selectAllQuestions() {
   selectedQuestions.value =
-    selectedQuestions.value.length === questions.value.length ? [] : questions.value.map((q) => q.id)
+    selectedQuestions.value.length === questions.value.length
+      ? []
+      : questions.value.map((q) => q.id)
 }
 function duplicateQuestion(question) {
   const duplicated = {
@@ -376,20 +397,21 @@ function duplicateQuestion(question) {
         content: a.content,
         correct: a.correct,
       })) || [],
-
   }
   newQuestion.value = duplicated
   activeTab.value = 'add-question'
 }
 
-function goBack() { router.push({ name: 'Dashboard', params: { userId } }) }
+function goBack() {
+  router.push({ name: 'Dashboard', params: { userId } })
+}
 
 async function previewQuiz() {
   try {
     const { quizAttemptService } = await import('@/services/quizAttemptService')
     const resp = await quizAttemptService.startAttempt(quizId)
     router.push({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
-  } catch { }
+  } catch {}
 }
 
 function switchTab(tabName) {
@@ -401,25 +423,39 @@ function switchTab(tabName) {
 async function saveAllChanges() {
   if (!editingQuestion.value) return
   const errors = validateEditQuestion(editingQuestion.value)
-  if (Object.keys(errors).length) { validationErrors.value = errors; return }
+  if (Object.keys(errors).length) {
+    validationErrors.value = errors
+    return
+  }
 
   isSaving.value = true
   try {
     const q = editingQuestion.value
-    await api.put(`/question/update/${q.id}`, {
-      id: q.id,
-      content: q.content,
-      point: q.point,
-      timeLimit: q.timeLimit,
-      quiz: { id: quizId },
-      image: null,
-    }, authJson)
+    await api.put(
+      `/question/update/${q.id}`,
+      {
+        id: q.id,
+        content: q.content,
+        point: q.point,
+        timeLimit: q.timeLimit,
+        quiz: { id: quizId },
+        image: null,
+      },
+      authJson,
+    )
 
     const answers = answersMap.value[q.id]
     if (answers?.length) {
-      await api.put(`/answer/update`, answers.map((a) => ({
-        id: a.id, content: a.content, correct: a.correct, question: { id: q.id },
-      })), authJson)
+      await api.put(
+        `/answer/update`,
+        answers.map((a) => ({
+          id: a.id,
+          content: a.content,
+          correct: a.correct,
+          question: { id: q.id },
+        })),
+        authJson,
+      )
     }
 
     const idx = questions.value.findIndex((x) => x.id === q.id)
@@ -430,14 +466,18 @@ async function saveAllChanges() {
     validationErrors.value = {}
   } catch {
     notify('Lưu thay đổi thất bại!', 'error')
-  } finally { isSaving.value = false }
+  } finally {
+    isSaving.value = false
+  }
 }
 
 // Set time cho tất cả
-function openSetTimeModal() { showSetTimeModal.value = true; globalTimeLimit.value = 30 }
+function openSetTimeModal() {
+  showSetTimeModal.value = true
+  globalTimeLimit.value = 30
+}
 
 async function setTimeForAllQuestions() {
-
   console.log('Setting time for all questions:', globalTimeLimit.value)
   if (
     globalTimeLimit.value === undefined ||
@@ -465,16 +505,12 @@ async function setTimeForAllQuestions() {
 
       console.log(`Cập nhật câu hỏi ${index + 1}:`, payload)
 
-      const response = await api.put(
-        `/question/update/${question.id}`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+      const response = await api.put(`/question/update/${question.id}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-      )
+      })
 
       console.log(`Câu hỏi ${index + 1} cập nhật thành công:`, response.data)
 
@@ -493,14 +529,15 @@ async function setTimeForAllQuestions() {
     showNotification(
       `Đã cập nhật thời gian ${globalTimeLimit.value}s cho ${questions.value.length} câu hỏi!`,
       'success',
-
     )
     await fetchQuestionsByQuizId()
     notify(`Đã cập nhật thời gian ${t}s cho ${questions.value.length} câu hỏi!`, 'success')
     showSetTimeModal.value = false
   } catch {
     notify('Cập nhật thời gian thất bại!', 'error')
-  } finally { isSaving.value = false }
+  } finally {
+    isSaving.value = false
+  }
 }
 
 // ===== Lifecycle & watches =====
@@ -513,13 +550,18 @@ const newQuestion = ref({
   content: '',
   point: 1,
   timeLimit: 30,
-  answers: Array(4).fill().map((_, i) => ({ content: '', correct: i === 0 })),
+  answers: Array(4)
+    .fill()
+    .map((_, i) => ({ content: '', correct: i === 0 })),
 })
-watch(newQuestion, () => {
-  if (Object.keys(validationErrors.value).length) validationErrors.value = {}
-}, { deep: true })
+watch(
+  newQuestion,
+  () => {
+    if (Object.keys(validationErrors.value).length) validationErrors.value = {}
+  },
+  { deep: true },
+)
 </script>
-
 
 <template>
   <div class="edit-quiz-container">
@@ -539,20 +581,28 @@ watch(newQuestion, () => {
                   {{ quizStats.totalQuestions }} câu hỏi
                 </span>
                 <!-- Bỏ tổng điểm trong header -->
-                <span class="meta-item" :class="{
-                  'text-success': quizStats.hasAnswers,
-                  'text-warning': !quizStats.hasAnswers,
-                }">
-                  <i :class="quizStats.hasAnswers ? 'bi bi-check-circle' : 'bi bi-exclamation-triangle'
-                    "></i>
+                <span
+                  class="meta-item"
+                  :class="{
+                    'text-success': quizStats.hasAnswers,
+                    'text-warning': !quizStats.hasAnswers,
+                  }"
+                >
+                  <i
+                    :class="
+                      quizStats.hasAnswers ? 'bi bi-check-circle' : 'bi bi-exclamation-triangle'
+                    "
+                  ></i>
                   {{ quizStats.hasAnswers ? 'Hoàn tất' : 'Chưa hoàn tất' }}
                 </span>
               </div>
             </div>
           </div>
           <div class="header-actions">
-            <button @click="previewQuiz"
-              class="btn btn-primary d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm custom-preview-btn">
+            <button
+              @click="previewQuiz"
+              class="btn btn-primary d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm custom-preview-btn"
+            >
               <i class="bi bi-eye-fill fs-5"></i>
               <span class="fw-semibold">Xem trước</span>
             </button>
@@ -568,16 +618,27 @@ watch(newQuestion, () => {
           <!-- Navigation Tabs -->
           <div class="nav-tabs-container">
             <nav class="nav nav-tabs">
-              <button class="nav-link" :class="{ active: activeTab === 'info' }" @click="switchTab('info')">
+              <button
+                class="nav-link"
+                :class="{ active: activeTab === 'info' }"
+                @click="switchTab('info')"
+              >
                 <i class="bi bi-info-circle"></i>
                 <span>Thông tin Quiz</span>
               </button>
-              <button class="nav-link" :class="{ active: activeTab === 'questions' }" @click="switchTab('questions')">
+              <button
+                class="nav-link"
+                :class="{ active: activeTab === 'questions' }"
+                @click="switchTab('questions')"
+              >
                 <i class="bi bi-list-ul"></i>
                 <span>Câu hỏi ({{ questions.length }})</span>
               </button>
-              <button class="nav-link" :class="{ active: activeTab === 'add-question' }"
-                @click="switchTab('add-question')">
+              <button
+                class="nav-link"
+                :class="{ active: activeTab === 'add-question' }"
+                @click="switchTab('add-question')"
+              >
                 <i class="bi bi-plus-circle"></i>
                 <span>Thêm câu hỏi</span>
               </button>
@@ -598,9 +659,16 @@ watch(newQuestion, () => {
                 <div class="card-body">
                   <form @submit.prevent="updateQuizInfo" class="quiz-form">
                     <div class="form-group">
-                      <label class="form-label">Tiêu đề Quiz *</label>
-                      <input type="text" class="form-control" :class="{ 'is-invalid': validationErrors.title }"
-                        v-model="quizInfo.title" placeholder="Nhập tiêu đề quiz..." />
+                      <label class="form-label"
+                        >Tiêu đề Quiz <span class="required-asterisk">*</span></label
+                      >
+                      <input
+                        type="text"
+                        class="form-control"
+                        :class="{ 'is-invalid': validationErrors.title }"
+                        v-model="quizInfo.title"
+                        placeholder="Nhập tiêu đề quiz..."
+                      />
                       <div v-if="validationErrors.title" class="invalid-feedback">
                         {{ validationErrors.title }}
                       </div>
@@ -608,8 +676,12 @@ watch(newQuestion, () => {
 
                     <div class="form-group">
                       <label class="form-label">Mô tả</label>
-                      <textarea class="form-control" v-model="quizInfo.description" rows="3"
-                        placeholder="Mô tả ngắn về quiz này..."></textarea>
+                      <textarea
+                        class="form-control"
+                        v-model="quizInfo.description"
+                        rows="3"
+                        placeholder="Mô tả ngắn về quiz này..."
+                      ></textarea>
                     </div>
 
                     <div class="row">
@@ -632,8 +704,13 @@ watch(newQuestion, () => {
                           <label class="form-label">Hình ảnh Quiz</label>
 
                           <div class="file-upload">
-                            <input type="file" id="imageFileInput" class="form-control" accept="image/*"
-                              @change="handleImageFileSelect" />
+                            <input
+                              type="file"
+                              id="imageFileInput"
+                              class="form-control"
+                              accept="image/*"
+                              @change="handleImageFileSelect"
+                            />
                             <small class="form-text">
                               Chọn file hình ảnh (tối đa 5MB) • Hỗ trợ: JPG, PNG, WEBP...
                             </small>
@@ -642,20 +719,28 @@ watch(newQuestion, () => {
                             <div v-if="imagePreview" class="image-preview-container">
                               <div class="image-preview">
                                 <img :src="imagePreview" alt="Quiz image preview" />
-                                <button type="button" class="remove-image-btn" @click="clearImage"
-                                  :disabled="isUploadingImage" title="Xoá ảnh">
+                                <button
+                                  type="button"
+                                  class="remove-image-btn"
+                                  @click="clearImage"
+                                  :disabled="isUploadingImage"
+                                  title="Xoá ảnh"
+                                >
                                   <i class="bi bi-x-lg"></i>
                                 </button>
                               </div>
                             </div>
                           </div>
                         </div>
-
                       </div>
                     </div>
 
                     <div class="form-actions">
-                      <button type="submit" class="btn btn-primary" :disabled="isSaving || isUploadingImage">
+                      <button
+                        type="submit"
+                        class="btn btn-primary"
+                        :disabled="isSaving || isUploadingImage"
+                      >
                         <i class="bi bi-check-lg" v-if="!isSaving && !isUploadingImage"></i>
                         <i class="bi bi-arrow-clockwise spin" v-else></i>
                         <span>
@@ -719,43 +804,69 @@ watch(newQuestion, () => {
                     <!-- Bulk Select Header -->
                     <div class="bulk-select-header" v-if="questions.length > 1">
                       <label class="checkbox-container">
-                        <input type="checkbox" :checked="selectedQuestions.length === questions.length"
-                          @change="selectAllQuestions" />
+                        <input
+                          type="checkbox"
+                          :checked="selectedQuestions.length === questions.length"
+                          @change="selectAllQuestions"
+                        />
                         <span class="checkmark"></span>
                         <span class="label">Chọn tất cả</span>
                       </label>
                     </div>
 
                     <!-- Question Items -->
-                    <div v-for="(question, index) in filteredQuestions" :key="question.id" class="question-item"
-                      :class="{ editing: editingQuestion?.id === question.id }">
+                    <div
+                      v-for="(question, index) in filteredQuestions"
+                      :key="question.id"
+                      class="question-item"
+                      :class="{ editing: editingQuestion?.id === question.id }"
+                    >
                       <div class="question-header">
                         <div class="question-meta">
                           <label class="checkbox-container">
-                            <input type="checkbox" :checked="selectedQuestions.includes(question.id)"
-                              @change="toggleQuestionSelection(question.id)" />
+                            <input
+                              type="checkbox"
+                              :checked="selectedQuestions.includes(question.id)"
+                              @change="toggleQuestionSelection(question.id)"
+                            />
                             <span class="checkmark"></span>
                           </label>
                           <span class="question-number">Câu {{ index + 1 }}</span>
                           <!-- Bỏ hiển thị điểm tại danh sách câu hỏi -->
                           <span class="question-time">
                             <i class="bi bi-clock"></i>
-                            {{ question.timeLimit === 0 ? '∞' : ((question.timeLimit ?? 30) + 's') }}
+                            {{ question.timeLimit === 0 ? '∞' : (question.timeLimit ?? 30) + 's' }}
                           </span>
                         </div>
                         <div class="question-actions">
-                          <button @click="duplicateQuestion(question)" class="action-btn" title="Nhân bản">
+                          <button
+                            @click="duplicateQuestion(question)"
+                            class="action-btn"
+                            title="Nhân bản"
+                          >
                             <i class="bi bi-copy"></i>
                           </button>
-                          <button @click="startEditQuestion(question)" class="action-btn" title="Chỉnh sửa"
-                            v-if="editingQuestion?.id !== question.id">
+                          <button
+                            @click="startEditQuestion(question)"
+                            class="action-btn"
+                            title="Chỉnh sửa"
+                            v-if="editingQuestion?.id !== question.id"
+                          >
                             <i class="bi bi-pencil"></i>
                           </button>
-                          <button @click="cancelEdit" class="action-btn" title="Huỷ"
-                            v-if="editingQuestion?.id === question.id">
+                          <button
+                            @click="cancelEdit"
+                            class="action-btn"
+                            title="Huỷ"
+                            v-if="editingQuestion?.id === question.id"
+                          >
                             <i class="bi bi-x-lg"></i>
                           </button>
-                          <button @click="deleteQuestion(question.id)" class="action-btn danger" title="Xoá">
+                          <button
+                            @click="deleteQuestion(question.id)"
+                            class="action-btn danger"
+                            title="Xoá"
+                          >
                             <i class="bi bi-trash"></i>
                           </button>
                         </div>
@@ -765,8 +876,12 @@ watch(newQuestion, () => {
                       <div v-if="editingQuestion?.id !== question.id" class="question-content">
                         <div class="question-text">{{ question.content }}</div>
                         <div class="answers-list" v-if="answersMap[question.id]">
-                          <div v-for="answer in answersMap[question.id]" :key="answer.id" class="answer-item"
-                            :class="{ correct: answer.correct }">
+                          <div
+                            v-for="answer in answersMap[question.id]"
+                            :key="answer.id"
+                            class="answer-item"
+                            :class="{ correct: answer.correct }"
+                          >
                             <div class="answer-indicator">
                               <i v-if="answer.correct" class="bi bi-check-circle-fill"></i>
                               <i v-else class="bi bi-circle"></i>
@@ -781,8 +896,12 @@ watch(newQuestion, () => {
                         <form @submit.prevent="saveAllChanges">
                           <div class="form-group">
                             <label class="form-label">Nội dung câu hỏi</label>
-                            <textarea class="form-control" :class="{ 'is-invalid': validationErrors.content }"
-                              v-model="editingQuestion.content" rows="3"></textarea>
+                            <textarea
+                              class="form-control"
+                              :class="{ 'is-invalid': validationErrors.content }"
+                              v-model="editingQuestion.content"
+                              rows="3"
+                            ></textarea>
                             <div v-if="validationErrors.content" class="invalid-feedback">
                               {{ validationErrors.content }}
                             </div>
@@ -790,12 +909,20 @@ watch(newQuestion, () => {
 
                           <div class="form-group">
                             <label class="form-label">Câu trả lời</label>
-                            <div v-for="(answer, i) in answersMap[question.id]" :key="answer.id"
-                              class="answer-input-group">
+                            <div
+                              v-for="(answer, i) in answersMap[question.id]"
+                              :key="answer.id"
+                              class="answer-input-group"
+                            >
                               <div class="input-group">
                                 <div class="input-group-text">
-                                  <input class="form-check-input" type="radio" :name="'correct-' + question.id"
-                                    :checked="answer.correct" @change="setCorrectAnswer(question.id, answer.id)" />
+                                  <input
+                                    class="form-check-input"
+                                    type="radio"
+                                    :name="'correct-' + question.id"
+                                    :checked="answer.correct"
+                                    @change="setCorrectAnswer(question.id, answer.id)"
+                                  />
                                 </div>
                                 <input type="text" class="form-control" v-model="answer.content" />
                               </div>
@@ -812,9 +939,15 @@ watch(newQuestion, () => {
                               <i class="bi bi-clock"></i>
                               Thời gian (giây)
                             </label>
-                            <input type="number" class="form-control"
-                              :class="{ 'is-invalid': validationErrors.timeLimit }" v-model="editingQuestion.timeLimit"
-                              min="0" max="300" placeholder="30" />
+                            <input
+                              type="number"
+                              class="form-control"
+                              :class="{ 'is-invalid': validationErrors.timeLimit }"
+                              v-model="editingQuestion.timeLimit"
+                              min="0"
+                              max="300"
+                              placeholder="30"
+                            />
                             <div v-if="validationErrors.timeLimit" class="invalid-feedback">
                               {{ validationErrors.timeLimit }}
                             </div>
@@ -827,7 +960,11 @@ watch(newQuestion, () => {
                               <i class="bi bi-arrow-clockwise spin" v-else></i>
                               <span>{{ isSaving ? 'Đang lưu...' : 'Lưu tất cả thay đổi' }}</span>
                             </button>
-                            <button type="button" @click="cancelEdit" class="btn btn-outline-secondary">
+                            <button
+                              type="button"
+                              @click="cancelEdit"
+                              class="btn btn-outline-secondary"
+                            >
                               <i class="bi bi-x-lg"></i>
                               Huỷ
                             </button>
@@ -852,31 +989,55 @@ watch(newQuestion, () => {
                 <div class="card-body">
                   <form @submit.prevent="createQuestion" class="question-form">
                     <div class="form-group">
-                      <label class="form-label">Nội dung câu hỏi *</label>
-                      <textarea class="form-control" :class="{ 'is-invalid': validationErrors.content }"
-                        v-model="newQuestion.content" rows="4" placeholder="Nhập nội dung câu hỏi..."></textarea>
+                      <label class="form-label"
+                        >Nội dung câu hỏi <span class="required-asterisk">*</span></label
+                      >
+                      <textarea
+                        class="form-control"
+                        :class="{ 'is-invalid': validationErrors.content }"
+                        v-model="newQuestion.content"
+                        rows="4"
+                        placeholder="Nhập nội dung câu hỏi..."
+                      ></textarea>
                       <div v-if="validationErrors.content" class="invalid-feedback">
                         {{ validationErrors.content }}
                       </div>
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label">Câu trả lời *</label>
+                      <label class="form-label"
+                        >Câu trả lời <span class="required-asterisk">*</span></label
+                      >
                       <div class="answers-input">
-                        <div v-for="(answer, i) in newQuestion.answers" :key="i" class="answer-input-group">
+                        <div
+                          v-for="(answer, i) in newQuestion.answers"
+                          :key="i"
+                          class="answer-input-group"
+                        >
                           <div class="input-group">
                             <div class="input-group-text">
-                              <input class="form-check-input" type="radio" name="new-question-correct"
-                                :checked="answer.correct" @change="setNewCorrectAnswer(i)" />
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="new-question-correct"
+                                :checked="answer.correct"
+                                @change="setNewCorrectAnswer(i)"
+                              />
                             </div>
-                            <input type="text" class="form-control" v-model="answer.content"
-                              :placeholder="'Câu trả lời ' + (i + 1)" />
+                            <input
+                              type="text"
+                              class="form-control"
+                              v-model="answer.content"
+                              :placeholder="'Câu trả lời ' + (i + 1)"
+                            />
                           </div>
                         </div>
                         <div v-if="validationErrors.answers" class="invalid-feedback d-block">
                           {{ validationErrors.answers }}
                         </div>
-                        <small class="form-text">Chọn một câu trả lời đúng bằng cách click vào radio button</small>
+                        <small class="form-text"
+                          >Chọn một câu trả lời đúng bằng cách click vào radio button</small
+                        >
                       </div>
                     </div>
 
@@ -885,10 +1046,17 @@ watch(newQuestion, () => {
                     <div class="form-group">
                       <label class="form-label">
                         <i class="bi bi-clock"></i>
-                        Thời gian (giây) *
+                        Thời gian (giây) <span class="required-asterisk">*</span>
                       </label>
-                      <input type="number" class="form-control" :class="{ 'is-invalid': validationErrors.timeLimit }"
-                        v-model="newQuestion.timeLimit" min="0" max="300" placeholder="30" />
+                      <input
+                        type="number"
+                        class="form-control"
+                        :class="{ 'is-invalid': validationErrors.timeLimit }"
+                        v-model="newQuestion.timeLimit"
+                        min="0"
+                        max="300"
+                        placeholder="30"
+                      />
                       <div v-if="validationErrors.timeLimit" class="invalid-feedback">
                         {{ validationErrors.timeLimit }}
                       </div>
@@ -901,8 +1069,12 @@ watch(newQuestion, () => {
                         <i class="bi bi-arrow-clockwise spin" v-else></i>
                         <span>{{ isSaving ? 'Đang thêm...' : 'Thêm câu hỏi' }}</span>
                       </button>
-                      <button type="button" @click="switchTab('questions')" class="btn btn-outline-secondary"
-                        v-if="questions.length > 0">
+                      <button
+                        type="button"
+                        @click="switchTab('questions')"
+                        class="btn btn-outline-secondary"
+                        v-if="questions.length > 0"
+                      >
                         <i class="bi bi-list-ul"></i>
                         Xem danh sách
                       </button>
@@ -1009,7 +1181,14 @@ watch(newQuestion, () => {
               <i class="bi bi-clock"></i>
               Thời gian (giây) cho tất cả câu hỏi
             </label>
-            <input type="number" class="form-control" v-model="globalTimeLimit" min="0" max="300" placeholder="30" />
+            <input
+              type="number"
+              class="form-control"
+              v-model="globalTimeLimit"
+              min="0"
+              max="300"
+              placeholder="30"
+            />
             <small class="form-text">0 (không giới hạn) hoặc 5–300 giây</small>
           </div>
           <div class="alert alert-info">
@@ -1390,6 +1569,11 @@ watch(newQuestion, () => {
   margin-top: 5px;
 }
 
+/* Hiển thị dấu * màu đỏ cho các trường bắt buộc */
+.required-asterisk {
+  color: #dc3545;
+}
+
 .form-actions {
   display: flex;
   gap: 10px;
@@ -1507,12 +1691,12 @@ watch(newQuestion, () => {
   transition: all 0.3s ease;
 }
 
-.checkbox-container input:checked+.checkmark {
+.checkbox-container input:checked + .checkmark {
   background: #667eea;
   border-color: #667eea;
 }
 
-.checkbox-container input:checked+.checkmark::after {
+.checkbox-container input:checked + .checkmark::after {
   content: '✓';
   position: absolute;
   top: -2px;
@@ -1759,6 +1943,47 @@ watch(newQuestion, () => {
 
 .input-group .form-control:focus {
   border-left: none;
+}
+
+/* Căn cùng dòng radio và input câu trả lời (áp dụng cho cả chế độ thêm và sửa).
+   Radio nằm ngoài khung; chỉ ô nhập có viền bo tròn. */
+.answer-input-group .input-group {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  column-gap: 12px;
+}
+
+/* Loại bỏ nền và viền khối bọc radio để không đẩy input xuống dòng */
+.answer-input-group .input-group-text {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* Tô màu xanh cho radio và chuẩn kích thước */
+.answer-input-group .form-check-input {
+  width: 18px;
+  height: 18px;
+  accent-color: #2ed573; /* xanh */
+}
+
+/* Viền bo tròn cho chính input đáp án (radio ở ngoài) */
+.answer-input-group .input-group .form-control {
+  border: 2px solid #e1e5e9 !important;
+  border-radius: 8px !important;
+  background: #fff;
+  padding: 10px 12px;
+}
+
+.answer-input-group .input-group .form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Đảm bảo không bị wrap khi có layout cũ dùng flex */
+.answer-input-group .input-group {
+  flex-wrap: nowrap;
 }
 
 /* Sidebar */
