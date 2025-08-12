@@ -17,6 +17,11 @@
   --warning-color: #ed8936;
   --danger-color: #f56565;
   --info-color: #4299e1;
+  /* App background (light) */
+  --app-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Card header theme */
+  --card-header-bg: rgba(255, 255, 255, 0.15);
+  --card-header-text: #2d3748;
 }
 
 /* Dark Theme Colors */
@@ -37,12 +42,17 @@
   --warning-color: #f6ad55;
   --danger-color: #fc8181;
   --info-color: #63b3ed;
+  /* App background (dark) */
+  --app-background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  /* Card header theme */
+  --card-header-bg: rgba(0, 0, 0, 0.25);
+  --card-header-text: #f7fafc;
 }
 
 body, html {
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--app-background);
     min-height: 100vh;
     /* ✅ VIETNAMESE-OPTIMIZED FONT STACK */
     font-family: 'Inter', 'Noto Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
@@ -55,9 +65,25 @@ body, html {
   
   #app {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--app-background);
     transition: background-color 0.3s ease;
   }
+
+/* Global card header theming across app */
+.card-header,
+.modal-header,
+.card-header-custom {
+  background: var(--card-header-bg) !important;
+  color: var(--card-header-text) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Remove decorative overlays that force gradients on headers */
+.card-header::before,
+.card-header-custom::before,
+.modal-header::before {
+  background: none !important;
+}
   
   /* Remove white gaps */
   * {

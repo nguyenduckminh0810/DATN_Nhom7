@@ -41,6 +41,31 @@ public class LeaderboardService {
         }
     }
 
+    // ✅ Xếp hạng theo quiz cụ thể với pagination thực sự
+    public org.springframework.data.domain.Page<LeaderboardEntry> getQuizLeaderboardPaginated(Long quizId, int page, int size) {
+        try {
+            System.out.println("🔍 Getting paginated quiz leaderboard for quizId: " + quizId + ", page: " + page + ", size: " + size);
+
+            // Sử dụng Pageable để phân trang
+            org.springframework.data.domain.Pageable pageable = PageRequest.of(page, size);
+            org.springframework.data.domain.Page<Result> resultsPage = resultRepo.findByQuizIdOrderByScoreDescTimeTakenAsc(quizId, pageable);
+
+            System.out.println("✅ Found " + resultsPage.getContent().size() + " results for page " + page + 
+                             ", total: " + resultsPage.getTotalElements() + 
+                             ", pages: " + resultsPage.getTotalPages());
+
+            // Convert Page<Result> thành Page<LeaderboardEntry>
+            org.springframework.data.domain.Page<LeaderboardEntry> leaderboardPage = resultsPage.map(this::convertToLeaderboardEntry);
+            
+            return leaderboardPage;
+        } catch (Exception e) {
+            System.err.println("❌ Error in getQuizLeaderboardPaginated: " + e.getMessage());
+            e.printStackTrace();
+            // Trả về empty page
+            return org.springframework.data.domain.Page.empty(PageRequest.of(page, size));
+        }
+    }
+
     // Xếp hạng tổng điểm theo tuần/tháng/all-time (hỗ trợ offset)
     public List<LeaderboardEntry> getGlobalLeaderboard(String period, int limit, int offset) {
         try {

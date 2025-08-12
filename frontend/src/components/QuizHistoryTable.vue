@@ -92,6 +92,8 @@
 import { ref, onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { quizAttemptService } from '@/services/quizAttemptService'
+import { adminService } from '@/services/adminService'
+import { quizService } from '@/services/quizService'
 
 // Props
 const props = defineProps({
@@ -122,16 +124,9 @@ const filters = ref({
   quizId: ''
 })
 
-// Mock data cho demo (trong thực tế sẽ lấy từ API)
-const users = ref([
-  { id: 1, username: 'nguyenvana' },
-  { id: 2, username: 'tranthib' }
-])
-
-const quizzes = ref([
-  { id: 1, title: 'Quiz Toán cơ bản' },
-  { id: 2, title: 'Quiz Lịch sử Việt Nam' }
-])
+// Dynamic lists fetched from backend
+const users = ref([])
+const quizzes = ref([])
 
 // Computed
 const isAdmin = computed(() => userStore.isAdmin())
@@ -152,6 +147,27 @@ const loadData = async () => {
     attempts.value = response.content
     totalPages.value = response.totalPages
     totalElements.value = response.totalElements
+
+    // Populate filters data for admin
+    if (isAdmin.value) {
+      if (users.value.length === 0) {
+        try {
+          const usersPage = await adminService.getAllUsers({ page: 0, size: 200 })
+          users.value = usersPage.content?.map(u => ({ id: u.id, username: u.username })) || []
+        } catch (e) {
+          console.warn('Unable to load users list:', e?.message || e)
+        }
+      }
+
+      if (quizzes.value.length === 0) {
+        try {
+          const quizzesPage = await quizService.getAllQuizzes({ page: 0, size: 200 })
+          quizzes.value = quizzesPage.content?.map(q => ({ id: q.id, title: q.title })) || []
+        } catch (e) {
+          console.warn('Unable to load quizzes list:', e?.message || e)
+        }
+      }
+    }
   } catch (error) {
     console.error('Error loading quiz attempts:', error)
     // Trong thực tế sẽ hiển thị thông báo lỗi

@@ -1,69 +1,69 @@
 <template>
   <div class="notification-container">
-    <!-- ✅ NOTIFICATION BELL ICON -->
     <div class="notification-bell" @click.stop="toggleNotificationPanel">
       <i class="fas fa-bell"></i>
       <span v-if="notificationStore.unreadCount > 0" class="notification-badge">{{ notificationStore.unreadCount }}</span>
     </div>
 
-         <!-- ✅ NOTIFICATION PANEL -->
-     <div v-if="showPanel" class="notification-panel">
-       <div class="notification-header">
-         <h3>Thông báo Client</h3>
-         <div class="notification-actions">
-           <button @click.stop="markAllAsRead" class="btn-mark-all">Đánh dấu tất cả đã đọc</button>
-           <button @click.stop="showPanel = false" class="btn-close">×</button>
-         </div>
-       </div>
-
-      <!-- ✅ NOTIFICATION LIST -->
-      <div class="notification-list">
-        <div v-if="notificationStore.isLoading" class="loading-notifications">
-          <div class="spinner"></div>
-          <p>Đang tải thông báo...</p>
-        </div>
-        
-                 <div v-else-if="notificationStore.notifications.length === 0" class="no-notifications">
-           <div class="no-notifications-content">
-             <i class="fas fa-bell-slash"></i>
-             <p>Không có thông báo nào</p>
-             <small>Bạn sẽ nhận được thông báo khi có hoạt động mới</small>
-           </div>
-         </div>
-        
-        <div v-else>
-          <div v-for="notification in notificationStore.sortedNotifications" 
-               :key="notification.id" 
-               :class="['notification-item', { 'unread': !notification.isRead }]"
-               @click.stop="handleNotificationClick(notification)">
-            
-            <div class="notification-icon">
-              <i :class="getNotificationIcon(notification.type)"></i>
-            </div>
-            
-            <div class="notification-content">
-              <div class="notification-title">{{ notification.title }}</div>
-              <div class="notification-message">{{ notification.message }}</div>
-              <div class="notification-time">{{ formatTime(notification.createdAt) }}</div>
-            </div>
-            
+    <Teleport to="body">
+      <div v-if="showPanel">
+        <div class="notif-backdrop" @click="showPanel = false"></div>
+        <div class="notification-panel">
+          <div class="notification-header">
+            <h3>Thông báo</h3>
             <div class="notification-actions">
-              <button @click.stop="markAsRead(notification.id)" 
-                      v-if="!notification.isRead" 
-                      class="btn-mark-read">
-                <i class="fas fa-check"></i>
-              </button>
-              <button @click.stop="deleteNotification(notification.id)" 
-                      class="btn-delete">
-                <i class="fas fa-trash"></i>
-              </button>
+              <button @click.stop="markAllAsRead" class="btn-mark-all">Đánh dấu tất cả đã đọc</button>
+              <button @click.stop="showPanel = false" class="btn-close">×</button>
             </div>
           </div>
+
+          <div class="notification-list">
+            <div v-if="notificationStore.isLoading" class="loading-notifications">
+              <div class="spinner"></div>
+              <p>Đang tải thông báo...</p>
+            </div>
+
+            <div v-else-if="notificationStore.notifications.length === 0" class="no-notifications">
+              <div class="no-notifications-content">
+                <i class="fas fa-bell-slash"></i>
+                <p>Không có thông báo nào</p>
+                <small>Bạn sẽ nhận được thông báo khi có hoạt động mới</small>
+              </div>
+            </div>
+
+            <div v-else>
+              <div
+                v-for="notification in notificationStore.sortedNotifications"
+                :key="notification.id"
+                :class="['notification-item', { unread: !notification.isRead }]"
+                @click.stop="handleNotificationClick(notification)"
+              >
+                <div class="notification-icon">
+                  <i :class="getNotificationIcon(notification.type)"></i>
+                </div>
+
+                <div class="notification-content">
+                  <div class="notification-title">{{ notification.title }}</div>
+                  <div class="notification-message">{{ notification.message }}</div>
+                  <div class="notification-time">{{ formatTime(notification.createdAt) }}</div>
+                </div>
+
+                <div class="notification-actions">
+                  <button v-if="!notification.isRead" @click.stop="markAsRead(notification.id)" class="btn-mark-read">
+                    <i class="fas fa-check"></i>
+                  </button>
+                  <button @click.stop="deleteNotification(notification.id)" class="btn-delete">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
-    </div>
+    </Teleport>
 
-    <!-- ✅ TOAST NOTIFICATION -->
     <div v-if="showToast" class="toast-notification" :class="toastType">
       <div class="toast-content">
         <i :class="getToastIcon(toastType)"></i>
@@ -131,10 +131,13 @@ export default {
 
     // ✅ TOGGLE PANEL
     const toggleNotificationPanel = () => {
-      showPanel.value = !showPanel.value;
-      if (showPanel.value) {
-        loadNotifications();
-      }
+      // Đảm bảo panel luôn hiển thị sau khi dropdown đóng hẳn
+      requestAnimationFrame(() => {
+        showPanel.value = !showPanel.value;
+        if (showPanel.value) {
+          loadNotifications();
+        }
+      });
     };
 
     // ✅ SHOW TOAST MESSAGE
@@ -263,6 +266,14 @@ export default {
   position: relative;
 }
 
+.notif-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.15);
+  backdrop-filter: blur(2px);
+  z-index: 1050;
+}
+
 .notification-bell {
   position: relative;
   cursor: pointer;
@@ -319,37 +330,35 @@ export default {
 }
 
 .notification-panel {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  width: 400px;
-  max-height: 500px;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  z-index: 1000;
+  position: fixed;
+  top: 88px; /* below navbar */
+  right: 24px;
+  width: 420px;
+  max-height: 520px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  z-index: 1101;
   overflow: hidden;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(16px);
 }
 
 .notification-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #eee;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 8px 8px 0 0;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--card-header-bg);
+  color: var(--card-header-text);
 }
 
 .notification-header h3 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--card-header-text);
 }
 
 .notification-actions {
@@ -358,44 +367,50 @@ export default {
 }
 
 .btn-mark-all {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 6px 12px;
-  border-radius: 6px;
+  background: transparent;
+  color: var(--card-header-text);
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  border-radius: 8px;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .btn-mark-all:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
+  background: rgba(0,0,0,0.04);
 }
 
 .btn-close {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  font-size: 18px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  font-size: 16px;
   cursor: pointer;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  color: var(--card-header-text);
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: background 0.2s ease;
 }
 
 .btn-close:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
+  background: rgba(0,0,0,0.06);
 }
 
 .notification-list {
-  max-height: 400px;
+  max-height: 440px;
   overflow-y: auto;
+}
+
+.notification-list::-webkit-scrollbar {
+  width: 8px;
+}
+.notification-list::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 6px;
 }
 
 .no-notifications {
@@ -407,20 +422,21 @@ export default {
 .notification-item {
   display: flex;
   align-items: flex-start;
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.2s ease, transform 0.2s ease;
   position: relative;
+  background: transparent;
 }
 
 .notification-item:hover {
-  background-color: #f8f9fa;
-  transform: translateX(4px);
+  background: rgba(0,0,0,0.03);
 }
 
 .notification-item.unread {
-  background: linear-gradient(135deg, #e3f2fd 0%, #f3f9ff 100%);
+  background: rgba(102, 126, 234, 0.08);
   border-left: 4px solid #667eea;
 }
 
@@ -435,18 +451,15 @@ export default {
 }
 
 .notification-icon {
-  margin-right: 16px;
   color: #667eea;
   font-size: 18px;
-  width: 24px;
-  text-align: center;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  background: rgba(102, 126, 234, 0.12);
+  border-radius: 12px;
 }
 
 .notification-content {
@@ -455,23 +468,23 @@ export default {
 }
 
 .notification-title {
-  font-weight: 600;
-  font-size: 15px;
-  margin-bottom: 6px;
-  color: #333;
-  line-height: 1.3;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+  line-height: 1.35;
 }
 
 .notification-message {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
   line-height: 1.5;
 }
 
 .notification-time {
   font-size: 12px;
-  color: #999;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -538,13 +551,13 @@ export default {
 
 .btn-mark-read,
 .btn-delete {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid #e0e0e0;
+  background: transparent;
+  border: 1px solid var(--border-color);
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   width: 32px;
   height: 32px;
   display: flex;
@@ -557,9 +570,8 @@ export default {
 }
 
 .btn-mark-read:hover {
-  background: #28a745;
-  color: white;
-  transform: scale(1.1);
+  background: rgba(40, 167, 69, 0.12);
+  color: #28a745;
 }
 
 .btn-delete {
@@ -567,9 +579,8 @@ export default {
 }
 
 .btn-delete:hover {
-  background: #dc3545;
-  color: white;
-  transform: scale(1.1);
+  background: rgba(220, 53, 69, 0.12);
+  color: #dc3545;
 }
 
 .toast-notification {

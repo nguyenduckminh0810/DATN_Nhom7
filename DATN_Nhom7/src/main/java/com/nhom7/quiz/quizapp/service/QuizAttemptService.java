@@ -76,10 +76,16 @@ public class QuizAttemptService {
      * Bắt đầu một quiz attempt mới
      */
     public Long startAttempt(Long quizId, Long userId) {
+        System.out.println("🔍 QuizAttemptService.startAttempt() - Quiz ID: " + quizId + ", User ID: " + userId);
+        
         User user = userRepo.findById(userId).orElse(null);
+        System.out.println("🔍 Found user: " + (user != null ? user.getUsername() : "null"));
+        
         Quiz quiz = quizRepo.findById(quizId).orElse(null);
+        System.out.println("🔍 Found quiz: " + (quiz != null ? quiz.getTitle() : "null"));
         
         if (user == null || quiz == null) {
+            System.err.println("❌ User or quiz not found");
             return null;
         }
         
@@ -90,7 +96,15 @@ public class QuizAttemptService {
         attempt.setAttemptedAt(LocalDateTime.now());
         attempt.setTimeTaken(0);
         
+        System.out.println("🔍 Creating attempt with data:");
+        System.out.println("  - User: " + user.getUsername() + " (ID: " + user.getId() + ")");
+        System.out.println("  - Quiz: " + quiz.getTitle() + " (ID: " + quiz.getId() + ")");
+        System.out.println("  - Score: " + attempt.getScore());
+        System.out.println("  - AttemptedAt: " + attempt.getAttemptedAt());
+        System.out.println("  - TimeTaken: " + attempt.getTimeTaken());
+        
         QuizAttempt saved = quizAttemptRepo.save(attempt);
+        System.out.println("✅ Successfully saved attempt with ID: " + saved.getId());
         return saved.getId();
     }
 
@@ -98,7 +112,35 @@ public class QuizAttemptService {
      * Trả về trạng thái attempt
      */
      public String getAttemptStatus(Long attemptId) {
-         return "COMPLETED"; // Vì không có status field, trả về mặc định
+         System.out.println("🔍 QuizAttemptService.getAttemptStatus() - Attempt ID: " + attemptId);
+         
+         QuizAttempt attempt = quizAttemptRepo.findById(attemptId).orElse(null);
+         if (attempt == null) {
+             System.err.println("❌ Attempt not found");
+             return null;
+         }
+         
+         System.out.println("🔍 Found attempt:");
+         System.out.println("  - ID: " + attempt.getId());
+         System.out.println("  - Score: " + attempt.getScore());
+         System.out.println("  - AttemptedAt: " + attempt.getAttemptedAt());
+         System.out.println("  - TimeTaken: " + attempt.getTimeTaken());
+         
+         // Kiểm tra nếu attempt đã có score > 0 thì coi như đã hoàn thành
+         if (attempt.getScore() > 0) {
+             System.out.println("✅ Attempt completed (score > 0)");
+             return "COMPLETED";
+         }
+         
+         // Kiểm tra nếu attempt đã có attemptedAt thì coi như đang trong tiến trình
+         if (attempt.getAttemptedAt() != null) {
+             System.out.println("🔄 Attempt in progress (has attemptedAt)");
+             return "IN_PROGRESS";
+         }
+         
+         // Mặc định là mới tạo
+         System.out.println("🆕 Attempt newly created");
+         return "CREATED";
     }
 
     /**

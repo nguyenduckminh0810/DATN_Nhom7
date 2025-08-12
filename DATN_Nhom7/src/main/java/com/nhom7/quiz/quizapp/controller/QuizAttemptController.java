@@ -47,16 +47,37 @@ public class QuizAttemptController {
     @PostMapping("/start")
     public ResponseEntity<?> startAttempt(@RequestParam Long quizId) {
         try {
+            System.out.println("🔍 QuizAttemptController.startAttempt() - Quiz ID: " + quizId);
+            
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            System.out.println("🔍 Authentication: " + authentication);
+            System.out.println("🔍 Authentication name: " + (authentication != null ? authentication.getName() : "null"));
+            System.out.println("🔍 Is authenticated: " + (authentication != null ? authentication.isAuthenticated() : "null"));
+            
             User currentUser = null;
             if (authentication != null && authentication.isAuthenticated()
                     && authentication.getName() != null && !"anonymousUser".equals(authentication.getName())) {
                 currentUser = loginService.findByUsername(authentication.getName());
+                System.out.println("🔍 Current user: " + (currentUser != null ? currentUser.getId() + " - " + currentUser.getUsername() : "null"));
             }
+            
             Long userId = currentUser != null ? currentUser.getId() : null;
+            System.out.println("🔍 User ID: " + userId);
+            
             Long attemptId = quizAttemptService.startAttempt(quizId, userId);
+            System.out.println("🔍 Created attempt ID: " + attemptId);
+            
+            if (attemptId == null) {
+                System.err.println("❌ Failed to create attempt");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(java.util.Map.of("error", "Failed to create attempt"));
+            }
+            
+            System.out.println("✅ Successfully created attempt: " + attemptId);
             return ResponseEntity.ok(java.util.Map.of("attemptId", attemptId, "status", "IN_PROGRESS"));
         } catch (Exception e) {
+            System.err.println("❌ Error in startAttempt: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(java.util.Map.of("error", e.getMessage()));
         }
@@ -68,10 +89,25 @@ public class QuizAttemptController {
      */
     @GetMapping("/{attemptId}/status")
     public ResponseEntity<?> getAttemptStatus(@PathVariable Long attemptId) {
-        String status = quizAttemptService.getAttemptStatus(attemptId);
-        if (status == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        return ResponseEntity.ok(java.util.Map.of("status", status));
+        try {
+            System.out.println("🔍 QuizAttemptController.getAttemptStatus() - Attempt ID: " + attemptId);
+            
+            String status = quizAttemptService.getAttemptStatus(attemptId);
+            System.out.println("🔍 Attempt status from service: " + status);
+            
+            if (status == null) {
+                System.err.println("❌ Attempt not found or status is null");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            
+            System.out.println("✅ Returning status: " + status);
+            return ResponseEntity.ok(java.util.Map.of("status", status));
+        } catch (Exception e) {
+            System.err.println("❌ Error in getAttemptStatus: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     /**
@@ -135,11 +171,19 @@ public class QuizAttemptController {
 
             com.nhom7.quiz.quizapp.model.dto.EvaluationResult eval = resultService.evaluateAndSave(dto);
 
-            // Update attempt (không cần set status nữa)
+            // Cập nhật attempt với điểm số/time đã chấm để lịch sử hiển thị đúng
             attempt.setAttemptedAt(java.time.LocalDateTime.now());
+            try {
+                attempt.setScore(eval.getScore());
+            } catch (Exception ignore) {}
+            try {
+                if (body.getTimeTaken() != null) {
+                    attempt.setTimeTaken(body.getTimeTaken());
+                }
+            } catch (Exception ignore) {}
             quizAttemptService.saveQuizAttempt(attempt);
 
-            return ResponseEntity.ok(java.util.Map.of("resultId", eval.getResultId()));
+            return ResponseEntity.ok(java.util.Map.of("resultId", eval.getResultId(), "score", eval.getScore()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of("error", e.getMessage()));
         }

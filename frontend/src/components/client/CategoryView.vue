@@ -58,14 +58,9 @@
         <div class="search-filter-section">
           <div class="search-box">
             <i class="bi bi-search"></i>
-            <input 
-              type="text" 
-              v-model="searchQuery" 
-              placeholder="Tìm kiếm danh mục..." 
-              class="search-input"
-            />
+            <input type="text" v-model="searchQuery" placeholder="Tìm kiếm danh mục..." class="search-input" />
           </div>
-          
+
           <div class="filter-dropdown">
             <select v-model="sortBy" class="filter-select">
               <option value="name">Tên A-Z</option>
@@ -77,12 +72,8 @@
 
         <!-- Categories Grid -->
         <div class="categories-grid">
-          <div 
-            v-for="category in filteredCategories" 
-            :key="category.id" 
-            class="category-card"
-            @click="viewCategoryQuizzes(category)"
-          >
+          <div v-for="category in filteredCategories" :key="category.id" class="category-card"
+            @click="viewCategoryQuizzes(category)">
             <div class="category-header">
               <div class="category-icon">
                 <i class="bi bi-tag-fill"></i>
@@ -92,7 +83,7 @@
                 <p class="category-description">{{ category.description || 'Không có mô tả' }}</p>
               </div>
             </div>
-            
+
             <div class="category-footer">
               <div class="category-date">
                 <i class="bi bi-calendar3"></i>
@@ -135,7 +126,7 @@ const filteredCategories = computed(() => {
 
   // Search filter
   if (searchQuery.value) {
-    filtered = filtered.filter(category => 
+    filtered = filtered.filter(category =>
       category.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       category.description?.toLowerCase().includes(searchQuery.value.toLowerCase())
     )
@@ -187,13 +178,12 @@ const formatDate = (dateString) => {
 }
 
 const viewCategoryQuizzes = (category) => {
-  // Navigate to quizzes in this category
   router.push({
-    name: 'Home',
-    query: { category: category.id }
+    name: 'CategoryQuizzes',
+    params: { id: category.id },
+    query: { name: category.name }
   })
 }
-
 // Lifecycle
 onMounted(() => {
   fetchCategories()
@@ -203,7 +193,7 @@ onMounted(() => {
 <style scoped>
 .category-view-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-background);
   position: relative;
   overflow: hidden;
 }
@@ -250,8 +240,15 @@ onMounted(() => {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 .hero-section {
@@ -507,21 +504,21 @@ onMounted(() => {
   .hero-title {
     font-size: 2rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .search-filter-section {
     flex-direction: column;
   }
-  
+
   .search-box {
     min-width: auto;
   }
-  
+
   .categories-grid {
     grid-template-columns: 1fr;
   }
 }
-</style> 
+</style>

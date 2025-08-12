@@ -1,5 +1,5 @@
 <template>
- <footer class="footer bg-dark text-light pt-3 pb-2">
+  <footer class="footer text-light pt-3 pb-2">
     <div class="container">
       <div class="row gy-3">
         <!-- Logo & Contact -->
@@ -12,38 +12,31 @@
           <p class="mb-1 small"><i class="bi bi-envelope-fill me-2"></i>quizmaster@example.com</p>
           <p class="mb-2 small"><i class="bi bi-telephone-fill me-2"></i>+84 123 456 789</p>
           <div class="d-flex gap-2">
-  <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-facebook"></i></a> <!-- Chuyển về btn-outline-light -->
-  <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-instagram"></i></a>
-  <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-linkedin"></i></a>
-</div>
+            <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-facebook"></i></a>
+            <!-- Chuyển về btn-outline-light -->
+            <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-linkedin"></i></a>
+          </div>
         </div>
-       <!-- Quick Links -->
-<div class="col-lg-2 col-md-3 mb-3">
-  <h6 class="fw-bold mb-2">Liên kết nhanh</h6>
-  <ul class="list-unstyled">
-    <li><a href="/" class="text-light text-decoration-none small">Trang chủ</a></li> <!-- Chuyển về text-light -->
-    <li><a href="/public-quizzes" class="text-light text-decoration-none small">Quiz công khai</a></li>
-    <li><a href="mailto:contact@quizmaster.com" class="text-light text-decoration-none small">Liên hệ</a></li>
-  </ul>
-</div>
+        <!-- Quick Links -->
+        <div class="col-lg-2 col-md-3 mb-3">
+          <h6 class="fw-bold mb-2">Liên kết nhanh</h6>
+          <ul class="list-unstyled">
+            <li><a href="/" class="text-light text-decoration-none small">Trang chủ</a></li>
+            <!-- Chuyển về text-light -->
+            <li><a href="/public-quizzes" class="text-light text-decoration-none small">Quiz công khai</a></li>
+            <li><a href="mailto:contact@quizmaster.com" class="text-light text-decoration-none small">Liên hệ</a></li>
+          </ul>
+        </div>
         <!-- About Project -->
         <div class="col-lg-3 col-md-3 mb-3">
           <h6 class="fw-bold mb-2">Về QuizMaster</h6>
           <p class="small">
-            QuizMaster là nền tảng thi trắc nghiệm trực tuyến, giúp bạn tạo, chia sẻ và kiểm tra kiến thức dễ dàng, nhanh chóng và hiệu quả.
+            QuizMaster là nền tảng thi trắc nghiệm trực tuyến, giúp bạn tạo, chia sẻ và kiểm tra kiến thức dễ dàng,
+            nhanh chóng và hiệu quả.
           </p>
         </div>
         <!-- Newsletter -->
-        <div class="col-lg-3 col-md-12">
-          <h6 class="fw-bold mb-2">Nhận tin mới</h6>
-          <form @submit.prevent="subscribe">
-            <div class="input-group mb-2">
-              <input v-model="email" type="email" class="form-control form-control-sm" placeholder="Nhập email của bạn" required>
-              <button class="btn btn-primary btn-sm" type="submit">Đăng ký</button>
-            </div>
-            <div v-if="message" :class="{'text-success': success, 'text-danger': !success}" class="small">{{ message }}</div>
-          </form>
-        </div>
       </div>
       <hr class="bg-secondary my-3" />
       <div class="text-center small">
@@ -75,12 +68,13 @@ function subscribe() {
 <style scoped>
 .footer {
   font-size: 0.9rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-background);
   color: #fff;
   box-shadow: 0 -4px 20px rgba(102, 126, 234, 0.2);
-  margin: 0; 
+  margin: 0;
   width: 100%;
 }
+
 .footer a:hover {
   text-decoration: underline;
   color: #ffc107 !important;
@@ -104,5 +98,4 @@ function subscribe() {
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
 }
-
 </style>

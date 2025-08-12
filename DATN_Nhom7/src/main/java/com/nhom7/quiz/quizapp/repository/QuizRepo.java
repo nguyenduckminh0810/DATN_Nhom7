@@ -80,4 +80,8 @@ public interface QuizRepo extends JpaRepository<Quiz, Long> {
 
       // ✅ THÊM METHOD KIỂM TRA CODE ĐÃ TỒN TẠI
       boolean existsByQuizCode(String quizCode);
+
+      // Tìm kiếm quiz theo trạng thái public và theo category
+      @Query("SELECT q FROM Quiz q WHERE q.isPublic = true AND q.category.id = :categoryId AND (q.deleted IS NULL OR q.deleted = false)")
+      Page<Quiz> findPublicByCategory(@Param("categoryId") Long categoryId, Pageable pageable);
 }

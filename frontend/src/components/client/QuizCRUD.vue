@@ -756,7 +756,7 @@ const resetForm = () => {
                           <li><strong>B:</strong> Câu hỏi</li>
                           <li><strong>C-F:</strong> Đáp án A, B, C, D</li>
                           <li><strong>G:</strong> Đáp án đúng (A/B/C/D)</li>
-                          <li><strong>H:</strong> Thời gian (giây) - mặc định 30s, range 5-300s</li>
+                          <li><strong>H:</strong> Thời gian (giây) - mặc định 30s, range 5-300s, 0 = không giới hạn</li>
                         </ul>
                       </div>
                     </div>
@@ -1127,7 +1127,7 @@ const resetForm = () => {
 /* === ENHANCED BASE STYLES === */
 .quiz-crud-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-background);
   position: relative;
   overflow: hidden;
 }

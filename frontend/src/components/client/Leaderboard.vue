@@ -22,23 +22,23 @@
           <i class="bi bi-trophy text-warning me-2"></i>
           Bảng xếp hạng Quiz
         </h6>
-        <span class="badge bg-primary">{{ total }} người chơi</span>
+        <span class="badge bg-primary">{{ totalElements }} người chơi</span>
       </div>
 
       <!-- Leaderboard List -->
       <div class="leaderboard-list">
         <div
           v-for="(entry, index) in visibleEntries"
-          :key="entry.userId"
+          :key="`${entry.userId}-${entry.attemptedAt}-${index}`"
           :class="['leaderboard-item', { 'my-rank': entry.userId === currentUserId }]"
           :data-rank="index + 1"
         >
           <!-- Rank -->
           <div class="rank-badge">
-            <span v-if="index < 3" class="rank-medal">
-              <i :class="getMedalIcon(index)"></i>
+            <span v-if="(currentPage * pageSize + index) < 3" class="rank-medal">
+              <i :class="getMedalIcon(currentPage * pageSize + index)"></i>
             </span>
-            <span v-else class="rank-number">{{ index + 1 }}</span>
+            <span v-else class="rank-number">{{ currentPage * pageSize + index + 1 }}</span>
           </div>
 
           <!-- User Info -->
@@ -66,49 +66,33 @@
         </div>
       </div>
 
-      <!-- Expand/Collapse Controls -->
-      <div v-if="leaderboardData.length > 5" class="expand-controls text-center mt-3">
-        <button
-          v-if="!isExpanded"
-          @click="expandLeaderboard"
-          class="btn btn-outline-primary btn-sm"
-        >
-          <i class="bi bi-chevron-down me-1"></i>
-          Xem thêm ({{ leaderboardData.length - 5 }} người)
-        </button>
-        <button v-else @click="collapseLeaderboard" class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-chevron-up me-1"></i>
-          Thu gọn
-        </button>
-      </div>
-
-      <!-- Pagination Controls (only show if more than 10 people) -->
-      <div v-if="leaderboardData.length > 10 && isExpanded" class="pagination-controls mt-3">
+      <!-- Pagination Controls (hiển thị nếu có nhiều hơn 1 trang) -->
+      <div v-if="totalPages > 1" class="pagination-controls mt-3">
         <div class="d-flex justify-content-between align-items-center">
           <div class="pagination-info">
             <small class="text-muted">
-              Hiển thị {{ currentPage * pageSize - pageSize + 1 }}-{{
-                Math.min(currentPage * pageSize, total)
+              Hiển thị {{ (currentPage * pageSize) + 1 }}-{{
+                Math.min((currentPage + 1) * pageSize, totalElements)
               }}
-              trong tổng số {{ total }} người chơi
+              trong tổng số {{ totalElements }} người chơi
             </small>
           </div>
 
           <div class="pagination-buttons">
             <button
               class="btn btn-outline-primary btn-sm me-2"
-              @click="previousPage"
-              :disabled="currentPage === 1"
+              @click="() => { console.log('🔍 Previous button clicked, currentPage:', currentPage.value); previousPage(); }"
+              :disabled="currentPage === 0"
             >
               <i class="bi bi-chevron-left"></i> Trước
             </button>
 
-            <span class="page-info mx-2"> Trang {{ currentPage }} / {{ totalPages }} </span>
+            <span class="page-info mx-2"> Trang {{ currentPage + 1 }} / {{ totalPages }} </span>
 
             <button
               class="btn btn-outline-primary btn-sm ms-2"
-              @click="nextPage"
-              :disabled="currentPage >= totalPages"
+              @click="() => { console.log('🔍 Next button clicked, currentPage:', currentPage.value); nextPage(); }"
+              :disabled="currentPage >= totalPages - 1"
             >
               Sau <i class="bi bi-chevron-right"></i>
             </button>
@@ -152,30 +136,36 @@ const userStore = useUserStore()
 const loading = ref(false)
 const error = ref(null)
 const leaderboardData = ref([])
-const pageSize = ref(5) // Hiển thị 5 người ban đầu
-const currentPage = ref(1)
-const isExpanded = ref(false)
+const pageSize = ref(5) // Hiển thị 5 người mỗi trang
+const currentPage = ref(0) // Bắt đầu từ page 0 (backend pagination)
 const currentUserId = computed(() => userStore.getUserId())
 
-/* Computed */
-const total = computed(() => leaderboardData.value.length)
-const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
+// ✅ Backend pagination state
+const totalElements = ref(0)
+const totalPages = ref(0)
+const isFirst = ref(true)
+const isLast = ref(true)
 
-// Chỉ hiển thị 5 người đầu tiên khi chưa expand
+/* Computed */
+const total = computed(() => totalElements.value)
+
+// ✅ Chỉ hiển thị dữ liệu từ backend (đã được phân trang)
 const visibleEntries = computed(() => {
-  if (isExpanded.value) {
-    // Khi đã expand, hiển thị theo phân trang
-    const start = (currentPage.value - 1) * pageSize.value
-    const end = start + pageSize.value
-    return leaderboardData.value.slice(start, end)
-  } else {
-    // Khi chưa expand, chỉ hiển thị 5 người đầu
-    return leaderboardData.value.slice(0, 5)
-  }
+  // Lọc dữ liệu để đảm bảo không có duplicate keys
+  const uniqueData = leaderboardData.value.filter((entry, index, array) => {
+    // Sử dụng userId + attemptedAt + index để đảm bảo tính duy nhất
+    const key = `${entry.userId}-${entry.attemptedAt}-${index}`
+    const firstIndex = array.findIndex(item => 
+      `${item.userId}-${item.attemptedAt}-${array.indexOf(item)}` === key
+    )
+    return firstIndex === index
+  })
+  
+  return uniqueData
 })
 
 /* Methods */
-async function fetchLeaderboard() {
+async function fetchLeaderboard(page = 0) {
   if (loading.value) return
 
   loading.value = true
@@ -185,19 +175,81 @@ async function fetchLeaderboard() {
     // dùng relative path để axios ghép với baseURL "/api"
     const base = 'leaderboard'
     const url = `${base}/quiz/${props.quizId}`
-    const params = { limit: 50, offset: 0 } // Lấy tối đa 50 người để có thể expand
+    const params = { page: page, size: pageSize.value }
 
     console.log('🔍 Calling leaderboard API:', url, params)
     const res = await axios.get(url, { params })
     console.log('✅ Leaderboard response:', res.data)
 
-    // Backend trả về trực tiếp List<LeaderboardEntry>, không có wrapper success
-    const data = res.data || []
+    // Backend trả về Map với pagination info
+    const data = res.data
+    console.log('🔍 Raw API response data:', data)
+    console.log('🔍 Data type:', typeof data)
+    console.log('🔍 Data keys:', Object.keys(data))
+    
+    // Kiểm tra dữ liệu trước khi parse
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid response data format')
+    }
+    
+    const content = data.content || []
+    const totalElementsFromAPI = parseInt(data.totalElements) || 0
+    const totalPagesFromAPI = parseInt(data.totalPages) || 0
+    const currentPageFromAPI = parseInt(data.currentPage) || 0
+    const isFirstFromAPI = Boolean(data.first)
+    const isLastFromAPI = Boolean(data.last)
+
+    console.log('🔍 Parsed values:', {
+      content: content,
+      totalElementsFromAPI: totalElementsFromAPI,
+      totalPagesFromAPI: totalPagesFromAPI,
+      currentPageFromAPI: currentPageFromAPI,
+      isFirstFromAPI: isFirstFromAPI,
+      isLastFromAPI: isLastFromAPI
+    })
 
     // Cập nhật dữ liệu
-    leaderboardData.value = data
-    currentPage.value = 1
-    isExpanded.value = false
+    // Chuẩn hóa timeTaken về giây nếu backend trả ms hoặc string
+    const normalized = (content || []).map((e) => {
+      let t = typeof e.timeTaken === 'string' ? parseInt(e.timeTaken) : e.timeTaken
+      if (Number.isNaN(t)) t = 0
+      // Heuristic: nếu lớn hơn 300 và nhỏ hơn 100000 (ms), chia 1000
+      if (t > 300 && t < 100000) t = Math.round(t / 1000)
+      return { ...e, timeTaken: t }
+    })
+    leaderboardData.value = normalized
+    totalElements.value = totalElementsFromAPI
+    totalPages.value = totalPagesFromAPI
+    currentPage.value = currentPageFromAPI
+    isFirst.value = isFirstFromAPI
+    isLast.value = isLastFromAPI
+    
+    console.log('🔍 UI Data updated:', {
+      leaderboardDataLength: leaderboardData.value.length,
+      visibleEntriesLength: visibleEntries.value.length,
+      firstEntry: leaderboardData.value[0],
+      lastEntry: leaderboardData.value[leaderboardData.value.length - 1]
+    })
+    
+    // Debug: Kiểm tra pagination state
+    console.log('🔍 Pagination state updated:', {
+      currentPage: currentPage.value,
+      totalPages: totalPages.value,
+      isFirst: isFirst.value,
+      isLast: isLast.value,
+      canGoPrevious: currentPage.value > 0,
+      canGoNext: currentPage.value < totalPages.value - 1
+    })
+    
+    // Debug: Kiểm tra pagination
+    console.log('🔍 Paginated leaderboard loaded:', {
+      content: content.length,
+      totalElements: totalElementsFromAPI,
+      totalPages: totalPagesFromAPI,
+      currentPage: currentPageFromAPI,
+      isFirst: isFirstFromAPI,
+      isLast: isLastFromAPI
+    })
   } catch (err) {
     console.error('❌ Error fetching leaderboard:', err)
     error.value = 'Lỗi khi tải bảng xếp hạng'
@@ -206,25 +258,21 @@ async function fetchLeaderboard() {
   }
 }
 
-function expandLeaderboard() {
-  isExpanded.value = true
-  currentPage.value = 1
-}
-
-function collapseLeaderboard() {
-  isExpanded.value = false
-  currentPage.value = 1
-}
-
 function previousPage() {
-  if (currentPage.value > 1) {
-    currentPage.value--
+  if (currentPage.value > 0) {
+    const newPage = currentPage.value - 1
+    console.log('🔍 Going to previous page:', newPage)
+    currentPage.value = newPage
+    fetchLeaderboard(newPage)
   }
 }
 
 function nextPage() {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
+  if (currentPage.value < totalPages.value - 1) {
+    const newPage = currentPage.value + 1
+    console.log('🔍 Going to next page:', newPage)
+    currentPage.value = newPage
+    fetchLeaderboard(newPage)
   }
 }
 
@@ -263,19 +311,18 @@ function formatTimeAgo(dateString) {
 }
 
 /* Watchers */
+// Reset pagination khi đổi quiz, không reset khi dữ liệu trang thay đổi
 watch(
-  leaderboardData,
+  () => props.quizId,
   () => {
-    // Reset pagination when data changes
-    currentPage.value = 1
-    isExpanded.value = false
+    currentPage.value = 0
+    fetchLeaderboard(0)
   },
-  { deep: true },
 )
 
 /* Init */
 onMounted(async () => {
-  await fetchLeaderboard()
+  await fetchLeaderboard(0)
 })
 </script>
 
