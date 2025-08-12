@@ -89,6 +89,7 @@ const routes = [
         path: 'global-leaderboard',
         name: 'GlobalLeaderboard',
         component: GlobalLeaderboardPage,
+        meta: { requiresAuth: true, requiresUser: true },
       },
       {
         path: 'contact',
@@ -303,7 +304,7 @@ router.beforeEach(async (to, from, next) => {
       if (done) {
         return next({ name: 'QuizResult', params: { quizId, userId: userIdParam } })
       }
-    } catch {}
+    } catch { }
   }
   const token = localStorage.getItem('token')
   const adminUser = localStorage.getItem('admin_user')

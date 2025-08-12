@@ -2,7 +2,7 @@
 import { RouterLink, useRouter } from 'vue-router'
 import { useLogin } from './useLogin'
 import { useQuizCRUD } from './useQuizCRUD'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 const router = useRouter()
 const {
     status,
@@ -58,7 +58,7 @@ onMounted(() => {
             try {
                 const u = JSON.parse(localStorage.getItem('user') || 'null')
                 if (u?.username) username.value = u.username
-            } catch {}
+            } catch { }
         }
         // Thử khôi phục mật khẩu đã lưu (nếu có)
         // Thử lấy mật khẩu từ Credential Management API
@@ -71,7 +71,7 @@ onMounted(() => {
                         if (cred.password) password.value = cred.password
                     }
                 }
-            }).catch(() => {})
+            }).catch(() => { })
         }
     }
 })
@@ -85,16 +85,16 @@ async function handleSubmit(e) {
     console.log('🔐 Login attempt:', { username: username.value, password: password.value ? '***' : 'empty' })
     console.log('📍 Current URL:', window.location.href)
     console.log('🔄 Preventing form submission...')
-    
+
     if (!username.value.trim() || !password.value.trim()) {
         message.value = '❌ Vui lòng nhập đầy đủ thông tin!'
         console.log('❌ Form validation failed')
         return
     }
-    
+
     console.log('✅ Form validation passed, calling login()')
     const result = await login()
-    
+
     if (result.success) {
 
         // Lưu tuỳ chọn ghi nhớ
@@ -119,7 +119,7 @@ async function handleSubmit(e) {
                     }
                     await navigator.credentials.store(cred)
                 }
-            } catch {}
+            } catch { }
         } else {
             localStorage.removeItem('rememberMe')
             // Không can thiệp xóa Keychain: trình duyệt sẽ quản lý theo người dùng
@@ -167,20 +167,10 @@ async function handleSubmit(e) {
                         <span>Tên đăng nhập</span>
                     </label>
                     <div class="input-wrapper">
-                        <input 
-                            type="text" 
-                            id="username" 
-                            name="username"
-                            v-model="username" 
-                            class="form-input"
+                        <input type="text" id="username" name="username" v-model="username" class="form-input"
                             :class="{ 'error': hasError, 'success': isSuccess }"
-                            placeholder="Nhập tên đăng nhập của bạn"
-                            required 
-                            :disabled="isLoading"
-                            autocomplete="username"
-                            autocapitalize="none"
-                            autocorrect="off"
-                        />
+                            placeholder="Nhập tên đăng nhập của bạn" required :disabled="isLoading"
+                            autocomplete="username" autocapitalize="none" autocorrect="off" />
                         <div class="input-icon">
                             <i class="bi bi-person-circle"></i>
                         </div>
@@ -194,24 +184,11 @@ async function handleSubmit(e) {
                         <span>Mật khẩu</span>
                     </label>
                     <div class="input-wrapper">
-                        <input 
-                            :type="showPassword ? 'text' : 'password'" 
-                            id="password" 
-                            name="password"
-                            v-model="password" 
-                            class="form-input"
-                            :class="{ 'error': hasError, 'success': isSuccess }"
-                            placeholder="Nhập mật khẩu của bạn"
-                            required 
-                            :disabled="isLoading"
-                            autocomplete="current-password"
-                        />
-                        <button 
-                            type="button" 
-                            class="password-toggle"
-                            @click="togglePassword"
-                            :disabled="isLoading"
-                        >
+                        <input :type="showPassword ? 'text' : 'password'" id="password" name="password"
+                            v-model="password" class="form-input" :class="{ 'error': hasError, 'success': isSuccess }"
+                            placeholder="Nhập mật khẩu của bạn" required :disabled="isLoading"
+                            autocomplete="current-password" />
+                        <button type="button" class="password-toggle" @click="togglePassword" :disabled="isLoading">
                             <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                         </button>
                     </div>
@@ -231,8 +208,10 @@ async function handleSubmit(e) {
 
                 <!-- Error/Success Message -->
                 <div class="message-container" v-if="message">
-                    <div class="message" :class="{ 'error': hasError, 'success': isSuccess, 'warning': message.includes('🚫') }">
-                        <i :class="hasError ? 'bi bi-exclamation-triangle' : message.includes('🚫') ? 'bi bi-shield-exclamation' : 'bi bi-check-circle'"></i>
+                    <div class="message"
+                        :class="{ 'error': hasError, 'success': isSuccess, 'warning': message.includes('🚫') }">
+                        <i
+                            :class="hasError ? 'bi bi-exclamation-triangle' : message.includes('🚫') ? 'bi bi-shield-exclamation' : 'bi bi-check-circle'"></i>
                         <span>{{ message }}</span>
                         <button v-if="hasError" @click="message = ''" class="close-error">
                             <i class="bi bi-x"></i>
@@ -241,12 +220,8 @@ async function handleSubmit(e) {
                 </div>
 
                 <!-- Submit Button -->
-                <button 
-                    type="submit" 
-                    class="login-btn"
-                    :disabled="isLoading || !username.trim() || !password.trim()"
-                    :class="{ 'loading': isLoading }"
-                >
+                <button type="submit" class="login-btn" :disabled="isLoading || !username.trim() || !password.trim()"
+                    :class="{ 'loading': isLoading }">
                     <span v-if="!isLoading" class="btn-content">
                         <i class="bi bi-box-arrow-in-right"></i>
                         <span>Đăng nhập</span>
@@ -257,28 +232,10 @@ async function handleSubmit(e) {
                     </span>
                 </button>
             </form>
-
-            <!-- Divider -->
-            <div class="divider">
-                <span class="divider-text">Hoặc đăng nhập với</span>
-            </div>
-
-            <!-- Social Login (Placeholder) -->
-            <div class="social-login">
-                <button class="social-btn google" disabled>
-                    <i class="bi bi-google"></i>
-                    <span>Google</span>
-                </button>
-                <button class="social-btn facebook" disabled>
-                    <i class="bi bi-facebook"></i>
-                    <span>Facebook</span>
-                </button>
-            </div>
-
             <!-- Register Link -->
             <div class="register-section">
                 <p class="register-text">
-                    Chưa có tài khoản? 
+                    Chưa có tài khoản?
                     <RouterLink to="/register" class="register-link">
                         Đăng ký ngay
                     </RouterLink>
@@ -299,14 +256,15 @@ async function handleSubmit(e) {
 <style scoped>
 /* === LOGIN CONTAINER === */
 .login-container {
-    min-height: 100vh;
-    background: var(--app-background);
     display: flex;
-    align-items: center;
     justify-content: center;
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
+    /* giữa ngang */
+    align-items: flex-start;
+    /* neo lên trên */
+    min-height: calc(100dvh - 56px);
+    /* navbar mobile ~56px, chỉnh theo thực tế */
+    padding: 20px 16px 24px;
+    /* thu khoảng trống phía trên */
 }
 
 /* === BACKGROUND ELEMENTS === */
@@ -366,27 +324,67 @@ async function handleSubmit(e) {
 }
 
 @keyframes float1 {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    25% { transform: translate(30px, -30px) rotate(90deg); }
-    50% { transform: translate(-20px, -40px) rotate(180deg); }
-    75% { transform: translate(-40px, 20px) rotate(270deg); }
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    25% {
+        transform: translate(30px, -30px) rotate(90deg);
+    }
+
+    50% {
+        transform: translate(-20px, -40px) rotate(180deg);
+    }
+
+    75% {
+        transform: translate(-40px, 20px) rotate(270deg);
+    }
 }
 
 @keyframes float2 {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    33% { transform: translate(-25px, 30px) rotate(120deg); }
-    66% { transform: translate(40px, -10px) rotate(240deg); }
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    33% {
+        transform: translate(-25px, 30px) rotate(120deg);
+    }
+
+    66% {
+        transform: translate(40px, -10px) rotate(240deg);
+    }
 }
 
 @keyframes float3 {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    50% { transform: translate(20px, -50px) rotate(180deg); }
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    50% {
+        transform: translate(20px, -50px) rotate(180deg);
+    }
 }
 
 @keyframes float4 {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    25% { transform: translate(-30px, -20px) rotate(90deg); }
-    75% { transform: translate(25px, 35px) rotate(270deg); }
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    25% {
+        transform: translate(-30px, -20px) rotate(90deg);
+    }
+
+    75% {
+        transform: translate(25px, 35px) rotate(270deg);
+    }
 }
 
 /* === LOGIN CARD === */
@@ -408,6 +406,7 @@ async function handleSubmit(e) {
         opacity: 0;
         transform: translateY(50px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -610,12 +609,12 @@ async function handleSubmit(e) {
     transition: all 0.3s ease;
 }
 
-.checkbox-input:checked + .checkbox-custom {
+.checkbox-input:checked+.checkbox-custom {
     background: linear-gradient(45deg, #00d4ff, #00b8d4);
     border-color: #00d4ff;
 }
 
-.checkbox-input:checked + .checkbox-custom::after {
+.checkbox-input:checked+.checkbox-custom::after {
     content: '✓';
     position: absolute;
     top: 50%;
@@ -662,6 +661,7 @@ async function handleSubmit(e) {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -738,7 +738,8 @@ async function handleSubmit(e) {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.btn-content, .btn-loading {
+.btn-content,
+.btn-loading {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -755,8 +756,13 @@ async function handleSubmit(e) {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* === DIVIDER === */
@@ -878,66 +884,32 @@ async function handleSubmit(e) {
 
 /* === RESPONSIVE DESIGN === */
 @media (max-width: 768px) {
+
+    /* Xếp dọc: login-card phía trên, bottom-links phía dưới */
     .login-container {
-        padding: 15px;
-    }
-    
-    .login-card {
-        padding: 30px 25px;
-        max-width: 100%;
-    }
-    
-    .app-title {
-        font-size: 1.8rem;
-    }
-    
-    .login-title {
-        font-size: 1.5rem;
-    }
-    
-    .form-options {
         flex-direction: column;
-        gap: 15px;
-        align-items: stretch;
+        /* <— quan trọng */
+        align-items: center;
+        /* giữa ngang */
+        justify-content: flex-start;
+        min-height: calc(100vh - 56px);
+        padding-top: 10px;
     }
-    
-    .social-login {
-        flex-direction: column;
-    }
-    
+
+    /* Đặt nút "Về trang chủ" ngay dưới login-card */
     .bottom-links {
         position: static;
-        margin-top: 30px;
+        /* không absolute nữa */
         transform: none;
+        margin-top: 16px;
+        width: 100%;
         text-align: center;
+        /* căn giữa nút */
     }
-    
+
     .back-home {
         display: inline-flex;
-    }
-}
-
-@media (max-width: 480px) {
-    .login-card {
-        padding: 25px 20px;
-    }
-    
-    .logo-section {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .app-title {
-        font-size: 1.6rem;
-    }
-    
-    .form-input {
-        padding: 14px 18px;
-        padding-right: 45px;
-    }
-    
-    .login-btn {
-        padding: 16px;
+        /* nút đẹp hơn */
     }
 }
 </style>

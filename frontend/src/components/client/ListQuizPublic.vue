@@ -10,7 +10,7 @@ import api from '@/utils/axios'
 const publicQuizzes = ref([])
 const currentPage = ref(0)
 const totalPages = ref(1)
-const pageSize = 8
+const pageSize = 6
 const isLoading = ref(true)
 const error = ref('')
 const router = useRouter()
@@ -305,7 +305,7 @@ function handleImageError(event) {
               </li>
 
               <!-- Page Numbers -->
-              <li v-for="page in Math.min(5, totalPages)" :key="page" class="page-item"
+              <li v-for="page in totalPages" :key="page" class="page-item"
                 :class="{ active: currentPage === page - 1 }">
                 <button class="page-link" @click="goToPage(page - 1)">
                   {{ page }}
@@ -527,12 +527,7 @@ function handleImageError(event) {
 }
 
 /* Quiz Grid */
-.quiz-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 30px;
-  padding: 20px 0;
-}
+
 
 /* Quiz Card */
 .quiz-card {
@@ -829,6 +824,14 @@ function handleImageError(event) {
   }
 }
 
+.quiz-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 30px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .hero-title {
@@ -839,11 +842,6 @@ function handleImageError(event) {
     font-size: 1.1rem;
   }
 
-  .quiz-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-    padding: 20px 10px;
-  }
 
   .quiz-card {
     margin: 0 10px;
