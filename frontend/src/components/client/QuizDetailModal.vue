@@ -100,7 +100,7 @@
                       <i class="bi bi-star-fill"></i>
                     </div>
                     <div class="stat-content">
-                      <div class="stat-number">{{ quizStats.totalPoints }}</div>
+                    <div class="stat-number">0</div>
                       <div class="stat-label">Điểm tối đa</div>
                     </div>
                   </div>
@@ -164,8 +164,8 @@
                   >
                     <div class="question-header">
                       <span class="question-number">Câu {{ index + 1 }}</span>
-                      <span class="question-points">{{ question.point }} điểm</span>
-                      <span class="question-time">{{ question.timeLimit }}s</span>
+              <!-- Bỏ hiển thị điểm câu hỏi -->
+                      <span class="question-time">{{ question.timeLimit === 0 ? '∞' : (question.timeLimit + 's') }}</span>
                     </div>
                     <div class="question-content">
                       {{ question.content }}
@@ -198,8 +198,8 @@
                     >
                       <div class="question-header">
                         <span class="question-number">Câu {{ index + 4 }}</span>
-                        <span class="question-points">{{ question.point }} điểm</span>
-                        <span class="question-time">{{ question.timeLimit }}s</span>
+                <!-- Bỏ hiển thị điểm câu hỏi -->
+                        <span class="question-time">{{ question.timeLimit === 0 ? '∞' : (question.timeLimit + 's') }}</span>
                       </div>
                       <div class="question-content">
                         {{ question.content }}
@@ -456,13 +456,13 @@ const quizStats = computed(() => {
   if (!quizDetail.value) return {}
 
   const totalQuestions = questions.value.length
-  const totalPoints = questions.value.reduce((sum, q) => sum + (q.point || 1), 0)
-  const totalTime = questions.value.reduce((sum, q) => sum + (q.timeLimit || 30), 0)
+const totalPoints = 0
+  const totalTime = questions.value.reduce((sum, q) => sum + (q.timeLimit === 0 ? 0 : (q.timeLimit || 30)), 0)
 
   // ✅ SỬ DỤNG DỮ LIỆU TỪ ENDPOINT THỐNG KÊ CÔNG KHAI
   return {
     totalQuestions,
-    totalPoints,
+  totalPoints,
     totalTime,
     totalPlays: quizDetail.value.totalPlays || 0,
     averageScore: quizDetail.value.averageScore || 0,

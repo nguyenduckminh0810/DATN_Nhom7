@@ -21,13 +21,13 @@
           <li>Cột A: Câu hỏi (bắt buộc)</li>
           <li>Cột B-E: Đáp án A, B, C, D (bắt buộc)</li>
           <li>Cột F: Đáp án đúng (A/B/C/D) (bắt buộc)</li>
-          <li>Cột G: Thời gian (giây) - mặc định 30s, range 5-300s</li>
+          <li>Cột G: Thời gian (giây) - mặc định 30s; cho phép 0 (không giới hạn) hoặc 5–300s</li>
         </ul>
         <p><strong>⚠️ Lưu ý validation:</strong></p>
         <ul>
           <li>Tất cả câu hỏi và đáp án không được để trống</li>
           <li>Đáp án đúng phải là A, B, C hoặc D</li>
-          <li>Thời gian phải từ 5-300 giây</li>
+          <li>Thời gian: 0 (không giới hạn) hoặc 5–300 giây; cho phép 0 (không giới hạn) hoặc 5–300s</li>
           <li>File phải có ít nhất 1 câu hỏi</li>
         </ul>
       </div>
@@ -172,7 +172,7 @@
             <span class="question-number">Câu {{ index + 1 }}:</span>
             <span class="question-time">
               <i class="bi bi-clock"></i>
-              {{ question.timeLimit || 30 }}s
+              {{ question.timeLimit === 0 ? '∞' : ((question.timeLimit ?? 30) + 's') }}
             </span>
           </div>
           <p class="question-content">{{ question.content }}</p>
@@ -294,7 +294,7 @@ const downloadTemplate = () => {
       'Đáp án C': 'Xanh', 
       'Đáp án D': 'Trắng', 
       'Đáp án đúng': 'C', 
-      'Thời gian (giây)': 25 
+      'Thời gian (giây)': 0 
     },
     { 
       'Câu hỏi': 'Con vật nào có 4 chân?', 
@@ -370,7 +370,7 @@ const getAverageTime = () => {
   }
 
   const totalTime = previewData.value.previewQuestions.reduce((sum, question) => {
-    return sum + (question.timeLimit || 30)
+    return sum + (question.timeLimit === 0 ? 0 : (question.timeLimit ?? 30))
   }, 0)
 
   return Math.round(totalTime / previewData.value.previewQuestions.length)

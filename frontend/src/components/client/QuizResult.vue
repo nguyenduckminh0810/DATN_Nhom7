@@ -1,8 +1,11 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useLogin } from './useLogin'
 import api from '@/utils/axios'
+import Leaderboard from './Leaderboard.vue' // Thêm import Leaderboard
+import { useUserStore } from '@/stores/user'
+
 const { username } = useLogin()
 const route = useRoute()
 const router = useRouter()
@@ -19,36 +22,78 @@ const review = ref({
 })
 const submitting = ref(false)
 const successMessage = ref('')
+const quizId = ref(null) // Thêm quizId để lưu trữ
+const leaderboardRef = ref(null) // Thêm ref để control Leaderboard
+
+const userStore = useUserStore()
+const currentUserId = computed(() => userStore.getUserId())
 
 onMounted(async () => {
   // Tải dữ liệu kết quả an toàn từ BE bằng resultId
   try {
     const resResult = await api.get(`/result/${resultId}`)
     score.value = resResult.data.score || 0
+    correctAnswers.value = resResult.data.correctAnswers || []
+    selectedAnswers.value = resResult.data.selectedAnswers || []
+
+    // ✅ Fallback: đọc selections từ localStorage nếu BE không trả
+    if ((!selectedAnswers.value || selectedAnswers.value.length === 0) && typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(`result_selected_${resultId}`)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          // Nếu là object map, chuyển thành array chuẩn [{questionId, answerId}]
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            selectedAnswers.value = Object.entries(parsed).map(([qid, aid]) => ({
+              questionId: Number(qid),
+              answerId: Number(aid),
+            }))
+          } else if (Array.isArray(parsed)) {
+            selectedAnswers.value = parsed
+          }
+        }
+      } catch {}
+    }
+    
+    // Lấy quizId từ result data
+    quizId.value = resResult.data.quizId || resResult.data.quiz?.id
+    
+    console.log('📊 Result data loaded:', {
+      score: score.value,
+      quizId: quizId.value,
+      correctAnswersCount: correctAnswers.value.length,
+      selectedAnswersCount: selectedAnswers.value.length
+    })
   } catch (e) {
     console.error('Không tải được kết quả:', e)
   }
 
   // Load questions data (để hiển thị chi tiết đẹp; có thể bỏ nếu không cần)
-  try {
-    const res = await api.get(`/question/play/${quizId}`)
-    const questionList = res.data
+  if (quizId.value) {
+    try {
+      console.log('❓ Loading questions for quiz ID:', quizId.value)
+      const res = await api.get(`/question/play/${quizId.value}`)
+      const questionList = res.data
 
-    const enrichedQuestions = await Promise.all(
-      questionList.map(async (question) => {
-        try {
-          const ansRes = await api.get(`/answer/${question.id}`)
-          return { ...question, answers: ansRes.data || [] }
-        } catch (err) {
-          console.error(`Lỗi khi lấy answers cho câu hỏi ID ${question.id}:`, err)
-          return { ...question, answers: [] }
-        }
-      }),
-    )
+      const enrichedQuestions = await Promise.all(
+        questionList.map(async (question) => {
+          try {
+            const ansRes = await api.get(`/answer/${question.id}`)
+            return { ...question, answers: ansRes.data || [] }
+          } catch (err) {
+            console.error(`Lỗi khi lấy answers cho câu hỏi ID ${question.id}:`, err)
+            return { ...question, answers: [] }
+          }
+        }),
+      )
 
-    questions.value = enrichedQuestions
-  } catch (err) {
-    console.error('Lỗi khi tải câu hỏi:', err)
+      questions.value = enrichedQuestions
+      console.log('✅ Questions loaded successfully:', enrichedQuestions.length)
+    } catch (err) {
+      console.error('Lỗi khi tải câu hỏi:', err)
+    }
+  } else {
+    console.warn('⚠️ No quizId found, skipping questions loading')
   }
 
   // Animation delay
@@ -57,6 +102,14 @@ onMounted(async () => {
   }, 500)
 
   // Không đọc/xóa dữ liệu localStorage nữa
+})
+
+// Watch quizId để reload Leaderboard
+watch(quizId, (newQuizId) => {
+  if (newQuizId && leaderboardRef.value) {
+    console.log('🔄 QuizId changed, reloading leaderboard:', newQuizId)
+    // Leaderboard sẽ tự động reload khi prop thay đổi
+  }
 })
 
 const radius = 85
@@ -85,40 +138,130 @@ const performanceLevel = computed(() => {
 })
 
 const combinedResults = computed(() => {
-  return correctAnswers.value.map((ca, index) => {
-    const userAns = selectedAnswers.value.find((sa) => sa.questionId === ca.questionId)
+  const toLetter = (idx) => (idx >= 0 ? String.fromCharCode(65 + idx) : null)
 
-    // Chuyển đổi ID thành chữ cái ABCD
-    const getAnswerLetter = (answerId, questionId) => {
-      if (!answerId) return 'Không chọn'
+  const getSelectedForQuestion = (question, answers) => {
+    const sel = selectedAnswers.value
+    const questionId = question.id
 
-      // Tìm câu hỏi và đáp án tương ứng
-      const question = questions.value.find((q) => q.id === questionId)
-      if (!question || !question.answers) return answerId.toString()
-
-      const answerIndex = question.answers.findIndex((a) => a.id === answerId)
-      return answerIndex >= 0 ? String.fromCharCode(65 + answerIndex) : answerId.toString()
+    // If array of selections
+    if (Array.isArray(sel)) {
+      for (const item of sel) {
+        const qId = item?.questionId ?? item?.question_id ?? item?.question?.id ?? item?.qid
+        if (qId === questionId) {
+          // Direct answer id
+          const directId =
+            item?.answerId ??
+            item?.answer_id ??
+            item?.selectedAnswerId ??
+            item?.chosenAnswerId ??
+            item?.userAnswerId ??
+            item?.selectedOptionId ??
+            item?.answer?.id
+          if (directId != null) {
+            const idx = answers.findIndex((a) => a.id === directId)
+            return { id: directId, idx }
+          }
+          // Letter like 'A' or index-based
+          const letter = (item?.letter || item?.choice || item?.selectedLetter || '').toString()
+          if (letter && /[A-Za-z]/.test(letter)) {
+            const idx = letter.toUpperCase().charCodeAt(0) - 65
+            const id = answers[idx]?.id
+            return { id, idx }
+          }
+          const indexChoice = item?.index ?? item?.selectedIndex
+          if (Number.isInteger(indexChoice)) {
+            const idx = indexChoice
+            const id = answers[idx]?.id
+            return { id, idx }
+          }
+        }
+      }
     }
 
-    // Lấy nội dung đáp án
-    const getAnswerContent = (answerId, questionId) => {
-      if (!answerId) return ''
-
-      const question = questions.value.find((q) => q.id === questionId)
-      if (!question || !question.answers) return ''
-
-      const answer = question.answers.find((a) => a.id === answerId)
-      return answer ? answer.content : ''
+    // If object map: { [questionId]: answerId | {id}| letter }
+    if (sel && typeof sel === 'object' && !Array.isArray(sel)) {
+      const raw = sel[questionId]
+      if (raw != null) {
+        if (typeof raw === 'number') {
+          // Might be answerId or index
+          const byIdIdx = answers.findIndex((a) => a.id === raw)
+          if (byIdIdx >= 0) return { id: raw, idx: byIdIdx }
+          if (answers[raw]) return { id: answers[raw].id, idx: raw }
+        } else if (typeof raw === 'string') {
+          const letter = raw.toUpperCase()
+          if (/[A-Z]/.test(letter)) {
+            const idx = letter.charCodeAt(0) - 65
+            const id = answers[idx]?.id
+            return { id, idx }
+          }
+          // try parseInt
+          const asNum = parseInt(raw, 10)
+          if (!Number.isNaN(asNum)) {
+            const byIdIdx = answers.findIndex((a) => a.id === asNum)
+            if (byIdIdx >= 0) return { id: asNum, idx: byIdIdx }
+            if (answers[asNum]) return { id: answers[asNum].id, idx: asNum }
+          }
+        } else if (typeof raw === 'object') {
+          const directId = raw?.id ?? raw?.answerId
+          if (directId != null) {
+            const idx = answers.findIndex((a) => a.id === directId)
+            return { id: directId, idx }
+          }
+        }
+      }
     }
+
+    // Sometimes question itself may hold user's answer
+    const qIdFromQuestion =
+      question?.userAnswerId ?? question?.selectedAnswerId ?? question?.chosenAnswerId
+    if (qIdFromQuestion != null) {
+      const idx = answers.findIndex((a) => a.id === qIdFromQuestion)
+      return { id: qIdFromQuestion, idx }
+    }
+
+    return { id: null, idx: -1 }
+  }
+
+  if (correctAnswers.value && correctAnswers.value.length > 0) {
+    return correctAnswers.value.map((ca, index) => {
+      const question = questions.value.find((q) => q.id === ca.questionId) || { answers: [] }
+      const answers = question.answers || []
+      const correctIdx = answers.findIndex((a) => a.id === ca.correctAnswerId)
+      const sel = getSelectedForQuestion(question, answers)
+
+      const getAnswerContentByIdx = (idx) => (idx >= 0 ? answers[idx]?.content || '' : '')
+
+      return {
+        questionId: ca.questionId,
+        questionNumber: index + 1,
+        correctAnswerId: toLetter(correctIdx),
+        selectedAnswerId: toLetter(sel.idx),
+        correctAnswerContent: getAnswerContentByIdx(correctIdx),
+        selectedAnswerContent: getAnswerContentByIdx(sel.idx),
+        isCorrect: sel.id != null && sel.id === ca.correctAnswerId,
+      }
+    })
+  }
+
+  // Fallback path
+  return (questions.value || []).map((question, index) => {
+    const answers = question.answers || []
+    const correctIdx = answers.findIndex(
+      (a) => a?.isCorrect === true || a?.correct === true || a?.is_correct === true,
+    )
+    const correctId = correctIdx >= 0 ? answers[correctIdx]?.id : null
+
+    const sel = getSelectedForQuestion(question, answers)
 
     return {
-      questionId: ca.questionId,
+      questionId: question.id,
       questionNumber: index + 1,
-      correctAnswerId: getAnswerLetter(ca.correctAnswerId, ca.questionId),
-      selectedAnswerId: getAnswerLetter(userAns?.answerId, ca.questionId),
-      correctAnswerContent: getAnswerContent(ca.correctAnswerId, ca.questionId),
-      selectedAnswerContent: getAnswerContent(userAns?.answerId, ca.questionId),
-      isCorrect: userAns?.answerId === ca.correctAnswerId,
+      correctAnswerId: toLetter(correctIdx),
+      selectedAnswerId: toLetter(sel.idx),
+      correctAnswerContent: correctIdx >= 0 ? answers[correctIdx]?.content || '' : '',
+      selectedAnswerContent: sel.idx >= 0 ? answers[sel.idx]?.content || '' : '',
+      isCorrect: sel.id != null && correctId != null && sel.id === correctId,
     }
   })
 })
@@ -139,7 +282,7 @@ function goBack() {
 async function playAgain() {
   try {
     const { quizAttemptService } = await import('@/services/quizAttemptService')
-    const resp = await quizAttemptService.startAttempt(quizId)
+    const resp = await quizAttemptService.startAttempt(quizId.value)
     router.replace({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
   } catch (e) {
     console.error('Không thể bắt đầu attempt:', e)
@@ -151,17 +294,24 @@ function viewQuizzes() {
 }
 
 const submitReview = async () => {
-  if (!review.value.rating || !review.value.reviewText || !userId) return
+  if (!review.value.rating || !review.value.reviewText) return
+  if (!currentUserId.value) {
+    alert('Bạn cần đăng nhập để gửi đánh giá.')
+    return
+  }
+  if (!quizId.value) {
+    alert('Không xác định được quizId.')
+    return
+  }
 
   try {
     submitting.value = true
-    await api.post(`/quizzes/${quizId}/review`, {
-      userId,
+    await api.post(`/quizzes/${quizId.value}/review`, {
+      userId: currentUserId.value,
       rating: review.value.rating,
       reviewText: review.value.reviewText
     })
     successMessage.value = 'Cảm ơn bạn đã đánh giá!'
-    // Reset form
     review.value.rating = ''
     review.value.reviewText = ''
   } catch (error) {
@@ -362,20 +512,33 @@ const submitReview = async () => {
                       class="value"
                       :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }"
                     >
-                      {{ result.selectedAnswerId ?? 'Không chọn' }}
+                      {{ result.selectedAnswerId || 'Không chọn' }}
                     </span>
-                    <span class="answer-content">
+                    <span v-if="result.selectedAnswerContent" class="answer-content">
                       {{ result.selectedAnswerContent }}
                     </span>
                   </div>
                   <div class="result-info">
                     <span class="label">Đáp án đúng:</span>
-                    <span class="value correct">{{ result.correctAnswerId }}</span>
-                    <span class="answer-content correct">{{ result.correctAnswerContent }}</span>
+                    <span class="value correct">{{ result.correctAnswerId || '?' }}</span>
+                    <span v-if="result.correctAnswerContent" class="answer-content correct">{{ result.correctAnswerContent }}</span>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Bảng xếp hạng -->
+        <div class="result-card leaderboard-card" :class="{ loaded: isLoaded }" v-if="quizId">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="bi bi-trophy"></i>
+              Bảng xếp hạng
+            </h3>
+          </div>
+          <div class="card-body">
+            <Leaderboard ref="leaderboardRef" :quizId="quizId" />
           </div>
         </div>
 

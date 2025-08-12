@@ -1,16 +1,15 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
 import api from '@/utils/axios'
 
 const route = useRoute()
 const router = useRouter()
-const token = localStorage.getItem('token')
+const token = localStorage.getItem('token') || ''
 const userId = route.params.userId
 const quizId = route.params.quizId
 
-// State management
+// ===== State =====
 const questions = ref([])
 const answersMap = ref({})
 const quizInfo = ref({ id: quizId, title: '', description: '', category: '', image: '' })
@@ -19,171 +18,119 @@ const isLoading = ref(false)
 const isSaving = ref(false)
 const searchQuery = ref('')
 const selectedQuestions = ref([])
-const showPreview = ref(false)
+const editingQuestion = ref(null)
+const validationErrors = ref({})
 
-// Image upload states
-const imageUploadType = ref('url') // 'url' or 'file'
+// Image (FILE ONLY)
 const selectedImageFile = ref(null)
 const imagePreview = ref('')
 const isUploadingImage = ref(false)
 
-// Form states
-const newQuestion = ref({
-  content: '',
-  point: 1,
-  timeLimit: 30, // ✅ THÊM TIMELIMIT MẶC ĐỊNH 30S
-  answers: Array(4)
-    .fill()
-    .map((_, i) => ({ content: '', correct: i === 0 })),
-})
-
-const editingQuestion = ref(null)
-const validationErrors = ref({})
-
-// ✅ MODAL SET TIME CHO TẤT CẢ
+// Modal set time
 const showSetTimeModal = ref(false)
 const globalTimeLimit = ref(30)
 
-// Computed properties
+// ===== Helpers =====
+const auth = { headers: { Authorization: `Bearer ${token}` } }
+const authJson = { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+const authMultipart = { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+
+// Bỏ cơ chế tổng điểm câu hỏi
+const totalPoints = computed(() => 0)
+
+// ===== Computed =====
 const filteredQuestions = computed(() => {
-  if (!searchQuery.value) return questions.value
-  return questions.value.filter((q) =>
-    q.content.toLowerCase().includes(searchQuery.value.toLowerCase()),
-  )
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return questions.value
+  return questions.value.filter((item) => item.content?.toLowerCase().includes(q))
 })
 
-const totalPoints = computed(() => {
-  return questions.value.reduce((sum, q) => sum + (q.point || 0), 0)
-})
 
-const totalTime = computed(() => {
-  return questions.value.reduce((sum, q) => sum + (q.timeLimit || 30), 0)
-})
+const totalTime = computed(() => questions.value.reduce((s, q) => s + (q.timeLimit || 30), 0))
 
 const quizStats = computed(() => ({
   totalQuestions: questions.value.length,
-  totalPoints: totalPoints.value,
-  avgPoints: questions.value.length ? Math.round(totalPoints.value / questions.value.length) : 0,
+  // Bỏ tổng điểm/điểm trung bình
+  totalPoints: 0,
+  avgPoints: 0,
   avgTime: questions.value.length ? Math.round(totalTime.value / questions.value.length) : 30,
-  hasAnswers: questions.value.every((q) => answersMap.value[q.id]?.length >= 2),
+  hasAnswers: questions.value.every((q) => (answersMap.value[q.id]?.length || 0) >= 2),
 }))
 
-// Validation
+// ===== Validation =====
 const validateQuestion = (question) => {
   const errors = {}
+
 
   if (!question.content?.trim()) {
     errors.content = 'Nội dung câu hỏi không được để trống'
   }
 
-  if (!question.point || question.point < 1) {
-    errors.point = 'Điểm phải lớn hơn 0'
-  }
+  // Bỏ validate point
 
   // ✅ THÊM VALIDATION CHO TIMELIMIT
-  if (!question.timeLimit || question.timeLimit < 5 || question.timeLimit > 300) {
-    errors.timeLimit = 'Thời gian phải từ 5-300 giây'
+  if (
+    question.timeLimit === undefined ||
+    question.timeLimit === null ||
+    (question.timeLimit !== 0 && (question.timeLimit < 5 || question.timeLimit > 300))
+  ) {
+    errors.timeLimit = 'Thời gian phải là 0 (không giới hạn) hoặc từ 5-300 giây'
   }
+
 
   const answers = question.answers || []
   const correctCount = answers.filter((a) => a.correct).length
   const emptyAnswers = answers.filter((a) => !a.content?.trim()).length
-
-  if (emptyAnswers > 0) {
-    errors.answers = 'Tất cả câu trả lời phải có nội dung'
-  } else if (correctCount !== 1) {
-    errors.answers = 'Phải chọn đúng một câu trả lời đúng'
-  }
-
+  if (emptyAnswers > 0) errors.answers = 'Tất cả câu trả lời phải có nội dung'
+  else if (correctCount !== 1) errors.answers = 'Phải chọn đúng một câu trả lời đúng'
   return errors
 }
 
-// ✅ VALIDATION RIÊNG CHO EDIT QUESTION (KHÔNG KIỂM TRA ANSWERS)
 const validateEditQuestion = (question) => {
   const errors = {}
-
   if (!question.content?.trim()) {
     errors.content = 'Nội dung câu hỏi không được để trống'
   }
 
-  if (!question.point || question.point < 1) {
-    errors.point = 'Điểm phải lớn hơn 0'
-  }
+  // Bỏ validate point
 
   // ✅ THÊM VALIDATION CHO TIMELIMIT
-  if (!question.timeLimit || question.timeLimit < 5 || question.timeLimit > 300) {
-    errors.timeLimit = 'Thời gian phải từ 5-300 giây'
+  if (
+    question.timeLimit === undefined ||
+    question.timeLimit === null ||
+    (question.timeLimit !== 0 && (question.timeLimit < 5 || question.timeLimit > 300))
+  ) {
+    errors.timeLimit = 'Thời gian phải là 0 (không giới hạn) hoặc từ 5-300 giây'
   }
+
 
   return errors
 }
 
-// Image handling functions
-function handleImageUploadTypeChange(type) {
-  imageUploadType.value = type
-  if (type === 'url') {
-    selectedImageFile.value = null
-    imagePreview.value = ''
-  } else {
-    quizInfo.value.image = ''
-  }
-}
+// ===== Image (FILE ONLY) =====
+function handleImageFileSelect(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  if (!file.type.startsWith('image/')) return notify('Vui lòng chọn file hình ảnh!', 'error')
+  if (file.size > 5 * 1024 * 1024) return notify('Kích thước file không được vượt quá 5MB!', 'error')
 
-function handleImageFileSelect(event) {
-  const file = event.target.files[0]
-  if (file) {
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      showNotification('Vui lòng chọn file hình ảnh!', 'error')
-      return
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      showNotification('Kích thước file không được vượt quá 5MB!', 'error')
-      return
-    }
-
-    selectedImageFile.value = file
-
-    // Create preview
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      imagePreview.value = e.target.result
-    }
-    reader.readAsDataURL(file)
-  }
+  selectedImageFile.value = file
+  const reader = new FileReader()
+  reader.onload = (ev) => (imagePreview.value = ev.target?.result || '')
+  reader.readAsDataURL(file)
 }
 
 async function uploadImageFile() {
   if (!selectedImageFile.value) return null
-
   isUploadingImage.value = true
   try {
     const formData = new FormData()
     formData.append('image', selectedImageFile.value)
-
-    const response = await api.post('/upload/image', formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-
-    if (response.data.success) {
-      // ✅ CHỈ TRẢ VỀ FILENAME, KHÔNG PHẢI FULL URL
-      const filename = response.data.filename
-      console.log('✅ Upload thành công, filename:', filename)
-      return filename
-    } else {
-      throw new Error(response.data.message || 'Upload failed')
-    }
-  } catch (error) {
-    console.error('Error uploading image:', error)
-    showNotification(
-      'Lỗi khi upload hình ảnh: ' + (error.response?.data?.message || error.message),
-      'error',
-    )
+    const { data } = await api.post('/upload/image', formData, authMultipart)
+    if (data?.success) return data.filename
+    throw new Error(data?.message || 'Upload failed')
+  } catch (err) {
+    notify('Lỗi khi upload hình ảnh', 'error')
     return null
   } finally {
     isUploadingImage.value = false
@@ -198,151 +145,84 @@ function clearImage() {
   if (fileInput) fileInput.value = ''
 }
 
-// API functions
+// ===== API =====
 async function fetchQuizInfo() {
   try {
-    const res = await api.get(`/quiz/${quizId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    quizInfo.value = { ...quizInfo.value, ...res.data }
-    // Set image preview if image exists
-    if (quizInfo.value.image) {
-      imagePreview.value = `/api/image/quiz/${quizId}`
-      imageUploadType.value = 'url'
-    }
-    console.log('Quiz info loaded:', quizInfo.value)
-  } catch (err) {
-    console.error('Lỗi khi lấy thông tin quiz:', err)
-    showNotification('Không thể tải thông tin quiz', 'error')
+    const { data } = await api.get(`/quiz/${quizId}`, auth)
+    quizInfo.value = { ...quizInfo.value, ...data }
+    if (quizInfo.value.image) imagePreview.value = `/api/image/quiz/${quizId}`
+  } catch {
+    notify('Không thể tải thông tin quiz', 'error')
   }
 }
 
 async function fetchAnswersForQuestion(questionId) {
   try {
-    const res = await api.get(`/answer/${questionId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    answersMap.value[questionId] = res.data
-  } catch (error) {
-    console.error('Lỗi khi lấy câu trả lời:', error)
-  }
+    const { data } = await api.get(`/answer/${questionId}`, auth)
+    answersMap.value[questionId] = data
+  } catch { }
 }
 
 async function fetchQuestionsByQuizId() {
   isLoading.value = true
   try {
-    const res = await api.get(`question/${quizId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-
-    // ✅ KIỂM TRA ARRAY TRƯỚC KHI MAP
-    if (Array.isArray(res.data)) {
-      questions.value = res.data
-      await Promise.all(res.data.map((q) => fetchAnswersForQuestion(q.id)))
-      console.log('Questions loaded:', questions.value.length)
-    } else {
-      console.error('API không trả về danh sách câu hỏi:', res.data)
+    const { data } = await api.get(`question/${quizId}`, auth)
+    if (!Array.isArray(data)) {
       questions.value = []
-      showNotification('Dữ liệu câu hỏi không hợp lệ', 'error')
+      return notify('Dữ liệu câu hỏi không hợp lệ', 'error')
     }
-  } catch (error) {
-    console.error('Lỗi khi lấy câu hỏi:', error)
+    questions.value = data
+    await Promise.all(data.map((q) => fetchAnswersForQuestion(q.id)))
+  } catch {
     questions.value = []
-    showNotification('Không thể tải danh sách câu hỏi', 'error')
+    notify('Không thể tải danh sách câu hỏi', 'error')
   } finally {
     isLoading.value = false
   }
 }
 
-// CRUD operations
+// ===== CRUD =====
 async function updateQuizInfo() {
   const errors = {}
-  if (!quizInfo.value.title?.trim()) {
-    errors.title = 'Tiêu đề không được để trống'
-  }
-
-  if (Object.keys(errors).length > 0) {
+  if (!quizInfo.value.title?.trim()) errors.title = 'Tiêu đề không được để trống'
+  if (Object.keys(errors).length) {
     validationErrors.value = errors
     return
   }
 
   isSaving.value = true
   try {
-    let imageUrl = quizInfo.value.image
-
-    // Upload image file if selected
-    if (imageUploadType.value === 'file' && selectedImageFile.value) {
-      const uploadedFilename = await uploadImageFile()
-      if (uploadedFilename) {
-        imageUrl = uploadedFilename // ✅ LƯU FILENAME THAY VÌ FULL URL
-        console.log('🖼️ Image filename sẽ được lưu:', imageUrl)
-      }
-    }
-
-    if (
-      imageUploadType.value === 'url' &&
-      quizInfo.value.image &&
-      quizInfo.value.image.startsWith('http')
-    ) {
-      try {
-        const response = await api.post(
-          '/upload/url',
-          new URLSearchParams({ imageUrl: quizInfo.value.image }),
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-          },
-        )
-        if (response.data.success) {
-          imageUrl = response.data.filename
-          console.log('🌐 URL converted to filename:', imageUrl)
-        }
-      } catch (err) {
-        console.error('Lỗi khi download URL:', err)
-        showNotification('Không thể download ảnh từ URL', 'error')
-        return
-      }
+    // nếu chọn file mới -> upload để lấy filename lưu DB
+    let imageFilename = quizInfo.value.image || null
+    if (selectedImageFile.value) {
+      const uploaded = await uploadImageFile()
+      if (!uploaded) return // đã notify ở trên
+      imageFilename = uploaded
     }
 
     const payload = {
       ...quizInfo.value,
-      image: imageUrl || null,
+      image: imageFilename,
       category: quizInfo.value.category || null,
     }
+    await api.put(`/quiz/${quizId}`, payload, authJson)
 
-    await api.put(`/quiz/${quizId}`, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    })
+    quizInfo.value.image = imageFilename
+    imagePreview.value = imageFilename ? `/api/image/quiz/${quizId}` : ''
+    selectedImageFile.value = null
 
-    // Update local state
-    quizInfo.value.image = imageUrl
-
-    if (imageUrl) {
-      // ✅ SỬ DỤNG ENDPOINT CHUẨN CHO PREVIEW
-      imagePreview.value = `/api/image/quiz/${quizId}`
-      console.log('🎯 Preview updated với endpoint chuẩn')
-    }
-
-    showNotification('Cập nhật thông tin quiz thành công!', 'success')
+    notify('Cập nhật thông tin quiz thành công!', 'success')
     validationErrors.value = {}
-  } catch (err) {
-    console.error('Lỗi khi cập nhật quiz:', err)
-    showNotification('Cập nhật thất bại!', 'error')
+  } catch {
+    notify('Cập nhật thất bại!', 'error')
   } finally {
     isSaving.value = false
   }
 }
 
-// ... (keep all other existing functions unchanged)
-
 async function createQuestion() {
   const errors = validateQuestion(newQuestion.value)
-  if (Object.keys(errors).length > 0) {
+  if (Object.keys(errors).length) {
     validationErrors.value = errors
     return
   }
@@ -352,68 +232,41 @@ async function createQuestion() {
     const questionPayload = {
       content: newQuestion.value.content.trim(),
       point: newQuestion.value.point,
-      timeLimit: newQuestion.value.timeLimit, // ✅ THÊM TIMELIMIT
+      timeLimit: newQuestion.value.timeLimit,
       quiz: { id: quizId },
       image: null,
     }
-
-    const questionRes = await api.post(
-      `/question/create`,
-      questionPayload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    )
-
-    const createdQuestion = questionRes.data
+    const { data: createdQuestion } = await api.post(`/question/create`, questionPayload, authJson)
 
     const answersPayload = newQuestion.value.answers.map((a) => ({
       content: a.content.trim(),
       correct: a.correct,
       question: { id: createdQuestion.id },
     }))
-
-    const answerRes = await api.post(
-      `/answer/create-multiple`,
-      answersPayload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    )
+    const { data: createdAnswers } = await api.post(`/answer/create-multiple`, answersPayload, authJson)
 
     questions.value.push(createdQuestion)
-    answersMap.value[createdQuestion.id] = answerRes.data
+    answersMap.value[createdQuestion.id] = createdAnswers
 
-    // Reset form
     newQuestion.value = {
       content: '',
       point: 1,
-      timeLimit: 30, // ✅ RESET TIMELIMIT VỀ 30S
-      answers: Array(4)
-        .fill()
-        .map((_, i) => ({ content: '', correct: i === 0 })),
+      timeLimit: 30,
+      answers: Array(4).fill().map((_, i) => ({ content: '', correct: i === 0 })),
     }
-
     validationErrors.value = {}
-    showNotification('Thêm câu hỏi thành công!', 'success')
+    notify('Thêm câu hỏi thành công!', 'success')
     activeTab.value = 'questions'
-  } catch (err) {
-    console.error('Lỗi khi tạo câu hỏi:', err)
-    showNotification('Tạo câu hỏi thất bại!', 'error')
+  } catch {
+    notify('Tạo câu hỏi thất bại!', 'error')
   } finally {
     isSaving.value = false
   }
 }
 
 async function updateQuestion(question) {
-  const errors = validateEditQuestion(question) // ✅ SỬ DỤNG VALIDATION RIÊNG
-  if (Object.keys(errors).length > 0) {
+  const errors = validateEditQuestion(question)
+  if (Object.keys(errors).length) {
     validationErrors.value = errors
     return
   }
@@ -423,31 +276,22 @@ async function updateQuestion(question) {
     const payload = {
       id: question.id,
       content: question.content,
-      point: question.point,
+      // point: question.point,
       timeLimit: question.timeLimit, // ✅ THÊM TIMELIMIT
+
       quiz: { id: quizId },
       image: null,
     }
+    await api.put(`/question/update/${question.id}`, payload, authJson)
 
-    await api.put(`/question/update/${question.id}`, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    })
+    const i = questions.value.findIndex((q) => q.id === question.id)
+    if (i !== -1) questions.value[i] = { ...questions.value[i], ...question }
 
-    // ✅ CẬP NHẬT LOCAL STATE
-    const questionIndex = questions.value.findIndex((q) => q.id === question.id)
-    if (questionIndex !== -1) {
-      questions.value[questionIndex] = { ...questions.value[questionIndex], ...question }
-    }
-
-    showNotification('Cập nhật câu hỏi thành công!', 'success')
+    notify('Cập nhật câu hỏi thành công!', 'success')
     editingQuestion.value = null
     validationErrors.value = {}
-  } catch (err) {
-    console.error('Lỗi khi cập nhật câu hỏi:', err)
-    showNotification('Cập nhật thất bại!', 'error')
+  } catch {
+    notify('Cập nhật thất bại!', 'error')
   } finally {
     isSaving.value = false
   }
@@ -456,25 +300,14 @@ async function updateQuestion(question) {
 async function updateAnswers(questionId) {
   isSaving.value = true
   try {
-    const answers = answersMap.value[questionId]
+    const answers = answersMap.value[questionId] || []
     const payload = answers.map((a) => ({
-      id: a.id,
-      content: a.content,
-      correct: a.correct,
-      question: { id: questionId },
+      id: a.id, content: a.content, correct: a.correct, question: { id: questionId },
     }))
-
-    await api.put(`/answer/update`, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    })
-
-    showNotification('Cập nhật câu trả lời thành công!', 'success')
-  } catch (error) {
-    console.error('Lỗi khi cập nhật câu trả lời:', error)
-    showNotification('Cập nhật câu trả lời thất bại!', 'error')
+    await api.put(`/answer/update`, payload, authJson)
+    notify('Cập nhật câu trả lời thành công!', 'success')
+  } catch {
+    notify('Cập nhật câu trả lời thất bại!', 'error')
   } finally {
     isSaving.value = false
   }
@@ -482,223 +315,135 @@ async function updateAnswers(questionId) {
 
 async function deleteQuestion(questionId) {
   if (!confirm('Bạn có chắc chắn muốn xoá câu hỏi này?')) return
-
   isSaving.value = true
   try {
-    await api.delete(`/question/delete/${questionId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-
+    await api.delete(`/question/delete/${questionId}`, auth)
     questions.value = questions.value.filter((q) => q.id !== questionId)
     delete answersMap.value[questionId]
     selectedQuestions.value = selectedQuestions.value.filter((id) => id !== questionId)
-
-    showNotification('Xoá câu hỏi thành công!', 'success')
-  } catch (err) {
-    console.error('Lỗi khi xoá câu hỏi:', err)
-    showNotification('Xoá câu hỏi thất bại!', 'error')
+    notify('Xoá câu hỏi thành công!', 'success')
+  } catch {
+    notify('Xoá câu hỏi thất bại!', 'error')
   } finally {
     isSaving.value = false
-  }
-}
-
-// Helper functions
-function setNewCorrectAnswer(index) {
-  newQuestion.value.answers.forEach((a, i) => (a.correct = i === index))
-}
-
-function setCorrectAnswer(questionId, answerId) {
-  if (answersMap.value[questionId]) {
-    answersMap.value[questionId].forEach((a) => {
-      a.correct = a.id === answerId
-    })
-  }
-}
-
-function startEditQuestion(question) {
-  editingQuestion.value = { ...question }
-  validationErrors.value = {}
-}
-
-function cancelEdit() {
-  editingQuestion.value = null
-  validationErrors.value = {}
-}
-
-function toggleQuestionSelection(questionId) {
-  const index = selectedQuestions.value.indexOf(questionId)
-  if (index > -1) {
-    selectedQuestions.value.splice(index, 1)
-  } else {
-    selectedQuestions.value.push(questionId)
-  }
-}
-
-function selectAllQuestions() {
-  if (selectedQuestions.value.length === questions.value.length) {
-    selectedQuestions.value = []
-  } else {
-    selectedQuestions.value = questions.value.map((q) => q.id)
   }
 }
 
 async function deleteSelectedQuestions() {
-  if (!confirm(`Bạn có chắc chắn muốn xoá ${selectedQuestions.value.length} câu hỏi đã chọn?`))
-    return
-
+  if (!confirm(`Bạn có chắc chắn muốn xoá ${selectedQuestions.value.length} câu hỏi đã chọn?`)) return
   isSaving.value = true
   try {
-    await Promise.all(
-      selectedQuestions.value.map((id) =>
-        api.delete(`/question/delete/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ),
-    )
-
+    await Promise.all(selectedQuestions.value.map((id) => api.delete(`/question/delete/${id}`, auth)))
     questions.value = questions.value.filter((q) => !selectedQuestions.value.includes(q.id))
     selectedQuestions.value.forEach((id) => delete answersMap.value[id])
     selectedQuestions.value = []
-
-    showNotification('Xoá các câu hỏi thành công!', 'success')
-  } catch (err) {
-    console.error('Lỗi khi xoá câu hỏi:', err)
-    showNotification('Xoá câu hỏi thất bại!', 'error')
+    notify('Xoá các câu hỏi thành công!', 'success')
+  } catch {
+    notify('Xoá câu hỏi thất bại!', 'error')
   } finally {
     isSaving.value = false
   }
 }
 
+// ===== UI helpers =====
+function setNewCorrectAnswer(index) {
+  newQuestion.value.answers.forEach((a, i) => (a.correct = i === index))
+}
+function setCorrectAnswer(questionId, answerId) {
+  const list = answersMap.value[questionId]
+  if (!list) return
+  list.forEach((a) => (a.correct = a.id === answerId))
+}
+function startEditQuestion(q) { editingQuestion.value = { ...q }; validationErrors.value = {} }
+function cancelEdit() { editingQuestion.value = null; validationErrors.value = {} }
+function toggleQuestionSelection(id) {
+  const i = selectedQuestions.value.indexOf(id)
+  if (i > -1) selectedQuestions.value.splice(i, 1)
+  else selectedQuestions.value.push(id)
+}
+function selectAllQuestions() {
+  selectedQuestions.value =
+    selectedQuestions.value.length === questions.value.length ? [] : questions.value.map((q) => q.id)
+}
 function duplicateQuestion(question) {
   const duplicated = {
     content: question.content + ' (Copy)',
-    point: question.point,
+
+    // point: question.point,
     timeLimit: question.timeLimit || 30, // ✅ THÊM TIMELIMIT
     answers:
       answersMap.value[question.id]?.map((a) => ({
         content: a.content,
         correct: a.correct,
       })) || [],
-  }
 
+  }
   newQuestion.value = duplicated
   activeTab.value = 'add-question'
 }
 
-function showNotification(message, type = 'info') {
-  if (type === 'success') {
-    alert('✅ ' + message)
-  } else if (type === 'error') {
-    alert('❌ ' + message)
-  } else {
-    alert('ℹ️ ' + message)
-  }
-}
-
-function goBack() {
-  router.push({ name: 'Dashboard', params: { userId } })
-}
+function goBack() { router.push({ name: 'Dashboard', params: { userId } }) }
 
 async function previewQuiz() {
   try {
     const { quizAttemptService } = await import('@/services/quizAttemptService')
     const resp = await quizAttemptService.startAttempt(quizId)
     router.push({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
-  } catch (e) {
-    console.error('Không thể bắt đầu attempt:', e)
-  }
+  } catch { }
 }
 
-// Tab switching function
 function switchTab(tabName) {
   activeTab.value = tabName
   validationErrors.value = {}
-  console.log('Switched to tab:', tabName)
 }
 
-// ✅ LƯU TẤT CẢ THAY ĐỔI (QUESTION + ANSWERS)
+// Lưu tất cả (question + answers)
 async function saveAllChanges() {
   if (!editingQuestion.value) return
-
   const errors = validateEditQuestion(editingQuestion.value)
-  if (Object.keys(errors).length > 0) {
-    validationErrors.value = errors
-    return
-  }
+  if (Object.keys(errors).length) { validationErrors.value = errors; return }
 
   isSaving.value = true
   try {
-    // 1. Cập nhật câu hỏi
-    const questionPayload = {
-      id: editingQuestion.value.id,
-      content: editingQuestion.value.content,
-      point: editingQuestion.value.point,
-      timeLimit: editingQuestion.value.timeLimit,
+    const q = editingQuestion.value
+    await api.put(`/question/update/${q.id}`, {
+      id: q.id,
+      content: q.content,
+      point: q.point,
+      timeLimit: q.timeLimit,
       quiz: { id: quizId },
       image: null,
+    }, authJson)
+
+    const answers = answersMap.value[q.id]
+    if (answers?.length) {
+      await api.put(`/answer/update`, answers.map((a) => ({
+        id: a.id, content: a.content, correct: a.correct, question: { id: q.id },
+      })), authJson)
     }
 
-    await api.put(
-      `/question/update/${editingQuestion.value.id}`,
-      questionPayload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    )
+    const idx = questions.value.findIndex((x) => x.id === q.id)
+    if (idx !== -1) questions.value[idx] = { ...questions.value[idx], ...q }
 
-    // 2. Cập nhật câu trả lời
-    const answers = answersMap.value[editingQuestion.value.id]
-    if (answers && answers.length > 0) {
-      const answersPayload = answers.map((a) => ({
-        id: a.id,
-        content: a.content,
-        correct: a.correct,
-        question: { id: editingQuestion.value.id },
-      }))
-
-      await api.put(`/answer/update`, answersPayload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-    }
-
-    // 3. Cập nhật local state
-    const questionIndex = questions.value.findIndex((q) => q.id === editingQuestion.value.id)
-    if (questionIndex !== -1) {
-      questions.value[questionIndex] = {
-        ...questions.value[questionIndex],
-        ...editingQuestion.value,
-      }
-    }
-
-    showNotification('Lưu tất cả thay đổi thành công!', 'success')
+    notify('Lưu tất cả thay đổi thành công!', 'success')
     editingQuestion.value = null
     validationErrors.value = {}
-  } catch (err) {
-    console.error('Lỗi khi lưu thay đổi:', err)
-    showNotification('Lưu thay đổi thất bại!', 'error')
-  } finally {
-    isSaving.value = false
-  }
+  } catch {
+    notify('Lưu thay đổi thất bại!', 'error')
+  } finally { isSaving.value = false }
 }
 
-// ✅ SHOW MODAL SET TIME
-function openSetTimeModal() {
-  console.log('Opening set time modal...')
-  showSetTimeModal.value = true
-  globalTimeLimit.value = 30 // Reset về giá trị mặc định
-  console.log('Modal state:', showSetTimeModal.value)
-}
+// Set time cho tất cả
+function openSetTimeModal() { showSetTimeModal.value = true; globalTimeLimit.value = 30 }
 
-// ✅ SET TIME CHO TẤT CẢ CÂU HỎI
 async function setTimeForAllQuestions() {
+
   console.log('Setting time for all questions:', globalTimeLimit.value)
-  if (!globalTimeLimit.value || globalTimeLimit.value < 5 || globalTimeLimit.value > 300) {
+  if (
+    globalTimeLimit.value === undefined ||
+    globalTimeLimit.value === null ||
+    (globalTimeLimit.value !== 0 && (globalTimeLimit.value < 5 || globalTimeLimit.value > 300))
+  ) {
     showNotification('Thời gian phải từ 5-300 giây!', 'error')
     return
   }
@@ -712,7 +457,7 @@ async function setTimeForAllQuestions() {
       const payload = {
         id: question.id,
         content: question.content,
-        point: question.point,
+        // point: question.point,
         timeLimit: globalTimeLimit.value,
         quiz: { id: quizId },
         image: null,
@@ -748,43 +493,33 @@ async function setTimeForAllQuestions() {
     showNotification(
       `Đã cập nhật thời gian ${globalTimeLimit.value}s cho ${questions.value.length} câu hỏi!`,
       'success',
+
     )
+    await fetchQuestionsByQuizId()
+    notify(`Đã cập nhật thời gian ${t}s cho ${questions.value.length} câu hỏi!`, 'success')
     showSetTimeModal.value = false
-  } catch (err) {
-    console.error('Lỗi khi cập nhật thời gian:', err)
-    showNotification('Cập nhật thời gian thất bại!', 'error')
-  } finally {
-    isSaving.value = false
-  }
+  } catch {
+    notify('Cập nhật thời gian thất bại!', 'error')
+  } finally { isSaving.value = false }
 }
 
-// Lifecycle
+// ===== Lifecycle & watches =====
 onMounted(async () => {
-  console.log('Component mounted, loading data...')
   await Promise.all([fetchQuizInfo(), fetchQuestionsByQuizId()])
 })
 
-// Watch for validation errors cleanup
-watch(
-  newQuestion,
-  () => {
-    if (Object.keys(validationErrors.value).length > 0) {
-      validationErrors.value = {}
-    }
-  },
-  { deep: true },
-)
-
-// Watch image URL changes for preview
-watch(
-  () => quizInfo.value.image,
-  (newUrl) => {
-    if (newUrl && imageUploadType.value === 'url') {
-      imagePreview.value = newUrl
-    }
-  },
-)
+// Clear error khi user đang nhập câu hỏi mới
+const newQuestion = ref({
+  content: '',
+  point: 1,
+  timeLimit: 30,
+  answers: Array(4).fill().map((_, i) => ({ content: '', correct: i === 0 })),
+})
+watch(newQuestion, () => {
+  if (Object.keys(validationErrors.value).length) validationErrors.value = {}
+}, { deep: true })
 </script>
+
 
 <template>
   <div class="edit-quiz-container">
@@ -803,10 +538,7 @@ watch(
                   <i class="bi bi-question-circle"></i>
                   {{ quizStats.totalQuestions }} câu hỏi
                 </span>
-                <span class="meta-item">
-                  <i class="bi bi-star"></i>
-                  {{ quizStats.totalPoints }} điểm
-                </span>
+                <!-- Bỏ tổng điểm trong header -->
                 <span class="meta-item" :class="{
                   'text-success': quizStats.hasAnswers,
                   'text-warning': !quizStats.hasAnswers,
@@ -895,50 +627,30 @@ watch(
                         </div>
                       </div>
                       <div class="col-md-6">
+                        <!-- Hình ảnh Quiz (FILE ONLY) -->
                         <div class="form-group">
                           <label class="form-label">Hình ảnh Quiz</label>
 
-                          <!-- Image Upload Type Selector -->
-                          <div class="image-upload-selector">
-                            <div class="upload-type-tabs">
-                              <button type="button" class="upload-type-btn"
-                                :class="{ active: imageUploadType === 'url' }"
-                                @click="handleImageUploadTypeChange('url')">
-                                <i class="bi bi-link-45deg"></i>
-                                URL
-                              </button>
-                              <button type="button" class="upload-type-btn"
-                                :class="{ active: imageUploadType === 'file' }"
-                                @click="handleImageUploadTypeChange('file')">
-                                <i class="bi bi-upload"></i>
-                                Upload
-                              </button>
-                            </div>
-                          </div>
-
-                          <!-- URL Input -->
-                          <div v-if="imageUploadType === 'url'" class="image-url-input">
-                            <input type="url" class="form-control" v-model="quizInfo.image"
-                              placeholder="https://example.com/image.jpg" />
-                          </div>
-
-                          <!-- File Upload -->
-                          <div v-if="imageUploadType === 'file'" class="image-file-input">
+                          <div class="file-upload">
                             <input type="file" id="imageFileInput" class="form-control" accept="image/*"
                               @change="handleImageFileSelect" />
-                            <small class="form-text">Chọn file hình ảnh (tối đa 5MB)</small>
-                          </div>
+                            <small class="form-text">
+                              Chọn file hình ảnh (tối đa 5MB) • Hỗ trợ: JPG, PNG, WEBP...
+                            </small>
 
-                          <!-- Image Preview -->
-                          <div v-if="imagePreview" class="image-preview-container">
-                            <div class="image-preview">
-                              <img :src="imagePreview" alt="Quiz image preview" />
-                              <button type="button" class="remove-image-btn" @click="clearImage">
-                                <i class="bi bi-x-lg"></i>
-                              </button>
+                            <!-- Preview -->
+                            <div v-if="imagePreview" class="image-preview-container">
+                              <div class="image-preview">
+                                <img :src="imagePreview" alt="Quiz image preview" />
+                                <button type="button" class="remove-image-btn" @click="clearImage"
+                                  :disabled="isUploadingImage" title="Xoá ảnh">
+                                  <i class="bi bi-x-lg"></i>
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
+
                       </div>
                     </div>
 
@@ -1025,10 +737,10 @@ watch(
                             <span class="checkmark"></span>
                           </label>
                           <span class="question-number">Câu {{ index + 1 }}</span>
-                          <span class="question-points">{{ question.point }} điểm</span>
+                          <!-- Bỏ hiển thị điểm tại danh sách câu hỏi -->
                           <span class="question-time">
                             <i class="bi bi-clock"></i>
-                            {{ question.timeLimit || 30 }}s
+                            {{ question.timeLimit === 0 ? '∞' : ((question.timeLimit ?? 30) + 's') }}
                           </span>
                         </div>
                         <div class="question-actions">
@@ -1093,14 +805,7 @@ watch(
                             </div>
                           </div>
 
-                          <div class="form-group">
-                            <label class="form-label">Điểm</label>
-                            <input type="number" class="form-control" :class="{ 'is-invalid': validationErrors.point }"
-                              v-model="editingQuestion.point" min="1" />
-                            <div v-if="validationErrors.point" class="invalid-feedback">
-                              {{ validationErrors.point }}
-                            </div>
-                          </div>
+                          <!-- Bỏ input điểm khi sửa câu hỏi -->
 
                           <div class="form-group">
                             <label class="form-label">
@@ -1109,11 +814,11 @@ watch(
                             </label>
                             <input type="number" class="form-control"
                               :class="{ 'is-invalid': validationErrors.timeLimit }" v-model="editingQuestion.timeLimit"
-                              min="5" max="300" placeholder="30" />
+                              min="0" max="300" placeholder="30" />
                             <div v-if="validationErrors.timeLimit" class="invalid-feedback">
                               {{ validationErrors.timeLimit }}
                             </div>
-                            <small class="form-text">Range: 5-300 giây</small>
+                            <small class="form-text">0 (không giới hạn) hoặc 5–300 giây</small>
                           </div>
 
                           <div class="form-actions">
@@ -1175,14 +880,7 @@ watch(
                       </div>
                     </div>
 
-                    <div class="form-group">
-                      <label class="form-label">Điểm *</label>
-                      <input type="number" class="form-control" :class="{ 'is-invalid': validationErrors.point }"
-                        v-model="newQuestion.point" min="1" placeholder="1" />
-                      <div v-if="validationErrors.point" class="invalid-feedback">
-                        {{ validationErrors.point }}
-                      </div>
-                    </div>
+                    <!-- Bỏ input điểm khi thêm câu hỏi -->
 
                     <div class="form-group">
                       <label class="form-label">
@@ -1190,11 +888,11 @@ watch(
                         Thời gian (giây) *
                       </label>
                       <input type="number" class="form-control" :class="{ 'is-invalid': validationErrors.timeLimit }"
-                        v-model="newQuestion.timeLimit" min="5" max="300" placeholder="30" />
+                        v-model="newQuestion.timeLimit" min="0" max="300" placeholder="30" />
                       <div v-if="validationErrors.timeLimit" class="invalid-feedback">
                         {{ validationErrors.timeLimit }}
                       </div>
-                      <small class="form-text">Range: 5-300 giây</small>
+                      <small class="form-text">0 (không giới hạn) hoặc 5–300 giây</small>
                     </div>
 
                     <div class="form-actions">
@@ -1234,24 +932,7 @@ watch(
                     <div class="stat-label">Câu hỏi</div>
                   </div>
                 </div>
-                <div class="stat-item">
-                  <div class="stat-icon">
-                    <i class="bi bi-star"></i>
-                  </div>
-                  <div class="stat-content">
-                    <div class="stat-number">{{ quizStats.totalPoints }}</div>
-                    <div class="stat-label">Tổng điểm</div>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-icon">
-                    <i class="bi bi-graph-up"></i>
-                  </div>
-                  <div class="stat-content">
-                    <div class="stat-number">{{ quizStats.avgPoints }}</div>
-                    <div class="stat-label">Điểm TB/câu</div>
-                  </div>
-                </div>
+                <!-- Bỏ các thống kê về điểm -->
                 <div class="stat-item">
                   <div class="stat-icon">
                     <i class="bi bi-clock"></i>
@@ -1328,8 +1009,8 @@ watch(
               <i class="bi bi-clock"></i>
               Thời gian (giây) cho tất cả câu hỏi
             </label>
-            <input type="number" class="form-control" v-model="globalTimeLimit" min="5" max="300" placeholder="30" />
-            <small class="form-text">Range: 5-300 giây</small>
+            <input type="number" class="form-control" v-model="globalTimeLimit" min="0" max="300" placeholder="30" />
+            <small class="form-text">0 (không giới hạn) hoặc 5–300 giây</small>
           </div>
           <div class="alert alert-info">
             <i class="bi bi-info-circle"></i>
