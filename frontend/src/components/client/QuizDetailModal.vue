@@ -100,7 +100,7 @@
                       <i class="bi bi-star-fill"></i>
                     </div>
                     <div class="stat-content">
-                    <div class="stat-number">0</div>
+                      <div class="stat-number">0</div>
                       <div class="stat-label">Điểm tối đa</div>
                     </div>
                   </div>
@@ -157,54 +157,80 @@
                 </h5>
 
                 <div class="questions-preview">
-                  <div
-                    class="question-item"
-                    v-for="(question, index) in questions.slice(0, 3)"
-                    :key="question.id"
-                  >
-                    <div class="question-header">
-                      <span class="question-number">Câu {{ index + 1 }}</span>
-              <!-- Bỏ hiển thị điểm câu hỏi -->
-                      <span class="question-time">{{ question.timeLimit === 0 ? '∞' : (question.timeLimit + 's') }}</span>
-                    </div>
-                    <div class="question-content">
-                      {{ question.content }}
-                    </div>
-                    <div class="question-image" v-if="question.image">
-                      <img
-                        :src="question.image"
-                        :alt="'Hình ảnh câu hỏi ' + (index + 1)"
-                        class="img-fluid"
-                      />
-                    </div>
-                  </div>
-
-                  <div v-if="questions.length > 3" class="text-center mt-3">
-                    <button
-                      class="btn btn-outline-primary"
-                      @click="showAllQuestions = !showAllQuestions"
-                    >
-                      {{
-                        showAllQuestions ? 'Ẩn bớt' : 'Xem tất cả ' + questions.length + ' câu hỏi'
-                      }}
-                    </button>
-                  </div>
-
-                  <div v-if="showAllQuestions" class="additional-questions">
+                  <!-- Preview 3 câu đầu khi chưa mở xem tất cả -->
+                  <template v-if="!showAllQuestions">
                     <div
                       class="question-item"
-                      v-for="(question, index) in questions.slice(3)"
+                      v-for="(question, index) in questions.slice(0, 3)"
                       :key="question.id"
                     >
                       <div class="question-header">
-                        <span class="question-number">Câu {{ index + 4 }}</span>
-                <!-- Bỏ hiển thị điểm câu hỏi -->
-                        <span class="question-time">{{ question.timeLimit === 0 ? '∞' : (question.timeLimit + 's') }}</span>
+                        <span class="question-number">Câu {{ index + 1 }}</span>
+                        <span class="question-time">{{
+                          question.timeLimit === 0 ? '∞' : question.timeLimit + 's'
+                        }}</span>
+                      </div>
+                      <div class="question-content">
+                        {{ question.content }}
+                      </div>
+                      <div class="question-image" v-if="question.image">
+                        <img
+                          :src="question.image"
+                          :alt="'Hình ảnh câu hỏi ' + (index + 1)"
+                          class="img-fluid"
+                        />
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Xem tất cả: hiển thị phân trang -->
+                  <template v-else>
+                    <div
+                      class="question-item"
+                      v-for="(question, idx) in paginatedQuestions"
+                      :key="question.id"
+                    >
+                      <div class="question-header">
+                        <span class="question-number">Câu {{ questionsPageStart + idx + 1 }}</span>
+                        <span class="question-time">{{
+                          question.timeLimit === 0 ? '∞' : question.timeLimit + 's'
+                        }}</span>
                       </div>
                       <div class="question-content">
                         {{ question.content }}
                       </div>
                     </div>
+
+                    <div v-if="totalQuestionPages > 1" class="questions-pagination mt-2">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <button
+                          class="btn btn-outline-primary btn-sm"
+                          @click="previousQuestionsPage"
+                          :disabled="currentQuestionsPage === 1"
+                        >
+                          <i class="bi bi-chevron-left"></i> Trước
+                        </button>
+                        <span class="page-info"
+                          >Trang {{ currentQuestionsPage }} / {{ totalQuestionPages }}</span
+                        >
+                        <button
+                          class="btn btn-outline-primary btn-sm"
+                          @click="nextQuestionsPage"
+                          :disabled="currentQuestionsPage >= totalQuestionPages"
+                        >
+                          Sau <i class="bi bi-chevron-right"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Toggle button luôn ở cuối danh sách -->
+                  <div v-if="questions.length > 3" class="text-center mt-3">
+                    <button class="btn btn-outline-primary" @click="toggleShowAllQuestions">
+                      {{
+                        showAllQuestions ? 'Ẩn bớt' : 'Xem tất cả ' + questions.length + ' câu hỏi'
+                      }}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -456,13 +482,16 @@ const quizStats = computed(() => {
   if (!quizDetail.value) return {}
 
   const totalQuestions = questions.value.length
-const totalPoints = 0
-  const totalTime = questions.value.reduce((sum, q) => sum + (q.timeLimit === 0 ? 0 : (q.timeLimit || 30)), 0)
+  const totalPoints = 0
+  const totalTime = questions.value.reduce(
+    (sum, q) => sum + (q.timeLimit === 0 ? 0 : q.timeLimit || 30),
+    0,
+  )
 
   // ✅ SỬ DỤNG DỮ LIỆU TỪ ENDPOINT THỐNG KÊ CÔNG KHAI
   return {
     totalQuestions,
-  totalPoints,
+    totalPoints,
     totalTime,
     totalPlays: quizDetail.value.totalPlays || 0,
     averageScore: quizDetail.value.averageScore || 0,
@@ -653,6 +682,31 @@ const displayedComments = computed(() => {
   }
   return comments.value.slice(0, 3)
 })
+
+// Pagination for questions when showing all
+const currentQuestionsPage = ref(1)
+const questionsPerPage = 5
+const totalQuestionPages = computed(() =>
+  Math.ceil(Math.max(questions.value.length, 0) / questionsPerPage),
+)
+const questionsPageStart = computed(() => (currentQuestionsPage.value - 1) * questionsPerPage)
+const paginatedQuestions = computed(() => {
+  const start = questionsPageStart.value
+  return questions.value.slice(start, start + questionsPerPage)
+})
+
+const nextQuestionsPage = () => {
+  if (currentQuestionsPage.value < totalQuestionPages.value) currentQuestionsPage.value++
+}
+const previousQuestionsPage = () => {
+  if (currentQuestionsPage.value > 1) currentQuestionsPage.value--
+}
+
+const toggleShowAllQuestions = () => {
+  showAllQuestions.value = !showAllQuestions.value
+  // reset to first page when toggling on
+  if (showAllQuestions.value) currentQuestionsPage.value = 1
+}
 
 // Computed property to check if the current user is the quiz creator
 const isQuizCreator = computed(() => {
@@ -938,6 +992,12 @@ watch(
   background: #f8f9fa;
   border-radius: 12px;
   padding: 1rem;
+}
+
+/* Pagination for questions */
+.questions-pagination .page-info {
+  font-weight: 600;
+  color: #495057;
 }
 
 .question-item {

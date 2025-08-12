@@ -5,7 +5,7 @@
         <h1>Liên hệ</h1>
         <p>Chúng tôi luôn sẵn sàng hỗ trợ bạn</p>
       </div>
-      
+
       <div class="contact-info">
         <div class="contact-item">
           <i class="bi bi-envelope"></i>
@@ -14,7 +14,7 @@
             <p>support@quizmaster.com</p>
           </div>
         </div>
-        
+
         <div class="contact-item">
           <i class="bi bi-telephone"></i>
           <div>
@@ -22,12 +22,12 @@
             <p>+84 123 456 789</p>
           </div>
         </div>
-        
+
         <div class="contact-item">
           <i class="bi bi-geo-alt"></i>
           <div>
             <h3>Địa chỉ</h3>
-            <p>123 Đường ABC, Quận 1, TP.HCM</p>
+            <p>V116 Cát Bi, Phường Hải An, TP Hải Phòng</p>
           </div>
         </div>
       </div>
@@ -111,9 +111,9 @@
   .contact-content {
     padding: 30px 20px;
   }
-  
+
   .contact-header h1 {
     font-size: 2rem;
   }
 }
-</style> 
+</style>
