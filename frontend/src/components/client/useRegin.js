@@ -1,5 +1,4 @@
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
 import { useRouter } from 'vue-router'
 import api from '@/utils/axios'
 
@@ -56,20 +55,31 @@ export function useRegin() {
       const data = res.data
       if (data.status === 'SUCCESS') {
         message.value = data.message || 'Đăng ký thành công!'
-        localStorage.setItem('token', data.token)
 
-        // Lưu thông tin user vào localStorage nếu có
+        // Lưu token và thông tin user vào localStorage
+        localStorage.setItem('token', data.token)
         if (data.user) {
           localStorage.setItem('user', JSON.stringify(data.user))
-          localStorage.setItem('userId', data.user.id) // Thêm userId
+          localStorage.setItem('userId', data.user.id)
         }
 
+        // Cập nhật status để hiển thị thông báo thành công
         status.value = 'SUCCESS'
 
-        // Tự động chuyển hướng sau 3 giây
+        // Đảm bảo rằng user được đăng nhập
+        console.log('✅ Registration successful, user logged in automatically')
+
+        // Tự động chuyển hướng đến dashboard sau 2 giây
         setTimeout(() => {
-          router.push('/')
-        }, 3000)
+          // Đảm bảo token đã được lưu trước khi chuyển hướng
+          if (localStorage.getItem('token')) {
+            console.log('✅ Token found, redirecting to dashboard')
+            router.push('/dashboard')
+          } else {
+            console.error('❌ Token not found after registration')
+            router.push('/login')
+          }
+        }, 2000)
       } else {
         message.value = data.message || 'Có lỗi xảy ra!'
         status.value = 'loggedOut'
