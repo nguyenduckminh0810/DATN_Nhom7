@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/utils/axios'
+import { useUserStore } from '@/stores/user'
 
 export const useNotificationStore = defineStore('notification', () => {
   // ✅ STATE
@@ -32,9 +33,31 @@ export const useNotificationStore = defineStore('notification', () => {
       notifications.value = []
       unreadCount.value = 0
       
+      const userStore = useUserStore()
       const response = await api.get('/notifications')
       notifications.value = response.data
+      // Admin: chỉ giữ thông báo quan trọng (tạm thời filter phía client)
+      if (userStore.isAdmin && userStore.isAdmin()) {
+        const importantTypes = new Set([
+          'NEW_QUIZ_SUBMITTED',
+          'REPORT_SUBMITTED',
+          'ACCOUNT_STATUS_CHANGED',
+          'SYSTEM_ACTIVITY'
+        ])
+        notifications.value = notifications.value.filter(n => {
+          const typeOk = n.notificationType ? importantTypes.has(n.notificationType) : true
+          const priority = (n.priority || 'NORMAL').toUpperCase()
+          const priorityOk = priority === 'HIGH' || priority === 'URGENT' || priority === 'NORMAL'
+          // Loại bỏ những loại rõ ràng dành cho user
+          const userOnly = n.notificationType === 'QUIZ_COMPLETED' || n.notificationType === 'QUIZ_RESULT_READY'
+          return !userOnly && typeOk && priorityOk
+        })
+      }
       updateUnreadCount()
+      // Đồng bộ UI: nếu API đếm chưa đọc trả 0 nhưng danh sách vẫn có cờ isRead=false, ép về true
+      if (unreadCount.value === 0 && notifications.value.some(n => n && n.isRead === false)) {
+        notifications.value = notifications.value.map(n => ({ ...n, isRead: true }))
+      }
       
       console.log('✅ Notifications loaded:', notifications.value.length)
     } catch (err) {
@@ -78,8 +101,9 @@ export const useNotificationStore = defineStore('notification', () => {
   const markAllAsRead = async () => {
     try {
       await api.put('/notifications/read-all')
-      notifications.value.forEach(n => n.isRead = true)
-      updateUnreadCount()
+      // Reload từ server để tránh hiển thị dữ liệu cache/cũ
+      await loadUnreadCount()
+      await loadNotifications()
     } catch (err) {
       console.error('❌ Error marking all notifications as read:', err)
     }

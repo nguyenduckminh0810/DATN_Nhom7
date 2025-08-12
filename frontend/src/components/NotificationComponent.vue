@@ -12,7 +12,7 @@
           <div class="notification-header">
             <h3>Thông báo</h3>
             <div class="notification-actions">
-              <button @click.stop="markAllAsRead" class="btn-mark-all">Đánh dấu tất cả đã đọc</button>
+              <button v-if="notificationStore.unreadCount > 0" @click.stop="markAllAsRead" class="btn-mark-all">Đánh dấu tất cả đã đọc</button>
               <button @click.stop="showPanel = false" class="btn-close">×</button>
             </div>
           </div>
@@ -49,11 +49,11 @@
                 </div>
 
                 <div class="notification-actions">
-                  <button v-if="!notification.isRead" @click.stop="markAsRead(notification.id)" class="btn-mark-read">
-                    <i class="fas fa-check"></i>
+                  <button v-if="!notification.isRead" @click.stop="markAsRead(notification.id)" class="btn-mark-read" title="Đánh dấu đã đọc">
+                    <i class="bi bi-check-lg"></i>
                   </button>
-                  <button @click.stop="deleteNotification(notification.id)" class="btn-delete">
-                    <i class="fas fa-trash"></i>
+                  <button @click.stop="deleteNotification(notification.id)" class="btn-delete" title="Xóa thông báo">
+                    <i class="bi bi-trash"></i>
                   </button>
                 </div>
               </div>
@@ -262,380 +262,82 @@ export default {
 </script>
 
 <style scoped>
-.notification-container {
-  position: relative;
+:root {
+  --notif-bg: #ffffff;
+  --notif-surface: rgba(255,255,255,0.85);
+  --notif-border: rgba(0,0,0,0.08);
+  --notif-shadow: 0 24px 60px rgba(0,0,0,0.18);
+  --notif-header-bg: rgba(255,255,255,0.7);
+  --notif-text: #1f2937;
+  --notif-text-2: #4b5563;
+  --notif-text-3: #6b7280;
+  --notif-muted: #9ca3af;
+  --notif-accent: #667eea;
 }
 
-.notif-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.15);
-  backdrop-filter: blur(2px);
-  z-index: 1050;
-}
+.notification-container { position: relative; }
 
-.notification-bell {
-  position: relative;
-  cursor: pointer;
-  padding: 10px;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.notif-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.28); backdrop-filter: blur(2px); z-index: 1050; }
 
-.notification-bell:hover {
-  background-color: rgba(102, 126, 234, 0.1);
-  transform: scale(1.05);
-}
+.notification-bell { position: relative; cursor: pointer; padding: 10px; border-radius: 50%; transition: transform .2s ease, background .2s ease; display: flex; align-items: center; justify-content: center; }
+.notification-bell:hover { background-color: rgba(102, 126, 234, 0.12); transform: translateY(-1px); }
+.notification-bell i { font-size: 18px; color: var(--notif-accent); }
 
-.notification-bell i {
-  font-size: 18px;
-  color: #667eea;
-}
+.notification-badge { position: absolute; top: -2px; right: -2px; background: linear-gradient(135deg, #ef4444, #f43f5e); color: #fff; border-radius: 999px; min-width: 20px; height: 20px; padding: 0 6px; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: 800; border: 2px solid #fff; box-shadow: 0 4px 12px rgba(244,63,94,.35); }
 
-.notification-badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  background: linear-gradient(135deg, #ff4757 0%, #ff3742 100%);
-  color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
-  animation: pulse 2s infinite;
-}
+.notification-panel { position: fixed; top: 84px; right: 24px; width: 420px; max-height: 560px; background: #ffffff; border: 1px solid var(--notif-border); border-radius: 16px; box-shadow: var(--notif-shadow); z-index: 1101; overflow: hidden; }
 
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
-  }
-  50% {
-    transform: scale(1.1);
-    box-shadow: 0 4px 16px rgba(255, 71, 87, 0.5);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
-  }
-}
+.notification-header { display:flex; justify-content: space-between; align-items:center; padding: 14px 16px; border-bottom: 1px solid var(--notif-border); background: #ffffff; }
+.notification-header h3 { margin: 0; font-size: 15px; font-weight: 800; color: var(--notif-text); }
+.notification-actions { display:flex; gap: 8px; }
+.btn-mark-all { background: #fff; color: var(--notif-text-2); border: 1px solid var(--notif-border); padding: 6px 10px; border-radius: 10px; font-size: 12px; cursor: pointer; transition: .2s; }
+.btn-mark-all:hover { background: #f8fafc; }
+.btn-close { background: #fff; border: 1px solid var(--notif-border); font-size: 16px; cursor: pointer; color: var(--notif-text-2); width: 32px; height: 32px; border-radius: 10px; display:flex; align-items:center; justify-content:center; transition: .2s; }
+.btn-close:hover { background:#f1f5f9; }
 
-.notification-panel {
-  position: fixed;
-  top: 88px; /* below navbar */
-  right: 24px;
-  width: 420px;
-  max-height: 520px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-  z-index: 1101;
-  overflow: hidden;
-  backdrop-filter: blur(16px);
-}
+.notification-list { max-height: 486px; overflow: auto; }
+.notification-list::-webkit-scrollbar { width: 8px; }
+.notification-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 6px; }
 
-.notification-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--card-header-bg);
-  color: var(--card-header-text);
-}
+.no-notifications { padding: 32px; text-align:center; color: var(--notif-text-3); }
 
-.notification-header h3 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--card-header-text);
-}
+.notification-item { display:flex; align-items:flex-start; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--notif-border); cursor: pointer; transition: background .15s ease; position: relative; background: transparent; }
+.notification-item:hover { background: rgba(15,23,42,.03); }
+.notification-item.unread { background: #f8fafc; }
+.notification-item.unread::before { content:''; position:absolute; left:0; top:0; bottom:0; width: 3px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 0 4px 4px 0; }
 
-.notification-actions {
-  display: flex;
-  gap: 8px;
-}
+.notification-icon { color: var(--notif-accent); font-size: 18px; width: 40px; height: 40px; display:flex; align-items:center; justify-content:center; background: rgba(102,126,234,.12); border-radius: 12px; }
 
-.btn-mark-all {
-  background: transparent;
-  color: var(--card-header-text);
-  border: 1px solid var(--border-color);
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+.notification-content { flex:1; min-width:0; }
+.notification-title { font-weight: 800; font-size: 14px; margin-bottom: 4px; color: #111827; line-height: 1.35; }
+.notification-message { font-size: 13px; color: #374151; margin-bottom: 6px; line-height: 1.5; }
+.notification-time { font-size: 12px; color: #6b7280; font-weight: 600; }
+.notification-time { font-size: 12px; color: var(--notif-muted); font-weight: 600; }
 
-.btn-mark-all:hover {
-  background: rgba(0,0,0,0.04);
-}
+.loading-notifications { padding: 20px; text-align:center; color: var(--notif-text-2); }
+.spinner { width: 20px; height: 20px; border: 2px solid #e5e7eb; border-top: 2px solid var(--notif-accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
 
-.btn-close {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  font-size: 16px;
-  cursor: pointer;
-  color: var(--card-header-text);
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease;
-}
+.no-notifications { padding: 40px 20px; text-align: center; color: var(--notif-text-3); background: #fafafa; }
+.no-notifications-content { display:flex; flex-direction:column; align-items:center; gap: 12px; }
+.no-notifications i { font-size: 48px; margin-bottom: 16px; opacity: .35; color: #94a3b8; }
+.no-notifications p { margin: 0; font-weight: 600; font-size: 15px; color: var(--notif-text-2); }
+.no-notifications small { color: var(--notif-muted); font-size: 12px; line-height: 1.4; }
 
-.btn-close:hover {
-  background: rgba(0,0,0,0.06);
-}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-.notification-list {
-  max-height: 440px;
-  overflow-y: auto;
-}
+.notification-actions { display:flex; gap: 6px; margin-left: 8px; }
+.btn-mark-read, .btn-delete { background: #fff; border: 1px solid var(--notif-border); padding: 6px; border-radius: 10px; cursor: pointer; font-size: 16px; transition: .2s; width: 32px; height: 32px; display:flex; align-items:center; justify-content:center; color: #374151; }
+.btn-mark-read { color: #16a34a; }
+.btn-mark-read:hover { background: rgba(22,163,74,.1); color: #16a34a; }
+.btn-delete { color: #dc2626; }
+.btn-delete:hover { background: rgba(220,38,38,.1); color: #dc2626; }
 
-.notification-list::-webkit-scrollbar {
-  width: 8px;
-}
-.notification-list::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.15);
-  border-radius: 6px;
-}
-
-.no-notifications {
-  padding: 32px;
-  text-align: center;
-  color: #666;
-}
-
-.notification-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
-  position: relative;
-  background: transparent;
-}
-
-.notification-item:hover {
-  background: rgba(0,0,0,0.03);
-}
-
-.notification-item.unread {
-  background: rgba(102, 126, 234, 0.08);
-  border-left: 4px solid #667eea;
-}
-
-.notification-item.unread::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.notification-icon {
-  color: #667eea;
-  font-size: 18px;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(102, 126, 234, 0.12);
-  border-radius: 12px;
-}
-
-.notification-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.notification-title {
-  font-weight: 700;
-  font-size: 14px;
-  margin-bottom: 4px;
-  color: var(--text-primary);
-  line-height: 1.35;
-}
-
-.notification-message {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-  line-height: 1.5;
-}
-
-.notification-time {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-.loading-notifications {
-  padding: 20px;
-  text-align: center;
-  color: #666;
-}
-
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #e0e0e0;
-  border-top: 2px solid #007bff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 10px;
-}
-
-.no-notifications {
-  padding: 40px 20px;
-  text-align: center;
-  color: #666;
-  background: #fafafa;
-}
-
-.no-notifications-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.no-notifications i {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.3;
-  color: #ccc;
-}
-
-.no-notifications p {
-  margin: 0;
-  font-weight: 500;
-  font-size: 16px;
-  color: #666;
-}
-
-.no-notifications small {
-  color: #999;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.notification-actions {
-  display: flex;
-  gap: 4px;
-  margin-left: 8px;
-}
-
-.btn-mark-read,
-.btn-delete {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  padding: 6px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-mark-read {
-  color: #28a745;
-}
-
-.btn-mark-read:hover {
-  background: rgba(40, 167, 69, 0.12);
-  color: #28a745;
-}
-
-.btn-delete {
-  color: #dc3545;
-}
-
-.btn-delete:hover {
-  background: rgba(220, 53, 69, 0.12);
-  color: #dc3545;
-}
-
-.toast-notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 10000;
-  animation: slideIn 0.3s ease;
-}
-
-.toast-notification.success {
-  border-left: 4px solid #28a745;
-}
-
-.toast-notification.error {
-  border-left: 4px solid #dc3545;
-}
-
-.toast-notification.warning {
-  border-left: 4px solid #ffc107;
-}
-
-.toast-notification.info {
-  border-left: 4px solid #17a2b8;
-}
-
-.toast-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.toast-close {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  color: #666;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-</style> 
+.toast-notification { position: fixed; top: 20px; right: 20px; background: #fff; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.15); padding: 14px 16px; display:flex; align-items:center; gap: 10px; z-index: 10000; animation: slideIn .3s ease; border: 1px solid var(--notif-border); }
+.toast-notification.success { border-left: 4px solid #16a34a; }
+.toast-notification.error { border-left: 4px solid #dc2626; }
+.toast-notification.warning { border-left: 4px solid #f59e0b; }
+.toast-notification.info { border-left: 4px solid #2563eb; }
+.toast-content { display:flex; align-items:center; gap: 8px; color: var(--notif-text); }
+.toast-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--notif-text-2); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>

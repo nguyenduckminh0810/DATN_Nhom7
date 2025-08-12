@@ -399,17 +399,28 @@
         </div>
 
         <div class="modal-actions">
-          <button class="action-btn primary" @click="showDetailModal = false">
-            <i class="bi bi-check2"></i>
-            Đóng
+          <button class="action-btn success left-align" @click="openReviewFromDetail">
+            <i class="bi bi-journal-text"></i>
+            Xem câu trả lời
           </button>
           <button v-if="modalData.resultId" class="action-btn" @click="gotoResult(modalData.resultId)">
             <i class="bi bi-box-arrow-up-right"></i>
             Xem kết quả
           </button>
+          <button class="action-btn primary" @click="showDetailModal = false">
+            <i class="bi bi-check2"></i>
+            Đóng
+          </button>
         </div>
       </div>
     </div>
+
+    <!-- Review Modal -->
+    <AttemptReviewModal
+      v-if="showReviewModal"
+      :attempt="selectedAttemptForReview"
+      @close="showReviewModal = false"
+    />
   </div>
 </template>
 
@@ -419,6 +430,8 @@ import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { quizAttemptService } from '@/services/quizAttemptService'
 import { adminService } from '@/services/adminService'
+import api from '@/utils/axios'
+import AttemptReviewModal from '@/components/client/AttemptReviewModal.vue'
 
 // Props
 const props = defineProps({
@@ -447,6 +460,8 @@ const sortBy = ref('recent')
 const scoreFilter = ref('all')
 const viewMode = ref('card')
 const showDetailModal = ref(false)
+  const showReviewModal = ref(false)
+  const selectedAttemptForReview = ref(null)
 const modalData = ref({
   title: '',
   score: 0,
@@ -710,8 +725,69 @@ const clearFilters = () => {
     }
   }
 
-  const gotoResult = (resultId) => {
-    window.location.href = `/result/${resultId}`
+  const gotoResult = (resultId, opts = {}) => {
+    const query = opts.reviewOnly ? '?reviewOnly=1' : ''
+    window.location.href = `/result/${resultId}${query}`
+  }
+
+  // Mở trang xem câu trả lời từ modal chi tiết
+  const viewAnswersFromModal = async () => {
+    try {
+      // 1) Nếu có resultId -> điều hướng trực tiếp
+      if (modalData.value?.resultId) {
+        return gotoResult(modalData.value.resultId, { reviewOnly: true })
+      }
+
+      // 2) Fallback: tìm result gần nhất của user cho quiz này
+      const currentUserId = userStore.user?.id
+      if (!currentUserId) {
+        console.warn('Không xác định được người dùng hiện tại để tra cứu kết quả')
+        return
+      }
+
+      const res = await api.get(`/result/user/${currentUserId}`)
+      const results = Array.isArray(res.data) ? res.data : []
+
+      // Lọc theo tiêu đề quiz tương ứng trong modal
+      const sameQuiz = results.filter(r => r.quizTitle === modalData.value.title)
+      if (!sameQuiz.length) {
+        console.warn('Chưa có dữ liệu câu trả lời cho lần làm này')
+        return
+      }
+
+      // Chọn bản ghi có thời điểm gần với attemptedAt nhất
+      const target = sameQuiz.reduce((best, cur) => {
+        const curDiff = Math.abs(new Date(cur.completedAt).getTime() - new Date(modalData.value.attemptedAt).getTime())
+        if (!best) return { item: cur, diff: curDiff }
+        return curDiff < best.diff ? { item: cur, diff: curDiff } : best
+      }, null)
+
+      if (target?.item?.id) {
+        return gotoResult(target.item.id, { reviewOnly: true })
+      }
+    } catch (e) {
+      console.warn('Không thể mở trang xem câu trả lời:', e)
+    }
+  }
+
+  // Mở modal review tại trang history
+  const openReviewModal = (attempt) => {
+    selectedAttemptForReview.value = attempt
+    showReviewModal.value = true
+  }
+
+  // Từ modal chi tiết: mở review modal của attempt đang xem chi tiết
+  const openReviewFromDetail = () => {
+    if (!modalData.value?.attemptId) return
+    const attempt = attempts.value.find(a => a.id === modalData.value.attemptId) || {
+      id: modalData.value.attemptId,
+      quizTitle: modalData.value.title,
+      score: modalData.value.score,
+      timeTaken: modalData.value.timeTaken,
+      attemptedAt: modalData.value.attemptedAt,
+      resultId: modalData.value.resultId
+    }
+    openReviewModal(attempt)
   }
 
 const getScoreClass = (score) => {
@@ -1055,6 +1131,8 @@ onMounted(() => {
 .action-btn i { font-size: 1rem; }
 .action-btn.primary { background: #ffffff; border: 1px solid rgba(0,0,0,.06); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
 .dark-theme .action-btn.primary { background: var(--bg-dark); border: 1px solid var(--border-dark); color: var(--text-light); }
+.action-btn.success { background: #16a34a; color: #fff; border: 1px solid #16a34a; box-shadow: 0 6px 18px rgba(22,163,74,.35); }
+.action-btn.success:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(22,163,74,.45); }
 .action-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.12); }
 
 /* Pagination */
@@ -1092,6 +1170,7 @@ onMounted(() => {
 .score-ring.poor { background: var(--poor-color); }
 .score-ring .score-value { font-size: 3rem; font-weight: 900; line-height: 1; }
 .score-ring .score-text { font-size: .9rem; font-weight: 700; opacity: .95; text-transform: uppercase; letter-spacing: .5px; }
-.modal-actions { display: flex; justify-content: flex-end; gap: .75rem; padding: 1rem 1.25rem; border-top: 1px solid var(--border-light); background: rgba(255,255,255,0.6); }
+.modal-actions { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: 1rem 1.25rem; border-top: 1px solid var(--border-light); background: rgba(255,255,255,0.6); }
 .dark-theme .modal-actions { background: rgba(0,0,0,0.25); border-top-color: var(--border-dark); }
+.modal-actions .left-align { margin-right: auto; }
 </style>

@@ -20,7 +20,7 @@ const notificationComponent = ref(null)
 
 const isLoggedIn = computed(() => !!token.value)
 const userProfile = ref(null)
-const notificationCount = computed(() => notificationStore.unreadCount)
+const notificationCount = computed(() => notificationStore.unreadCount || 0)
 
 // ✅ CHECK USER ROLE
 const isAdmin = computed(() => {
@@ -162,25 +162,25 @@ const showNotifications = (event) => {
 
 // ✅ LOGOUT FOR NAVBAR
 const logoutForNavbar = () => {
-  logout()
-  // ✅ Reset user profile
-  userProfile.value = null
-  // ✅ Close all dropdowns
-  closeAllDropdowns()
-  // ✅ Clear all reactive state
-  notificationCount.value = 0
-  avatarUrl.value = null
-  username.value = null
+  // Để composable useLogin xử lý việc bảo lưu username khi rememberMe=1
+  const remembered = localStorage.getItem('rememberMe') === '1'
+  const rememberedUsername = remembered ? localStorage.getItem('username') : null
 
-  // ✅ Clear all localStorage completely
-  localStorage.clear()
+  logout()
+  // ✅ Reset user profile & UI
+  userProfile.value = null
+  closeAllDropdowns()
+  avatarUrl.value = null
+
+  // Không xóa toàn bộ localStorage để giữ lại username/rememberMe nếu người dùng đã tick
+  if (remembered && rememberedUsername) {
+    localStorage.setItem('username', rememberedUsername)
+    localStorage.setItem('rememberMe', '1')
+  }
 
   // ✅ Redirect to login page after logout
   router.push('/login')
-  console.log('✅ Logout completed - redirected to login')
-
-  // ✅ Force refresh immediately
-  window.location.reload()
+  console.log('✅ Logout completed - redirected to login (preserved rememberMe if enabled)')
 }
 
 watch(message, (newVal) => {
@@ -233,7 +233,14 @@ onMounted(() => {
   if (isLoggedIn.value && token) {
     fetchUserProfile()
     // ✅ Khởi tạo notification store
-    notificationStore.initialize()
+    notificationStore.initialize().then(async () => {
+      // Đồng bộ badge ngay sau initialize nếu server đã ghi nhận đã đọc hết
+      const countBefore = notificationStore.unreadCount
+      await notificationStore.loadUnreadCount()
+      if (notificationStore.unreadCount === 0 && countBefore !== 0) {
+        await notificationStore.loadNotifications()
+      }
+    })
   }
 
   // Add click outside listener
@@ -588,7 +595,7 @@ const handleUserDropdownLeave = (event) => {
                 <RouterLink v-if="item.link" :to="item.link" class="user-dropdown-link" @click="closeAllDropdowns">
                   <i :class="item.icon"></i>
                   <span>{{ item.label }}</span>
-                  <span v-if="item.badge" class="notification-badge">{{ item.badge }}</span>
+                  <span v-if="notificationStore.unreadCount > 0 && item.label === 'Thông báo'" class="notification-badge">{{ notificationStore.unreadCount }}</span>
                 </RouterLink>
 
                 <a v-else-if="item.action" href="#" class="user-dropdown-link"
@@ -596,7 +603,7 @@ const handleUserDropdownLeave = (event) => {
                 >
                   <i :class="item.icon"></i>
                   <span>{{ item.label }}</span>
-                  <span v-if="item.badge" class="notification-badge">{{ item.badge }}</span>
+                  <span v-if="notificationStore.unreadCount > 0 && item.label === 'Thông báo'" class="notification-badge">{{ notificationStore.unreadCount }}</span>
                 </a>
               </template>
             </div>

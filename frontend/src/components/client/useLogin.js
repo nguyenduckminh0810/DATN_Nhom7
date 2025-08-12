@@ -13,7 +13,8 @@ const message = ref('')
 const initializeToken = () => {
   const savedToken = localStorage.getItem('token')
   const savedUserId = localStorage.getItem('userId')
-  const savedUsername = localStorage.getItem('username') // ✅ Thêm dòng này
+  // chỉ khôi phục username nếu user đã chọn ghi nhớ
+  const savedUsername = localStorage.getItem('rememberMe') === '1' ? localStorage.getItem('username') : null
 
   if (savedToken) {
     token.value = savedToken
@@ -129,16 +130,29 @@ const login = async () => {
 
 const logout = () => {
   // ✅ CLEAR AUTH DATA WITHOUT ROUTER
+  const remembered = localStorage.getItem('rememberMe') === '1'
+  const rememberedUsername = remembered ? localStorage.getItem('username') : null
+
   localStorage.removeItem('token')
   localStorage.removeItem('userId')
-  localStorage.removeItem('username')
   localStorage.removeItem('user')
   localStorage.removeItem('admin_user') // ✅ Xóa cả admin_user nếu có
-  
+
+  // Nếu KHÔNG nhớ đăng nhập → xóa username/rememberMe
+  if (!remembered) {
+    localStorage.removeItem('username')
+    localStorage.removeItem('rememberMe')
+    localStorage.removeItem('remembered_pw')
+  } else if (rememberedUsername) {
+    // Đảm bảo username vẫn còn (phòng trường hợp nơi khác xóa)
+    localStorage.setItem('username', rememberedUsername)
+    localStorage.setItem('rememberMe', '1')
+  }
+
   // ✅ Reset reactive values
   token.value = null
   userId.value = null
-  username.value = null
+  username.value = remembered ? rememberedUsername : null
   status.value = 'loggedOut'
   message.value = ''
   resetForm()

@@ -11,7 +11,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -215,19 +214,13 @@ public class NotificationService {
 
     // ✅ NEW QUIZ SUBMITTED (CHO ADMIN)
     public void sendNewQuizSubmittedNotification(Long quizId, String quizTitle, String creatorName) {
-        String title = "Quiz mới cần phê duyệt";
-        String message = "Quiz '" + quizTitle + "' của " + creatorName + " cần phê duyệt";
-        String actionUrl = "/admin/quiz/" + quizId;
-        
-        sendNotificationToAdmins(NEW_QUIZ_SUBMITTED, title, message, PRIORITY_HIGH, quizId, "QUIZ", actionUrl);
+        // Hệ thống đang cho phép tạo quiz công khai không cần duyệt → không gửi thông báo cho admin
+        System.out.println("ℹ️ Skipped admin notification NEW_QUIZ_SUBMITTED because quizzes are auto-public.");
     }
 
     // ✅ QUIZ COMPLETED (CHO ADMIN)
     public void sendQuizCompletedNotification(Long quizId, String quizTitle, String userName, int score) {
-        String title = "Quiz hoàn thành";
-        String message = userName + " đã hoàn thành quiz '" + quizTitle + "' với " + score + " điểm";
-        String actionUrl = "/admin/quiz/" + quizId;
-        
-        sendNotificationToAdmins(QUIZ_COMPLETED, title, message, PRIORITY_NORMAL, quizId, "QUIZ", actionUrl);
+        // Tránh spam admin: sự kiện hoàn thành quiz chỉ dành cho user
+        System.out.println("ℹ️ Skipped admin notification QUIZ_COMPLETED for user activity.");
     }
 } 
