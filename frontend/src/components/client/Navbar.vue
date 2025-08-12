@@ -144,15 +144,20 @@ const switchToUserPanel = () => {
   router.push('/dashboard')
 }
 
-// ✅ SHOW NOTIFICATIONS
-const showNotifications = () => {
-  console.log('🔔 Show notifications clicked')
-  if (notificationComponent.value) {
-    // ✅ Trigger toggle panel trực tiếp
-    notificationComponent.value.toggleNotificationPanel()
-  } else {
-    console.log('❌ NotificationComponent not found')
+// ✅ SHOW NOTIFICATIONS: đóng dropdown trước khi mở panel để tránh chồng chéo
+const showNotifications = (event) => {
+  if (event) {
+    event.preventDefault()
+    event.stopPropagation()
   }
+  // Đóng mọi dropdown
+  closeAllDropdowns()
+  // Mở panel sau khi dropdown đóng
+  setTimeout(() => {
+    if (notificationComponent.value) {
+      notificationComponent.value.toggleNotificationPanel()
+    }
+  }, 0)
 }
 
 // ✅ LOGOUT FOR NAVBAR
@@ -543,8 +548,7 @@ const handleUserDropdownLeave = (event) => {
           </button>
         </div>
 
-        <!-- ✅ NOTIFICATION COMPONENT (VISIBLE FOR TESTING) -->
-        <NotificationComponent v-if="isLoggedIn" ref="notificationComponent" />
+        <!-- ✅ Notification moved into profile dropdown -->
 
         <div v-if="isLoggedIn" class="user-menu dropdown" @mouseenter="handleUserDropdownHover"
           @mouseleave="handleUserDropdownLeave">
@@ -556,10 +560,6 @@ const handleUserDropdownLeave = (event) => {
             <div class="user-info">
               <div class="user-name-row">
                 <span class="user-name">{{ userProfile?.fullName || username }}</span>
-                <!-- ✅ NOTIFICATION BADGE BÊN NGOÀI -->
-                <span v-if="notificationCount > 0" class="navbar-notification-badge">{{
-                  notificationCount
-                  }}</span>
               </div>
               <small class="user-status">Online</small>
             </div>
@@ -592,12 +592,19 @@ const handleUserDropdownLeave = (event) => {
                 </RouterLink>
 
                 <a v-else-if="item.action" href="#" class="user-dropdown-link"
-                  @click.prevent="item.action === 'notifications' ? showNotifications() : null">
+                  @click="showNotifications($event)"
+                >
                   <i :class="item.icon"></i>
                   <span>{{ item.label }}</span>
                   <span v-if="item.badge" class="notification-badge">{{ item.badge }}</span>
                 </a>
               </template>
+            </div>
+
+            <!-- Inline notifications panel inside dropdown -->
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-notifications">
+              <NotificationComponent ref="notificationComponent" />
             </div>
 
             <!-- Logout Button - Always show -->
@@ -1118,6 +1125,19 @@ const handleUserDropdownLeave = (event) => {
   width: 20px;
   text-align: center;
   color: #667eea;
+}
+
+/* Notification component inside dropdown */
+.dropdown-notifications :deep(.notification-bell) {
+  display: none;
+}
+.dropdown-notifications :deep(.notification-panel) {
+  position: fixed;
+  top: calc(80px + 8px);
+  right: 24px;
+  width: 420px;
+  max-height: 520px;
+  z-index: 1100;
 }
 
 .dropdown-header {

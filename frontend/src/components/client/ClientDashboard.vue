@@ -203,7 +203,7 @@ function handleAvatarError(e) {
 /* ====== Phần sẵn có giữ nguyên từ đây ====== */
 .gradient-bg-with-floating {
   position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-background);
   overflow-x: hidden;
   min-height: 100vh;
 }

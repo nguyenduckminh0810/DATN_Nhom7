@@ -1037,7 +1037,7 @@ watch(newQuestion, () => {
 <style scoped>
 .edit-quiz-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: var(--app-background);
   padding-bottom: 40px;
 }
 

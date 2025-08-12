@@ -438,7 +438,7 @@ async function submitQuiz() {
 /* === CONTAINER === */
 .quiz-play-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-background);
   padding: 20px;
   display: flex;
   flex-direction: column;

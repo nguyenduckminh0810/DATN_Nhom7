@@ -19,7 +19,7 @@
 
 <style scoped>
 .admin-footer {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-background);
   color: #fff;
   box-shadow: 0 -4px 20px rgba(102, 126, 234, 0.2);
   border-top-left-radius: 12px;
