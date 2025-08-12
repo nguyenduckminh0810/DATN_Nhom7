@@ -348,6 +348,11 @@ watch(() => route.params.id, (val) => {
 </template>
 
 <style scoped>
+/* Page background uses theme */
+.quiz-public-container {
+    min-height: 100vh;
+    background: var(--app-background);
+}
 /* Skeleton Loading */
 .quiz-skeleton-grid {
     display: grid;

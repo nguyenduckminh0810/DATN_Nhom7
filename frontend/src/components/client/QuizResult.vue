@@ -594,7 +594,7 @@ const submitReview = async () => {
 <style scoped>
 .quiz-result-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-background);
   position: relative;
   padding: 40px 0;
   overflow-x: hidden;

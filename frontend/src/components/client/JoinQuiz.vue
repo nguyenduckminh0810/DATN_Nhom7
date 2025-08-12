@@ -228,7 +228,7 @@ const resetForm = () => {
 <style scoped>
 .join-quiz-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-background);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -236,7 +236,7 @@ const resetForm = () => {
 }
 
 .join-quiz-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 20px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -245,10 +245,11 @@ const resetForm = () => {
 }
 
 .card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--card-header-bg);
+  color: var(--card-header-text);
   padding: 30px;
   text-align: center;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .header-icon {
@@ -264,7 +265,7 @@ const resetForm = () => {
 
 .header-subtitle {
   font-size: 1.1rem;
-  opacity: 0.9;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -374,14 +375,14 @@ const resetForm = () => {
 }
 
 .quiz-preview {
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   border-radius: 15px;
   padding: 25px;
   margin-top: 20px;
 }
 
 .preview-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 10px;
   padding: 20px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
@@ -401,14 +402,14 @@ const resetForm = () => {
 .quiz-title {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #333;
+  color: var(--text-primary);
   margin: 0 0 5px 0;
 }
 
 .quiz-meta {
   display: flex;
   gap: 15px;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -478,14 +479,14 @@ const resetForm = () => {
 }
 
 .instructions {
-  background: #e3f2fd;
+  background: var(--bg-secondary);
   border-radius: 10px;
   padding: 20px;
   margin-top: 20px;
 }
 
 .instruction-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 10px;
   padding: 20px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
@@ -517,12 +518,12 @@ const resetForm = () => {
 .instruction-content strong {
   display: block;
   margin-bottom: 5px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .instruction-content p {
   margin: 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 </style> 

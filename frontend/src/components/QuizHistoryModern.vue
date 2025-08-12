@@ -11,22 +11,20 @@
     </div>
 
     <!-- Header Section -->
-    <div class="header-section">
+    <div class="header-section" role="banner">
       <div class="header-content">
         <div class="title-group">
-          <div class="icon-wrapper">
+          <div class="icon-wrapper" aria-hidden="true">
             <i class="bi bi-graph-up-arrow"></i>
           </div>
           <div class="title-text">
-            <h1>{{ isAdmin ? 'Quản lý lịch sử làm bài' : 'Lịch sử làm bài của tôi' }}</h1>
-            <p>{{ isAdmin ? 'Theo dõi và phân tích kết quả của tất cả người dùng' : 'Theo dõi tiến trình học tập và' +
-              'phân'
-              + 'tích kết quả cá nhân' }}</p>
+            <h1 class="header-title">{{ isAdmin ? 'Quản lý lịch sử làm bài' : 'Lịch sử làm bài của tôi' }}</h1>
+            <p class="header-subtitle">{{ isAdmin ? 'Theo dõi và phân tích kết quả của tất cả người dùng' : 'Theo dõi tiến trình học tập và phân tích kết quả cá nhân' }}</p>
           </div>
         </div>
 
         <div class="header-controls">
-          <button @click="refreshData" class="refresh-btn" :disabled="loading">
+          <button @click="refreshData" class="refresh-btn" :disabled="loading" aria-label="Làm mới dữ liệu">
             <i class="bi bi-arrow-clockwise" :class="{ 'spinning': loading }"></i>
           </button>
         </div>
@@ -121,43 +119,43 @@
         <div class="chart-section">
           <div class="chart-header">
             <h3>Phân tích hiệu suất</h3>
-            <div class="chart-legend">
-              <div class="legend-item excellent">
-                <div class="legend-color"></div>
-                <span>Xuất sắc (90+)</span>
-              </div>
-              <div class="legend-item good">
-                <div class="legend-color"></div>
-                <span>Tốt (70-89)</span>
-              </div>
-              <div class="legend-item average">
-                <div class="legend-color"></div>
-                <span>Trung bình (50-69)</span>
-              </div>
-              <div class="legend-item poor">
-                <div class="legend-color"></div>
-                <span>Cần cải thiện (&lt;50)</span>
-              </div>
+          <div class="chart-legend">
+            <div class="legend-item excellent">
+              <div class="legend-color" :style="{ background: 'var(--excellent-color)' }"></div>
+              <span>Xuất sắc (90+)</span>
             </div>
+            <div class="legend-item good">
+              <div class="legend-color" :style="{ background: 'var(--good-color)' }"></div>
+              <span>Tốt (70-89)</span>
+            </div>
+            <div class="legend-item average">
+              <div class="legend-color" :style="{ background: 'var(--average-color)' }"></div>
+              <span>Trung bình (50-69)</span>
+            </div>
+            <div class="legend-item poor">
+              <div class="legend-color" :style="{ background: 'var(--poor-color)' }"></div>
+              <span>Cần cải thiện (&lt;50)</span>
+            </div>
+          </div>
           </div>
           <div class="performance-bars">
             <div class="performance-bar excellent">
-              <div class="bar-fill" :style="{ width: `${excellentPercentage}%` }">
+              <div class="bar-fill" :style="{ width: `${excellentPercentage}%`, background: 'var(--excellent-color)' }">
                 <span class="bar-label">{{ excellentCount }}</span>
               </div>
             </div>
             <div class="performance-bar good">
-              <div class="bar-fill" :style="{ width: `${goodPercentage}%` }">
+              <div class="bar-fill" :style="{ width: `${goodPercentage}%`, background: 'var(--good-color)' }">
                 <span class="bar-label">{{ goodCount }}</span>
               </div>
             </div>
             <div class="performance-bar average">
-              <div class="bar-fill" :style="{ width: `${averagePercentage}%` }">
+              <div class="bar-fill" :style="{ width: `${averagePercentage}%`, background: 'var(--average-color)' }">
                 <span class="bar-label">{{ averageCount }}</span>
               </div>
             </div>
             <div class="performance-bar poor">
-              <div class="bar-fill" :style="{ width: `${poorPercentage}%` }">
+              <div class="bar-fill" :style="{ width: `${poorPercentage}%`, background: 'var(--poor-color)' }">
                 <span class="bar-label">{{ poorCount }}</span>
               </div>
             </div>
@@ -237,9 +235,9 @@
                     <i class="bi bi-person-fill"></i>
                     {{ attempt.username }}
                   </span>
-                  <span class="date">
-                    <i class="bi bi-calendar3"></i>
-                    {{ formatDate(attempt.attemptedAt) }}
+                  <span class="duration">
+                    <i class="bi bi-stopwatch"></i>
+                    {{ formatTime(attempt.timeTaken) }}
                   </span>
                 </div>
               </div>
@@ -274,7 +272,7 @@
             </div>
 
             <div class="card-actions">
-              <button class="action-btn secondary">
+              <button class="action-btn primary" @click="openAttemptDetail(attempt)" title="Xem chi tiết lần làm">
                 <i class="bi bi-eye"></i>
                 Chi tiết
               </button>
@@ -335,6 +333,83 @@
         </div>
       </div>
     </div>
+
+    <!-- Detail Modal (polished) -->
+    <div v-if="showDetailModal" class="detail-overlay" @click.self="showDetailModal = false">
+      <div class="detail-modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <div class="modal-title">
+            <i class="bi bi-clipboard2-check"></i>
+            Chi tiết lần làm
+          </div>
+          <button class="modal-close" @click="showDetailModal = false" aria-label="Đóng">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-info">
+            <h3 class="quiz-name">{{ modalData.title }}</h3>
+            <div class="meta-grid">
+              <div class="meta-item">
+                <i class="bi bi-trophy-fill"></i>
+                <span>Điểm:</span>
+                <strong>{{ modalData.score }}/100</strong>
+              </div>
+              <div class="meta-item">
+                <i class="bi bi-123"></i>
+                <span>Lần làm:</span>
+                <strong>#{{ modalData.nthAttempt }}</strong>
+              </div>
+              <div class="meta-item">
+                <i class="bi bi-activity"></i>
+                <span>So với lần trước:</span>
+                <strong :class="{ up: modalData.prevDelta>0, down: modalData.prevDelta<0 }">
+                  {{ modalData.prevDelta>0? '+' : '' }}{{ modalData.prevDelta }} điểm
+                </strong>
+              </div>
+              <div class="meta-item">
+                <i class="bi bi-bar-chart-line"></i>
+                <span>Điểm trung bình:</span>
+                <strong>{{ modalData.averageScore }}/100</strong>
+              </div>
+              <div class="meta-item">
+                <i class="bi bi-stars"></i>
+                <span>Điểm cao nhất:</span>
+                <strong>{{ modalData.bestScore }}/100</strong>
+              </div>
+              <div class="meta-item">
+                <i class="bi bi-clock"></i>
+                <span>Thời gian TB:</span>
+                <strong>{{ formatTime(modalData.averageTime) }}</strong>
+              </div>
+              <div class="meta-item">
+                <i class="bi bi-calendar-event"></i>
+                <span>Ngày làm:</span>
+                <strong>{{ formatDateTime(modalData.attemptedAt) }}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="modal-score">
+            <div class="score-ring" :class="getScoreClass(modalData.score)">
+              <div class="score-value">{{ modalData.score }}</div>
+              <div class="score-text">{{ getScoreLabel(modalData.score) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="action-btn primary" @click="showDetailModal = false">
+            <i class="bi bi-check2"></i>
+            Đóng
+          </button>
+          <button v-if="modalData.resultId" class="action-btn" @click="gotoResult(modalData.resultId)">
+            <i class="bi bi-box-arrow-up-right"></i>
+            Xem kết quả
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -343,6 +418,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { quizAttemptService } from '@/services/quizAttemptService'
+import { adminService } from '@/services/adminService'
 
 // Props
 const props = defineProps({
@@ -370,6 +446,21 @@ const searchQuery = ref('')
 const sortBy = ref('recent')
 const scoreFilter = ref('all')
 const viewMode = ref('card')
+const showDetailModal = ref(false)
+const modalData = ref({
+  title: '',
+  score: 0,
+  attemptedAt: null,
+  timeTaken: 0,
+  resultId: null,
+  attemptId: null,
+  // Stats
+  nthAttempt: 1,
+  prevDelta: 0, // điểm chênh so với lần trước
+  averageScore: 0,
+  bestScore: 0,
+  averageTime: 0
+})
 
 // Filters
 const filters = ref({
@@ -377,11 +468,8 @@ const filters = ref({
   quizId: ''
 })
 
-// Mock data
-const users = ref([
-  { id: 1, username: 'nguyenvana' },
-  { id: 2, username: 'tranthib' }
-])
+// Users list for admin filter (fetched from backend)
+const users = ref([])
 
 // Computed properties
 const isAdmin = computed(() => userStore.isAdmin())
@@ -533,6 +621,16 @@ const loadData = async () => {
     const response = await quizAttemptService.getQuizAttempts(params)
     attempts.value = response.content || []
     totalElements.value = response.totalElements || 0
+
+    // Load users list for admin filter once
+    if (isAdmin.value && users.value.length === 0) {
+      try {
+        const usersPage = await adminService.getAllUsers({ page: 0, size: 200 })
+        users.value = usersPage.content?.map(u => ({ id: u.id, username: u.username })) || []
+      } catch (e) {
+        console.warn('Unable to load users for admin filter:', e?.message || e)
+      }
+    }
   } catch (error) {
     console.error('Error loading quiz attempts:', error)
     attempts.value = []
@@ -563,6 +661,58 @@ const clearFilters = () => {
   filters.value.quizId = ''
   currentPage.value = 1
 }
+
+  // Open attempt detail - navigate if có resultId/attemptId; fallback: expand card modal (todo)
+  const openAttemptDetail = (attempt) => {
+    try {
+      // Nếu backend trả id kết quả, ưu tiên điều hướng về trang kết quả
+      if (attempt.resultId) {
+        // name 'QuizResult' đã có trong router
+        window.location.href = `/result/${attempt.resultId}`
+        return
+      }
+      // Nếu chưa có resultId, thử gọi API lấy kết quả theo attemptId (nếu sau này có API)
+      // TODO: hiện tại fallback: hiển thị modal đơn giản với thông tin cơ bản
+      // Tính thống kê theo cùng quiz (dựa theo title)
+      const sameQuizAttempts = attempts.value
+        .filter(a => a.quizTitle === attempt.quizTitle)
+        .slice()
+        .sort((a, b) => new Date(a.attemptedAt) - new Date(b.attemptedAt))
+
+      const index = sameQuizAttempts.findIndex(a => a.id === attempt.id)
+      const prev = index > 0 ? sameQuizAttempts[index - 1] : null
+      const avgScore = sameQuizAttempts.reduce((s, a) => s + a.score, 0) / Math.max(1, sameQuizAttempts.length)
+      const bestScore = Math.max(...sameQuizAttempts.map(a => a.score))
+      const avgTime = sameQuizAttempts.reduce((s, a) => s + (a.timeTaken || 0), 0) / Math.max(1, sameQuizAttempts.length)
+
+      modalData.value = {
+        title: attempt.quizTitle,
+        score: attempt.score,
+        attemptedAt: attempt.attemptedAt,
+        timeTaken: attempt.timeTaken,
+        resultId: attempt.resultId,
+        attemptId: attempt.id,
+        nthAttempt: index + 1,
+        prevDelta: prev ? (attempt.score - prev.score) : 0,
+        averageScore: Math.round(avgScore * 10) / 10,
+        bestScore: bestScore,
+        averageTime: Math.round(avgTime)
+      }
+      showDetailModal.value = true
+      // Nếu có attemptId riêng
+      if (attempt.id) {
+        // fallback: mở lại play attempt ở chế độ chỉ xem nếu có (hoặc có thể mở modal sau)
+        // Ở đây điều hướng tới trang Home để tránh lỗi nếu route không tồn tại
+        console.log('Attempt detail not implemented; attempt id:', attempt.id)
+      }
+    } catch (e) {
+      console.warn('Cannot open attempt detail:', e)
+    }
+  }
+
+  const gotoResult = (resultId) => {
+    window.location.href = `/result/${resultId}`
+  }
 
 const getScoreClass = (score) => {
   if (score >= 90) return 'excellent'
@@ -627,23 +777,79 @@ onMounted(() => {
 })
 </script>
 
+<style>
+/* Global variables to avoid scoped isolation */
+:root {
+  --font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif;
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --primary-color: #667eea;
+  --secondary-color: #764ba2;
+  --success-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --success-color: #667eea;
+  --info-gradient: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  --info-color: #8b5cf6;
+  --warning-gradient: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  --warning-color: #a855f7;
+  --danger-gradient: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  --danger-color: #7c3aed;
+  /* Distinct category colors for performance analysis (requested palette) */
+  --excellent-color: #4CAF50; /* green success */
+  --good-color: #2196F3;      /* blue */
+  --average-color: #FFC107;   /* amber */
+  --poor-color: #F44336;      /* red */
+  --bg-primary: rgba(255, 255, 255, 0.95);
+  --bg-secondary: rgba(255, 255, 255, 0.1);
+  --bg-dark: rgba(52, 73, 94, 0.95);
+  --bg-dark-secondary: rgba(0, 0, 0, 0.2);
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-light: #ecf0f1;
+  --text-muted: #bdc3c7;
+  --border-light: rgba(255, 255, 255, 0.2);
+  --border-dark: rgba(255, 255, 255, 0.1);
+  --shadow-primary: rgba(102, 126, 234, 0.3);
+  --shadow-secondary: rgba(0, 0, 0, 0.1);
+  --shadow-dark: rgba(0, 0, 0, 0.15);
+}
+</style>
+
 <style scoped>
-@import './QuizHistoryModern.css';
-@import './QuizHistoryModern2.css';
-
-/* Component-specific overrides if needed */
-.quiz-history-modern {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  position: relative;
-  overflow-x: hidden;
-  transition: all 0.3s ease;
+/* Merged styles from QuizHistoryModern.css and QuizHistoryModern2.css */
+/* Variables */
+:root {
+  --font-family: 'Inter', 'Noto Sans', 'Roboto', sans-serif;
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --primary-color: #667eea;
+  --secondary-color: #764ba2;
+  --success-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --success-color: #667eea;
+  --info-gradient: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  --info-color: #8b5cf6;
+  --warning-gradient: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  --warning-color: #a855f7;
+  --danger-gradient: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  --danger-color: #7c3aed;
+  --excellent-color: #667eea;
+  --good-color: #8b5cf6;
+  --average-color: #a855f7;
+  --poor-color: #7c3aed;
+  --bg-primary: rgba(255, 255, 255, 0.95);
+  --bg-secondary: rgba(255, 255, 255, 0.1);
+  --bg-dark: rgba(52, 73, 94, 0.95);
+  --bg-dark-secondary: rgba(0, 0, 0, 0.2);
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-light: #ecf0f1;
+  --text-muted: #bdc3c7;
+  --border-light: rgba(255, 255, 255, 0.2);
+  --border-dark: rgba(255, 255, 255, 0.1);
+  --shadow-primary: rgba(102, 126, 234, 0.3);
+  --shadow-secondary: rgba(0, 0, 0, 0.1);
+  --shadow-dark: rgba(0, 0, 0, 0.15);
 }
 
-.quiz-history-modern.dark-theme {
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-  color: #ecf0f1;
-}
+.quiz-history-modern { position: relative; min-height: 100vh; overflow-x: hidden; background: var(--primary-gradient); }
+.quiz-history-modern.dark-theme { color: var(--text-primary); }
 
 /* Background Pattern */
 .background-pattern {
@@ -730,4 +936,162 @@ onMounted(() => {
     transform: translateY(-30px) rotate(180deg);
   }
 }
+
+/* Header Section */
+.header-section { position: relative; z-index: 1; padding: 2rem 1rem; background: rgba(255,255,255,0.18); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255,255,255,0.25); font-family: var(--font-family); }
+.dark-theme .header-section { background: rgba(0,0,0,0.25); border-bottom: 1px solid rgba(255,255,255,0.15); }
+.header-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 2rem; }
+.title-group { display: flex; align-items: center; gap: 1.5rem; }
+.icon-wrapper { width: 70px; height: 70px; background: var(--primary-gradient); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #fff; box-shadow: 0 12px 40px var(--shadow-primary); position: relative; overflow: hidden; transition: .3s; }
+.icon-wrapper::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent, rgba(255,255,255,.3), transparent); transform: rotate(45deg); transition: .6s; opacity: 0; }
+.icon-wrapper:hover::before { opacity: 1; transform: rotate(45deg) translateX(100%); }
+.icon-wrapper:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 20px 60px var(--shadow-primary); }
+.title-text h1 { font-size: 2.4rem; font-weight: 800; margin: 0; color: var(--text-primary); text-shadow: 0 2px 6px rgba(0,0,0,.08); }
+.title-text p { margin: .5rem 0 0; color: var(--text-secondary); font-size: 1.05rem; }
+
+/* Header controls (refresh) */
+.header-section .header-controls { display:flex; align-items:center; gap: 0.75rem; }
+.header-section .refresh-btn { width:48px; height:48px; border-radius:14px; border:1px solid rgba(0,0,0,.06); background:#ffffff; color:#34495e; cursor:pointer; transition:.2s; display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow:0 8px 20px rgba(0,0,0,.12); }
+.dark-theme .header-section .refresh-btn { background:#2d3748; color:#e2e8f0; border-color:#4a5568; }
+.header-section .refresh-btn:hover { transform: translateY(-2px); box-shadow:0 12px 28px rgba(0,0,0,.18); }
+.header-section .refresh-btn i { display:inline-block; width:20px; height:20px; font-size:20px; line-height:20px; }
+.header-section .refresh-btn svg, .header-section .refresh-btn img { width:20px; height:20px; object-fit:contain; }
+
+/* Loading Section */
+.loading-section { display: flex; justify-content: center; align-items: center; min-height: 60vh; position: relative; z-index: 1; }
+.loading-card { background: var(--bg-primary); backdrop-filter: blur(25px); border-radius: 28px; padding: 3.5rem; text-align: center; box-shadow: 0 25px 80px var(--shadow-secondary); border: 1px solid var(--border-light); max-width: 450px; position: relative; overflow: hidden; }
+.loading-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--primary-gradient); }
+.loading-animation { display: flex; justify-content: center; align-items: center; margin-bottom: 2.5rem; position: relative; width: 100px; height: 100px; margin-left: auto; margin-right: auto; }
+.pulse-ring { position: absolute; width: 100px; height: 100px; border: 4px solid var(--primary-color); border-radius: 50%; animation: pulse 2.5s ease-out infinite; }
+@keyframes pulse { 0% { transform: scale(.1); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+.loading-card h3 { font-size: 1.8rem; font-weight: 700; margin-bottom: 1rem; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.loading-card p { color: var(--text-secondary); margin: 0; font-size: 1.1rem; }
+
+/* Main Content */
+.main-content { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
+.stats-dashboard { margin-bottom: 3rem; }
+.stats-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+.stats-header h2 { font-size: 2.0rem; font-weight: 800; margin: 0; color: var(--text-primary); text-shadow: 0 2px 5px rgba(0,0,0,.06); }
+.stats-period { background: var(--bg-primary); backdrop-filter: blur(15px); padding: .75rem 1.5rem; border-radius: 25px; border: 1px solid var(--border-light); display: flex; align-items: center; gap: .5rem; }
+.period-text { font-size: .95rem; font-weight: 600; color: var(--text-secondary); }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 2.5rem; }
+.stat-card { background: var(--bg-primary); backdrop-filter: blur(25px); border-radius: 24px; padding: 2.5rem; display: flex; align-items: center; gap: 2rem; box-shadow: 0 15px 50px var(--shadow-secondary); border: 1px solid var(--border-light); transition: .4s; position: relative; overflow: hidden; cursor: pointer; }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: var(--primary-gradient); transition: .4s; }
+.stat-card:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 25px 80px var(--shadow-dark); }
+.stat-icon { width: 75px; height: 75px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #fff; background: var(--primary-gradient); box-shadow: 0 12px 40px var(--shadow-primary); }
+.stat-value { font-size: 3rem; font-weight: 900; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: .5rem; }
+.stat-label { font-size: 1.1rem; color: var(--text-secondary); font-weight: 600; margin-bottom: .75rem; text-transform: uppercase; letter-spacing: .5px; }
+.stat-trend { display: flex; align-items: center; gap: .5rem; font-size: .9rem; font-weight: 600; padding: .5rem 1rem; border-radius: 20px; width: fit-content; }
+.stat-trend.positive { color: var(--success-color); background: rgba(102,126,234,.1); border: 1px solid rgba(102,126,234,.2); }
+.stat-trend.neutral { color: var(--text-secondary); background: rgba(102,102,102,.1); border: 1px solid rgba(102,102,102,.2); }
+
+/* Chart Section */
+.chart-section { background: var(--bg-primary); backdrop-filter: blur(25px); border-radius: 24px; padding: 2.5rem; box-shadow: 0 15px 50px var(--shadow-secondary); border: 1px solid var(--border-light); position: relative; overflow: hidden; }
+.chart-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--primary-gradient); }
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1.5rem; }
+.chart-header h3 { font-size: 1.8rem; font-weight: 800; margin: 0; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.chart-legend { display: flex; gap: 2rem; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: .75rem; font-size: .95rem; font-weight: 600; padding: .5rem 1rem; border-radius: 20px; background: var(--bg-secondary); backdrop-filter: blur(10px); border: 1px solid var(--border-light); transition: .3s; }
+.legend-color { width: 16px; height: 16px; border-radius: 4px; position: relative; border: 2px solid rgba(0,0,0,0.06); box-shadow: 0 0 0 2px rgba(255,255,255,0.8) inset; }
+.legend-item.excellent .legend-color { background: var(--excellent-color) !important; }
+.legend-item.good .legend-color { background: var(--good-color) !important; }
+.legend-item.average .legend-color { background: var(--average-color) !important; }
+.legend-item.poor .legend-color { background: var(--poor-color) !important; }
+.performance-bars { display: flex; flex-direction: column; gap: 1.5rem; }
+.performance-bar { position: relative; height: 50px; background: var(--bg-primary); border-radius: 25px; overflow: hidden; box-shadow: inset 0 2px 10px rgba(0,0,0,.1); }
+.bar-fill { height: 100%; border-radius: 25px; display: flex; align-items: center; justify-content: flex-end; padding-right: 1.5rem; color: #fff; font-weight: 700; font-size: 1rem; transition: width 2s ease; min-width: 80px; position: relative; overflow: hidden; }
+.bar-fill::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent); animation: shimmer 2s infinite; }
+@keyframes shimmer { 0% { transform: translateX(-100%);} 100% { transform: translateX(100%);} }
+.performance-bar.excellent .bar-fill { background: var(--excellent-color); }
+.performance-bar.good .bar-fill { background: var(--good-color); }
+.performance-bar.average .bar-fill { background: var(--average-color); }
+.performance-bar.poor .bar-fill { background: var(--poor-color); }
+
+/* Controls */
+.controls-section { background: var(--bg-primary); backdrop-filter: blur(25px); border-radius: 24px; padding: 2rem; margin-bottom: 2.5rem; box-shadow: 0 15px 50px var(--shadow-secondary); border: 1px solid var(--border-light); position: relative; overflow: hidden; }
+.search-container { margin-bottom: 2rem; }
+.search-box { position: relative; max-width: 450px; }
+.search-box i { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 1.2rem; z-index: 2; }
+.search-input { width: 100%; padding: 1rem 1rem 1rem 3.5rem; border: 2px solid #e9ecef; border-radius: 16px; font-size: 1rem; background: #fff; transition: .3s; font-weight: 500; }
+.clear-search { position: absolute; right: .75rem; top: 50%; transform: translateY(-50%); width: 35px; height: 35px; border: none; background: var(--bg-primary); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: .3s; color: var(--text-secondary); }
+.filters-container { display: flex; gap: 2rem; flex-wrap: wrap; }
+.filter-group { display: flex; flex-direction: column; gap: .75rem; min-width: 180px; }
+.filter-group label { font-size: .95rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: .5rem; }
+.filter-select { padding: 1rem 1.25rem; border: 2px solid #e9ecef; border-radius: 16px; font-size: .95rem; background: #fff; cursor: pointer; transition: .3s; font-weight: 500; position: relative; }
+
+/* History List */
+.history-section { margin-top: 3rem; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+.view-toggle { display: flex; gap: .5rem; background: var(--bg-secondary); backdrop-filter: blur(15px); padding: .5rem; border-radius: 16px; border: 1px solid var(--border-light); }
+.view-btn { width: 45px; height: 45px; border: none; background: transparent; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-secondary); transition: .3s; }
+.view-btn.active { background: var(--primary-gradient); color: #fff; box-shadow: 0 8px 25px var(--shadow-primary); }
+.history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 2rem; }
+.history-grid.list-view { grid-template-columns: 1fr; }
+.history-card { background: var(--bg-primary); backdrop-filter: blur(25px); border-radius: 20px; padding: 2rem; box-shadow: 0 15px 50px var(--shadow-secondary); border: 1px solid var(--border-light); transition: .4s; position: relative; overflow: hidden; cursor: pointer; animation: slideInUp .6s ease forwards; opacity: 0; transform: translateY(30px); }
+@keyframes slideInUp { to { opacity: 1; transform: translateY(0); } }
+.history-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--primary-gradient); transition: .4s; }
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
+.quiz-info { flex: 1; }
+.quiz-title { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin: 0 0 .75rem 0; line-height: 1.3; }
+.username, .date { display: flex; align-items: center; gap: .5rem; font-size: .9rem; color: var(--text-secondary); font-weight: 500; }
+.score-badge { display: flex; flex-direction: column; align-items: center; padding: 1rem 1.5rem; border-radius: 16px; color: #fff; font-weight: 700; min-width: 80px; position: relative; overflow: hidden; }
+.score-badge.excellent { background: var(--excellent-color); }
+.score-badge.good { background: var(--good-color); }
+.score-badge.average { background: var(--average-color); }
+.score-badge.poor { background: var(--poor-color); }
+.score-value { font-size: 1.8rem; font-weight: 900; line-height: 1; }
+.score-label { font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-top: .25rem; }
+.progress-section { margin-bottom: 1.5rem; }
+.progress-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; font-size: .9rem; font-weight: 600; color: var(--text-secondary); }
+.progress-bar { height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; position: relative; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 1.2s ease; position: relative; overflow: hidden; }
+.progress-fill.excellent { background: var(--excellent-color); }
+.progress-fill.good { background: var(--good-color); }
+.progress-fill.average { background: var(--average-color); }
+.progress-fill.poor { background: var(--poor-color); }
+.stats-row { display: flex; gap: 2rem; flex-wrap: wrap; }
+.card-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+.action-btn { padding: 0.75rem 1.25rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: .5rem; background: var(--bg-secondary); color: var(--text-primary); transition: transform .2s ease, box-shadow .2s ease; }
+.action-btn i { font-size: 1rem; }
+.action-btn.primary { background: #ffffff; border: 1px solid rgba(0,0,0,.06); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+.dark-theme .action-btn.primary { background: var(--bg-dark); border: 1px solid var(--border-dark); color: var(--text-light); }
+.action-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.12); }
+
+/* Pagination */
+.pagination-section { margin-top: 3rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-primary); backdrop-filter: blur(20px); border-radius: 20px; padding: 1.5rem; box-shadow: 0 10px 40px var(--shadow-secondary); border: 1px solid var(--border-light); }
+.pagination-info { font-size: .9rem; color: var(--text-secondary); font-weight: 500; }
+.pagination-controls { display: flex; align-items: center; gap: .5rem; }
+.page-btn { width: 40px; height: 40px; border: none; border-radius: 10px; background: rgba(0,0,0,.05); color: #333; cursor: pointer; transition: .3s; display: flex; align-items: center; justify-content: center; }
+.page-btn:hover:not(:disabled) { background: var(--primary-gradient); color: #fff; transform: translateY(-2px); }
+.page-btn:disabled { opacity: .5; cursor: not-allowed; }
+.page-numbers { display: flex; gap: .25rem; }
+.page-number { min-width: 40px; height: 40px; border: none; border-radius: 10px; background: rgba(0,0,0,.05); color: #333; cursor: pointer; transition: .3s; font-weight: 500; }
+.page-number.active { background: var(--primary-gradient); color: #fff; box-shadow: 0 4px 15px rgba(102,126,234,.3); }
+
+/* Detail modal polished */
+.detail-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }
+.detail-modal { width: 100%; max-width: 760px; background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: 20px; box-shadow: 0 30px 80px rgba(0,0,0,.25); overflow: hidden; }
+.dark-theme .detail-modal { background: var(--bg-dark); border: 1px solid var(--border-dark); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-light); background: rgba(255,255,255,0.6); }
+.dark-theme .modal-header { background: rgba(0,0,0,0.25); border-bottom-color: var(--border-dark); }
+.modal-title { display: flex; align-items: center; gap: .5rem; font-weight: 800; font-size: 1.1rem; color: var(--text-primary); }
+.modal-close { background: transparent; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1rem; }
+.modal-body { display: grid; grid-template-columns: 1.4fr .8fr; gap: 1.25rem; padding: 1.25rem; }
+.quiz-name { margin: 0 0 .5rem 0; font-size: 1.25rem; font-weight: 800; color: var(--text-primary); }
+.meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem; }
+.meta-item { display: grid; grid-template-columns: 22px auto auto; align-items: center; gap: .5rem; padding: .75rem; background: rgba(0,0,0,.03); border: 1px solid var(--border-light); border-radius: 12px; }
+.dark-theme .meta-item { background: rgba(255,255,255,.06); border-color: var(--border-dark); }
+.meta-item i { color: var(--primary-color); }
+.meta-item strong.up { color: #16a34a; }
+.meta-item strong.down { color: #ef4444; }
+.modal-score { display: flex; align-items: center; justify-content: center; }
+.score-ring { width: 160px; height: 160px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; box-shadow: 0 12px 40px var(--shadow-secondary); }
+.score-ring.excellent { background: var(--excellent-color); }
+.score-ring.good { background: var(--good-color); }
+.score-ring.average { background: var(--average-color); }
+.score-ring.poor { background: var(--poor-color); }
+.score-ring .score-value { font-size: 3rem; font-weight: 900; line-height: 1; }
+.score-ring .score-text { font-size: .9rem; font-weight: 700; opacity: .95; text-transform: uppercase; letter-spacing: .5px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: .75rem; padding: 1rem 1.25rem; border-top: 1px solid var(--border-light); background: rgba(255,255,255,0.6); }
+.dark-theme .modal-actions { background: rgba(0,0,0,0.25); border-top-color: var(--border-dark); }
 </style>

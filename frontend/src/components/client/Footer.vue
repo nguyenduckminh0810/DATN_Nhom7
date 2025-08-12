@@ -1,5 +1,5 @@
 <template>
-  <footer class="footer bg-dark text-light pt-3 pb-2">
+  <footer class="footer text-light pt-3 pb-2">
     <div class="container">
       <div class="row gy-3">
         <!-- Logo & Contact -->
@@ -68,7 +68,7 @@ function subscribe() {
 <style scoped>
 .footer {
   font-size: 0.9rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-background);
   color: #fff;
   box-shadow: 0 -4px 20px rgba(102, 126, 234, 0.2);
   margin: 0;

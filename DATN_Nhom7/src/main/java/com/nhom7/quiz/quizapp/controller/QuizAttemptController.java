@@ -171,11 +171,19 @@ public class QuizAttemptController {
 
             com.nhom7.quiz.quizapp.model.dto.EvaluationResult eval = resultService.evaluateAndSave(dto);
 
-            // Update attempt (không cần set status nữa)
+            // Cập nhật attempt với điểm số/time đã chấm để lịch sử hiển thị đúng
             attempt.setAttemptedAt(java.time.LocalDateTime.now());
+            try {
+                attempt.setScore(eval.getScore());
+            } catch (Exception ignore) {}
+            try {
+                if (body.getTimeTaken() != null) {
+                    attempt.setTimeTaken(body.getTimeTaken());
+                }
+            } catch (Exception ignore) {}
             quizAttemptService.saveQuizAttempt(attempt);
 
-            return ResponseEntity.ok(java.util.Map.of("resultId", eval.getResultId()));
+            return ResponseEntity.ok(java.util.Map.of("resultId", eval.getResultId(), "score", eval.getScore()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of("error", e.getMessage()));
         }
