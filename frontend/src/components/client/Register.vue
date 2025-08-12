@@ -1,11 +1,10 @@
 <script setup>
 import { useRegin } from './useRegin'
-import { useLogin } from './useLogin'
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 defineOptions({ name: 'UserRegister' })
 
-const { logout } = useLogin()
 const {
   status,
   username,
@@ -19,6 +18,17 @@ const {
   isLoading,
   register,
 } = useRegin()
+
+const router = useRouter()
+
+// Method để chuyển hướng đến dashboard
+const goToDashboard = () => {
+  if (localStorage.getItem('token')) {
+    router.push('/dashboard')
+  } else {
+    router.push('/login')
+  }
+}
 
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
@@ -61,23 +71,35 @@ const handleAvatarFile = (event) => {
 
 const getStrengthColor = (strength) => {
   switch (strength) {
-    case 1: return '#ff4757'
-    case 2: return '#ffa502'
-    case 3: return '#2ed573'
-    case 4: return '#1e90ff'
-    case 5: return '#8e44ad'
-    default: return '#ddd'
+    case 1:
+      return '#ff4757'
+    case 2:
+      return '#ffa502'
+    case 3:
+      return '#2ed573'
+    case 4:
+      return '#1e90ff'
+    case 5:
+      return '#8e44ad'
+    default:
+      return '#ddd'
   }
 }
 
 const getStrengthText = (strength) => {
   switch (strength) {
-    case 1: return 'Yếu'
-    case 2: return 'Trung bình'
-    case 3: return 'Mạnh'
-    case 4: return 'Rất mạnh'
-    case 5: return 'Xuất sắc'
-    default: return ''
+    case 1:
+      return 'Yếu'
+    case 2:
+      return 'Trung bình'
+    case 3:
+      return 'Mạnh'
+    case 4:
+      return 'Rất mạnh'
+    case 5:
+      return 'Xuất sắc'
+    default:
+      return ''
   }
 }
 
@@ -111,8 +133,14 @@ const clearAvatar = () => {
               <i class="fas fa-user"></i>
               Tên đăng nhập
             </label>
-            <input type="text" v-model="username" required maxlength="50" class="form-input"
-              placeholder="Nhập tên đăng nhập" />
+            <input
+              type="text"
+              v-model="username"
+              required
+              maxlength="50"
+              class="form-input"
+              placeholder="Nhập tên đăng nhập"
+            />
           </div>
 
           <!-- Email -->
@@ -121,8 +149,14 @@ const clearAvatar = () => {
               <i class="fas fa-envelope"></i>
               Email
             </label>
-            <input type="email" v-model="email" required maxlength="100" class="form-input"
-              placeholder="your@email.com" />
+            <input
+              type="email"
+              v-model="email"
+              required
+              maxlength="100"
+              class="form-input"
+              placeholder="your@email.com"
+            />
           </div>
 
           <!-- Password -->
@@ -133,8 +167,15 @@ const clearAvatar = () => {
               <span class="password-hint">(8-50 ký tự)</span>
             </label>
             <div class="password-wrapper">
-              <input :type="showPassword ? 'text' : 'password'" v-model="password" required minlength="8" maxlength="50"
-                class="form-input password-input" placeholder="Tối thiểu 8 ký tự" />
+              <input
+                :type="showPassword ? 'text' : 'password'"
+                v-model="password"
+                required
+                minlength="8"
+                maxlength="50"
+                class="form-input password-input"
+                placeholder="Tối thiểu 8 ký tự"
+              />
               <button type="button" @click="showPassword = !showPassword" class="password-toggle">
                 <div class="eye-icon" :class="{ 'eye-hidden': showPassword }"></div>
               </button>
@@ -142,10 +183,13 @@ const clearAvatar = () => {
 
             <div v-if="password" class="password-strength">
               <div class="strength-bar">
-                <div class="strength-fill" :style="{
-                  width: passwordStrength * 20 + '%',
-                  backgroundColor: getStrengthColor(passwordStrength),
-                }"></div>
+                <div
+                  class="strength-fill"
+                  :style="{
+                    width: passwordStrength * 20 + '%',
+                    backgroundColor: getStrengthColor(passwordStrength),
+                  }"
+                ></div>
               </div>
               <span class="strength-text" :style="{ color: getStrengthColor(passwordStrength) }">
                 {{ getStrengthText(passwordStrength) }}
@@ -183,17 +227,30 @@ const clearAvatar = () => {
               Nhập lại mật khẩu
             </label>
             <div class="password-wrapper">
-              <input :type="showConfirmPassword ? 'text' : 'password'" v-model="confirmPassword" required maxlength="50"
-                class="form-input password-input" :class="{
+              <input
+                :type="showConfirmPassword ? 'text' : 'password'"
+                v-model="confirmPassword"
+                required
+                maxlength="50"
+                class="form-input password-input"
+                :class="{
                   'match-success': passwordMatch === true,
                   'match-error': passwordMatch === false,
-                }" placeholder="Nhập lại mật khẩu" />
-              <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="password-toggle">
+                }"
+                placeholder="Nhập lại mật khẩu"
+              />
+              <button
+                type="button"
+                @click="showConfirmPassword = !showConfirmPassword"
+                class="password-toggle"
+              >
                 <div class="eye-icon" :class="{ 'eye-hidden': showConfirmPassword }"></div>
               </button>
             </div>
             <div v-if="confirmPassword" class="password-match">
-              <i :class="passwordMatch ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
+              <i
+                :class="passwordMatch ? 'fas fa-check text-success' : 'fas fa-times text-danger'"
+              ></i>
               <span :class="passwordMatch ? 'text-success' : 'text-danger'">
                 {{ passwordMatch ? 'Mật khẩu khớp' : 'Mật khẩu không khớp' }}
               </span>
@@ -206,7 +263,13 @@ const clearAvatar = () => {
               <i class="fas fa-id-card"></i>
               Họ và tên
             </label>
-            <input type="text" v-model="fullName" maxlength="100" class="form-input" placeholder="Nhập họ và tên" />
+            <input
+              type="text"
+              v-model="fullName"
+              maxlength="100"
+              class="form-input"
+              placeholder="Nhập họ và tên"
+            />
           </div>
 
           <!-- Avatar Upload (file only) -->
@@ -222,7 +285,13 @@ const clearAvatar = () => {
                   <i class="fas fa-upload"></i>
                   Tải ảnh lên
                 </label>
-                <input type="file" id="avatarFile" accept="image/*" @change="handleAvatarFile" style="display: none" />
+                <input
+                  type="file"
+                  id="avatarFile"
+                  accept="image/*"
+                  @change="handleAvatarFile"
+                  style="display: none"
+                />
               </div>
 
               <!-- Preview -->
@@ -242,13 +311,22 @@ const clearAvatar = () => {
               <i class="fas fa-pen"></i>
               Giới thiệu bản thân
             </label>
-            <textarea v-model="bio" rows="3" maxlength="500" class="form-textarea"
-              placeholder="Viết vài dòng về bản thân... (tối đa 500 ký tự)"></textarea>
+            <textarea
+              v-model="bio"
+              rows="3"
+              maxlength="500"
+              class="form-textarea"
+              placeholder="Viết vài dòng về bản thân... (tối đa 500 ký tự)"
+            ></textarea>
             <div class="char-count">{{ bio?.length || 0 }}/500 ký tự</div>
           </div>
 
           <!-- Submit -->
-          <button type="submit" class="register-btn" :disabled="isLoading || !passwordMatch || passwordStrength < 2">
+          <button
+            type="submit"
+            class="register-btn"
+            :disabled="isLoading || !passwordMatch || passwordStrength < 2"
+          >
             <div v-if="isLoading" class="btn-loading">
               <div class="spinner"></div>
               <span>Đang tạo tài khoản...</span>
@@ -294,11 +372,11 @@ const clearAvatar = () => {
         </div>
         <div class="redirect-info">
           <i class="fas fa-clock"></i>
-          <span>Tự động chuyển hướng sau 3 giây...</span>
+          <span>Tự động chuyển hướng đến Dashboard sau 2 giây...</span>
         </div>
-        <button @click="logout" class="home-btn">
-          <i class="fas fa-home"></i>
-          Về trang chủ ngay
+        <button @click="goToDashboard" class="home-btn">
+          <i class="fas fa-tachometer-alt"></i>
+          Vào Dashboard ngay
         </button>
       </div>
     </div>
@@ -311,7 +389,7 @@ const clearAvatar = () => {
         </div>
         <h2 class="error-title">Email đã tồn tại</h2>
         <p class="error-message">{{ message }}</p>
-        <button @click="logout" class="retry-btn">
+        <button @click="goToDashboard" class="retry-btn">
           <i class="fas fa-redo"></i>
           Thử lại
         </button>
@@ -325,7 +403,7 @@ const clearAvatar = () => {
         </div>
         <h2 class="error-title">Tên đăng nhập đã tồn tại</h2>
         <p class="error-message">{{ message }}</p>
-        <button @click="logout" class="retry-btn">
+        <button @click="goToDashboard" class="retry-btn">
           <i class="fas fa-redo"></i>
           Thử lại
         </button>
@@ -346,21 +424,21 @@ const clearAvatar = () => {
 .password-input {
   width: 100%;
   padding: 16px 60px 16px 20px !important;
-  border: 2px solid rgba(255, 255, 255, .3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 15px;
-  background: rgba(255, 255, 255, .1);
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   color: white;
   font-size: 1.1rem;
   font-weight: 500;
-  transition: all .3s ease;
+  transition: all 0.3s ease;
 }
 
 .password-input:focus {
   outline: none;
   border-color: #00d4ff;
-  background: rgba(255, 255, 255, .2);
-  box-shadow: 0 0 20px rgba(0, 212, 255, .3);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
   transform: translateY(-2px);
 }
 
@@ -369,12 +447,12 @@ const clearAvatar = () => {
   right: 15px;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(255, 255, 255, .1);
-  border: 1px solid rgba(255, 255, 255, .2);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
-  color: rgba(255, 255, 255, .8);
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  transition: all .3s ease;
+  transition: all 0.3s ease;
   z-index: 100;
   width: 36px;
   height: 36px;
@@ -385,14 +463,14 @@ const clearAvatar = () => {
 }
 
 .password-toggle:hover {
-  background: rgba(255, 255, 255, .2);
-  border-color: rgba(255, 255, 255, .4);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
   color: white;
   transform: translateY(-50%) scale(1.05);
 }
 
 .password-toggle:active {
-  transform: translateY(-50%) scale(.95);
+  transform: translateY(-50%) scale(0.95);
 }
 
 .password-toggle i {
@@ -411,16 +489,16 @@ const clearAvatar = () => {
 .register-container {
   width: 100%;
   max-width: 600px;
-  animation: slideInUp .8s ease-out;
+  animation: slideInUp 0.8s ease-out;
 }
 
 .register-card {
-  background: rgba(255, 255, 255, .15);
+  background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(20px);
   border-radius: 30px;
   padding: 50px 40px;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, .3);
-  border: 2px solid rgba(255, 255, 255, .2);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .register-header {
@@ -437,7 +515,7 @@ const clearAvatar = () => {
   align-items: center;
   justify-content: center;
   margin: 0 auto 20px;
-  box-shadow: 0 15px 35px rgba(95, 39, 205, .4);
+  box-shadow: 0 15px 35px rgba(95, 39, 205, 0.4);
   animation: pulse 2s infinite;
 }
 
@@ -451,12 +529,12 @@ const clearAvatar = () => {
   font-weight: 800;
   color: white;
   margin-bottom: 10px;
-  text-shadow: 2px 2px 15px rgba(0, 0, 0, .3);
+  text-shadow: 2px 2px 15px rgba(0, 0, 0, 0.3);
 }
 
 .register-subtitle {
   font-size: 1.2rem;
-  color: rgba(255, 255, 255, .8);
+  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 0;
   font-weight: 300;
 }
@@ -480,7 +558,7 @@ const clearAvatar = () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  text-shadow: 1px 1px 5px rgba(0, 0, 0, .3);
+  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
 }
 
 .form-label i {
@@ -489,46 +567,46 @@ const clearAvatar = () => {
 }
 
 .password-hint {
-  font-size: .9rem;
-  color: rgba(255, 255, 255, .6);
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
   font-weight: 400;
   margin-left: auto;
 }
 
 .form-input {
   padding: 16px 20px;
-  border: 2px solid rgba(255, 255, 255, .3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 15px;
-  background: rgba(255, 255, 255, .1);
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   color: white;
   font-size: 1.1rem;
   font-weight: 500;
-  transition: all .3s ease;
+  transition: all 0.3s ease;
 }
 
 .form-input:focus {
   outline: none;
   border-color: #00d4ff;
-  background: rgba(255, 255, 255, .2);
-  box-shadow: 0 0 20px rgba(0, 212, 255, .3);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
   transform: translateY(-2px);
 }
 
 .form-input::placeholder {
-  color: rgba(255, 255, 255, .6);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .form-textarea {
   padding: 16px 20px;
-  border: 2px solid rgba(255, 255, 255, .3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 15px;
-  background: rgba(255, 255, 255, .1);
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   color: white;
   font-size: 1.1rem;
   font-weight: 500;
-  transition: all .3s ease;
+  transition: all 0.3s ease;
   resize: vertical;
   min-height: 100px;
 }
@@ -536,18 +614,18 @@ const clearAvatar = () => {
 .form-textarea:focus {
   outline: none;
   border-color: #00d4ff;
-  background: rgba(255, 255, 255, .2);
-  box-shadow: 0 0 20px rgba(0, 212, 255, .3);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
   transform: translateY(-2px);
 }
 
 .form-textarea::placeholder {
-  color: rgba(255, 255, 255, .6);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .char-count {
-  font-size: .9rem;
-  color: rgba(255, 255, 255, .6);
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
   text-align: right;
   margin-top: 5px;
 }
@@ -562,19 +640,19 @@ const clearAvatar = () => {
 .strength-bar {
   flex: 1;
   height: 8px;
-  background: rgba(255, 255, 255, .2);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .strength-fill {
   height: 100%;
-  transition: all .3s ease;
+  transition: all 0.3s ease;
   border-radius: 4px;
 }
 
 .strength-text {
-  font-size: .9rem;
+  font-size: 0.9rem;
   font-weight: 600;
   min-width: 80px;
 }
@@ -585,7 +663,7 @@ const clearAvatar = () => {
   gap: 8px;
   margin-top: 10px;
   padding: 15px;
-  background: rgba(0, 0, 0, .2);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
 }
 
@@ -593,9 +671,9 @@ const clearAvatar = () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: .9rem;
-  color: rgba(255, 255, 255, .6);
-  transition: color .3s ease;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.3s ease;
 }
 
 .requirement.met {
@@ -604,7 +682,7 @@ const clearAvatar = () => {
 
 .requirement i {
   width: 12px;
-  font-size: .8rem;
+  font-size: 0.8rem;
 }
 
 .password-match {
@@ -612,7 +690,7 @@ const clearAvatar = () => {
   align-items: center;
   gap: 8px;
   margin-top: 8px;
-  font-size: .95rem;
+  font-size: 0.95rem;
   font-weight: 500;
 }
 
@@ -651,17 +729,17 @@ const clearAvatar = () => {
   padding: 12px 20px;
   border-radius: 15px;
   cursor: pointer;
-  transition: all .3s ease;
+  transition: all 0.3s ease;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 8px 20px rgba(95, 39, 205, .3);
+  box-shadow: 0 8px 20px rgba(95, 39, 205, 0.3);
 }
 
 .upload-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 25px rgba(95, 39, 205, .4);
+  box-shadow: 0 12px 25px rgba(95, 39, 205, 0.4);
 }
 
 .avatar-preview-section {
@@ -682,8 +760,8 @@ const clearAvatar = () => {
   height: 120px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid rgba(255, 255, 255, .3);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, .3);
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
 .avatar-remove-btn {
@@ -700,18 +778,18 @@ const clearAvatar = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all .3s ease;
-  box-shadow: 0 5px 15px rgba(255, 71, 87, .4);
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
 }
 
 .avatar-remove-btn:hover {
   transform: scale(1.1);
-  box-shadow: 0 8px 20px rgba(255, 71, 87, .6);
+  box-shadow: 0 8px 20px rgba(255, 71, 87, 0.6);
 }
 
 .avatar-preview-text {
-  color: rgba(255, 255, 255, .7);
-  font-size: .9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
   margin: 0;
 }
 
@@ -724,18 +802,18 @@ const clearAvatar = () => {
   font-size: 1.2rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all .3s ease;
-  box-shadow: 0 10px 30px rgba(95, 39, 205, .4);
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(95, 39, 205, 0.4);
   margin-top: 10px;
 }
 
 .register-btn:hover:not(:disabled) {
   transform: translateY(-3px);
-  box-shadow: 0 15px 40px rgba(95, 39, 205, .6);
+  box-shadow: 0 15px 40px rgba(95, 39, 205, 0.6);
 }
 
 .register-btn:disabled {
-  opacity: .7;
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
@@ -750,7 +828,7 @@ const clearAvatar = () => {
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, .3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   border-top-color: white;
   animation: spin 1s linear infinite;
@@ -761,11 +839,11 @@ const clearAvatar = () => {
   align-items: center;
   gap: 10px;
   padding: 12px 15px;
-  background: rgba(255, 193, 7, .2);
-  border: 1px solid rgba(255, 193, 7, .4);
+  background: rgba(255, 193, 7, 0.2);
+  border: 1px solid rgba(255, 193, 7, 0.4);
   border-radius: 10px;
   color: #ffc107;
-  font-size: .95rem;
+  font-size: 0.95rem;
   font-weight: 500;
 }
 
@@ -775,7 +853,7 @@ const clearAvatar = () => {
 }
 
 .form-footer p {
-  color: rgba(255, 255, 255, .8);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 1rem;
   margin: 0;
 }
@@ -784,7 +862,7 @@ const clearAvatar = () => {
   color: #00d4ff;
   text-decoration: none;
   font-weight: 600;
-  transition: color .3s ease;
+  transition: color 0.3s ease;
 }
 
 .login-link:hover {
@@ -806,7 +884,6 @@ const clearAvatar = () => {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     transform: scale(1);
@@ -828,21 +905,19 @@ const clearAvatar = () => {
 }
 
 @keyframes successPulse {
-
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 15px 35px rgba(46, 213, 115, .4);
+    box-shadow: 0 15px 35px rgba(46, 213, 115, 0.4);
   }
 
   50% {
     transform: scale(1.1);
-    box-shadow: 0 20px 45px rgba(46, 213, 115, .6);
+    box-shadow: 0 20px 45px rgba(46, 213, 115, 0.6);
   }
 }
 
 @keyframes blink {
-
   0%,
   50% {
     opacity: 1;
@@ -850,7 +925,7 @@ const clearAvatar = () => {
 
   51%,
   100% {
-    opacity: .3;
+    opacity: 0.3;
   }
 }
 
@@ -924,7 +999,7 @@ const clearAvatar = () => {
     right: 12px;
     width: 30px;
     height: 30px;
-    font-size: .9rem;
+    font-size: 0.9rem;
   }
 
   .eye-icon {
@@ -985,7 +1060,7 @@ const clearAvatar = () => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  transition: all .2s ease;
+  transition: all 0.2s ease;
 }
 
 .eye-icon.eye-hidden::before {
@@ -998,7 +1073,7 @@ const clearAvatar = () => {
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 2px;
-  opacity: .7;
+  opacity: 0.7;
 }
 
 .eye-icon.eye-hidden::after {
@@ -1011,6 +1086,257 @@ const clearAvatar = () => {
   left: 50%;
   transform: translate(-50%, -50%) rotate(45deg);
   border-radius: 1px;
-  opacity: .8;
+  opacity: 0.8;
+}
+
+/* === SUCCESS CONTAINER === */
+.success-container {
+  min-height: 100vh;
+  background: var(--app-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.success-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 30px;
+  padding: 50px 40px;
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  max-width: 500px;
+  width: 100%;
+  animation: slideInUp 0.8s ease-out;
+}
+
+.success-icon {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(45deg, #2ed573, #1e90ff);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 30px;
+  box-shadow: 0 15px 35px rgba(46, 213, 115, 0.4);
+  animation: successPulse 2s infinite;
+}
+
+.success-icon i {
+  font-size: 3rem;
+  color: white;
+}
+
+.success-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #2ed573;
+  margin-bottom: 20px;
+  text-shadow: 0 2px 10px rgba(46, 213, 115, 0.3);
+}
+
+.success-message {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.success-details {
+  background: rgba(46, 213, 115, 0.1);
+  border-radius: 20px;
+  padding: 25px;
+  margin-bottom: 30px;
+  border: 1px solid rgba(46, 213, 115, 0.2);
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-item i {
+  width: 20px;
+  color: #2ed573;
+}
+
+.redirect-info {
+  background: rgba(0, 212, 255, 0.1);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 30px;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  color: #00d4ff;
+  font-weight: 600;
+  font-size: 1.1rem;
+  animation: blink 2s infinite;
+}
+
+.home-btn {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 18px 40px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 0 auto;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+.home-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+}
+
+.home-btn:active {
+  transform: translateY(-1px);
+}
+
+/* === ERROR CONTAINERS === */
+.error-container {
+  min-height: 100vh;
+  background: var(--app-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.error-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 30px;
+  padding: 50px 40px;
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  max-width: 500px;
+  width: 100%;
+  animation: slideInUp 0.8s ease-out;
+}
+
+.error-icon {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(45deg, #ff4757, #ff6b9d);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 30px;
+  box-shadow: 0 15px 35px rgba(255, 71, 87, 0.4);
+}
+
+.error-icon i {
+  font-size: 3rem;
+  color: white;
+}
+
+.error-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ff4757;
+  margin-bottom: 20px;
+  text-shadow: 0 2px 10px rgba(255, 71, 87, 0.3);
+}
+
+.error-message {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.retry-btn {
+  background: linear-gradient(45deg, #ff4757, #ff6b9d);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 18px 40px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 0 auto;
+  box-shadow: 0 10px 30px rgba(255, 71, 87, 0.4);
+}
+
+.retry-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(255, 71, 87, 0.6);
+}
+
+.retry-btn:active {
+  transform: translateY(-1px);
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes successPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 15px 35px rgba(46, 213, 115, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 20px 45px rgba(46, 213, 115, 0.6);
+  }
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0.3;
+  }
 }
 </style>
