@@ -2,8 +2,7 @@
 import { RouterLink, useRouter } from 'vue-router'
 import { useLogin } from './useLogin'
 import { useQuizCRUD } from './useQuizCRUD'
-import { watch, ref, computed } from 'vue'
-import api from '@/utils/axios'
+import { ref, computed } from 'vue'
 const router = useRouter()
 const {
     status,
@@ -43,16 +42,6 @@ onMounted(() => {
     message.value = ''
 })
 
-watch(status, (newStatus) => {
-    if (newStatus === 'loggedIn') {
-        getUserId().then(id => {
-            if (id) {
-                router.push({ name: 'Dashboard', params: { userId: id } })
-            } else alert("Không thể lấy thông tin người dùng.")
-        })
-    }
-})
-
 function togglePassword() {
     showPassword.value = !showPassword.value
 }
@@ -73,9 +62,14 @@ async function handleSubmit(e) {
     const result = await login()
     
     if (result.success) {
-        // ✅ REDIRECT TO USER DASHBOARD FOR ALL USERS
-        console.log('🚀 Redirecting to user dashboard')
-        router.push('/dashboard')
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+    console.log('🚀 Logged in as role:', user.role)
+
+    if (user.role?.toUpperCase() === 'ADMIN') {
+        router.push({ name: 'AdminCategories' })
+    } else {
+        router.push({ name: 'Home', params: { userId: user.id } })
+    }
     }
 }
 </script>

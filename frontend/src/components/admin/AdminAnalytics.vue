@@ -184,6 +184,12 @@
 import { ref, onMounted, watch } from 'vue'
 import Chart from 'chart.js/auto'
 import api from '@/utils/axios'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/vi'
+
+dayjs.extend(relativeTime)
+dayjs.locale('vi')
 
 // ✅ REACTIVE DATA
 const selectedPeriod = ref(30)
@@ -241,36 +247,11 @@ const topUsers = ref([
   { id: 5, fullName: 'Hoàng Văn E', username: 'hoangvane', avatarUrl: null, quizCount: 6, avgScore: 88 }
 ])
 
-const recentActivities = ref([
-  {
-    id: 1,
-    type: 'user',
-    title: 'Người dùng mới đăng ký',
-    description: 'user123 đã đăng ký tài khoản',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000)
-  },
-  {
-    id: 2,
-    type: 'quiz',
-    title: 'Quiz mới được tạo',
-    description: 'Quiz "Toán lớp 10" đã được tạo bởi teacher001',
-    timestamp: new Date(Date.now() - 15 * 60 * 1000)
-  },
-  {
-    id: 3,
-    type: 'attempt',
-    title: 'Hoàn thành quiz',
-    description: 'student456 đã hoàn thành quiz "Tiếng Anh cơ bản" với điểm 85%',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000)
-  },
-  {
-    id: 4,
-    type: 'report',
-    title: 'Báo cáo vi phạm',
-    description: 'Có báo cáo mới về quiz "Lịch sử Việt Nam"',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
-  }
-])
+// 🔹 Hoạt động gần đây — sẽ thay dữ liệu mock bằng API
+const recentActivities = ref([]) 
+const page = ref(0)
+const size = ref(10)
+const totalPages = ref(0)
 
 // ✅ METHODS
 const loadAnalytics = async () => {
@@ -282,26 +263,46 @@ const loadAnalytics = async () => {
   }
 }
 
+// 🔹 Lấy danh sách hoạt động gần đây từ backend
+const loadRecentActivities = async () => {
+  try {
+    const res = await api.get('/activities/recent', {
+      params: { page: page.value, size: size.value }
+    })
+    recentActivities.value = res.data.content.map(item => ({
+      id: item.id,
+      type: mapActivityType(item.activityType),
+      title: item.fullName,
+      description: item.activityType,
+      timestamp: item.activityTime
+    }))
+    totalPages.value = res.data.totalPages
+  } catch (error) {
+    console.error('Lỗi tải hoạt động gần đây:', error)
+  }
+}
+
+const mapActivityType = (type) => {
+  if (type?.includes('Quiz')) return 'quiz'
+  if (type?.includes('Report')) return 'report'
+  if (type?.includes('Attempt')) return 'attempt'
+  return 'user'
+}
+
 const updateStats = (data) => {
-  // Update overview stats
   overviewStats.value[0].value = data.totalUsers || 0
   overviewStats.value[1].value = data.totalQuizzes || 0
   overviewStats.value[2].value = data.totalAttempts || 0
   overviewStats.value[3].value = `${data.avgScore || 0}%`
-  
-  // Update charts
   updateCharts(data)
 }
 
 const updateCharts = (data) => {
-  // User Growth Chart
   if (userGrowthChart.value) {
     userGrowthChart.value.data.labels = data.userGrowth?.labels || []
     userGrowthChart.value.data.datasets[0].data = data.userGrowth?.data || []
     userGrowthChart.value.update()
   }
-  
-  // Quiz Activity Chart
   if (quizActivityChart.value) {
     quizActivityChart.value.data.labels = data.quizActivity?.labels || []
     quizActivityChart.value.data.datasets[0].data = data.quizActivity?.data || []
@@ -310,7 +311,6 @@ const updateCharts = (data) => {
 }
 
 const initCharts = () => {
-  // User Growth Chart
   const userCtx = document.getElementById('userGrowthChart')
   if (userCtx) {
     userGrowthChart.value = new Chart(userCtx, {
@@ -325,24 +325,9 @@ const initCharts = () => {
           tension: 0.4
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        }
-      }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
     })
   }
-  
-  // Quiz Activity Chart
   const quizCtx = document.getElementById('quizActivityChart')
   if (quizCtx) {
     quizActivityChart.value = new Chart(quizCtx, {
@@ -355,30 +340,15 @@ const initCharts = () => {
           backgroundColor: '#28a745'
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        }
-      }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
     })
   }
 }
 
 const exportReport = () => {
-  // TODO: Implement export functionality
   alert('Tính năng xuất báo cáo sẽ được implement sau')
 }
 
-// ✅ UTILITY FUNCTIONS
 const getRankClass = (index) => {
   if (index === 0) return 'rank-gold'
   if (index === 1) return 'rank-silver'
@@ -387,25 +357,12 @@ const getRankClass = (index) => {
 }
 
 const getActivityClass = (type) => {
-  const classes = {
-    user: 'bg-primary',
-    quiz: 'bg-success',
-    attempt: 'bg-warning',
-    report: 'bg-danger'
-  }
+  const classes = { user: 'bg-primary', quiz: 'bg-success', attempt: 'bg-warning', report: 'bg-danger' }
   return classes[type] || 'bg-secondary'
 }
 
 const formatTimeAgo = (timestamp) => {
-  const now = new Date()
-  const diff = now - timestamp
-  const minutes = Math.floor(diff / (1000 * 60))
-  const hours = Math.floor(diff / (1000 * 60 * 60))
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  
-  if (minutes < 60) return `${minutes} phút trước`
-  if (hours < 24) return `${hours} giờ trước`
-  return `${days} ngày trước`
+  return dayjs(timestamp).fromNow()
 }
 
 // ✅ WATCHERS
@@ -416,6 +373,7 @@ watch(selectedPeriod, () => {
 // ✅ MOUNTED
 onMounted(() => {
   loadAnalytics()
+  loadRecentActivities()
   setTimeout(() => {
     initCharts()
   }, 100)

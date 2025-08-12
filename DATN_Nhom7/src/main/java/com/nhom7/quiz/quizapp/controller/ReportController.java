@@ -256,7 +256,9 @@ public class ReportController {
         report.setStatus("RESOLVED");
         reportRepo.save(report);
 
-        adminService.checkAndBanUser(report.getReportedUser().getId());
+        if (report.getReportedUser() != null) {
+            adminService.checkAndBanUser(report.getReportedUser().getId());
+        }
 
         return ResponseEntity.ok("Đã xử lý report và kiểm tra user bị report");
     }
