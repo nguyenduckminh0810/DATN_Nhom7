@@ -11,6 +11,7 @@ const route = useRoute()
 const router = useRouter()
 
 const resultId = route.params.resultId
+const reviewOnly = computed(() => route.query?.reviewOnly === '1')
 const score = ref(0)
 const correctAnswers = ref([])
 const selectedAnswers = ref([]) // không dùng nữa nếu BE trả đầy đủ, giữ tạm cho UI
@@ -357,7 +358,7 @@ const submitReview = async () => {
 
       <!-- Main Content -->
       <div class="content-section">
-        <div class="row g-4">
+        <div class="row g-4" v-if="!reviewOnly">
           <!-- Score Card -->
           <div class="col-lg-6">
             <div class="result-card score-card" :class="{ loaded: isLoaded }">
@@ -530,7 +531,7 @@ const submitReview = async () => {
         </div>
 
         <!-- Bảng xếp hạng -->
-        <div class="result-card leaderboard-card" :class="{ loaded: isLoaded }" v-if="quizId">
+        <div class="result-card leaderboard-card" :class="{ loaded: isLoaded }" v-if="quizId && !reviewOnly">
           <div class="card-header">
             <h3 class="card-title">
               <i class="bi bi-trophy"></i>
@@ -543,7 +544,7 @@ const submitReview = async () => {
         </div>
 
         <!-- Form đánh giá -->
-        <div class="result-card review-card" :class="{ loaded: isLoaded }">
+        <div class="result-card review-card" :class="{ loaded: isLoaded }" v-if="!reviewOnly">
           <div class="card-header">
             <h3 class="card-title">
               <i class="bi bi-star-fill text-warning"></i>
@@ -570,7 +571,7 @@ const submitReview = async () => {
         </div>
 
         <!-- Action Buttons -->
-        <div class="actions-section" :class="{ loaded: isLoaded }">
+        <div class="actions-section" :class="{ loaded: isLoaded }" v-if="!reviewOnly">
           <div class="actions-container">
             <button @click="playAgain" class="action-btn primary">
               <i class="bi bi-arrow-clockwise"></i>

@@ -21,6 +21,15 @@ const showPassword = ref(false)
 const isLoading = computed(() => status.value === 'loggingIn')
 const hasError = computed(() => message.value && status.value === 'loggedOut')
 const isSuccess = computed(() => status.value === 'loggedIn')
+const rememberMe = ref(localStorage.getItem('rememberMe') === '1')
+// Khi user thay đổi checkbox, đồng bộ localStorage ngay (để giữ sau logout)
+watch(rememberMe, (val) => {
+    if (val) localStorage.setItem('rememberMe', '1')
+    else localStorage.removeItem('rememberMe')
+})
+
+// ====== Simple local encryption for remembered password (client-side only) ======
+// Sử dụng Credential Management API của trình duyệt để lưu Keychain
 
 function toQuizHistory() {
     if (!userId.value) {
@@ -41,6 +50,31 @@ onMounted(() => {
     // ✅ Reset status to ensure clean state
     status.value = 'loggedOut'
     message.value = ''
+    // nếu trước đó user chọn ghi nhớ → khôi phục username
+    if (rememberMe.value) {
+        const savedUser = localStorage.getItem('username')
+        if (savedUser) username.value = savedUser
+        else {
+            // có rememberMe nhưng chưa có username -> thử lấy từ user object
+            try {
+                const u = JSON.parse(localStorage.getItem('user') || 'null')
+                if (u?.username) username.value = u.username
+            } catch {}
+        }
+        // Thử khôi phục mật khẩu đã lưu (nếu có)
+        // Thử lấy mật khẩu từ Credential Management API
+        if ('credentials' in navigator && ('PasswordCredential' in window || window.PasswordCredential)) {
+            navigator.credentials.get({ password: true, mediation: 'optional' }).then((cred) => {
+                if (cred && cred.id) {
+                    // Nếu username trùng thì điền mật khẩu
+                    if (!username.value || username.value === cred.id) {
+                        username.value = cred.id
+                        if (cred.password) password.value = cred.password
+                    }
+                }
+            }).catch(() => {})
+        }
+    }
 })
 
 watch(status, (newStatus) => {
@@ -73,6 +107,33 @@ async function handleSubmit(e) {
     const result = await login()
     
     if (result.success) {
+        // Lưu tuỳ chọn ghi nhớ
+        if (rememberMe.value) {
+            localStorage.setItem('rememberMe', '1')
+            localStorage.setItem('username', result.user?.username || username.value)
+            // Đề nghị trình duyệt lưu mật khẩu (Keychain)
+            try {
+                if ('credentials' in navigator && ('PasswordCredential' in window || window.PasswordCredential)) {
+                    // Tạo từ form DOM để tăng tỉ lệ được password manager nhận diện
+                    const formEl = document.querySelector('form.login-form') || document.querySelector('form')
+                    let cred = null
+                    if (formEl && window.PasswordCredential) {
+                        try { cred = new PasswordCredential(formEl) } catch { cred = null }
+                    }
+                    if (!cred) {
+                        cred = new PasswordCredential({
+                            id: result.user?.username || username.value,
+                            password: password.value,
+                            name: result.user?.fullName || (result.user?.username || username.value)
+                        })
+                    }
+                    await navigator.credentials.store(cred)
+                }
+            } catch {}
+        } else {
+            localStorage.removeItem('rememberMe')
+            // Không can thiệp xóa Keychain: trình duyệt sẽ quản lý theo người dùng
+        }
         // ✅ REDIRECT TO USER DASHBOARD FOR ALL USERS
         console.log('🚀 Redirecting to user dashboard')
         router.push('/dashboard')
@@ -107,7 +168,7 @@ async function handleSubmit(e) {
             </div>
 
             <!-- Login Form -->
-            <form @submit.prevent="handleSubmit" class="login-form">
+            <form @submit.prevent="handleSubmit" class="login-form" autocomplete="on">
                 <!-- Username Field -->
                 <div class="form-group">
                     <label for="username" class="form-label">
@@ -118,12 +179,16 @@ async function handleSubmit(e) {
                         <input 
                             type="text" 
                             id="username" 
+                            name="username"
                             v-model="username" 
                             class="form-input"
                             :class="{ 'error': hasError, 'success': isSuccess }"
                             placeholder="Nhập tên đăng nhập của bạn"
                             required 
                             :disabled="isLoading"
+                            autocomplete="username"
+                            autocapitalize="none"
+                            autocorrect="off"
                         />
                         <div class="input-icon">
                             <i class="bi bi-person-circle"></i>
@@ -141,12 +206,14 @@ async function handleSubmit(e) {
                         <input 
                             :type="showPassword ? 'text' : 'password'" 
                             id="password" 
+                            name="password"
                             v-model="password" 
                             class="form-input"
                             :class="{ 'error': hasError, 'success': isSuccess }"
                             placeholder="Nhập mật khẩu của bạn"
                             required 
                             :disabled="isLoading"
+                            autocomplete="current-password"
                         />
                         <button 
                             type="button" 
@@ -162,7 +229,7 @@ async function handleSubmit(e) {
                 <!-- Remember & Forgot -->
                 <div class="form-options">
                     <label class="remember-checkbox">
-                        <input type="checkbox" class="checkbox-input">
+                        <input type="checkbox" class="checkbox-input" v-model="rememberMe">
                         <span class="checkbox-custom"></span>
                         <span class="checkbox-label">Ghi nhớ đăng nhập</span>
                     </label>

@@ -44,6 +44,10 @@ public class Notification {
     @Column(name = "priority", length = 20, nullable = false)
     private String priority = "NORMAL"; // LOW, NORMAL, HIGH, URGENT
 
+    // Audience: USER | ADMIN | ALL (mặc định USER)
+    @Column(name = "audience", length = 10, nullable = false)
+    private String audience = "USER";
+
     @Column(name = "related_entity_id")
     private Long relatedEntityId; // ID của quiz, user, etc.
 
@@ -78,6 +82,7 @@ public class Notification {
         this.actionUrl = actionUrl;
         this.createdAt = LocalDateTime.now();
         this.isRead = false;
+        this.audience = "USER";
     }
 
     // Getters and setters
