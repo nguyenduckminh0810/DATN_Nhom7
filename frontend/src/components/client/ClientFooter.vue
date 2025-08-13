@@ -32,27 +32,36 @@
 
         <!-- Quick Links -->
         <div class="col-lg-3 col-md-4 mb-3 links-col">
-          <h6 class="section-title fw-bold">Liên kết nhanh</h6>
-          <ul class="list-unstyled">
+          <h6 class="section-title fw-bold with-icon">
+            <i class="bi bi-link-45deg"></i>
+            <span>Liên kết nhanh</span>
+          </h6>
+          <ul class="list-unstyled quick-links">
             <li>
               <router-link
                 :to="{ name: 'Dashboard' }"
-                class="text-light text-decoration-none small"
+                class="text-light text-decoration-none small link-item"
               >
-                Trang chủ
+                <i class="bi bi-house-door"></i>
+                <span>Trang chủ</span>
               </router-link>
             </li>
             <li>
               <router-link
                 :to="{ name: 'ListQuizPublic' }"
-                class="text-light text-decoration-none small"
+                class="text-light text-decoration-none small link-item"
               >
-                Quiz công khai
+                <i class="bi bi-collection"></i>
+                <span>Quiz công khai</span>
               </router-link>
             </li>
             <li>
-              <router-link :to="{ name: 'Contact' }" class="text-light text-decoration-none small">
-                Liên hệ
+              <router-link
+                :to="{ name: 'Contact' }"
+                class="text-light text-decoration-none small link-item"
+              >
+                <i class="bi bi-envelope-open"></i>
+                <span>Liên hệ</span>
               </router-link>
             </li>
           </ul>
@@ -60,7 +69,10 @@
 
         <!-- About Project -->
         <div class="col-lg-5 col-md-5 mb-3 about-col">
-          <h6 class="section-title fw-bold">Về QuizMaster</h6>
+          <h6 class="section-title fw-bold with-icon">
+            <i class="bi bi-info-circle"></i>
+            <span>Về QuizMaster</span>
+          </h6>
           <p class="small">
             QuizMaster là nền tảng thi trắc nghiệm trực tuyến, giúp bạn tạo, chia sẻ và kiểm tra
             kiến thức dễ dàng, nhanh chóng và hiệu quả.
@@ -129,7 +141,7 @@
   margin-bottom: 6px;
 }
 
-/* --- Fix căn hàng: đưa logo ra khỏi flow để địa chỉ lên cao (>=992px) --- */
+/* --- Fix căn hàng: đưa logo/tiêu đề ra khỏi flow để nội dung chính (địa chỉ, danh sách link, mô tả) cùng cao độ (>=992px) --- */
 @media (min-width: 992px) {
   .brand-col {
     position: relative;
@@ -142,6 +154,53 @@
     right: 0;
     margin: 0; /* bỏ mb-2 của bootstrap */
   }
+
+  /* Đưa tiêu đề của cột Liên kết nhanh ra khỏi flow và chừa khoảng tương đương logo để
+     danh sách (Trang chủ, Quiz công khai, …) bắt đầu cùng hàng với dòng địa chỉ V116 Cát Bi */
+  .links-col {
+    position: relative;
+    padding-top: 44px; /* căn dọc bằng với cột bên trái */
+  }
+  .links-col .section-title {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+  }
+
+  /* Cột About: giữ tiêu đề trên cùng, đoạn mô tả bắt đầu cùng hàng với địa chỉ */
+  .about-col {
+    position: relative;
+    padding-top: 44px; /* căn dọc bằng với cột bên trái */
+  }
+  .about-col .section-title {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+  }
+}
+
+/* tiêu đề có icon */
+.with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.with-icon i {
+  color: #9fdcff;
+}
+
+/* link với icon */
+.quick-links .link-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.quick-links .link-item i {
+  opacity: 0.9;
 }
 /* Mobile/Tablet: giữ layout mặc định */
 @media (max-width: 991.98px) {

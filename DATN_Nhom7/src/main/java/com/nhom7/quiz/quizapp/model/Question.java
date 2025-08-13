@@ -1,5 +1,9 @@
 package com.nhom7.quiz.quizapp.model;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -19,6 +24,9 @@ public class Question {
 	@ManyToOne
 	@JoinColumn(name = "quiz_id", nullable = false)
 	private Quiz quiz;
+
+	@OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+	private Set<Answer> answers = new HashSet<>();
 
 	@Column(columnDefinition = "TEXT", nullable = false)
 	private String content;

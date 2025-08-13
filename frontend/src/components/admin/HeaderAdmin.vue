@@ -30,16 +30,12 @@
             </div>
           </RouterLink>
 
-          <!-- Quiz Attempts -->
-          <RouterLink to="/admin/attempts" class="nav-item" active-class="router-link-active">
-            <div class="nav-content">
-              <i class="bi bi-play-circle"></i>
-              <span>Quiz Attempts</span>
-            </div>
-          </RouterLink>
-
           <!-- Categories Dropdown -->
-          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
+          <div
+            class="nav-item dropdown"
+            @mouseenter="handleDropdownHover"
+            @mouseleave="handleDropdownLeave"
+          >
             <div class="nav-content" @click="handleDropdownClick">
               <i class="bi bi-tags"></i>
               <span>Danh mục</span>
@@ -60,20 +56,24 @@
                   <small class="link-desc">Quản lý quiz</small>
                 </div>
               </RouterLink>
-                                    <RouterLink to="/admin/categories" class="dropdown-link" @click="closeAllDropdowns">
-                        <i class="bi bi-folder2"></i>
-                        <div class="link-content">
-                          <span class="link-title">Quản lý Danh mục</span>
-                          <small class="link-desc">Tạo & sửa danh mục</small>
-                        </div>
-                      </RouterLink>
-                      <RouterLink to="/admin/categories/trash" class="dropdown-link" @click="closeAllDropdowns">
-                        <i class="bi bi-trash3"></i>
-                        <div class="link-content">
-                          <span class="link-title">Thùng rác</span>
-                          <small class="link-desc">Danh mục đã xóa</small>
-                        </div>
-                      </RouterLink>
+              <RouterLink to="/admin/categories" class="dropdown-link" @click="closeAllDropdowns">
+                <i class="bi bi-folder2"></i>
+                <div class="link-content">
+                  <span class="link-title">Quản lý Danh mục</span>
+                  <small class="link-desc">Tạo & sửa danh mục</small>
+                </div>
+              </RouterLink>
+              <RouterLink
+                to="/admin/categories/trash"
+                class="dropdown-link"
+                @click="closeAllDropdowns"
+              >
+                <i class="bi bi-trash3"></i>
+                <div class="link-content">
+                  <span class="link-title">Thùng rác</span>
+                  <small class="link-desc">Danh mục đã xóa</small>
+                </div>
+              </RouterLink>
             </div>
           </div>
 
@@ -82,7 +82,9 @@
             <div class="nav-content">
               <i class="bi bi-flag"></i>
               <span>Báo cáo</span>
-              <span v-if="reportCount > 0" class="navbar-notification-badge">{{ reportCount }}</span>
+              <span v-if="reportCount > 0" class="navbar-notification-badge">{{
+                reportCount
+              }}</span>
             </div>
           </RouterLink>
 
@@ -101,14 +103,20 @@
         <!-- ✅ ADMIN NOTIFICATION COMPONENT (VISIBLE) -->
         <AdminNotificationComponent ref="notificationComponent" />
         <!-- Dark Mode Toggle -->
-        <button @click="themeStore.toggleTheme" class="theme-toggle-btn" :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'">
+        <button
+          @click="themeStore.toggleTheme"
+          class="theme-toggle-btn"
+          :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'"
+        >
           <i :class="themeStore.isDarkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
         </button>
-        
-
 
         <!-- Admin Profile -->
-        <div class="user-menu dropdown" @mouseenter="handleUserDropdownHover" @mouseleave="handleUserDropdownLeave">
+        <div
+          class="user-menu dropdown"
+          @mouseenter="handleUserDropdownHover"
+          @mouseleave="handleUserDropdownLeave"
+        >
           <div class="user-trigger" @click="handleUserDropdownClick">
             <div class="user-avatar">
               <img
@@ -122,7 +130,9 @@
             </div>
             <div class="user-info">
               <div class="user-name-row">
-                <span class="user-name">{{ adminInfo?.fullName || adminInfo?.username || 'Admin' }}</span>
+                <span class="user-name">{{
+                  adminInfo?.fullName || adminInfo?.username || 'Admin'
+                }}</span>
               </div>
               <small class="user-status">Online</small>
             </div>
@@ -144,7 +154,9 @@
               <div class="profile-info">
                 <strong>{{ adminInfo?.fullName || adminInfo?.username || 'Administrator' }}</strong>
                 <small>{{ adminInfo?.role || 'Admin' }}</small>
-                <small class="profile-email">{{ adminInfo?.email || 'admin@quizmaster.com' }}</small>
+                <small class="profile-email">{{
+                  adminInfo?.email || 'admin@quizmaster.com'
+                }}</small>
               </div>
             </div>
 
@@ -162,7 +174,9 @@
               <button @click="showNotifications" class="user-dropdown-link">
                 <i class="bi bi-bell"></i>
                 <span>Thông báo</span>
-                <span v-if="notificationCount > 0" class="notification-badge">{{ notificationCount }}</span>
+                <span v-if="notificationCount > 0" class="notification-badge">{{
+                  notificationCount
+                }}</span>
               </button>
               <button @click="logout" class="user-dropdown-link logout-link">
                 <i class="bi bi-box-arrow-right"></i>
@@ -253,14 +267,12 @@ const avatarUrl = computed(() => {
   return null
 })
 
-
-
 function handleLogoClick() {
-  router.push('/')
+  router.push({ name: 'Dashboard' })
 }
 
 function handleHomeClick() {
-  router.push('/')
+  router.push({ name: 'Dashboard' })
 }
 
 // ✅ SHOW NOTIFICATIONS
@@ -280,11 +292,11 @@ const showNotifications = () => {
 function logout() {
   // ✅ Clear all localStorage completely
   localStorage.clear()
-  
+
   // ✅ Redirect to login page
   router.push('/login')
   console.log('✅ Admin logout completed - redirected to login')
-  
+
   // ✅ Force refresh immediately
   window.location.reload()
 }
@@ -303,13 +315,13 @@ function handleAvatarError(event) {
 const handleDropdownClick = (event) => {
   event.preventDefault()
   event.stopPropagation()
-  
+
   const dropdown = event.currentTarget.closest('.dropdown')
   const panel = dropdown.querySelector('.dropdown-panel')
-  
+
   // Close all other dropdowns first
   closeAllDropdowns()
-  
+
   // Toggle current dropdown
   if (panel.style.visibility === 'visible') {
     panel.style.opacity = '0'
@@ -330,22 +342,22 @@ const closeAllDropdowns = () => {
   const dropdownItems = document.querySelectorAll('.nav-item.dropdown')
   const userDropdowns = document.querySelectorAll('.user-dropdown')
   const userMenus = document.querySelectorAll('.user-menu')
-  
-  dropdowns.forEach(panel => {
+
+  dropdowns.forEach((panel) => {
     panel.style.opacity = '0'
     panel.style.visibility = 'hidden'
     panel.style.transform = 'translateX(-50%) translateY(-10px)'
   })
-  
-  dropdownItems.forEach(item => {
+
+  dropdownItems.forEach((item) => {
     item.classList.remove('active')
   })
-  
-  userDropdowns.forEach(dropdown => {
+
+  userDropdowns.forEach((dropdown) => {
     dropdown.style.display = 'none'
   })
-  
-  userMenus.forEach(menu => {
+
+  userMenus.forEach((menu) => {
     menu.classList.remove('active')
   })
 }
@@ -354,10 +366,10 @@ const closeAllDropdowns = () => {
 const handleDropdownHover = (event) => {
   const dropdown = event.currentTarget.closest('.dropdown')
   const panel = dropdown.querySelector('.dropdown-panel')
-  
+
   // Close all other dropdowns first
   closeAllDropdowns()
-  
+
   // Show current dropdown
   panel.style.opacity = '1'
   panel.style.visibility = 'visible'
@@ -368,7 +380,7 @@ const handleDropdownHover = (event) => {
 const handleDropdownLeave = (event) => {
   const dropdown = event.currentTarget.closest('.dropdown')
   const panel = dropdown.querySelector('.dropdown-panel')
-  
+
   // Hide dropdown after delay
   setTimeout(() => {
     if (!dropdown.matches(':hover')) {
@@ -384,13 +396,13 @@ const handleDropdownLeave = (event) => {
 const handleUserDropdownClick = (event) => {
   event.preventDefault()
   event.stopPropagation()
-  
+
   const userMenu = event.currentTarget.closest('.user-menu')
   const userDropdown = userMenu.querySelector('.user-dropdown')
-  
+
   // Close all other dropdowns first
   closeAllDropdowns()
-  
+
   // Toggle user dropdown
   if (userDropdown.style.display === 'block') {
     userDropdown.style.display = 'none'
@@ -405,10 +417,10 @@ const handleUserDropdownClick = (event) => {
 const handleUserDropdownHover = (event) => {
   const userMenu = event.currentTarget.closest('.user-menu')
   const userDropdown = userMenu.querySelector('.user-dropdown')
-  
+
   // Close all other dropdowns first
   closeAllDropdowns()
-  
+
   // Show user dropdown
   userDropdown.style.display = 'block'
   userDropdown.style.opacity = '1'
@@ -420,7 +432,7 @@ const handleUserDropdownHover = (event) => {
 const handleUserDropdownLeave = (event) => {
   const userMenu = event.currentTarget.closest('.user-menu')
   const userDropdown = userMenu.querySelector('.user-dropdown')
-  
+
   // Hide user dropdown after delay
   setTimeout(() => {
     if (!userMenu.matches(':hover')) {
@@ -435,9 +447,12 @@ const handleUserDropdownLeave = (event) => {
 
 // ✅ CLICK OUTSIDE TO CLOSE
 const handleClickOutside = (event) => {
-  if (!event.target.closest('.dropdown') && !event.target.closest('.user-menu') && !event.target.closest('.notification-dropdown')) {
+  if (
+    !event.target.closest('.dropdown') &&
+    !event.target.closest('.user-menu') &&
+    !event.target.closest('.notification-dropdown')
+  ) {
     closeAllDropdowns()
-  
   }
 }
 
@@ -446,16 +461,16 @@ onMounted(async () => {
   await loadAdminInfo()
   await fetchUserProfile()
   await loadNotificationCount()
-  
+
   // ✅ DEBUG: Check if notificationComponent is available
   console.log('🔍 AdminNotificationComponent ref:', notificationComponent.value)
-  
+
   // Add click outside listener
   document.addEventListener('click', handleClickOutside)
-  
+
   // Add mouse leave listeners for dropdowns
   const dropdowns = document.querySelectorAll('.nav-item.dropdown')
-  dropdowns.forEach(dropdown => {
+  dropdowns.forEach((dropdown) => {
     dropdown.addEventListener('mouseleave', () => {
       setTimeout(() => {
         const panel = dropdown.querySelector('.dropdown-panel')
@@ -479,7 +494,7 @@ async function loadAdminInfo() {
       console.log('✅ Admin user loaded from admin_user:', adminInfo.value)
       return
     }
-    
+
     // Try to get from user data
     const userInfo = localStorage.getItem('user')
     if (userInfo) {
@@ -490,7 +505,7 @@ async function loadAdminInfo() {
         return
       }
     }
-    
+
     // Try to get from localStorage user data
     const username = localStorage.getItem('username')
     const userId = localStorage.getItem('userId')
@@ -499,12 +514,12 @@ async function loadAdminInfo() {
         username: username,
         id: userId,
         role: 'admin',
-        fullName: username
+        fullName: username,
       }
       console.log('✅ Admin user loaded from localStorage:', adminInfo.value)
       return
     }
-    
+
     console.log('❌ No admin user found')
     adminInfo.value = null
   } catch (error) {
@@ -515,10 +530,10 @@ async function loadAdminInfo() {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
-  
+
   // Remove mouse leave listeners
   const dropdowns = document.querySelectorAll('.nav-item.dropdown')
-  dropdowns.forEach(dropdown => {
+  dropdowns.forEach((dropdown) => {
     dropdown.removeEventListener('mouseleave', () => {})
   })
 })
@@ -792,8 +807,6 @@ onUnmounted(() => {
 .theme-toggle-btn:hover i {
   transform: scale(1.1);
 }
-
-
 
 /* USER MENU */
 .user-menu {
