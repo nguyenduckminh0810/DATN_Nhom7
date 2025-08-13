@@ -2,7 +2,7 @@
   <div v-if="isAuthorized" class="admin-layout">
     <!-- Header -->
     <HeaderAdmin />
-    
+
     <!-- Main Content -->
     <main class="main-content">
       <router-view />
@@ -11,32 +11,31 @@
     <!-- Footer -->
     <FooterAdmin />
   </div>
-  
+
   <!-- Unauthorized Access -->
   <div v-else class="unauthorized-container">
     <div class="unauthorized-content">
       <div class="unauthorized-icon">
         <i class="bi bi-shield-exclamation"></i>
       </div>
-      
+
       <h1 class="unauthorized-title">Truy cập bị từ chối</h1>
-      
+
       <p class="unauthorized-message">
-        Bạn không có quyền truy cập vào Admin Panel. 
-        Chỉ Admin mới có thể truy cập tính năng này.
+        Bạn không có quyền truy cập vào Admin Panel. Chỉ Admin mới có thể truy cập tính năng này.
       </p>
-      
+
       <div class="unauthorized-actions">
         <button @click="goBack" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left"></i>
           Quay lại
         </button>
-        
+
         <button @click="goHome" class="btn btn-primary">
           <i class="bi bi-house"></i>
           Về trang chủ
         </button>
-        
+
         <button @click="goLogin" class="btn btn-success">
           <i class="bi bi-box-arrow-in-right"></i>
           Đăng nhập Admin
@@ -70,7 +69,7 @@ const loadAdminUser = () => {
       adminUser.value = null
       return
     }
-    
+
     // Kiểm tra admin_user trước (cho admin login)
     const adminUserStr = localStorage.getItem('admin_user')
     if (adminUserStr) {
@@ -78,7 +77,7 @@ const loadAdminUser = () => {
       console.log('✅ Admin user loaded from admin_user:', adminUser.value)
       return
     }
-    
+
     // Kiểm tra user role từ user data (cho user login với role admin)
     const userInfo = localStorage.getItem('user')
     if (userInfo) {
@@ -89,7 +88,7 @@ const loadAdminUser = () => {
         return
       }
     }
-    
+
     console.log('❌ No admin user found')
     adminUser.value = null
   } catch (error) {
@@ -114,7 +113,7 @@ const goLogin = () => {
 // ✅ MOUNTED
 onMounted(() => {
   loadAdminUser()
-  
+
   // Watch for changes in localStorage
   window.addEventListener('storage', (e) => {
     if (e.key === 'admin_user' || e.key === 'user' || e.key === 'token') {
@@ -142,7 +141,8 @@ onMounted(() => {
 .main-content {
   flex: 1;
   padding: 0;
-  margin-top: 0;
+  /* Đẩy nội dung xuống dưới navbar cố định để tránh bị che */
+  padding-top: 90px;
 }
 
 /* Unauthorized Access Styles */
@@ -239,19 +239,19 @@ onMounted(() => {
   .unauthorized-content {
     padding: 2rem;
   }
-  
+
   .unauthorized-title {
     font-size: 1.5rem;
   }
-  
+
   .unauthorized-message {
     font-size: 1rem;
   }
-  
+
   .unauthorized-actions {
     flex-direction: column;
   }
-  
+
   .btn {
     width: 100%;
     justify-content: center;

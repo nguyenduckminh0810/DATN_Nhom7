@@ -74,9 +74,16 @@
                   <span>Tên danh mục</span>
                   <span class="required">*</span>
                 </label>
-                <input type="text" id="categoryName" v-model="newCategory.name" class="form-input"
-                  :class="{ 'error': nameError, 'success': newCategory.name && !nameError }"
-                  placeholder="Nhập tên danh mục..." maxlength="50" required />
+                <input
+                  type="text"
+                  id="categoryName"
+                  v-model="newCategory.name"
+                  class="form-input"
+                  :class="{ error: nameError, success: newCategory.name && !nameError }"
+                  placeholder="Nhập tên danh mục..."
+                  maxlength="50"
+                  required
+                />
                 <div v-if="nameError" class="error-message">{{ nameError }}</div>
                 <div class="char-count">{{ newCategory.name.length }}/50</div>
               </div>
@@ -86,9 +93,15 @@
                   <i class="bi bi-text-paragraph"></i>
                   <span>Mô tả</span>
                 </label>
-                <textarea id="categoryDesc" v-model="newCategory.description" class="form-textarea"
-                  :class="{ 'success': newCategory.description }" placeholder="Mô tả chi tiết về danh mục..." rows="3"
-                  maxlength="200"></textarea>
+                <textarea
+                  id="categoryDesc"
+                  v-model="newCategory.description"
+                  class="form-textarea"
+                  :class="{ success: newCategory.description }"
+                  placeholder="Mô tả chi tiết về danh mục..."
+                  rows="3"
+                  maxlength="200"
+                ></textarea>
                 <div class="char-count">{{ newCategory.description.length }}/200</div>
               </div>
             </div>
@@ -98,11 +111,7 @@
                 <i class="bi bi-x-circle"></i>
                 Xóa form
               </button>
-              <button 
-                type="submit" 
-                class="btn-primary" 
-                :disabled="isButtonDisabled"
-              >
+              <button type="submit" class="btn-primary" :disabled="isButtonDisabled">
                 <div v-if="isAdding" class="loading-spinner">
                   <i class="bi bi-arrow-clockwise spin"></i>
                 </div>
@@ -129,7 +138,12 @@
             <div class="table-controls">
               <div class="search-box">
                 <i class="bi bi-search"></i>
-                <input v-model="searchTerm" type="text" placeholder="Tìm kiếm danh mục..." class="search-input" />
+                <input
+                  v-model="searchTerm"
+                  type="text"
+                  placeholder="Tìm kiếm danh mục..."
+                  class="search-input"
+                />
               </div>
               <select v-model="sortBy" class="sort-select">
                 <option value="name">Tên A-Z</option>
@@ -161,39 +175,60 @@
             </div>
 
             <div v-else class="categories-grid">
-              <div v-for="(category, index) in filteredCategories" :key="category.id" class="category-card"
-                :class="{ 'editing': editId === category.id }" :style="{ 'animation-delay': `${index * 0.1}s` }">
+              <div
+                v-for="(category, index) in filteredCategories"
+                :key="category.id"
+                class="category-card"
+                :class="{ editing: editId === category.id }"
+                :style="{ 'animation-delay': `${index * 0.1}s` }"
+              >
                 <div class="card-header">
                   <div class="category-info">
                     <div v-if="editId !== category.id" class="category-name">
                       {{ category.name }}
                     </div>
-                    <input v-else v-model="editCategory.name" class="edit-input" placeholder="Tên danh mục..."
-                      maxlength="50" />
+                    <input
+                      v-else
+                      v-model="editCategory.name"
+                      class="edit-input"
+                      placeholder="Tên danh mục..."
+                      maxlength="50"
+                    />
 
                     <div class="category-meta">
                       <span class="date-badge">
                         <i class="bi bi-calendar3"></i>
                         {{ formatDate(category.createdAt) }}
                       </span>
-                      <span class="id-badge">
-                        ID: {{ category.id }}
-                      </span>
                     </div>
                   </div>
 
                   <div v-if="isAdmin" class="card-actions">
-                    <button v-if="editId !== category.id" @click="startEdit(category)" class="btn-edit"
-                      title="Chỉnh sửa">
+                    <button
+                      v-if="editId !== category.id"
+                      @click="startEdit(category)"
+                      class="btn-edit"
+                      title="Chỉnh sửa"
+                    >
                       <i class="bi bi-pencil"></i>
                     </button>
-                    <button v-else @click="saveEdit(category.id)" class="btn-save" title="Lưu" :disabled="isSaving">
+                    <button
+                      v-else
+                      @click="saveEdit(category.id)"
+                      class="btn-save"
+                      title="Lưu"
+                      :disabled="isSaving"
+                    >
                       <i v-if="isSaving" class="bi bi-arrow-clockwise spin"></i>
                       <i v-else class="bi bi-check-lg"></i>
                     </button>
 
-                    <button v-if="editId !== category.id" @click="confirmDelete(category)" class="btn-delete"
-                      title="Xóa">
+                    <button
+                      v-if="editId !== category.id"
+                      @click="confirmDelete(category)"
+                      class="btn-delete"
+                      title="Xóa"
+                    >
                       <i class="bi bi-trash"></i>
                     </button>
                     <button v-else @click="cancelEdit" class="btn-cancel" title="Hủy">
@@ -206,8 +241,14 @@
                   <div v-if="editId !== category.id" class="category-description">
                     {{ category.description || 'Chưa có mô tả' }}
                   </div>
-                  <textarea v-else v-model="editCategory.description" class="edit-textarea"
-                    placeholder="Mô tả danh mục..." rows="2" maxlength="200"></textarea>
+                  <textarea
+                    v-else
+                    v-model="editCategory.description"
+                    class="edit-textarea"
+                    placeholder="Mô tả danh mục..."
+                    rows="2"
+                    maxlength="200"
+                  ></textarea>
                 </div>
               </div>
             </div>
@@ -229,16 +270,17 @@
         <div class="modal-body">
           <div class="category-info">
             <h4>{{ categoryToDelete?.name }}</h4>
-            <p class="category-description">{{ categoryToDelete?.description || 'Không có mô tả' }}</p>
+            <p class="category-description">
+              {{ categoryToDelete?.description || 'Không có mô tả' }}
+            </p>
             <div class="category-meta">
               <span class="date-badge">
                 <i class="bi bi-calendar3"></i>
                 {{ formatDate(categoryToDelete?.createdAt) }}
               </span>
-              <span class="id-badge">ID: {{ categoryToDelete?.id }}</span>
             </div>
           </div>
-          
+
           <div class="warning-section">
             <div class="warning-icon">
               <i class="bi bi-info-circle"></i>
@@ -307,7 +349,7 @@ const isAdmin = computed(() => {
   if (userStore.isAdmin()) {
     return true
   }
-  
+
   // Kiểm tra trực tiếp từ localStorage
   const userInfo = localStorage.getItem('user')
   if (userInfo) {
@@ -316,7 +358,7 @@ const isAdmin = computed(() => {
       return true
     }
   }
-  
+
   return false
 })
 
@@ -324,7 +366,7 @@ const toast = ref({
   show: false,
   type: 'success',
   message: '',
-  icon: ''
+  icon: '',
 })
 
 // Validation
@@ -335,7 +377,9 @@ const nameError = computed(() => {
   if (newCategory.value.name.length < 2) {
     return 'Tên danh mục phải có ít nhất 2 ký tự'
   }
-  if (categories.value.some(cat => cat.name.toLowerCase() === newCategory.value.name.toLowerCase())) {
+  if (
+    categories.value.some((cat) => cat.name.toLowerCase() === newCategory.value.name.toLowerCase())
+  ) {
     return 'Tên danh mục đã tồn tại'
   }
   return ''
@@ -352,9 +396,10 @@ const filteredCategories = computed(() => {
 
   // Search filter
   if (searchTerm.value) {
-    filtered = filtered.filter(cat =>
-      cat.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      cat.description?.toLowerCase().includes(searchTerm.value.toLowerCase())
+    filtered = filtered.filter(
+      (cat) =>
+        cat.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+        cat.description?.toLowerCase().includes(searchTerm.value.toLowerCase()),
     )
   }
 
@@ -380,7 +425,7 @@ const filteredCategories = computed(() => {
 const recentCategories = computed(() => {
   const oneWeekAgo = new Date()
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-  return categories.value.filter(cat => new Date(cat.createdAt) > oneWeekAgo).length
+  return categories.value.filter((cat) => new Date(cat.createdAt) > oneWeekAgo).length
 })
 
 const mostPopularCategory = computed(() => {
@@ -395,7 +440,7 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('vi-VN', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 
@@ -403,14 +448,14 @@ function showToast(message, type = 'success') {
   const icons = {
     success: 'bi bi-check-circle-fill',
     error: 'bi bi-exclamation-circle-fill',
-    info: 'bi bi-info-circle-fill'
+    info: 'bi bi-info-circle-fill',
   }
 
   toast.value = {
     show: true,
     type,
     message,
-    icon: icons[type]
+    icon: icons[type],
   }
 
   setTimeout(() => {
@@ -444,7 +489,7 @@ async function addCategory() {
   try {
     const token = localStorage.getItem('token')
     await api.post('/categories', newCategory.value, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
 
     clearForm()
@@ -466,7 +511,7 @@ function startEdit(category) {
   editId.value = category.id
   editCategory.value = {
     name: category.name,
-    description: category.description || ''
+    description: category.description || '',
   }
 }
 
@@ -482,7 +527,7 @@ async function saveEdit(id) {
   try {
     const token = localStorage.getItem('token')
     await api.put(`/categories/${id}`, editCategory.value, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
 
     cancelEdit()
@@ -514,12 +559,12 @@ async function deleteCategory() {
   try {
     const token = localStorage.getItem('token')
     const response = await api.delete(`/categories/${categoryToDelete.value.id}`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
 
     // ✅ KIỂM TRA RESPONSE MESSAGE
     const message = response.data || 'Xóa danh mục thành công!'
-    
+
     // ✅ KIỂM TRA NẾU CÓ QUIZ
     if (message.includes('Không thể xóa danh mục vì có')) {
       showToast(message, 'error')
@@ -596,7 +641,6 @@ onMounted(() => {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
@@ -628,7 +672,6 @@ onMounted(() => {
 }
 
 @keyframes bounce {
-
   0%,
   20%,
   50%,

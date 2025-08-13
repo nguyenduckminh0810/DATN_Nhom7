@@ -19,7 +19,7 @@ const questions = ref([])
 const isLoaded = ref(false)
 const review = ref({
   rating: '',
-  reviewText: ''
+  reviewText: '',
 })
 const submitting = ref(false)
 const successMessage = ref('')
@@ -38,7 +38,10 @@ onMounted(async () => {
     selectedAnswers.value = resResult.data.selectedAnswers || []
 
     // ✅ Fallback: đọc selections từ localStorage nếu BE không trả
-    if ((!selectedAnswers.value || selectedAnswers.value.length === 0) && typeof window !== 'undefined') {
+    if (
+      (!selectedAnswers.value || selectedAnswers.value.length === 0) &&
+      typeof window !== 'undefined'
+    ) {
       try {
         const raw = localStorage.getItem(`result_selected_${resultId}`)
         if (raw) {
@@ -55,15 +58,15 @@ onMounted(async () => {
         }
       } catch {}
     }
-    
+
     // Lấy quizId từ result data
     quizId.value = resResult.data.quizId || resResult.data.quiz?.id
-    
+
     console.log('📊 Result data loaded:', {
       score: score.value,
       quizId: quizId.value,
       correctAnswersCount: correctAnswers.value.length,
-      selectedAnswersCount: selectedAnswers.value.length
+      selectedAnswersCount: selectedAnswers.value.length,
     })
   } catch (e) {
     console.error('Không tải được kết quả:', e)
@@ -277,7 +280,7 @@ const stats = computed(() => {
 })
 
 function goBack() {
-  router.push({ name: 'Home' })
+  router.push({ name: 'Dashboard' })
 }
 
 async function playAgain() {
@@ -310,7 +313,7 @@ const submitReview = async () => {
     await api.post(`/quizzes/${quizId.value}/review`, {
       userId: currentUserId.value,
       rating: review.value.rating,
-      reviewText: review.value.reviewText
+      reviewText: review.value.reviewText,
     })
     successMessage.value = 'Cảm ơn bạn đã đánh giá!'
     review.value.rating = ''
@@ -522,7 +525,9 @@ const submitReview = async () => {
                   <div class="result-info">
                     <span class="label">Đáp án đúng:</span>
                     <span class="value correct">{{ result.correctAnswerId || '?' }}</span>
-                    <span v-if="result.correctAnswerContent" class="answer-content correct">{{ result.correctAnswerContent }}</span>
+                    <span v-if="result.correctAnswerContent" class="answer-content correct">{{
+                      result.correctAnswerContent
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -531,7 +536,11 @@ const submitReview = async () => {
         </div>
 
         <!-- Bảng xếp hạng -->
-        <div class="result-card leaderboard-card" :class="{ loaded: isLoaded }" v-if="quizId && !reviewOnly">
+        <div
+          class="result-card leaderboard-card"
+          :class="{ loaded: isLoaded }"
+          v-if="quizId && !reviewOnly"
+        >
           <div class="card-header">
             <h3 class="card-title">
               <i class="bi bi-trophy"></i>
@@ -561,9 +570,18 @@ const submitReview = async () => {
             </div>
             <div class="mb-3">
               <label for="reviewText">Ý kiến của bạn:</label>
-              <textarea v-model="review.reviewText" class="form-control" rows="3" placeholder="Viết cảm nhận của bạn..."></textarea>
+              <textarea
+                v-model="review.reviewText"
+                class="form-control"
+                rows="3"
+                placeholder="Viết cảm nhận của bạn..."
+              ></textarea>
             </div>
-            <button @click="submitReview" class="btn btn-primary" :disabled="review.rating === '' || submitting">
+            <button
+              @click="submitReview"
+              class="btn btn-primary"
+              :disabled="review.rating === '' || submitting"
+            >
               <i class="bi bi-send-fill me-2"></i> Gửi đánh giá
             </button>
             <div v-if="successMessage" class="alert alert-success mt-2">{{ successMessage }}</div>
