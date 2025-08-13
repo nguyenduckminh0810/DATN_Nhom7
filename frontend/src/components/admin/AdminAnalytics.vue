@@ -16,167 +16,123 @@
           <option value="90">90 ngày qua</option>
           <option value="365">1 năm qua</option>
         </select>
-        <button @click="exportReport" class="btn btn-outline-success">
-          <i class="bi bi-download me-2"></i>
-          Xuất báo cáo
+        <button @click="exportExcel" class="btn btn-success btn-sm">
+          <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
         </button>
+        
       </div>
     </div>
 
-    <!-- Overview Stats -->
+    <!-- (Loại bỏ KPI trùng với Dashboard) -->
+
+    <!-- Charts Row (Trends) -->
     <div class="row mb-4">
-      <div class="col-md-3" v-for="stat in overviewStats" :key="stat.label">
-        <div class="card shadow-sm border-start border-4" :class="stat.borderClass">
+      <!-- Attempts series -->
+      <div class="col-md-6">
+        <div class="card shadow-sm">
+          <div class="card-header bg-light">
+            <h6 class="mb-0">
+              <i class="bi bi-graph-up-arrow me-2"></i>
+              Lượt làm theo ngày
+            </h6>
+          </div>
           <div class="card-body">
-            <div class="d-flex align-items-center">
-              <div class="flex-shrink-0">
-                <i :class="stat.icon + ' fs-2'" :style="{ color: stat.color }"></i>
-              </div>
-              <div class="flex-grow-1 ms-3">
-                <h4 class="mb-1 fw-bold">{{ stat.value }}</h4>
-                <p class="mb-0 text-muted small">{{ stat.label }}</p>
-                <small class="text-success" v-if="stat.change > 0">
-                  <i class="bi bi-arrow-up"></i> +{{ stat.change }}%
-                </small>
-                <small class="text-danger" v-else-if="stat.change < 0">
-                  <i class="bi bi-arrow-down"></i> {{ stat.change }}%
-                </small>
-              </div>
-            </div>
+            <canvas ref="attemptsSeriesCanvas" height="200"></canvas>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Charts Row -->
-    <div class="row mb-4">
-      <!-- User Growth Chart -->
+      <!-- Users series -->
       <div class="col-md-6">
         <div class="card shadow-sm">
           <div class="card-header bg-light">
             <h6 class="mb-0">
               <i class="bi bi-people me-2"></i>
-              Tăng trưởng người dùng
+              Người dùng (DAU & mới)
             </h6>
           </div>
           <div class="card-body">
-            <canvas ref="userGrowthChart" height="200"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quiz Activity Chart -->
-      <div class="col-md-6">
-        <div class="card shadow-sm">
-          <div class="card-header bg-light">
-            <h6 class="mb-0">
-              <i class="bi bi-journal-code me-2"></i>
-              Hoạt động Quiz
-            </h6>
-          </div>
-          <div class="card-body">
-            <canvas ref="quizActivityChart" height="200"></canvas>
+            <canvas ref="usersSeriesCanvas" height="200"></canvas>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Detailed Analytics -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header bg-light">
+            <h6 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Điểm trung bình theo ngày</h6>
+          </div>
+          <div class="card-body">
+            <canvas ref="avgScoreCanvas" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-7">
+        <div class="card shadow-sm">
+          <div class="card-header bg-light">
+            <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Phân phối điểm</h6>
+          </div>
+          <div class="card-body">
+            <canvas ref="scoreHistogramCanvas" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <div class="card shadow-sm">
+          <div class="card-header bg-light">
+            <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Tỷ lệ hoàn thành</h6>
+          </div>
+          <div class="card-body">
+            <canvas ref="completionPieCanvas" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="row">
-      <!-- Top Categories -->
-      <div class="col-md-6">
+      <div class="col-md-7">
         <div class="card shadow-sm">
           <div class="card-header bg-light">
-            <h6 class="mb-0">
-              <i class="bi bi-tags me-2"></i>
-              Danh mục phổ biến
-            </h6>
+            <h6 class="mb-0"><i class="bi bi-tags me-2"></i>Phân bố theo danh mục (Top)</h6>
           </div>
           <div class="card-body">
-            <div v-for="category in topCategories" :key="category.id" class="d-flex justify-content-between align-items-center mb-3">
-              <div class="d-flex align-items-center">
-                <div class="category-color me-2" :style="{ backgroundColor: category.color }"></div>
-                <span class="fw-medium">{{ category.name }}</span>
-              </div>
-              <div class="d-flex align-items-center">
-                <div class="progress me-2" style="width: 100px; height: 8px;">
-                  <div 
-                    class="progress-bar" 
-                    :style="{ width: category.percentage + '%', backgroundColor: category.color }"
-                  ></div>
-                </div>
-                <small class="text-muted">{{ category.count }} quizzes</small>
-              </div>
-            </div>
+            <canvas ref="categoryDistributionCanvas" height="220"></canvas>
           </div>
         </div>
       </div>
-
-      <!-- User Performance -->
-      <div class="col-md-6">
+      <div class="col-md-5">
         <div class="card shadow-sm">
           <div class="card-header bg-light">
-            <h6 class="mb-0">
-              <i class="bi bi-trophy me-2"></i>
-              Top người dùng
-            </h6>
+            <h6 class="mb-0"><i class="bi bi-grid-3x3-gap me-2"></i>HeatMap theo giờ và thứ</h6>
           </div>
           <div class="card-body">
-            <div v-for="(user, index) in topUsers" :key="user.id" class="d-flex justify-content-between align-items-center mb-3">
-              <div class="d-flex align-items-center">
-                <div class="rank-badge me-2" :class="getRankClass(index)">
-                  {{ index + 1 }}
-                </div>
-                <div class="d-flex align-items-center">
-                  <img 
-                    v-if="user.avatarUrl" 
-                    :src="user.avatarUrl" 
-                    class="rounded-circle me-2"
-                    width="32" 
-                    height="32"
-                  />
-                  <i v-else class="bi bi-person-circle text-muted me-2"></i>
-                  <div>
-                    <div class="fw-medium">{{ user.fullName }}</div>
-                    <small class="text-muted">{{ user.username }}</small>
-                  </div>
-                </div>
-              </div>
-              <div class="text-end">
-                <div class="fw-bold">{{ user.quizCount }} quizzes</div>
-                <small class="text-muted">{{ user.avgScore }}% avg</small>
-              </div>
+            <div class="heatmap-grid" v-if="heatmapMatrix && heatmapMatrix.length">
+              <div class="heatmap-corner"></div>
+              <div v-for="h in 24" :key="'h'+h" class="heatmap-hour">{{ (h-1) + 'h' }}</div>
+              <template v-for="(row, rIdx) in heatmapMatrix" :key="'r'+rIdx">
+                <div class="heatmap-day">{{ weekDays[rIdx] }}</div>
+                <div
+                  v-for="(val, cIdx) in row"
+                  :key="'c'+rIdx+'-'+cIdx"
+                  class="heat-cell"
+                  :style="{ backgroundColor: heatColor(val) }"
+                  :title="`${weekDays[rIdx]}, ${cIdx}h: ${val}`"
+                ></div>
+              </template>
             </div>
+            <div v-else class="text-muted">Chưa có dữ liệu.</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Recent Activity -->
-    <div class="card shadow-sm mt-4">
-      <div class="card-header bg-light">
-        <h6 class="mb-0">
-          <i class="bi bi-clock-history me-2"></i>
-          Hoạt động gần đây
-        </h6>
-      </div>
-      <div class="card-body">
-        <div class="timeline">
-          <div v-for="activity in recentActivities" :key="activity.id" class="timeline-item">
-            <div class="timeline-marker" :class="getActivityClass(activity.type)"></div>
-            <div class="timeline-content">
-              <div class="d-flex justify-content-between align-items-start">
-                <div>
-                  <strong>{{ activity.title }}</strong>
-                  <p class="mb-1 text-muted">{{ activity.description }}</p>
-                </div>
-                <small class="text-muted">{{ formatTimeAgo(activity.timestamp) }}</small>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- (Loại bỏ hoạt động gần đây vì đã có ở Dashboard) -->
   </div>
 </template>
 
@@ -193,160 +149,110 @@ dayjs.locale('vi')
 
 // ✅ REACTIVE DATA
 const selectedPeriod = ref(30)
-const userGrowthChart = ref(null)
-const quizActivityChart = ref(null)
+// Canvas refs
+const attemptsSeriesCanvas = ref(null)
+const usersSeriesCanvas = ref(null)
+const avgScoreCanvas = ref(null)
+const scoreHistogramCanvas = ref(null)
+const completionPieCanvas = ref(null)
+const categoryDistributionCanvas = ref(null)
 
-const overviewStats = ref([
-  {
-    label: 'Tổng người dùng',
-    value: 0,
-    change: 12,
-    icon: 'bi bi-people-fill',
-    color: 'var(--info-color)',
-    borderClass: 'border-primary'
-  },
-  {
-    label: 'Quiz đã tạo',
-    value: 0,
-    change: 8,
-    icon: 'bi bi-journal-code',
-    color: 'var(--success-color)',
-    borderClass: 'border-success'
-  },
-  {
-    label: 'Lượt làm quiz',
-    value: 0,
-    change: -3,
-    icon: 'bi bi-play-circle',
-    color: 'var(--warning-color)',
-    borderClass: 'border-warning'
-  },
-  {
-    label: 'Điểm trung bình',
-    value: '0%',
-    change: 5,
-    icon: 'bi bi-graph-up',
-    color: 'var(--danger-color)',
-    borderClass: 'border-danger'
-  }
-])
+// Chart instances
+let attemptsSeriesChart = null
+let usersSeriesChart = null
+let avgScoreChart = null
+let scoreHistogramChart = null
+let completionPieChart = null
+let categoryDistributionChart = null
 
-const topCategories = ref([
-  { id: 1, name: 'Toán học', count: 45, percentage: 85, color: 'var(--info-color)' },
-  { id: 2, name: 'Tiếng Anh', count: 32, percentage: 60, color: 'var(--success-color)' },
-  { id: 3, name: 'Lịch sử', count: 28, percentage: 52, color: 'var(--warning-color)' },
-  { id: 4, name: 'Khoa học', count: 25, percentage: 47, color: 'var(--danger-color)' },
-  { id: 5, name: 'Văn học', count: 20, percentage: 38, color: 'var(--text-secondary)' }
-])
-
-const topUsers = ref([
-  { id: 1, fullName: 'Nguyễn Văn A', username: 'nguyenvana', avatarUrl: null, quizCount: 15, avgScore: 85 },
-  { id: 2, fullName: 'Trần Thị B', username: 'tranthib', avatarUrl: null, quizCount: 12, avgScore: 78 },
-  { id: 3, fullName: 'Lê Văn C', username: 'levanc', avatarUrl: null, quizCount: 10, avgScore: 92 },
-  { id: 4, fullName: 'Phạm Thị D', username: 'phamthid', avatarUrl: null, quizCount: 8, avgScore: 76 },
-  { id: 5, fullName: 'Hoàng Văn E', username: 'hoangvane', avatarUrl: null, quizCount: 6, avgScore: 88 }
-])
-
-// 🔹 Hoạt động gần đây — sẽ thay dữ liệu mock bằng API
-const recentActivities = ref([]) 
-const page = ref(0)
-const size = ref(10)
-const totalPages = ref(0)
+// Dữ liệu động từ BE
+const heatmapMatrix = ref(defaultHeatmap())
+const weekDays = ['Th 2','Th 3','Th 4','Th 5','Th 6','Th 7','CN']
 
 // ✅ METHODS
-const loadAnalytics = async () => {
-  try {
-    const response = await api.get(`/admin/analytics?period=${selectedPeriod.value}`)
-    updateStats(response.data)
-  } catch (error) {
-    console.error('Error loading analytics:', error)
-  }
-}
+const loadAnalytics = async () => { await refreshAll() }
 
-// 🔹 Lấy danh sách hoạt động gần đây từ backend
-const loadRecentActivities = async () => {
-  try {
-    const res = await api.get('/activities/recent', {
-      params: { page: page.value, size: size.value }
-    })
-    recentActivities.value = res.data.content.map(item => ({
-      id: item.id,
-      type: mapActivityType(item.activityType),
-      title: item.fullName,
-      description: item.activityType,
-      timestamp: item.activityTime
-    }))
-    totalPages.value = res.data.totalPages
-  } catch (error) {
-    console.error('Lỗi tải hoạt động gần đây:', error)
-  }
-}
+const updateStats = (data) => {}
 
-const mapActivityType = (type) => {
-  if (type?.includes('Quiz')) return 'quiz'
-  if (type?.includes('Report')) return 'report'
-  if (type?.includes('Attempt')) return 'attempt'
-  return 'user'
-}
-
-const updateStats = (data) => {
-  overviewStats.value[0].value = data.totalUsers || 0
-  overviewStats.value[1].value = data.totalQuizzes || 0
-  overviewStats.value[2].value = data.totalAttempts || 0
-  overviewStats.value[3].value = `${data.avgScore || 0}%`
-  updateCharts(data)
-}
-
-const updateCharts = (data) => {
-  if (userGrowthChart.value) {
-    userGrowthChart.value.data.labels = data.userGrowth?.labels || []
-    userGrowthChart.value.data.datasets[0].data = data.userGrowth?.data || []
-    userGrowthChart.value.update()
-  }
-  if (quizActivityChart.value) {
-    quizActivityChart.value.data.labels = data.quizActivity?.labels || []
-    quizActivityChart.value.data.datasets[0].data = data.quizActivity?.data || []
-    quizActivityChart.value.update()
-  }
-}
+const updateCharts = () => {}
 
 const initCharts = () => {
-  const userCtx = document.getElementById('userGrowthChart')
-  if (userCtx) {
-    userGrowthChart.value = new Chart(userCtx, {
+  if (attemptsSeriesCanvas.value) {
+    attemptsSeriesChart = new Chart(attemptsSeriesCanvas.value.getContext('2d'), {
       type: 'line',
-      data: {
-        labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-        datasets: [{
-          label: 'Người dùng mới',
-          data: [12, 19, 15, 25, 22, 30, 28],
-          borderColor: '#007bff',
-          backgroundColor: 'rgba(37, 99, 235, 0.15)',
-          tension: 0.4
-        }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+      data: { labels: [], datasets: [{ label: 'Attempts', data: [], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.15)', fill: true, tension: 0.35 }] },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        plugins: { legend: { display: false } }, 
+        scales: { 
+          y: { 
+            beginAtZero: true,
+            ticks: { stepSize: 1, precision: 0, callback: (v) => Number.isInteger(v) ? v : '' }
+          } 
+        } 
+      }
     })
   }
-  const quizCtx = document.getElementById('quizActivityChart')
-  if (quizCtx) {
-    quizActivityChart.value = new Chart(quizCtx, {
+  if (usersSeriesCanvas.value) {
+    usersSeriesChart = new Chart(usersSeriesCanvas.value.getContext('2d'), {
+      type: 'line',
+      data: { labels: [], datasets: [
+        { label: 'Active Users', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.15)', fill: true, tension: 0.35 },
+        { label: 'New Users', data: [], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.15)', fill: true, tension: 0.35 }
+      ] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, callback: (v) => Number.isInteger(v) ? v : '' } } } }
+    })
+  }
+  if (avgScoreCanvas.value) {
+    avgScoreChart = new Chart(avgScoreCanvas.value.getContext('2d'), {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: 'Điểm trung bình (%)', data: [], borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.15)', fill: true, tension: 0.35 }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 10 } } } }
+    })
+  }
+  if (scoreHistogramCanvas.value) {
+    scoreHistogramChart = new Chart(scoreHistogramCanvas.value.getContext('2d'), {
       type: 'bar',
-      data: {
-        labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-        datasets: [{
-          label: 'Quiz được tạo',
-          data: [5, 8, 12, 15, 10, 18, 22],
-          backgroundColor: '#28a745'
-        }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+      data: { labels: [], datasets: [{ label: 'Số lượt', data: [], backgroundColor: '#60a5fa' }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, callback: (v) => Number.isInteger(v) ? v : '' } } } }
+    })
+  }
+  if (completionPieCanvas.value) {
+    completionPieChart = new Chart(completionPieCanvas.value.getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: ['Hoàn thành', 'Chưa hoàn thành'], datasets: [{ data: [0, 0], backgroundColor: ['#22c55e', '#ef4444'] }] },
+      options: { responsive: true, maintainAspectRatio: false }
+    })
+  }
+  if (categoryDistributionCanvas.value) {
+    categoryDistributionChart = new Chart(categoryDistributionCanvas.value.getContext('2d'), {
+      type: 'bar',
+      data: { labels: [], datasets: [{ label: 'Lượt làm', data: [], backgroundColor: '#0ea5e9' }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, callback: (v) => Number.isInteger(v) ? v : '' } } } }
     })
   }
 }
 
 const exportReport = () => {
-  alert('Tính năng xuất báo cáo sẽ được implement sau')
+  // Chưa có API export: để trống, nút vẫn hiện nhằm mục đích UX (sẽ kết nối BE sau)
+}
+
+async function exportExcel() {
+  try {
+    const { from, to } = periodRange(selectedPeriod.value)
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const url = `/admin/analytics/export/xlsx?from=${from}&to=${to}&tz=${encodeURIComponent(tz)}&bins=20&topLimit=10&minAttempts=5`
+    const res = await api.get(url, { responseType: 'blob' })
+    const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `analytics-${from}_${to}.xlsx`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  } catch (e) {
+    console.error('Xuất Excel thất bại', e)
+  }
 }
 
 const getRankClass = (index) => {
@@ -366,18 +272,120 @@ const formatTimeAgo = (timestamp) => {
 }
 
 // ✅ WATCHERS
-watch(selectedPeriod, () => {
-  loadAnalytics()
-})
+watch(selectedPeriod, () => { refreshAll() })
 
 // ✅ MOUNTED
 onMounted(() => {
+  initCharts()
   loadAnalytics()
-  loadRecentActivities()
-  setTimeout(() => {
-    initCharts()
-  }, 100)
 })
+
+// Helpers & data loaders for new BE endpoints
+function periodRange(days) {
+  const to = new Date()
+  const from = new Date()
+  from.setDate(to.getDate() - Number(days) + 1)
+  const pad = (n) => String(n).padStart(2, '0')
+  const toStr = `${to.getFullYear()}-${pad(to.getMonth()+1)}-${pad(to.getDate())}`
+  const fromStr = `${from.getFullYear()}-${pad(from.getMonth()+1)}-${pad(from.getDate())}`
+  return { from: fromStr, to: toStr }
+}
+
+async function refreshAll() {
+  const { from, to } = periodRange(selectedPeriod.value)
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  await Promise.all([
+    loadTrends(from, to, tz),
+    loadQuality(from, to, tz),
+    loadDistribution(from, to, tz)
+  ])
+}
+
+watch(selectedPeriod, () => { refreshAll() })
+
+async function loadTrends(from, to, tz) {
+  try {
+    const [attempts, users] = await Promise.all([
+      api.get('/admin/analytics/stats/attempts-series', { params: { from, to, tz } }),
+      api.get('/admin/analytics/stats/users-series', { params: { from, to, tz } })
+    ])
+    if (attemptsSeriesChart) {
+      attemptsSeriesChart.data.labels = attempts.data?.labels || []
+      attemptsSeriesChart.data.datasets[0].data = attempts.data?.data || []
+      attemptsSeriesChart.update()
+    }
+    if (usersSeriesChart) {
+      usersSeriesChart.data.labels = users.data?.labels || []
+      usersSeriesChart.data.datasets[0].data = users.data?.activeUsers || []
+      usersSeriesChart.data.datasets[1].data = users.data?.newUsers || []
+      usersSeriesChart.update()
+    }
+  } catch (e) { console.warn('Trends API chưa sẵn sàng', e) }
+}
+
+async function loadQuality(from, to, tz) {
+  try {
+    const [quality, histogram, completion] = await Promise.all([
+      api.get('/admin/analytics/stats/quality-series', { params: { from, to, tz } }),
+      api.get('/admin/analytics/stats/score-histogram', { params: { from, to, bins: 20 } }),
+      api.get('/admin/analytics/stats/completion', { params: { from, to } })
+    ])
+    if (avgScoreChart) {
+      avgScoreChart.data.labels = quality.data?.labels || []
+      avgScoreChart.data.datasets[0].data = quality.data?.avgScore || []
+      avgScoreChart.update()
+    }
+    if (scoreHistogramChart) {
+      const labels = (histogram.data?.bins || []).map(b => `${b.min}-${b.max}`)
+      const values = (histogram.data?.bins || []).map(b => b.count)
+      scoreHistogramChart.data.labels = labels
+      scoreHistogramChart.data.datasets[0].data = values
+      scoreHistogramChart.update()
+    }
+    if (completionPieChart) {
+      const attempts = completion.data?.attempts ?? 0
+      const completed = completion.data?.completed ?? 0
+      completionPieChart.data.datasets[0].data = [completed, Math.max(0, attempts - completed)]
+      completionPieChart.update()
+    }
+  } catch (e) { console.warn('Quality API chưa sẵn sàng', e) }
+}
+
+async function loadDistribution(from, to, tz) {
+  try {
+    const [category, heatmap] = await Promise.all([
+      api.get('/admin/analytics/stats/category-distribution', { params: { from, to, limit: 10 } }),
+      api.get('/admin/analytics/stats/heatmap', { params: { from, to, tz } })
+    ])
+    if (categoryDistributionChart) {
+      categoryDistributionChart.data.labels = (category.data?.items || []).map(i => i.name)
+      categoryDistributionChart.data.datasets[0].data = (category.data?.items || []).map(i => i.count)
+      categoryDistributionChart.update()
+    }
+    const m = heatmap.data?.matrix
+    heatmapMatrix.value = (Array.isArray(m) && m.length) ? m : defaultHeatmap()
+    if (!Array.isArray(m) || !m.length) {
+      console.warn('Heatmap trả về rỗng hoặc không đúng cấu trúc', heatmap.data)
+    } else {
+      console.debug('Heatmap matrix', heatmapMatrix.value)
+    }
+  } catch (e) { console.warn('Distribution API chưa sẵn sàng', e) }
+}
+
+// Color scale for heatmap cells
+function heatColor(value) {
+  const flat = (heatmapMatrix.value || []).flat()
+  const max = Math.max(1, ...flat)
+  const ratio = Math.min(1, (value || 0) / max)
+  const alpha = 0.15 + ratio * 0.85
+  return `rgba(59,130,246,${alpha.toFixed(2)})`
+}
+
+function defaultHeatmap() {
+  const rows = []
+  for (let r = 0; r < 7; r++) rows.push(new Array(24).fill(0))
+  return rows
+}
 </script>
 
 <style scoped>
@@ -460,4 +468,21 @@ onMounted(() => {
 .progress-bar {
   transition: width 0.6s ease;
 }
+
+/* Heatmap */
+.heatmap { display: grid; gap: 6px; }
+.heatmap-row { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; }
+.heat-cell { height: 16px; border-radius: 2px; background: rgba(59,130,246,0.1); }
+
+/* Grid with headers */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: 40px repeat(24, 1fr);
+  grid-auto-rows: 20px;
+  gap: 4px;
+  align-items: center;
+}
+.heatmap-corner { height: 0; }
+.heatmap-hour { font-size: 10px; color: var(--text-secondary); text-align: center; }
+.heatmap-day { font-size: 12px; color: var(--text-secondary); padding-right: 4px; text-align: right; }
 </style> 

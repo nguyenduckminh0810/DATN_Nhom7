@@ -141,7 +141,6 @@ onMounted(() => {
 .main-content {
   flex: 1;
   padding: 0;
-  /* Đẩy nội dung xuống dưới navbar cố định để tránh bị che */
   padding-top: 90px;
 }
 
