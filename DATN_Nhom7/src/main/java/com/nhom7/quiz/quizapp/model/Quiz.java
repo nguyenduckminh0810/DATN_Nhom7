@@ -51,23 +51,26 @@ public class Quiz {
 	@Column(name = "code_created_at")
 	private LocalDateTime codeCreatedAt;
 
-    // ✅ Trường tạm để trả về số lượt chơi (không lưu DB)
-    @Transient
-    private Long playCount;
+	// ✅ Trường tạm để trả về số lượt chơi (không lưu DB)
+	@Transient
+	private Long playCount;
 
 	@JsonIgnore
 	@OneToMany(mappedBy = "quiz")
 	private Set<QuizTag> quizTags;
-	
+
 	// ✅ THÊM RELATIONSHIP VỚI QUESTIONS
 	@JsonIgnore
-	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private Set<Question> questions = new HashSet<>();
-	
+
 	// Sau này dùng
 	@JsonIgnore
 	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
 	private Set<QuizReview> reviews = new HashSet<>();
+
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+	private Set<Image> images = new HashSet<>();
 
 	public Long getId() {
 		return id;
@@ -185,13 +188,13 @@ public class Quiz {
 		this.codeCreatedAt = codeCreatedAt;
 	}
 
-    public Long getPlayCount() {
-        return playCount;
-    }
+	public Long getPlayCount() {
+		return playCount;
+	}
 
-    public void setPlayCount(Long playCount) {
-        this.playCount = playCount;
-    }
+	public void setPlayCount(Long playCount) {
+		this.playCount = playCount;
+	}
 
 	public Quiz(Long id, String title, User user, Category category, boolean isPublic, LocalDateTime createdAt,
 			Set<QuizTag> quizTags, String image) {

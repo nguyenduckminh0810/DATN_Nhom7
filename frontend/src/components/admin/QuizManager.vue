@@ -1,7 +1,6 @@
 <template>
   <div class="container my-4">
     <h4 class="mb-4">Danh sách Quiz</h4>
-    <button class="btn btn-primary btn-sm" @click="addNewQuiz">Thêm Quiz</button>
     <hr>
     <!-- Tìm kiếm và lọc -->
     <div class="row mb-3">
@@ -23,7 +22,6 @@
           </option>
         </select>
       </div>
-
     </div>
 
     <!-- Bảng -->
@@ -86,9 +84,7 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">
-              {{ selectedQuiz.id === null ? 'Thêm Quiz mới' : 'Sửa Quiz' }}
-            </h5>
+            <h5 class="modal-title">Sửa Quiz</h5>
             <button type="button" class="btn-close" @click="showEditModal = false"></button>
           </div>
           <div class="modal-body">
@@ -106,7 +102,7 @@
             </div>
             <div class="mb-3">
               <label class="form-label">Người tạo</label>
-              <input v-model="selectedQuiz.creatorName" class="form-control" />
+              <input v-model="selectedQuiz.creatorName" class="form-control" disabled/>
             </div>
             <div class="mb-3">
               <label class="form-label">Trạng thái</label>
@@ -133,10 +129,10 @@ import api from '@/utils/axios';
 
 const quizzes = ref([]);
 const search = ref('');
-const isPublic = ref(''); // true / false / ''
+const isPublic = ref('');
 const currentPage = ref(0);
 const totalPages = ref(1);
-const pageSize = 5;
+const pageSize = 10;
 const categories = ref([]);
 const selectedTagId = ref('');
 const tags = ref([]);
@@ -160,7 +156,7 @@ async function fetchCategories() {
 
 async function fetchTags() {
   try {
-    const response = await api.get('/admin/tags'); // endpoint em viết
+    const response = await api.get('/admin/tags');
     tags.value = response.data;
   } catch (error) {
     console.error('Lỗi khi tải tag:', error);
@@ -218,39 +214,16 @@ function editQuiz(quiz) {
   showEditModal.value = true;
 }
 
-function addNewQuiz() {
-  selectedQuiz.value = {
-    id: null,
-    title: '',
-    categoryName: '',
-    isPublic: true
-  };
-  showEditModal.value = true;
-}
-
 async function saveQuiz() {
   try {
-    if (selectedQuiz.value.id === null) {
-      // ✅ Thêm mới
-      await axios.post('/api/admin/quizzes', {
-        title: selectedQuiz.value.title,
-        categoryName: selectedQuiz.value.categoryName,
-        isPublic: selectedQuiz.value.isPublic,
-        categoryId: selectedQuiz.value.categoryId,
-      });
-      alert('Thêm quiz thành công!');
-    } else {
-      // ✅ Sửa
-      await axios.put(`/api/admin/quizzes/${selectedQuiz.value.id}`, {
-        id: selectedQuiz.value.id,
-        title: selectedQuiz.value.title,
-        categoryName: selectedQuiz.value.categoryName,
-        isPublic: selectedQuiz.value.isPublic,
-        categoryId: selectedQuiz.value.categoryId
-      });
-      alert('Cập nhật quiz thành công!'); 
-    }
-
+    await api.put(`/admin/quizzes/${selectedQuiz.value.id}`, {
+      id: selectedQuiz.value.id,
+      title: selectedQuiz.value.title,
+      categoryName: selectedQuiz.value.categoryName,
+      isPublic: selectedQuiz.value.isPublic,
+      categoryId: selectedQuiz.value.categoryId
+    });
+    alert('Cập nhật quiz thành công!');
     showEditModal.value = false;
     fetchQuizzes();
   } catch (error) {
@@ -261,7 +234,7 @@ async function saveQuiz() {
 async function deleteQuiz(id) {
   if (confirm('Bạn có chắc muốn xoá quiz này không?')) {
     try {
-      await axios.delete(`/api/admin/quizzes/${id}`);
+      await api.delete(`/admin/quizzes/${id}`);
       alert('Xoá quiz thành công!');
       fetchQuizzes();
     } catch (error) {
@@ -274,7 +247,5 @@ onMounted(() => {
   fetchQuizzes();
   fetchCategories();
   fetchTags();
-
 });
-
 </script>
