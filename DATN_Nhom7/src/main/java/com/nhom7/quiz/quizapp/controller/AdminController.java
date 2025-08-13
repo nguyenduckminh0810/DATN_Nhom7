@@ -25,6 +25,7 @@ import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
 import com.nhom7.quiz.quizapp.model.dto.TagDTO;
 import com.nhom7.quiz.quizapp.model.dto.UserDTO;
 import com.nhom7.quiz.quizapp.model.dto.ResultDTO;
+import com.nhom7.quiz.quizapp.model.dto.AttemptsByHourDTO;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
 import com.nhom7.quiz.quizapp.repository.TagRepo;
@@ -95,6 +96,9 @@ public class AdminController {
 
         @Autowired
         private adminservice adminService;
+
+        @Autowired
+        private com.nhom7.quiz.quizapp.service.AdminService.DashboardService dashboardService;
 
         // ✅ ADMIN ONLY - Lấy danh sách người dùng
         @GetMapping("/all-users")
@@ -174,6 +178,15 @@ public class AdminController {
         public ResponseEntity<String> testBan(@PathVariable Long id) {
                 adminService.checkAndBanUser(id);
                 return ResponseEntity.ok("Đã kiểm tra và xử lý ban nếu đủ report");
+        }
+
+        // ✅ Attempts today by hour for dashboard chart
+        @GetMapping("/stats/attempts-today")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<AttemptsByHourDTO> getAttemptsTodayByHour(
+                        @RequestParam(required = false, name = "tz") String timezone) {
+                AttemptsByHourDTO dto = dashboardService.getAttemptsTodayByHour(timezone);
+                return ResponseEntity.ok(dto);
         }
 
         // Lấy danh sách quiz
@@ -363,6 +376,92 @@ public class AdminController {
                                 .map(tag -> new TagDTO(tag.getId(), tag.getName(), tag.getDescription()))
                                 .toList();
                 return ResponseEntity.ok(tagDTOs);
+        }
+
+        // ===== Analytics endpoints (ADMIN) =====
+        @Autowired
+        private com.nhom7.quiz.quizapp.service.AdminService.AnalyticsService analyticsService;
+        @Autowired
+        private com.nhom7.quiz.quizapp.service.AdminService.AnalyticsExportService analyticsExportService;
+
+        @GetMapping("/analytics/stats/attempts-series")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getAttemptsSeries(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(required = false) String tz) {
+                return ResponseEntity.ok(analyticsService.attemptsSeries(from, to, tz));
+        }
+
+        @GetMapping("/analytics/stats/users-series")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getUsersSeries(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(required = false) String tz) {
+                return ResponseEntity.ok(analyticsService.usersSeries(from, to, tz));
+        }
+
+        @GetMapping("/analytics/stats/quality-series")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getQualitySeries(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(required = false) String tz) {
+                return ResponseEntity.ok(analyticsService.qualitySeries(from, to, tz));
+        }
+
+        @GetMapping("/analytics/stats/score-histogram")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getScoreHistogram(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(defaultValue = "20") int bins) {
+                return ResponseEntity.ok(analyticsService.scoreHistogram(from, to, bins));
+        }
+
+        @GetMapping("/analytics/stats/completion")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getCompletion(@RequestParam String from, @RequestParam String to) {
+                return ResponseEntity.ok(analyticsService.completion(from, to));
+        }
+
+        @GetMapping("/analytics/stats/category-distribution")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getCategoryDistribution(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(defaultValue = "10") int limit) {
+                return ResponseEntity.ok(analyticsService.categoryDistribution(from, to, limit));
+        }
+
+        @GetMapping("/analytics/stats/heatmap")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getHeatmap(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(required = false) String tz) {
+                return ResponseEntity.ok(analyticsService.heatmap(from, to, tz));
+        }
+
+        @GetMapping("/analytics/top-quizzes")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getTopQuizzes(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(defaultValue = "10") int limit) {
+                return ResponseEntity.ok(analyticsService.topQuizzes(from, to, limit));
+        }
+
+        @GetMapping("/analytics/top-performers")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getTopPerformers(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(defaultValue = "10") int limit,
+                        @RequestParam(defaultValue = "5") int minAttempts) {
+                return ResponseEntity.ok(analyticsService.topPerformers(from, to, limit, minAttempts));
+        }
+
+        // Export Excel tổng hợp analytics
+        @GetMapping("/analytics/export/xlsx")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<byte[]> exportAnalyticsXlsx(
+                        @RequestParam String from,
+                        @RequestParam String to,
+                        @RequestParam(required = false) String tz,
+                        @RequestParam(defaultValue = "20") int bins,
+                        @RequestParam(defaultValue = "10") int topLimit,
+                        @RequestParam(defaultValue = "5") int minAttempts) {
+                byte[] bytes = analyticsExportService.exportAnalyticsXlsx(from, to, tz, bins, topLimit, minAttempts);
+                return ResponseEntity.ok()
+                                .header("Content-Disposition", "attachment; filename=analytics-" + from + "_" + to + ".xlsx")
+                                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                                .body(bytes);
         }
 
 }

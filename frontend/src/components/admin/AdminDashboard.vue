@@ -115,6 +115,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import api from '@/utils/axios';
+import { adminService } from '@/services/adminService'
 import DashboardChart from './DashboardChart.vue';
 import { useThemeStore } from '@/stores/theme'
 import { useRouter } from 'vue-router'
@@ -163,11 +164,13 @@ onMounted(async () => {
     updateStatsCards();
     await loadRecentActivities();
     await loadTodayStats();
+    await loadAttemptsTodayFromBE();
     buildAttemptsToday();
     // Auto refresh hoạt động mỗi 60s
     refreshTimer = setInterval(async () => {
       await loadRecentActivities();
       await loadTodayStats();
+      await loadAttemptsTodayFromBE();
       updateAttemptsTodayChart();
     }, 60000)
   } catch (err) {
@@ -294,7 +297,18 @@ function buildAttemptsToday() {
       plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { color: textColor, font: { size: 12 } }, grid: { color: gridColor } },
-        y: { beginAtZero: true, suggestedMax: Math.max(...attemptsByHour.value, 1), ticks: { color: textColor, font: { size: 12 } }, grid: { color: gridColor } }
+        y: {
+          beginAtZero: true,
+          suggestedMax: Math.max(1, Math.ceil(Math.max(...attemptsByHour.value, 1))),
+          ticks: {
+            color: textColor,
+            font: { size: 12 },
+            stepSize: 1,
+            precision: 0,
+            callback: (value) => Number.isInteger(value) ? value : ''
+          },
+          grid: { color: gridColor }
+        }
       }
     }
   })
@@ -303,8 +317,24 @@ function buildAttemptsToday() {
 function updateAttemptsTodayChart() {
   if (!attemptsChartInstance) return
   attemptsChartInstance.data.datasets[0].data = attemptsByHour.value
-  attemptsChartInstance.options.scales.y.suggestedMax = Math.max(...attemptsByHour.value, 1)
+  attemptsChartInstance.options.scales.y.suggestedMax = Math.max(1, Math.ceil(Math.max(...attemptsByHour.value, 1)))
+  attemptsChartInstance.options.scales.y.ticks.stepSize = 1
+  attemptsChartInstance.options.scales.y.ticks.precision = 0
   attemptsChartInstance.update()
+}
+
+// Gọi API BE mới để lấy attempts theo giờ
+async function loadAttemptsTodayFromBE() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const res = await adminService.getAttemptsTodayByHour(tz)
+    if (Array.isArray(res?.countsByHour) && res.countsByHour.length === 24) {
+      attemptsByHour.value = res.countsByHour.slice()
+    }
+  } catch (e) {
+    // fallback giữ nguyên logic cũ
+    console.warn('Không lấy được attempts-today từ BE, dùng fallback từ activities.', e)
+  }
 }
 
 function nextActivityPage() {

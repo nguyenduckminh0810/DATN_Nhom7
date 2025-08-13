@@ -142,7 +142,7 @@ onMounted(() => {
 .main-content {
   flex: 1;
   padding: 0;
-  margin-top: 0;
+  padding-top: 90px;
 }
 
 /* Unauthorized Access Styles */
