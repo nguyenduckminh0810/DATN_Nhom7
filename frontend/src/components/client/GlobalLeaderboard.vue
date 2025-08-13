@@ -61,7 +61,7 @@
           :key="p.userId"
           :class="['podium', { 'podium--center': idx === 1 }]"
         >
-          <div class="podium__rank">{{ idx === 1 ? 1 : idx === 0 ? 2 : 3 }}</div>
+          <div class="podium__rank">{{ podiumRank(idx) }}</div>
           <img
             class="podium__avatar"
             :src="p.avatarUrl || '/img/default-avatar.png'"
@@ -144,7 +144,8 @@ const loading = ref(false)
 const loadingMore = ref(false)
 const error = ref(null)
 const leaderboardData = ref([])
-const selectedPeriod = ref('all')
+// Đồng bộ với backend: 'weekly' | 'monthly' | 'all-time'
+const selectedPeriod = ref('all-time')
 const offset = ref(0)
 const total = ref(null)
 
@@ -154,7 +155,7 @@ const currentUserId = computed(() => userStore.getUserId())
 const periods = [
   { value: 'weekly', label: 'Tuần này' },
   { value: 'monthly', label: 'Tháng này' },
-  { value: 'all', label: 'Tất cả thời gian' },
+  { value: 'all-time', label: 'Tất cả thời gian' },
 ]
 
 const podiumCount = 3
@@ -163,6 +164,12 @@ const podiumThree = computed(() => {
   const p = podiumFiltered.value
   return p.length >= 3 ? [p[1], p[0], p[2]] : p
 })
+// Khi < 3 người, hiển thị số thứ hạng 1..n; khi >=3 người dùng thứ tự 2-1-3
+function podiumRank(idx) {
+  const len = podiumFiltered.value.length
+  if (len >= 3) return idx === 1 ? 1 : idx === 0 ? 2 : 3
+  return idx + 1
+}
 const rest = computed(() => leaderboardData.value.slice(podiumCount))
 
 const currentViewRange = computed(() => {
@@ -277,9 +284,9 @@ onMounted(async () => {
 
 /* ===== Container: đẩy hẳn xuống dưới navbar, bỏ phần trắng thừa ===== */
 .lb {
-  max-width: 1100px;
-  margin: 20px auto;
-  margin-top: calc(var(--nav-h) + 20px);
+  max-width: 1200px; /* khớp với container ngoài để thẳng hàng */
+  margin: 20px auto 0;
+  padding: 0 16px; /* canh lề với header */
   background: transparent;
 }
 
@@ -290,6 +297,7 @@ onMounted(async () => {
   align-items: center;
   gap: 16px;
   padding: 18px 22px;
+  margin-bottom: 16px; /* tạo khoảng cách dưới header */
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 16px;
@@ -311,10 +319,12 @@ onMounted(async () => {
 .lb__period {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* giữ các đầu mục trên 1 hàng */
+  overflow-x: auto; /* nếu hẹp thì cho cuộn ngang */
+  white-space: nowrap;
 }
 .pill {
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 999px;
   font-weight: 600;
   font-size: 0.85rem;
@@ -323,6 +333,7 @@ onMounted(async () => {
   color: #fff;
   backdrop-filter: blur(4px);
   transition: all 0.2s ease;
+  flex: 0 0 auto; /* không co lại để xuống dòng */
 }
 .pill:hover {
   background: rgba(124, 58, 237, 0.28);
@@ -339,7 +350,7 @@ onMounted(async () => {
 .lb__state,
 .lb__empty {
   padding: 32px 22px;
-  margin: 0 18px;
+  margin: 0;
   text-align: center;
   color: rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.06);
@@ -358,7 +369,7 @@ onMounted(async () => {
   align-items: center;
   gap: 16px;
   padding: 12px 18px;
-  margin: 0 18px;
+  margin: 12px 0 16px; /* khoảng cách trên và dưới cho dễ nhìn */
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 14px;
@@ -381,7 +392,7 @@ onMounted(async () => {
   grid-template-columns: 1fr 1.2fr 1fr;
   gap: 20px;
   padding: 20px 22px;
-  margin: 0 18px 20px 18px;
+  margin: 0 0 18px 0; /* tách podium với list */
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 16px;
@@ -526,7 +537,10 @@ onMounted(async () => {
   list-style: none;
   margin: 0;
   padding: 0;
-  margin-top: 20px;
+  margin-top: 8px;
+}
+.lb__list-container {
+  padding: 0;
 }
 .rowitem {
   display: grid;
@@ -534,7 +548,7 @@ onMounted(async () => {
   align-items: center;
   gap: 16px;
   padding: 16px 20px;
-  margin-bottom: 12px;
+  margin-bottom: 14px; /* khoảng cách đều và thoáng hơn một chút */
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.25);
   background: rgba(255, 255, 255, 0.92);
@@ -630,7 +644,7 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   padding: 16px 20px;
-  margin: 18px 18px;
+  margin: 18px 0;
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 14px;
@@ -652,11 +666,12 @@ onMounted(async () => {
     margin-top: calc(var(--nav-h) + 12px);
   }
   .lb__header {
-    flex-direction: column;
-    text-align: center;
+    /* vẫn giữ 1 hàng trên mobile, phần period sẽ cuộn ngang nếu tràn */
+    flex-wrap: nowrap;
+    gap: 12px;
   }
   .lb__period {
-    justify-content: center;
+    justify-content: flex-end;
   }
   .lb__stats {
     flex-direction: column;

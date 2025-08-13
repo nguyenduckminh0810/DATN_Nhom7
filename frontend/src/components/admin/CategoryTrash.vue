@@ -69,7 +69,12 @@
             <div class="table-controls">
               <div class="search-box">
                 <i class="bi bi-search"></i>
-                <input v-model="searchTerm" type="text" placeholder="Tìm kiếm danh mục..." class="search-input" />
+                <input
+                  v-model="searchTerm"
+                  type="text"
+                  placeholder="Tìm kiếm danh mục..."
+                  class="search-input"
+                />
               </div>
               <select v-model="sortBy" class="sort-select">
                 <option value="deletedAt">Xóa gần nhất</option>
@@ -97,8 +102,12 @@
             </div>
 
             <div v-else class="categories-grid">
-              <div v-for="(category, index) in filteredCategories" :key="category.id" class="category-card deleted"
-                :style="{ 'animation-delay': `${index * 0.1}s` }">
+              <div
+                v-for="(category, index) in filteredCategories"
+                :key="category.id"
+                class="category-card deleted"
+                :style="{ 'animation-delay': `${index * 0.1}s` }"
+              >
                 <div class="card-header">
                   <div class="category-info">
                     <div class="category-name">
@@ -113,9 +122,7 @@
                         <i class="bi bi-calendar3"></i>
                         {{ formatDate(category.deletedAt) }}
                       </span>
-                      <span class="id-badge">
-                        ID: {{ category.id }}
-                      </span>
+                      <span class="id-badge"> ID: {{ category.id }} </span>
                       <span v-if="category.deletedBy" class="deleted-by-badge">
                         <i class="bi bi-person"></i>
                         {{ category.deletedBy.username }}
@@ -124,10 +131,18 @@
                   </div>
 
                   <div class="card-actions">
-                    <button @click="restoreCategory(category)" class="btn-restore" title="Khôi phục">
+                    <button
+                      @click="restoreCategory(category)"
+                      class="btn-restore"
+                      title="Khôi phục"
+                    >
                       <i class="bi bi-arrow-clockwise"></i>
                     </button>
-                    <button @click="confirmHardDelete(category)" class="btn-hard-delete" title="Xóa hoàn toàn">
+                    <button
+                      @click="confirmHardDelete(category)"
+                      class="btn-hard-delete"
+                      title="Xóa hoàn toàn"
+                    >
                       <i class="bi bi-trash3-fill"></i>
                     </button>
                   </div>
@@ -164,7 +179,9 @@
         <div class="modal-body">
           <div class="category-info">
             <h4>{{ categoryToHardDelete?.name }}</h4>
-            <p class="category-description">{{ categoryToHardDelete?.description || 'Không có mô tả' }}</p>
+            <p class="category-description">
+              {{ categoryToHardDelete?.description || 'Không có mô tả' }}
+            </p>
             <div class="category-meta">
               <span class="date-badge">
                 <i class="bi bi-calendar3"></i>
@@ -173,7 +190,7 @@
               <span class="id-badge">ID: {{ categoryToHardDelete?.id }}</span>
             </div>
           </div>
-          
+
           <div class="warning-section danger">
             <div class="warning-icon">
               <i class="bi bi-exclamation-triangle-fill"></i>
@@ -194,7 +211,11 @@
             <i class="bi bi-x-circle"></i>
             Hủy
           </button>
-          <button @click="hardDeleteCategory" class="btn-confirm-hard-delete" :disabled="isHardDeleting">
+          <button
+            @click="hardDeleteCategory"
+            class="btn-confirm-hard-delete"
+            :disabled="isHardDeleting"
+          >
             <i v-if="isHardDeleting" class="bi bi-arrow-clockwise spin"></i>
             <i v-else class="bi bi-trash3-fill"></i>
             {{ isHardDeleting ? 'Đang xóa...' : 'Xóa hoàn toàn' }}
@@ -234,7 +255,7 @@ const toast = ref({
   show: false,
   type: 'success',
   message: '',
-  icon: ''
+  icon: '',
 })
 
 // Computed properties
@@ -243,9 +264,10 @@ const filteredCategories = computed(() => {
 
   // Search filter
   if (searchTerm.value) {
-    filtered = filtered.filter(cat =>
-      cat.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      cat.description?.toLowerCase().includes(searchTerm.value.toLowerCase())
+    filtered = filtered.filter(
+      (cat) =>
+        cat.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+        cat.description?.toLowerCase().includes(searchTerm.value.toLowerCase()),
     )
   }
 
@@ -271,7 +293,7 @@ const filteredCategories = computed(() => {
 const recentDeletions = computed(() => {
   const oneWeekAgo = new Date()
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-  return deletedCategories.value.filter(cat => new Date(cat.deletedAt) > oneWeekAgo).length
+  return deletedCategories.value.filter((cat) => new Date(cat.deletedAt) > oneWeekAgo).length
 })
 
 // Methods
@@ -279,7 +301,7 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('vi-VN', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 
@@ -289,7 +311,7 @@ function formatDateTime(dateStr) {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 
@@ -297,14 +319,14 @@ function showToast(message, type = 'success') {
   const icons = {
     success: 'bi bi-check-circle-fill',
     error: 'bi bi-exclamation-circle-fill',
-    info: 'bi bi-info-circle-fill'
+    info: 'bi bi-info-circle-fill',
   }
 
   toast.value = {
     show: true,
     type,
     message,
-    icon: icons[type]
+    icon: icons[type],
   }
 
   setTimeout(() => {
@@ -333,9 +355,13 @@ async function restoreCategory(category) {
   isRestoring.value = true
   try {
     const token = localStorage.getItem('token')
-    await api.put(`/admin/categories/${category.id}/restore`, {}, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    await api.put(
+      `/admin/categories/${category.id}/restore`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    )
 
     showToast('Khôi phục danh mục thành công!')
     await fetchDeletedCategories()
@@ -365,11 +391,11 @@ async function hardDeleteCategory() {
   try {
     const token = localStorage.getItem('token')
     const response = await api.delete(`/admin/categories/${categoryToHardDelete.value.id}/hard`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
 
     const message = response.data || 'Xóa hoàn toàn danh mục thành công!'
-    
+
     if (message.includes('Không thể xóa hoàn toàn danh mục vì có')) {
       showToast(message, 'error')
       closeHardDeleteModal()
@@ -438,7 +464,8 @@ onMounted(() => {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
   50% {
@@ -511,9 +538,15 @@ onMounted(() => {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
-.stat-card.danger { border-left: 4px solid var(--danger-color); }
-.stat-card.warning { border-left: 4px solid var(--warning-color); }
-.stat-card.info { border-left: 4px solid var(--info-color); }
+.stat-card.danger {
+  border-left: 4px solid var(--danger-color);
+}
+.stat-card.warning {
+  border-left: 4px solid var(--warning-color);
+}
+.stat-card.info {
+  border-left: 4px solid var(--info-color);
+}
 
 .stat-icon {
   width: 60px;
@@ -526,16 +559,31 @@ onMounted(() => {
   color: white;
 }
 
-.stat-card.danger .stat-icon { background: linear-gradient(135deg, var(--danger-color), #ff6b9d); }
-.stat-card.warning .stat-icon { background: linear-gradient(135deg, var(--warning-color), #ffb142); }
-.stat-card.info .stat-icon { background: linear-gradient(135deg, var(--info-color), #5352ed); }
+.stat-card.danger .stat-icon {
+  background: linear-gradient(135deg, var(--danger-color), #ff6b9d);
+}
+.stat-card.warning .stat-icon {
+  background: linear-gradient(135deg, var(--warning-color), #ffb142);
+}
+.stat-card.info .stat-icon {
+  background: linear-gradient(135deg, var(--info-color), #5352ed);
+}
 
 .stat-content {
   flex: 1;
 }
 
-.stat-value { font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
-.stat-label { color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; }
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
 
 /* Main Content */
 .main-content {
@@ -545,15 +593,49 @@ onMounted(() => {
 }
 
 /* Table Section */
-.table-section { position: relative; z-index: 1; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; }
+.table-section {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
 
-.table-card { background: var(--bg-primary); color: var(--text-primary); backdrop-filter: blur(20px); border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px var(--shadow-color); border: 1px solid var(--border-color); }
+.table-card {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px var(--shadow-color);
+  border: 1px solid var(--border-color);
+}
 
-.table-header { padding: 2rem; border-bottom: 1px solid var(--border-color); background: var(--bg-primary); display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; flex-wrap: wrap; }
+.table-header {
+  padding: 2rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
 
-.header-content h2 { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.header-content h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
-.table-subtitle { color: var(--text-secondary); font-size: 0.9rem; }
+.table-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
 
 .table-controls {
   display: flex;
@@ -608,7 +690,10 @@ onMounted(() => {
   border-color: var(--info-color);
 }
 
-.sort-select option { background: var(--bg-primary); color: var(--text-primary); }
+.sort-select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
 
 /* Table Container */
 .table-container {
@@ -634,13 +719,26 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-.empty-icon { font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem; }
-.empty-state h3 { color: var(--text-primary); margin-bottom: 0.5rem; }
-.empty-state p { color: var(--text-secondary); }
+.empty-icon {
+  font-size: 4rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.empty-state h3 {
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+.empty-state p {
+  color: var(--text-secondary);
+}
 
 /* Categories Grid */
 .categories-grid {
@@ -666,7 +764,10 @@ onMounted(() => {
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
 }
 
-.category-card.deleted { border-left: 4px solid var(--danger-color); background: var(--bg-primary); }
+.category-card.deleted {
+  border-left: 4px solid var(--danger-color);
+  background: var(--bg-primary);
+}
 
 @keyframes slideIn {
   to {
@@ -686,7 +787,15 @@ onMounted(() => {
   flex: 1;
 }
 
-.category-name { font-size: 1.2rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.category-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
 .deleted-badge {
   background: linear-gradient(135deg, #ff4757, #ff6b9d);
@@ -708,9 +817,21 @@ onMounted(() => {
 
 .date-badge,
 .id-badge,
-.deleted-by-badge { background: var(--bg-tertiary); color: var(--text-secondary); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; display: flex; align-items: center; gap: 0.25rem; }
+.deleted-by-badge {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
 
-.deleted-by-badge { background: rgba(255, 71, 87, 0.1); color: var(--danger-color); }
+.deleted-by-badge {
+  background: rgba(255, 71, 87, 0.1);
+  color: var(--danger-color);
+}
 
 .card-actions {
   display: flex;
@@ -751,13 +872,29 @@ onMounted(() => {
   box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
 }
 
-.card-body { border-top: 1px solid var(--border-color); padding-top: 1rem; }
+.card-body {
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
 
-.category-description { color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem; }
+.category-description {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
 
-.deletion-info { border-top: 1px solid var(--border-color); padding-top: 0.75rem; }
+.deletion-info {
+  border-top: 1px solid var(--border-color);
+  padding-top: 0.75rem;
+}
 
-.deletion-time { color: var(--text-muted); font-size: 0.8rem; display: flex; align-items: center; gap: 0.25rem; }
+.deletion-time {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
 
 /* Modal Styles */
 .modal-overlay {
@@ -774,9 +911,19 @@ onMounted(() => {
   backdrop-filter: blur(5px);
 }
 
-.delete-modal { background: var(--bg-primary); border-radius: 16px; padding: 2rem; max-width: 600px; width: 90%; box-shadow: 0 20px 60px var(--shadow-color); animation: modalSlideIn 0.3s ease; }
+.delete-modal {
+  background: var(--bg-primary);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 20px 60px var(--shadow-color);
+  animation: modalSlideIn 0.3s ease;
+}
 
-.delete-modal.hard-delete { border-left: 4px solid var(--danger-color); }
+.delete-modal.hard-delete {
+  border-left: 4px solid var(--danger-color);
+}
 
 @keyframes modalSlideIn {
   from {
@@ -796,16 +943,37 @@ onMounted(() => {
   margin-bottom: 1.5rem;
 }
 
-.modal-icon { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--danger-color), #ff6b9d); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+.modal-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--danger-color), #ff6b9d);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
 
-.modal-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
 
 .modal-body {
   margin-bottom: 2rem;
 }
 
 /* Category Info Section */
-.category-info { background: var(--bg-tertiary); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--info-color); }
+.category-info {
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--info-color);
+}
 
 .category-info h4 {
   color: #333;
@@ -923,15 +1091,33 @@ onMounted(() => {
 }
 
 /* Toast */
-.toast { position: fixed; top: 2rem; right: 2rem; background: var(--bg-primary); border-radius: 12px; padding: 1rem 1.5rem; box-shadow: 0 10px 30px var(--shadow-color); z-index: 1001; display: flex; align-items: center; gap: 1rem; min-width: 300px; animation: toastSlideIn 0.3s ease; }
+.toast {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 10px 30px var(--shadow-color);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 300px;
+  animation: toastSlideIn 0.3s ease;
+}
 
 .toast.success {
   border-left: 4px solid #2ed573;
 }
 
-.toast.error { border-left: 4px solid var(--danger-color); }
+.toast.error {
+  border-left: 4px solid var(--danger-color);
+}
 
-.toast.info { border-left: 4px solid var(--info-color); }
+.toast.info {
+  border-left: 4px solid var(--info-color);
+}
 
 .toast-content {
   display: flex;
@@ -993,22 +1179,22 @@ onMounted(() => {
   .hero-title {
     font-size: 2rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .table-header {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .categories-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-actions {
     flex-direction: column;
   }
 }
-</style> 
+</style>
