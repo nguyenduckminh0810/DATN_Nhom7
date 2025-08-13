@@ -2,6 +2,7 @@ package com.nhom7.quiz.quizapp.repository;
 
 import com.nhom7.quiz.quizapp.model.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -25,13 +26,29 @@ public interface NotificationRepo extends JpaRepository<Notification, Long> {
 
     // ✅ TÌM NOTIFICATIONS THEO TYPE
     @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.notificationType = :type ORDER BY n.createdAt DESC")
-    List<Notification> findByUserIdAndTypeOrderByCreatedAtDesc(@Param("userId") Long userId, @Param("type") String type);
+    List<Notification> findByUserIdAndTypeOrderByCreatedAtDesc(@Param("userId") Long userId,
+            @Param("type") String type);
 
     // ✅ TÌM NOTIFICATIONS THEO PRIORITY
     @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.priority = :priority ORDER BY n.createdAt DESC")
-    List<Notification> findByUserIdAndPriorityOrderByCreatedAtDesc(@Param("userId") Long userId, @Param("priority") String priority);
+    List<Notification> findByUserIdAndPriorityOrderByCreatedAtDesc(@Param("userId") Long userId,
+            @Param("priority") String priority);
 
     // ✅ XÓA NOTIFICATIONS CŨ (30 NGÀY TRỞ LÊN)
     @Query("DELETE FROM Notification n WHERE n.createdAt < :date")
     void deleteOldNotifications(@Param("date") java.time.LocalDateTime date);
-} 
+
+    @Modifying
+    @Query("""
+            UPDATE Notification n
+            SET n.isRead = true
+            WHERE
+              (n.audience = 'USER' AND n.user.id = :userId)
+              OR (n.audience = 'ALL')
+            """)
+    int markAllAsReadForUser(@Param("userId") Long userId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.audience IN ('ADMIN','ALL')")
+    int markAllAsReadForAdmin();
+}

@@ -5,6 +5,9 @@ import com.nhom7.quiz.quizapp.model.User;
 import com.nhom7.quiz.quizapp.model.dto.NotificationDTO;
 import com.nhom7.quiz.quizapp.repository.NotificationRepo;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -46,8 +49,8 @@ public class NotificationService {
     public static final String PRIORITY_URGENT = "URGENT";
 
     // ✅ TẠO VÀ GỬI NOTIFICATION
-    public void sendNotification(Long userId, String type, String title, String message, 
-                               String priority, Long relatedEntityId, String relatedEntityType, String actionUrl) {
+    public void sendNotification(Long userId, String type, String title, String message,
+            String priority, Long relatedEntityId, String relatedEntityType, String actionUrl) {
         try {
             Optional<User> userOpt = userRepo.findById(userId);
             if (userOpt.isEmpty()) {
@@ -56,30 +59,28 @@ public class NotificationService {
             }
 
             User user = userOpt.get();
-            
+
             // ✅ TẠO NOTIFICATION ENTITY
             Notification notification = new Notification(
-                user, message, type, title, priority, relatedEntityId, relatedEntityType, actionUrl
-            );
-            
+                    user, message, type, title, priority, relatedEntityId, relatedEntityType, actionUrl);
+
             // ✅ LƯU VÀO DATABASE
             Notification savedNotification = notificationRepo.save(notification);
-            
+
             // ✅ TẠO DTO CHO WEBSOCKET
             NotificationDTO notificationDTO = new NotificationDTO(
-                savedNotification.getId(), type, userId, title, message, priority,
-                relatedEntityId, relatedEntityType, actionUrl, false, savedNotification.getCreatedAt()
-            );
-            
+                    savedNotification.getId(), type, userId, title, message, priority,
+                    relatedEntityId, relatedEntityType, actionUrl, false, savedNotification.getCreatedAt());
+
             // ✅ GỬI QUA WEBSOCKET
             messagingTemplate.convertAndSendToUser(
-                user.getUsername(), // ✅ DESTINATION USER
-                "/queue/notifications", // ✅ QUEUE PATH
-                notificationDTO // ✅ MESSAGE
+                    user.getUsername(), // ✅ DESTINATION USER
+                    "/queue/notifications", // ✅ QUEUE PATH
+                    notificationDTO // ✅ MESSAGE
             );
-            
+
             System.out.println("✅ Đã gửi notification: " + type + " cho user: " + user.getUsername());
-            
+
         } catch (Exception e) {
             System.err.println("❌ Lỗi khi gửi notification: " + e.getMessage());
             e.printStackTrace();
@@ -87,19 +88,20 @@ public class NotificationService {
     }
 
     // ✅ GỬI NOTIFICATION CHO ADMIN
-    public void sendNotificationToAdmins(String type, String title, String message, 
-                                       String priority, Long relatedEntityId, String relatedEntityType, String actionUrl) {
+    public void sendNotificationToAdmins(String type, String title, String message,
+            String priority, Long relatedEntityId, String relatedEntityType, String actionUrl) {
         try {
             // ✅ TÌM TẤT CẢ ADMIN (SỬ DỤNG PAGINATION)
             Page<User> adminPage = userRepo.findByRole("ADMIN", PageRequest.of(0, 1000));
             List<User> admins = adminPage.getContent();
-            
+
             for (User admin : admins) {
-                sendNotification(admin.getId(), type, title, message, priority, relatedEntityId, relatedEntityType, actionUrl);
+                sendNotification(admin.getId(), type, title, message, priority, relatedEntityId, relatedEntityType,
+                        actionUrl);
             }
-            
+
             System.out.println("✅ Đã gửi notification cho " + admins.size() + " admin");
-            
+
         } catch (Exception e) {
             System.err.println("❌ Lỗi khi gửi notification cho admin: " + e.getMessage());
             e.printStackTrace();
@@ -136,15 +138,25 @@ public class NotificationService {
     }
 
     // ✅ ĐÁNH DẤU TẤT CẢ NOTIFICATIONS CỦA USER ĐÃ ĐỌC
-    public void markAllAsRead(Long userId) {
-        List<Notification> unreadNotifications = notificationRepo.findUnreadByUserIdOrderByCreatedAtDesc(userId);
-        System.out.println("✅ Marking " + unreadNotifications.size() + " notifications as read for user " + userId);
-        
-        for (Notification notification : unreadNotifications) {
-            notification.setRead(true);
+    @Transactional
+    public int markAllAsRead(Long userId, boolean isAdmin) {
+        if (isAdmin) {
+            // Optional: nếu bạn muốn admin có endpoint mark-all riêng
+            // Tạo method dưới đây trong repo (nếu chưa có):
+            // @Modifying
+            // @Query("UPDATE Notification n SET n.isRead = true WHERE n.audience IN
+            // ('ADMIN','ALL')")
+            // int markAllAsReadForAdmin();
+            int updated = isAdmin ? notificationRepo.markAllAsReadForAdmin()
+                    : notificationRepo.markAllAsReadForUser(userId);
+            System.out.println("Mark-all updated rows = " + updated);
+            return notificationRepo.markAllAsReadForAdmin();
+        } else {
+            int updated = isAdmin ? notificationRepo.markAllAsReadForAdmin()
+                    : notificationRepo.markAllAsReadForUser(userId);
+            System.out.println("Mark-all updated rows = " + updated);
+            return notificationRepo.markAllAsReadForUser(userId);
         }
-        notificationRepo.saveAll(unreadNotifications);
-        System.out.println("✅ All notifications marked as read for user " + userId);
     }
 
     // ✅ ĐẾM NOTIFICATIONS CHƯA ĐỌC
@@ -160,18 +172,17 @@ public class NotificationService {
     // ✅ CONVERT ENTITY TO DTO
     private NotificationDTO convertToDTO(Notification notification) {
         return new NotificationDTO(
-            notification.getId(),
-            notification.getNotificationType(),
-            notification.getUser().getId(),
-            notification.getTitle(),
-            notification.getContent(),
-            notification.getPriority(),
-            notification.getRelatedEntityId(),
-            notification.getRelatedEntityType(),
-            notification.getActionUrl(),
-            notification.isRead(),
-            notification.getCreatedAt()
-        );
+                notification.getId(),
+                notification.getNotificationType(),
+                notification.getUser().getId(),
+                notification.getTitle(),
+                notification.getContent(),
+                notification.getPriority(),
+                notification.getRelatedEntityId(),
+                notification.getRelatedEntityType(),
+                notification.getActionUrl(),
+                notification.isRead(),
+                notification.getCreatedAt());
     }
 
     // ✅ SPECIFIC NOTIFICATION METHODS
@@ -181,7 +192,7 @@ public class NotificationService {
         String title = "Kết quả Quiz: " + quizTitle;
         String message = "Bạn đã đạt " + score + " điểm trong quiz " + quizTitle;
         String actionUrl = "/quiz/result/" + quizId;
-        
+
         sendNotification(userId, QUIZ_RESULT_READY, title, message, PRIORITY_NORMAL, quizId, "QUIZ", actionUrl);
     }
 
@@ -190,7 +201,7 @@ public class NotificationService {
         String title = "Quiz được phê duyệt";
         String message = "Quiz '" + quizTitle + "' của bạn đã được phê duyệt";
         String actionUrl = "/quiz/" + quizId;
-        
+
         sendNotification(userId, QUIZ_APPROVED, title, message, PRIORITY_HIGH, quizId, "QUIZ", actionUrl);
     }
 
@@ -199,7 +210,7 @@ public class NotificationService {
         String title = "Quiz bị từ chối";
         String message = "Quiz '" + quizTitle + "' của bạn đã bị từ chối";
         String actionUrl = "/quiz/edit/" + quizId;
-        
+
         sendNotification(userId, QUIZ_REJECTED, title, message, PRIORITY_HIGH, quizId, "QUIZ", actionUrl);
     }
 
@@ -208,13 +219,14 @@ public class NotificationService {
         String title = isBanned ? "Tài khoản bị khóa" : "Tài khoản được mở khóa";
         String message = isBanned ? "Tài khoản của bạn đã bị khóa" : "Tài khoản của bạn đã được mở khóa";
         String actionUrl = "/profile";
-        
+
         sendNotification(userId, ACCOUNT_STATUS_CHANGED, title, message, PRIORITY_URGENT, userId, "USER", actionUrl);
     }
 
     // ✅ NEW QUIZ SUBMITTED (CHO ADMIN)
     public void sendNewQuizSubmittedNotification(Long quizId, String quizTitle, String creatorName) {
-        // Hệ thống đang cho phép tạo quiz công khai không cần duyệt → không gửi thông báo cho admin
+        // Hệ thống đang cho phép tạo quiz công khai không cần duyệt → không gửi thông
+        // báo cho admin
         System.out.println("ℹ️ Skipped admin notification NEW_QUIZ_SUBMITTED because quizzes are auto-public.");
     }
 
@@ -223,4 +235,4 @@ public class NotificationService {
         // Tránh spam admin: sự kiện hoàn thành quiz chỉ dành cho user
         System.out.println("ℹ️ Skipped admin notification QUIZ_COMPLETED for user activity.");
     }
-} 
+}

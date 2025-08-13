@@ -33,14 +33,14 @@ public class NotificationController {
 
             String username = authentication.getName();
             User user = loginService.findByUsername(username);
-            
+
             if (user == null) {
                 return ResponseEntity.status(401).build();
             }
 
             List<NotificationDTO> notifications = notificationService.getUserNotifications(user.getId());
             return ResponseEntity.ok(notifications);
-            
+
         } catch (Exception e) {
             System.err.println("❌ Lỗi khi lấy notifications: " + e.getMessage());
             return ResponseEntity.status(500).build();
@@ -57,14 +57,14 @@ public class NotificationController {
 
             String username = authentication.getName();
             User user = loginService.findByUsername(username);
-            
+
             if (user == null) {
                 return ResponseEntity.status(401).build();
             }
 
             List<NotificationDTO> notifications = notificationService.getUnreadNotifications(user.getId());
             return ResponseEntity.ok(notifications);
-            
+
         } catch (Exception e) {
             System.err.println("❌ Lỗi khi lấy unread notifications: " + e.getMessage());
             return ResponseEntity.status(500).build();
@@ -81,14 +81,14 @@ public class NotificationController {
 
             String username = authentication.getName();
             User user = loginService.findByUsername(username);
-            
+
             if (user == null) {
                 return ResponseEntity.status(401).build();
             }
 
             Long count = notificationService.getUnreadCount(user.getId());
             return ResponseEntity.ok(Map.of("count", count));
-            
+
         } catch (Exception e) {
             System.err.println("❌ Lỗi khi đếm unread notifications: " + e.getMessage());
             return ResponseEntity.status(500).build();
@@ -105,14 +105,14 @@ public class NotificationController {
 
             String username = authentication.getName();
             User user = loginService.findByUsername(username);
-            
+
             if (user == null) {
                 return ResponseEntity.status(401).build();
             }
 
             notificationService.markAsRead(notificationId);
             return ResponseEntity.ok().build();
-            
+
         } catch (Exception e) {
             System.err.println("❌ Lỗi khi đánh dấu notification đã đọc: " + e.getMessage());
             return ResponseEntity.status(500).build();
@@ -129,14 +129,21 @@ public class NotificationController {
 
             String username = authentication.getName();
             User user = loginService.findByUsername(username);
-            
             if (user == null) {
                 return ResponseEntity.status(401).build();
             }
 
-            notificationService.markAllAsRead(user.getId());
-            return ResponseEntity.ok().build();
-            
+            // xác định role
+            boolean isAdmin = false;
+            try {
+                isAdmin = user.getRole() != null && user.getRole().equalsIgnoreCase("ADMIN");
+                // nếu dùng enum: isAdmin = user.getRole() == Role.ADMIN;
+            } catch (Exception ignored) {
+            }
+
+            int updated = notificationService.markAllAsRead(user.getId(), isAdmin);
+            return ResponseEntity.ok(Map.of("updated", (long) updated));
+
         } catch (Exception e) {
             System.err.println("❌ Lỗi khi đánh dấu tất cả notifications đã đọc: " + e.getMessage());
             return ResponseEntity.status(500).build();
@@ -153,17 +160,17 @@ public class NotificationController {
 
             String username = authentication.getName();
             User user = loginService.findByUsername(username);
-            
+
             if (user == null) {
                 return ResponseEntity.status(401).build();
             }
 
             notificationService.deleteNotification(notificationId);
             return ResponseEntity.ok().build();
-            
+
         } catch (Exception e) {
             System.err.println("❌ Lỗi khi xóa notification: " + e.getMessage());
             return ResponseEntity.status(500).build();
         }
     }
-} 
+}
