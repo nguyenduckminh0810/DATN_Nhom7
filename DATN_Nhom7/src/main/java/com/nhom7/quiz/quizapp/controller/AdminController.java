@@ -51,7 +51,7 @@ public class AdminController {
         private CategoryRepo categoryRepo;
         @Autowired
         private LoginService loginService;
-        
+
         @Autowired
         private JwtUtil jwtUtil;
 
@@ -67,7 +67,8 @@ public class AdminController {
                 return switch (result.status()) {
                         case SUCCESS -> {
                                 // ✅ Generate JWT token for admin
-                                String token = jwtUtil.generateToken(result.user().getUsername(), result.user().getRole());
+                                String token = jwtUtil.generateToken(result.user().getUsername(),
+                                                result.user().getRole());
                                 yield ResponseEntity.ok(Map.of(
                                                 "status", "SUCCESS",
                                                 "message", "Đăng nhập thành công",
@@ -153,16 +154,17 @@ public class AdminController {
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
                 user.setBanned(true);
+                user.setRole("BANNED");
                 userRepo.save(user);
-                
+
                 // ✅ GỬI NOTIFICATION CHO USER
                 try {
-                    notificationService.sendAccountStatusNotification(user.getId(), true);
-                    System.out.println("✅ Sent ban notification to user: " + user.getUsername());
+                        notificationService.sendAccountStatusNotification(user.getId(), true);
+                        System.out.println("✅ Sent ban notification to user: " + user.getUsername());
                 } catch (Exception e) {
-                    System.err.println("❌ Error sending ban notification: " + e.getMessage());
+                        System.err.println("❌ Error sending ban notification: " + e.getMessage());
                 }
-                
+
                 return ResponseEntity.ok("Người dùng đã bị ban.");
         }
 
