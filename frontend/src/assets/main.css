@@ -17,6 +17,9 @@
   --warning-color: #ed8936;
   --danger-color: #f56565;
   --info-color: #4299e1;
+  /* Links (light) - high contrast */
+  --link-color: #000000;
+  --link-hover: #111111;
   /* App background (light) */
   --app-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   /* Card header theme */
@@ -26,27 +29,33 @@
 
 /* Dark Theme Colors */
 :root[data-theme="dark"] {
-  --bg-primary: #1a202c;
-  --bg-secondary: #2d3748;
-  --bg-tertiary: #4a5568;
-  --text-primary: #f7fafc;
-  --text-secondary: #e2e8f0;
-  --text-muted: #a0aec0;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --shadow-color: rgba(0, 0, 0, 0.3);
-  --card-bg: rgba(45, 55, 72, 0.95);
-  --navbar-bg: rgba(26, 32, 44, 0.9);
-  --input-bg: #2d3748;
-  --input-border: #4a5568;
-  --success-color: #68d391;
-  --warning-color: #f6ad55;
-  --danger-color: #fc8181;
-  --info-color: #63b3ed;
+  /* Dark surfaces: mạnh tương phản hơn */
+  --bg-primary: #0f172a;     /* panel/card */
+  --bg-secondary: #0b1220;   /* page background */
+  --bg-tertiary: #0b1324;
+  /* Text: sáng và rõ hơn */
+  --text-primary: #e5e7eb;   /* slate-200 */
+  --text-secondary: #cbd5e1; /* slate-300 */
+  --text-muted: #94a3b8;     /* slate-400 */
+  /* Border/Shadow: rõ ràng hơn một chút */
+  --border-color: rgba(255, 255, 255, 0.22);
+  --shadow-color: rgba(0, 0, 0, 0.55);
+  --card-bg: rgba(15, 23, 42, 0.98);
+  --navbar-bg: rgba(11, 18, 32, 0.9);
+  --input-bg: #0f172a;
+  --input-border: #1f2a44;
+  --success-color: #34d399;
+  --warning-color: #f59e0b;
+  --danger-color: #f87171;
+  --info-color: #60a5fa;
+  /* Links (dark) - high contrast */
+  --link-color: #ffffff;
+  --link-hover: #f1f5f9;
   /* App background (dark) */
-  --app-background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  --app-background: linear-gradient(135deg, #0b1220 0%, #0f172a 100%);
   /* Card header theme */
-  --card-header-bg: rgba(0, 0, 0, 0.25);
-  --card-header-text: #f7fafc;
+  --card-header-bg: rgba(255, 255, 255, 0.08);
+  --card-header-text: #e5e7eb;
 }
 
 body, html {
@@ -68,6 +77,18 @@ body, html {
     background: var(--app-background);
     transition: background-color 0.3s ease;
   }
+
+/* Global link styles with theme-aware contrast */
+a, .panel-header a, .card-header a, .section-title a, .panel-header h3, .section-title, .card-header .card-title {
+  color: var(--link-color);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover, a:focus, .panel-header a:hover, .card-header a:hover, .section-title a:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+}
 
 /* Global card header theming across app */
 .card-header,

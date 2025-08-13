@@ -296,28 +296,28 @@ const stats = ref([
     label: 'Tổng Attempts',
     value: 0,
     icon: 'bi bi-play-circle',
-    color: '#007bff',
+    color: 'var(--info-color)',
     borderClass: 'border-primary'
   },
   {
     label: 'Điểm trung bình',
     value: '0%',
     icon: 'bi bi-graph-up',
-    color: '#28a745',
+    color: 'var(--success-color)',
     borderClass: 'border-success'
   },
   {
     label: 'Thời gian TB',
     value: '0 phút',
     icon: 'bi bi-clock',
-    color: '#ffc107',
+    color: 'var(--warning-color)',
     borderClass: 'border-warning'
   },
   {
     label: 'Tỷ lệ đỗ',
     value: '0%',
     icon: 'bi bi-check-circle',
-    color: '#dc3545',
+    color: 'var(--danger-color)',
     borderClass: 'border-danger'
   }
 ])
@@ -480,7 +480,8 @@ onMounted(() => {
 
 .table th {
   font-weight: 600;
-  background-color: #f8f9fa;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .btn-group-sm .btn {

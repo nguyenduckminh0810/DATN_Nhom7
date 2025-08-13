@@ -202,7 +202,7 @@ const overviewStats = ref([
     value: 0,
     change: 12,
     icon: 'bi bi-people-fill',
-    color: '#007bff',
+    color: 'var(--info-color)',
     borderClass: 'border-primary'
   },
   {
@@ -210,7 +210,7 @@ const overviewStats = ref([
     value: 0,
     change: 8,
     icon: 'bi bi-journal-code',
-    color: '#28a745',
+    color: 'var(--success-color)',
     borderClass: 'border-success'
   },
   {
@@ -218,7 +218,7 @@ const overviewStats = ref([
     value: 0,
     change: -3,
     icon: 'bi bi-play-circle',
-    color: '#ffc107',
+    color: 'var(--warning-color)',
     borderClass: 'border-warning'
   },
   {
@@ -226,17 +226,17 @@ const overviewStats = ref([
     value: '0%',
     change: 5,
     icon: 'bi bi-graph-up',
-    color: '#dc3545',
+    color: 'var(--danger-color)',
     borderClass: 'border-danger'
   }
 ])
 
 const topCategories = ref([
-  { id: 1, name: 'Toán học', count: 45, percentage: 85, color: '#007bff' },
-  { id: 2, name: 'Tiếng Anh', count: 32, percentage: 60, color: '#28a745' },
-  { id: 3, name: 'Lịch sử', count: 28, percentage: 52, color: '#ffc107' },
-  { id: 4, name: 'Khoa học', count: 25, percentage: 47, color: '#dc3545' },
-  { id: 5, name: 'Văn học', count: 20, percentage: 38, color: '#6f42c1' }
+  { id: 1, name: 'Toán học', count: 45, percentage: 85, color: 'var(--info-color)' },
+  { id: 2, name: 'Tiếng Anh', count: 32, percentage: 60, color: 'var(--success-color)' },
+  { id: 3, name: 'Lịch sử', count: 28, percentage: 52, color: 'var(--warning-color)' },
+  { id: 4, name: 'Khoa học', count: 25, percentage: 47, color: 'var(--danger-color)' },
+  { id: 5, name: 'Văn học', count: 20, percentage: 38, color: 'var(--text-secondary)' }
 ])
 
 const topUsers = ref([
@@ -321,7 +321,7 @@ const initCharts = () => {
           label: 'Người dùng mới',
           data: [12, 19, 15, 25, 22, 30, 28],
           borderColor: '#007bff',
-          backgroundColor: 'rgba(0, 123, 255, 0.1)',
+          backgroundColor: 'rgba(37, 99, 235, 0.15)',
           tension: 0.4
         }]
       },
@@ -400,7 +400,7 @@ onMounted(() => {
 }
 
 .rank-gold {
-  background: linear-gradient(45deg, #ffd700, #ffed4e);
+  background: linear-gradient(45deg, var(--warning-color), #ffed4e);
 }
 
 .rank-silver {
@@ -412,7 +412,7 @@ onMounted(() => {
 }
 
 .rank-normal {
-  background: #6c757d;
+  background: var(--bg-tertiary);
 }
 
 .timeline {
@@ -427,7 +427,7 @@ onMounted(() => {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #e9ecef;
+  background: var(--bg-tertiary);
 }
 
 .timeline-item {
@@ -443,18 +443,18 @@ onMounted(() => {
   height: 12px;
   border-radius: 50%;
   border: 2px solid white;
-  box-shadow: 0 0 0 2px #e9ecef;
+  box-shadow: 0 0 0 2px var(--border-color);
 }
 
 .timeline-content {
-  background: #f8f9fa;
+  background: var(--bg-primary);
   padding: 15px;
   border-radius: 8px;
   margin-left: 10px;
 }
 
 .progress {
-  background-color: #e9ecef;
+  background-color: var(--bg-tertiary);
 }
 
 .progress-bar {
