@@ -233,7 +233,7 @@ const openAddUserModal = () => {
 
 const createUser = async () => {
   try {
-    await axios.post('/api/admin/users', newUser.value)
+    await api.post('/admin/users', newUser.value)
     alert('Tạo người dùng thành công!')
     showAddModal.value = false
     await fetchUsers()
@@ -250,7 +250,7 @@ const editUser = (user) => {
 
 const saveUser = async () => {
   try {
-    await axios.put(`/api/admin/users/${selectedUser.value.id}`, selectedUser.value)
+    await api.put(`/admin/users/${selectedUser.value.id}`, selectedUser.value)
     showEditModal.value = false
     await fetchUsers()
   } catch (err) {
@@ -262,7 +262,7 @@ const saveUser = async () => {
 const deleteUser = async (userId) => {
   if (confirm('Bạn có chắc chắn muốn xóa người dùng này không?')) {
     try {
-      await axios.delete(`/api/admin/users/${userId}`)
+      await api.delete(`/admin/users/${userId}`)
       await fetchUsers()
     } catch (err) {
       console.error('Lỗi khi xóa:', err)
@@ -274,7 +274,7 @@ const deleteUser = async (userId) => {
 const banUser = async (user) => {
   if (confirm(`Bạn có chắc chắn muốn BAN người dùng: ${user.username}?`)) {
     try {
-      await axios.put(`/api/admin/users/${user.id}/ban`)
+      await api.put(`/admin/users/${user.id}/ban`)
       alert('Người dùng đã bị ban.')
       await fetchUsers()
     } catch (err) {
