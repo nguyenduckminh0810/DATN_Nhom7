@@ -125,9 +125,17 @@ async function handleSubmit(e) {
             // Không can thiệp xóa Keychain: trình duyệt sẽ quản lý theo người dùng
         }
         // ✅ REDIRECT TO USER DASHBOARD FOR ALL USERS
-        console.log('🚀 Redirecting to user dashboard')
-        router.push('/dashboard')
+        // console.log('🚀 Redirecting to user dashboard')
+        // router.push('/dashboard')
 
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        console.log('Logged in as role:', user.role)
+        if (user.role?.toUpperCase() === 'ADMIN') {
+        router.push({ name: 'AdminCategories' })
+        } else {
+            router.push({ name: 'Home', params: { userId: user.id } })
+
+        }
     }
 }
 </script>

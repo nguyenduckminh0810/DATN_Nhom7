@@ -1,51 +1,7 @@
 <template>
   <div class="container my-4">
     <h4 class="mb-4">Danh sách người dùng</h4>
-    <div class="mb-4">
-      <button class="btn btn-primary" @click="openAddUserModal">+ Thêm người dùng</button>
-    </div>
-    <!-- Modal Thêm người dùng -->
-    <div class="modal fade show" tabindex="-1" style="display: block;" v-if="showAddModal">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Thêm người dùng</h5>
-            <button type="button" class="btn-close" @click="showAddModal = false"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label">Họ tên</label>
-              <input v-model="newUser.fullName" class="form-control" />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Email</label>
-              <input v-model="newUser.email" class="form-control" />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Username</label>
-              <input v-model="newUser.username" class="form-control" />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Mật khẩu</label>
-              <input type="password" v-model="newUser.password" class="form-control" />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Vai trò</label>
-              <select v-model="newUser.role" class="form-select">
-                <option value="ADMIN">Admin</option>
-                <option value="USER">Người dùng</option>
-              </select>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" @click="showAddModal = false">Huỷ</button>
-            <button class="btn btn-primary" @click="createUser">Tạo mới</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-backdrop fade show" v-if="showAddModal"></div>
-
+    <hr>
     <div class="row mb-3">
       <div class="col-md-4">
         <input v-model="search" @keyup.enter="fetchUsers" class="form-control" placeholder="Tìm kiếm tên hoặc email..." />
@@ -63,7 +19,7 @@
       <table class="table align-middle table-hover table-bordered shadow-sm">
         <thead class="table-light">
           <tr>
-            <th>#</th>
+            <th>STT</th>
             <th>Họ tên</th>
             <th>Email</th>
             <th>Username</th>
@@ -168,19 +124,10 @@ const users = ref([])
 const search = ref('')
 const role = ref('')
 const currentPage = ref(0)
-const pageSize = 5
+const pageSize = 10
 const totalPages = ref(1)
 const selectedUser = ref(null)
 const showEditModal = ref(false)
-const showAddModal = ref(false)
-const newUser = ref({
-  fullName: '',
-  email: '',
-  username: '',
-  password: '',
-  role: 'USER'
-})
-
 
 // Fetch users
 const fetchUsers = async () => {
@@ -217,29 +164,6 @@ const nextPage = () => {
   if (currentPage.value < totalPages.value - 1) {
     currentPage.value++
     fetchUsers()
-  }
-}
-const openAddUserModal = () => {
-  // Reset lại form
-  newUser.value = {
-    fullName: '',
-    email: '',
-    username: '',
-    password: '',
-    role: 'USER'
-  }
-  showAddModal.value = true
-}
-
-const createUser = async () => {
-  try {
-    await api.post('/admin/users', newUser.value)
-    alert('Tạo người dùng thành công!')
-    showAddModal.value = false
-    await fetchUsers()
-  } catch (err) {
-    console.error('Lỗi khi tạo user:', err)
-    alert('Không thể tạo người dùng. Vui lòng kiểm tra lại.')
   }
 }
 
