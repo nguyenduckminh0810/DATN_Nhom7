@@ -253,12 +253,12 @@ export default {
   padding: 0.5rem;
   border-radius: 50%;
   transition: all 0.3s ease;
-  color: #667eea;
+  color: var(--info-color);
   font-size: 1.2rem;
 }
 
 .admin-notification-bell:hover {
-  background-color: rgba(102, 126, 234, 0.1);
+  background-color: var(--card-header-bg);
   transform: scale(1.05);
 }
 
@@ -266,7 +266,7 @@ export default {
   position: absolute;
   top: -2px;
   right: -2px;
-  background: linear-gradient(135deg, #ff4757, #ff3742);
+  background: linear-gradient(135deg, var(--danger-color), #ff3742);
   color: white;
   border-radius: 50%;
   width: 18px;
@@ -286,9 +286,9 @@ export default {
   width: 450px;
   max-height: 600px;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 25px var(--shadow-color);
   z-index: 1000;
   overflow: hidden;
 }
@@ -299,7 +299,7 @@ export default {
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #e2e8f0;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, var(--info-color), #764ba2);
   color: white;
 }
 
@@ -315,7 +315,7 @@ export default {
 }
 
 .btn-mark-all {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--card-header-bg);
   color: white;
   border: none;
   padding: 0.25rem 0.75rem;
@@ -326,7 +326,7 @@ export default {
 }
 
 .btn-mark-all:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--card-header-bg);
 }
 
 .btn-close {
@@ -341,7 +341,7 @@ export default {
 }
 
 .btn-close:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--card-header-bg);
 }
 
 .admin-notification-list {
@@ -352,13 +352,13 @@ export default {
 .loading-notifications {
   padding: 2rem;
   text-align: center;
-  color: #718096;
+  color: var(--text-secondary);
 }
 
 .spinner {
   width: 2rem;
   height: 2rem;
-  border: 3px solid #e2e8f0;
+  border: 3px solid var(--border-color);
   border-top: 3px solid #667eea;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -368,7 +368,7 @@ export default {
 .no-notifications {
   padding: 2rem;
   text-align: center;
-  color: #718096;
+  color: var(--text-secondary);
 }
 
 .no-notifications i {
@@ -387,7 +387,7 @@ export default {
 }
 
 .admin-notification-item:hover {
-  background-color: #f7fafc;
+  background-color: var(--bg-primary);
   transform: translateX(4px);
 }
 

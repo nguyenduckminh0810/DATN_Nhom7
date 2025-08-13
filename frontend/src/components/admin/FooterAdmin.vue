@@ -19,14 +19,14 @@
 
 <style scoped>
 .admin-footer {
-  background: var(--app-background);
-  color: #fff;
-  box-shadow: 0 -4px 20px rgba(102, 126, 234, 0.2);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  box-shadow: 0 -4px 20px var(--shadow-color);
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
 }
 .admin-footer a:hover {
-  color: #ffc107 !important;
+  color: var(--warning-color) !important;
   text-decoration: underline;
   transform: translateY(-2px);
   transition: all 0.3s ease;
@@ -34,14 +34,14 @@
 
 /* Enhanced styling for admin footer */
 .admin-footer .btn-outline-light {
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: var(--border-color);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
 
 .admin-footer .btn-outline-light:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.6);
+  background: var(--card-header-bg);
+  border-color: var(--border-color);
   transform: translateY(-2px);
 }
 </style>
