@@ -6,7 +6,7 @@
         <span class="fw-bold h5 mb-0">QuizMaster Admin</span>
       </div>
       <div class="small">
-        © 2024 <strong>QuizMaster</strong> Admin. All Rights Reserved.
+        © 2025 <strong>QuizMaster</strong> Admin. All Rights Reserved.
       </div>
       <div>
         <a href="https://facebook.com" class="btn btn-outline-light btn-sm rounded-circle me-1"><i class="bi bi-facebook"></i></a>

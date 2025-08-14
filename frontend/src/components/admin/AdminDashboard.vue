@@ -1,12 +1,24 @@
+.admin-dashboard.is-light .title-card {
+  background: #ffffff;
+  border-color: rgba(2, 6, 23, 0.12);
+}
+.admin-dashboard.is-dark .title-card {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.18);
+}
 <template>
-  <div class="admin-dashboard">
+  <div class="admin-dashboard" :class="{ 'is-light': !themeStore.isDarkMode, 'is-dark': themeStore.isDarkMode }">
     <!-- Header bar -->
     <div class="page-header">
-      <div class="page-title">
-        <i class="bi bi-shield-check"></i>
-        <div>
+      <div class="title-card">
+        <div class="page-title">
+        <div class="icon-badge">
+          <i class="bi bi-shield-check"></i>
+        </div>
+        <div class="title-text">
           <h1>Admin Dashboard</h1>
           <p>Giám sát tổng quan hệ thống QuizMaster</p>
+        </div>
         </div>
       </div>
       <div class="page-actions">
@@ -46,7 +58,7 @@
 
     <!-- Lưới 2 cột: Attempts theo giờ + Hoạt động gần đây / Hành động nhanh -->
     <div class="grid-2">
-      <div class="panel">
+      <div class="panel panel-left">
         <div class="panel-header">
           <h3>
             <i class="bi bi-clock-history"></i>
@@ -60,17 +72,23 @@
           <div class="top-quizzes">
             <h4>Top 5 quiz hot hôm nay</h4>
             <div v-if="topQuizzesToday.length === 0" class="empty-top">Chưa có dữ liệu hôm nay</div>
-            <ul v-else>
-              <li v-for="q in topQuizzesToday" :key="q.title">
-                <span class="q-title">{{ q.title }}</span>
-                <span class="q-count">{{ q.count }}</span>
-              </li>
-            </ul>
+            <div v-else class="top-list">
+              <div v-for="(q, idx) in topQuizzesToday" :key="q.title" class="top-item">
+                <div class="rank-badge" :class="`rank-${idx+1}`">{{ idx + 1 }}</div>
+                <div class="top-info">
+                  <div class="top-title" :title="q.title">{{ q.title }}</div>
+                  <div class="progress">
+                    <div class="progress-bar" :style="{ width: Math.round((q.count / topMaxCount) * 100) + '%' }"></div>
+                  </div>
+                </div>
+                <div class="top-count"><i class="bi bi-fire"></i> {{ q.count }}</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel panel-right">
         <div class="panel-header">
           <h3>
             <i class="bi bi-activity"></i>
@@ -79,15 +97,15 @@
         </div>
         <div class="panel-body recent-list">
           <div v-if="recentActivities.length === 0" class="empty-recent">Chưa có hoạt động gần đây</div>
-          <div v-for="item in recentActivities" :key="item.id" class="recent-item">
+          <div v-for="item in recentActivities" :key="item.id" :class="['recent-item', 'type-' + item.type]">
             <div class="recent-icon">
               <i :class="getActivityIcon(item.type)"></i>
             </div>
             <div class="recent-content">
               <div class="recent-title">{{ item.title }}</div>
               <div class="recent-desc">{{ item.description }}</div>
+              <div class="recent-time-pill">{{ formatTimeAgo(item.timestamp) }}</div>
             </div>
-            <div class="recent-time">{{ formatTimeAgo(item.timestamp) }}</div>
           </div>
 
           <!-- Pagination -->
@@ -113,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import api from '@/utils/axios';
 import { adminService } from '@/services/adminService'
 import DashboardChart from './DashboardChart.vue';
@@ -146,12 +164,13 @@ const attemptsTodayCanvas = ref(null)
 let attemptsChartInstance = null
 let refreshTimer = null
 const activityPage = ref(0)
-const activitySize = ref(10)
+  const activitySize = ref(5)
 const activityTotalPages = ref(1)
 // Today stats
 const todayAttemptsCount = ref(0)
 const todayReportsCount = ref(0)
 const topQuizzesToday = ref([])
+  const topMaxCount = ref(1)
 
 onMounted(async () => {
   try {
@@ -275,8 +294,9 @@ function buildAttemptsToday() {
   // Chọn màu theo theme thực tế để đảm bảo tương phản
   const theme = document.documentElement.getAttribute('data-theme') || (themeStore.isDarkMode ? 'dark' : 'light')
   const isDark = theme === 'dark'
-  const textColor = isDark ? '#e5e7eb' : '#1f2937'
-  const gridColor = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.08)'
+  const textColor = isDark ? '#f8fafc' : '#1f2937'
+  const gridColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.08)'
+  const axisColor = isDark ? 'rgba(255,255,255,0.70)' : 'rgba(0,0,0,0.35)'
   attemptsChartInstance = new ChartJS(ctx, {
     type: 'line',
     data: {
@@ -288,7 +308,8 @@ function buildAttemptsToday() {
         backgroundColor: 'rgba(96,165,250,0.15)',
         tension: 0.35,
         fill: true,
-        pointRadius: 2
+        pointRadius: 2,
+        borderWidth: 2
       }]
     },
     options: {
@@ -296,18 +317,19 @@ function buildAttemptsToday() {
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: textColor, font: { size: 12 } }, grid: { color: gridColor } },
+        x: { ticks: { color: textColor, font: { size: 13 } }, grid: { color: gridColor, lineWidth: 1.2 }, border: { color: axisColor } },
         y: {
           beginAtZero: true,
           suggestedMax: Math.max(1, Math.ceil(Math.max(...attemptsByHour.value, 1))),
           ticks: {
             color: textColor,
-            font: { size: 12 },
+            font: { size: 13 },
             stepSize: 1,
             precision: 0,
             callback: (value) => Number.isInteger(value) ? value : ''
           },
-          grid: { color: gridColor }
+          grid: { color: gridColor, lineWidth: 1.2 },
+          border: { color: axisColor }
         }
       }
     }
@@ -322,6 +344,11 @@ function updateAttemptsTodayChart() {
   attemptsChartInstance.options.scales.y.ticks.precision = 0
   attemptsChartInstance.update()
 }
+
+// Rebuild the attempts chart when theme toggles to ensure proper contrast
+watch(() => themeStore.isDarkMode, () => {
+  buildAttemptsToday()
+})
 
 // Gọi API BE mới để lấy attempts theo giờ
 async function loadAttemptsTodayFromBE() {
@@ -386,6 +413,7 @@ async function loadTodayStats() {
       .slice(0, 5)
       .map(([title, count]) => ({ title, count }))
     topQuizzesToday.value = top
+    topMaxCount.value = Math.max(1, ...top.map(t => t.count))
     // cập nhật 2 KPI phụ nếu đã render
     augmentTodayKpi()
   } catch (e) {
@@ -465,17 +493,62 @@ function goCategories() { router.push('/admin/categories') }
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  background: transparent;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+/* Title card container - subtle panel to group icon + text */
+.title-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: 0 6px 18px var(--shadow-color);
 }
 
 .page-title {
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 4px 0;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
-.page-title i {
-  font-size: 28px;
+.icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.icon-badge i {
+  font-size: 22px;
   color: var(--info-color);
+  filter: none;
+}
+
+.title-text { background: transparent !important; }
+.title-text h1 {
+  font-size: 26px;
+  margin: 0;
+  line-height: 1.2;
+  color: var(--text-primary);
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  text-shadow: none;
+}
+.title-text p {
+  margin: 2px 0 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  opacity: 0.85;
 }
 
 .page-title h1 {
@@ -494,7 +567,60 @@ function goCategories() { router.push('/admin/categories') }
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-radius: 10px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
+.page-actions .btn:hover { background: var(--card-header-bg); }
+
+/* Better contrast for refresh button per theme, scoped to AdminDashboard */
+.admin-dashboard.is-light .page-actions .btn {
+  background: #ffffff;
+  border-color: rgba(2, 6, 23, 0.12);
+  color: #0b1220;
+}
+.admin-dashboard.is-light .page-actions .btn:hover {
+  background: #f8fafc;
+  border-color: rgba(2, 6, 23, 0.18);
+}
+
+.admin-dashboard.is-dark .page-actions .btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #e5e7eb;
+}
+.admin-dashboard.is-dark .page-actions .btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Subtle underline accent for heading */
+.title-text h1::after {
+  content: '';
+  display: block;
+  height: 3px;
+  width: 80px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  opacity: .6;
+}
+
+/* Theme-specific fine-tune for subtitle contrast */
+/* Scope styles strictly inside AdminDashboard only, avoid global theme overrides */
+.admin-dashboard.is-light .title-text p { color: rgba(31, 41, 55, 0.75); }
+.admin-dashboard.is-dark .title-text p { color: rgba(226, 232, 240, 0.88); }
+
+.admin-dashboard.is-light .title-text h1 {
+  color: #0b1220; /* deeper slate */
+}
+.admin-dashboard.is-light .title-text h1::after {
+  height: 4px;
+  width: 96px;
+  opacity: .95;
+  background: linear-gradient(90deg, #4338ca 0%, #7c3aed 100%);
+}
+.admin-dashboard.is-light .icon-badge i { color: #4338ca; }
 
 .kpi-grid {
   display: grid;
@@ -561,7 +687,7 @@ function goCategories() { router.push('/admin/categories') }
 }
 
 .chart-fixed {
-  height: 260px;
+  height: 220px;
   position: relative;
   overflow: hidden;
 }
@@ -572,10 +698,15 @@ function goCategories() { router.push('/admin/categories') }
 
 .grid-2 {
   display: grid;
-  grid-template-columns: 2fr 1.4fr;
+  grid-template-columns: 1.8fr 1.2fr;
   gap: 16px;
   margin-top: 16px;
+  align-items: start;
 }
+
+.panel-left .chart-fixed { height: 240px; }
+.panel-left .top-quizzes { margin-top: 8px; }
+.panel-right .recent-list { max-height: none; overflow: visible; padding-right: 0; }
 
 .recent-list {
   display: flex;
@@ -594,6 +725,15 @@ function goCategories() { router.push('/admin/categories') }
 .recent-title { font-weight: 600; }
 .recent-desc { font-size: 12px; color: var(--text-secondary); }
 .recent-time { font-size: 12px; color: var(--text-muted); }
+.recent-time-pill {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--text-primary);
+  background: var(--card-header-bg);
+}
 
 .empty-recent { color: var(--text-secondary); font-size: 14px; }
 
@@ -615,10 +755,27 @@ function goCategories() { router.push('/admin/categories') }
 
 .top-quizzes { margin-top: 12px; }
 .top-quizzes h4 { font-size: 14px; margin: 8px 0; color: var(--card-header-text); }
-.top-quizzes ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-.top-quizzes li { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 4px; }
-.top-quizzes .q-title { color: var(--text-secondary); }
-.top-quizzes .q-count { font-weight: 700; }
+.top-list { display: grid; gap: 10px; }
+.top-item {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--border-color);
+}
+.rank-badge {
+  width: 28px; height: 28px; border-radius: 8px; display:flex; align-items:center; justify-content:center;
+  font-weight: 800; font-size: 12px; color: #fff;
+  background: linear-gradient(135deg,#647dee,#7f53ac);
+}
+.rank-1 { background: linear-gradient(135deg,#f59e0b,#ef4444); }
+.rank-2 { background: linear-gradient(135deg,#60a5fa,#7c3aed); }
+.rank-3 { background: linear-gradient(135deg,#34d399,#059669); }
+.top-title { font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progress { width: 100%; height: 6px; background: var(--card-header-bg); border-radius: 999px; margin-top: 6px; overflow: hidden; }
+.progress-bar { height: 100%; background: linear-gradient(90deg,#667eea,#764ba2); border-radius: 999px; }
+.top-count { font-weight: 700; color: var(--text-primary); display: inline-flex; align-items: center; gap: 6px; }
 
 /* Pagination */
 .pagination-bar {

@@ -8,13 +8,13 @@ export const useThemeStore = defineStore('theme', () => {
   // Actions
   const toggleTheme = () => {
     isDarkMode.value = !isDarkMode.value
-    localStorage.setItem('app-dark-mode', isDarkMode.value)
+    localStorage.setItem('app-dark-mode', JSON.stringify(isDarkMode.value))
     applyTheme()
   }
 
   const setTheme = (dark) => {
-    isDarkMode.value = dark
-    localStorage.setItem('app-dark-mode', isDarkMode.value)
+    isDarkMode.value = !!dark
+    localStorage.setItem('app-dark-mode', JSON.stringify(isDarkMode.value))
     applyTheme()
   }
 
@@ -22,7 +22,7 @@ export const useThemeStore = defineStore('theme', () => {
     // Check localStorage first
     const savedTheme = localStorage.getItem('app-dark-mode')
     if (savedTheme !== null) {
-      isDarkMode.value = JSON.parse(savedTheme)
+      try { isDarkMode.value = JSON.parse(savedTheme) } catch { isDarkMode.value = savedTheme === 'true' }
     } else {
       // Check system preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -40,6 +40,8 @@ export const useThemeStore = defineStore('theme', () => {
       root.classList.remove('dark-theme')
       root.setAttribute('data-theme', 'light')
     }
+    // Fire a custom event so components can react immediately when needed
+    window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark: isDarkMode.value } }))
   }
 
   // Watch for system theme changes

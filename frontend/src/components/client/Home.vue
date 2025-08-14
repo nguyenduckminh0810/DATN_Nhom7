@@ -1,7 +1,7 @@
 <template>
   <div class="homepage">
     <!-- Hero Section -->
-    <section class="hero-section">
+    <section class="hero-section" :class="{ 'is-dark': isDarkMode }">
       <div class="hero-container">
         <div class="hero-content">
           <div class="hero-badge">
@@ -160,6 +160,11 @@
 
 <script setup>
 import { onMounted } from 'vue'
+import { useThemeStore } from '@/stores/theme'
+import { storeToRefs } from 'pinia'
+
+const themeStore = useThemeStore()
+const { isDarkMode } = storeToRefs(themeStore)
 
 onMounted(() => {
   console.log('✅ Home component mounted successfully!')
@@ -658,4 +663,161 @@ onMounted(() => {
     font-size: 2rem;
   }
 }
+
+/* ===================== */
+/* Dark theme overrides  */
+/* ===================== */
+
+:global(.dark-theme) .homepage {
+  background: linear-gradient(135deg, #0f172a, #1e1b4b);
+}
+
+:global(.dark-theme) .hero-section {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 27, 75, 0.96) 100%) !important;
+  color: #f8fafc;
+}
+
+/* Extra specificity to ensure override when other gradients win */
+:global(html.dark-theme) .hero-section,
+:global(html[data-theme='dark']) .hero-section {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 27, 75, 0.98) 100%) !important;
+}
+
+/* Local fallback using component class when root class is missing */
+.hero-section.is-dark {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 27, 75, 0.98) 100%) !important;
+  color: #f8fafc;
+}
+
+:global(.dark-theme) .hero-badge {
+  background: rgba(15, 23, 42, 0.85);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+}
+
+:global(.dark-theme) .hero-title {
+  color: #f1f5f9;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7), 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+:global(.dark-theme) .hero-description {
+  background: rgba(15, 23, 42, 0.6);
+  color: #e5e7eb;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
+}
+
+:global(.dark-theme) .hero-actions .btn-primary {
+  border-color: #eab308; /* amber-500 */
+  box-shadow: 0 8px 25px rgba(234, 179, 8, 0.25);
+}
+
+:global(.dark-theme) .hero-actions .btn-secondary {
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  border: 2px solid rgba(234, 179, 8, 0.35);
+}
+
+:global(.dark-theme) .hero-actions .btn-secondary:hover {
+  background: rgba(15, 23, 42, 0.95);
+}
+
+:global(.dark-theme) .hero-stats .stat-number {
+  color: #fca5a5; /* red-300 */
+}
+
+:global(.dark-theme) .btn-secondary {
+  background: rgba(15, 23, 42, 0.85);
+  color: #e2e8f0;
+  border: 2px solid rgba(255, 215, 0, 0.4);
+}
+
+:global(.dark-theme) .btn-secondary:hover {
+  background: rgba(15, 23, 42, 0.95);
+  color: #f8fafc;
+}
+
+:global(.dark-theme) .hero-stats .stat-item {
+  background: rgba(15, 23, 42, 0.75);
+  border: 2px solid rgba(255, 215, 0, 0.25);
+}
+
+:global(.dark-theme) .stat-label {
+  color: #cbd5e1;
+}
+
+:global(.dark-theme) .quiz-card {
+  background: rgba(15, 23, 42, 0.9);
+  color: #e2e8f0;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+:global(.dark-theme) .quiz-card i {
+  color: #ffd700;
+}
+
+:global(.dark-theme) .features-section {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+:global(.dark-theme) .section-header {
+  background: rgba(15, 23, 42, 0.85);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+:global(.dark-theme) .section-title {
+  color: #f8fafc;
+}
+
+:global(.dark-theme) .section-subtitle {
+  color: #cbd5e1;
+}
+
+:global(.dark-theme) .feature-card {
+  background: rgba(15, 23, 42, 0.9);
+  border: 2px solid rgba(255, 215, 0, 0.25);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
+}
+
+:global(.dark-theme) .feature-card:hover {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: #ffd700;
+}
+
+:global(.dark-theme) .feature-title {
+  color: #f8fafc;
+}
+
+:global(.dark-theme) .feature-description {
+  color: #cbd5e1;
+}
+
+:global(.dark-theme) .cta-section {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+:global(.dark-theme) .cta-container {
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+:global(.dark-theme) .cta-title {
+  color: #f8fafc;
+}
+
+:global(.dark-theme) .cta-description {
+  color: #cbd5e1;
+}
+
+/* Generic links on Home in dark mode (exclude styled buttons/cards) */
+:global(.dark-theme) .homepage a:not(.btn-primary):not(.btn-secondary):not(.cta-btn):not(.feature-card) {
+  color: #93c5fd;
+  text-decoration-color: rgba(147, 197, 253, 0.5);
+}
+
+:global(.dark-theme) .homepage a:not(.btn-primary):not(.btn-secondary):not(.cta-btn):not(.feature-card):hover {
+  color: #bfdbfe;
+  text-decoration-color: rgba(191, 219, 254, 0.7);
+}
+
 </style>
