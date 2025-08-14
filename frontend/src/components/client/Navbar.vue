@@ -588,6 +588,18 @@ const handleUserDropdownLeave = (event) => {
 
             <div class="dropdown-divider"></div>
 
+            <!-- Admin quick access (compact) -->
+            <RouterLink
+              v-if="isAdmin"
+              to="/admin/dashboard"
+              class="user-dropdown-link admin-link compact-link"
+              @click="closeAllDropdowns"
+            >
+              <i class="bi bi-speedometer2"></i>
+              <span>Admin Panel</span>
+            </RouterLink>
+            
+
             <!-- Menu Items - Show user menu items for all users -->
             <div v-if="userMenuItems && userMenuItems.length > 0">
               <!-- User Menu Items -->
@@ -1169,6 +1181,11 @@ const handleUserDropdownLeave = (event) => {
 
 .admin-link i {
   color: #dc3545 !important;
+}
+
+.compact-link {
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.25rem;
 }
 
 .logout-link {
