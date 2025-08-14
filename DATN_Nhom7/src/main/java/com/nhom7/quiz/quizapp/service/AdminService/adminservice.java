@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.nhom7.quiz.quizapp.model.Quiz;
@@ -42,7 +43,7 @@ public class adminservice {
         // Lấy danh sách tất cả quiz (kể cả riêng tư), lọc theo tags, có phân trang
         public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, int page, int size) {
                 checkAdminPermission();
-                
+
                 Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
                 Page<Quiz> quizzes = quizRepo.findAll(pageable);
@@ -82,7 +83,7 @@ public class adminservice {
         // Lấy danh sách tất cả quiz attempts (lịch sử làm quiz) cho admin
         public Page<ResultDTO> getAllQuizAttempts(int page, int size, Long userId, Long quizId) {
                 checkAdminPermission();
-                
+
                 Pageable pageable = PageRequest.of(page, size, Sort.by("completedAt").descending());
 
                 Page<Result> resultPage;
@@ -118,7 +119,7 @@ public class adminservice {
         // Phương thức để lấy danh sách tất cả người dùng
         public Page<UserDTO> getAllUsers(int page, int size, String search, String role) {
                 checkAdminPermission();
-                
+
                 Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
                 Page<User> userPage;
@@ -154,15 +155,33 @@ public class adminservice {
         // Phương thức dùng để sửa thông tin người dùng
         public UserDTO updateUser(Long id, UserDTO dto) {
                 checkAdminPermission();
-                
+
+                // Lấy user đang đăng nhập
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                String currentUsername = authentication != null ? authentication.getName() : null;
+                User currentUser = userRepo.findByUsername(currentUsername)
+                                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản hiện tại"));
+
+                // Lấy user mục tiêu
                 User user = userRepo.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
+                // ❌ Không cho tự đổi role
+                if (currentUser.getId().equals(id)
+                                && dto.getRole() != null
+                                && !dto.getRole().equalsIgnoreCase(user.getRole())) {
+                        throw new AccessDeniedException("Bạn không thể đổi vai trò của chính mình");
+                }
+
+                // ✅ Cập nhật các trường khác
                 user.setFullName(dto.getFullName());
                 user.setEmail(dto.getEmail());
                 user.setUsername(dto.getUsername());
-                user.setRole(dto.getRole());
 
+                // Chỉ cập nhật role nếu không phải tự đổi chính mình
+                if (dto.getRole() != null && !currentUser.getId().equals(id)) {
+                        user.setRole(dto.getRole());
+                }
                 userRepo.save(user);
 
                 return new UserDTO(
@@ -177,11 +196,26 @@ public class adminservice {
         // Phương thức dùng để xóa người dùng
         public void deleteUser(Long id) {
                 checkAdminPermission();
-                
+
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                String currentUsername = authentication != null ? authentication.getName() : null;
+                User currentUser = userRepo.findByUsername(currentUsername)
+                                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản hiện tại"));
+
                 if (!userRepo.existsById(id)) {
                         throw new RuntimeException("Người dùng không tồn tại");
                 }
-                userRepo.deleteById(id);
+
+                // Không cho tự xoá chính mình
+                if (currentUser.getId().equals(id)) {
+                        throw new AccessDeniedException("Bạn không thể tự xoá tài khoản của mình");
+                }
+
+                // (Khuyến nghị) Không cho xoá Admin cuối cùng
+                User target = userRepo.findById(id).orElseThrow();
+                if ("ADMIN".equalsIgnoreCase(target.getRole()) && userRepo.countByRole("ADMIN") <= 1) {
+                        throw new AccessDeniedException("Không thể xoá Admin cuối cùng trong hệ thống");
+                }
         }
 
         @Autowired
@@ -191,7 +225,7 @@ public class adminservice {
 
         public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, Boolean isPublic, int page, int size) {
                 checkAdminPermission();
-                
+
                 Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
                 Page<Quiz> quizzes = quizRepo.searchQuizzes(
@@ -232,7 +266,13 @@ public class adminservice {
 
         public void checkAndBanUser(Long userId) {
                 checkAdminPermission();
-                
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                String currentUsername = authentication != null ? authentication.getName() : null;
+                User currentUser = userRepo.findByUsername(currentUsername)
+                                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản hiện tại"));
+                if (currentUser.getId().equals(userId)) {
+                        throw new AccessDeniedException("Bạn không thể tự ban tài khoản của mình");
+                }
                 int reportCount = reportRepo.countByReportedUserIdAndStatus(userId, "RESOLVED");
 
                 if (reportCount >= REPORT_THRESHOLD) {

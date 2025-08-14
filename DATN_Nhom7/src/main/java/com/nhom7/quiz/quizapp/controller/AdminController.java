@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 // ✅ Removed unused Bean import
 import org.springframework.data.domain.Page;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 // ✅ Removed unused BCryptPasswordEncoder import
@@ -43,6 +44,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -116,7 +118,23 @@ public class AdminController {
         // ✅ ADMIN ONLY - Cập nhật user
         @PutMapping("/users/{id}")
         @PreAuthorize("hasRole('ADMIN')")
-        public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDTO dto) {
+        public ResponseEntity<?> updateUser(@PathVariable Long id,
+                        @RequestBody UserDTO dto,
+                        Authentication authentication) {
+                String currentUsername = authentication.getName();
+                User currentUser = userRepo.findByUsername(currentUsername)
+                                .orElseThrow(() -> new UsernameNotFoundException("Not found"));
+
+                // ❌ Chặn tự ĐỔI ROLE của chính mình
+                if (currentUser.getId().equals(id)
+                                && dto.getRole() != null
+                                && !dto.getRole().equalsIgnoreCase(currentUser.getRole())) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                        .body(Map.of("status", "FORBIDDEN", "message",
+                                                        "Bạn không thể đổi vai trò của chính mình"));
+                }
+
+                // ✅ Không đặt check “tự xoá” ở đây (để ở DELETE)
                 UserDTO updated = adminService.updateUser(id, dto);
                 return ResponseEntity.ok(updated);
         }
@@ -153,10 +171,18 @@ public class AdminController {
 
         @PutMapping("/users/{id}/ban")
         @PreAuthorize("hasRole('ADMIN')")
-        public ResponseEntity<?> banUser(@PathVariable Long id) {
+        public ResponseEntity<?> banUser(@PathVariable Long id, Authentication authentication) {
                 User user = userRepo.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+                String currentUsername = authentication.getName();
+                User currentUser = userRepo.findByUsername(currentUsername)
+                                .orElseThrow(() -> new UsernameNotFoundException("Not found"));
 
+                if (currentUser.getId().equals(id)) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                        .body(Map.of("status", "FORBIDDEN", "message",
+                                                        "Bạn không thể tự ban tài khoản của mình"));
+                }
                 user.setBanned(true);
                 user.setRole("BANNED");
                 userRepo.save(user);
@@ -459,8 +485,10 @@ public class AdminController {
                         @RequestParam(defaultValue = "5") int minAttempts) {
                 byte[] bytes = analyticsExportService.exportAnalyticsXlsx(from, to, tz, bins, topLimit, minAttempts);
                 return ResponseEntity.ok()
-                                .header("Content-Disposition", "attachment; filename=analytics-" + from + "_" + to + ".xlsx")
-                                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                                .header("Content-Disposition",
+                                                "attachment; filename=analytics-" + from + "_" + to + ".xlsx")
+                                .header("Content-Type",
+                                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                                 .body(bytes);
         }
 

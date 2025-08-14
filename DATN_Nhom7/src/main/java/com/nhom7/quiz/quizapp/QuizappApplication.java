@@ -20,7 +20,7 @@ public class QuizappApplication {
 		BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 		String rawPassword = "matkhau10";
 		String encodedPassword = encoder.encode(rawPassword);
-		System.out.println(encodedPassword);
+		System.out.println("admin passxzczxzcx: " + encodedPassword);
 	}
 
 }
