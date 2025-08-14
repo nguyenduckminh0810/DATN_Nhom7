@@ -96,6 +96,7 @@ const routes = [
         name: 'Contact',
         component: Contact,
       },
+      { path: 'ban', name: 'Ban', component: () => import('@/components/BanPage.vue') },
     ],
   },
 
@@ -104,6 +105,7 @@ const routes = [
     path: '/',
     component: ClientLayout,
     children: [
+
       {
         path: 'dashboard',
         name: 'Dashboard',
@@ -288,136 +290,52 @@ const router = createRouter({
 })
 
 // ✅ NAVIGATION GUARDS
-router.beforeEach(async (to, from, next) => {
-  // Chặn quay lại trang Play của attempt vừa hoàn thành (client-side)
-  if (to.name === 'PlayQuiz') {
-    const quizId = to.params.quizId
-    const userIdParam = to.params.userId
-    const completedKey = `quiz_completed_${quizId}_${userIdParam}`
-    try {
-      // Cho phép bypass khi có retake=1
-      if (to.query && (to.query.retake === '1' || to.query.retake === 1)) {
-        localStorage.removeItem(completedKey)
-        return next()
-      }
-      const done = localStorage.getItem(completedKey) === '1'
-      if (done) {
-        return next({ name: 'QuizResult', params: { quizId, userId: userIdParam } })
-      }
-    } catch { }
-  }
+router.beforeEach((to, from, next) => {
+  const ALWAYS_ALLOW = new Set(['Ban', 'Login', 'Register', 'ForgotPassword', 'ResetPassword', 'Home', 'Contact'])
+
   const token = localStorage.getItem('token')
   const adminUser = localStorage.getItem('admin_user')
-  const userInfo = localStorage.getItem('user')
-  const userRole = userInfo ? JSON.parse(userInfo).role : null
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
+  const role = (user?.role || '').toUpperCase()
+  const isAdmin = !!adminUser || role === 'ADMIN'
+  const isBanned = localStorage.getItem('banned') === '1' || role === 'BANNED'
 
-  console.log('🔍 Navigation guard - Route:', to.path)
-  console.log('🔍 Token exists:', !!token)
-  console.log('🔍 Admin user exists:', !!adminUser)
-  console.log('🔍 User role:', userRole)
-
-  // ✅ PUBLIC ROUTES - Always accessible
-  if (!to.meta.requiresAuth) {
-    console.log('✅ Public route - allowing access')
-    return next()
-  }
-
-  // ✅ AUTHENTICATION CHECK
-  if (!token && !adminUser) {
-    console.log('❌ No authentication - redirecting to login')
-    return next({ name: 'Login' })
-  }
-
-  // ✅ ATTEMPT ROUTE CHECK (PlayAttempt): chặn vào attempt đã hoàn thành
-  if (to.name === 'PlayAttempt') {
-    try {
-      console.log('🔍 Checking PlayAttempt status for attemptId:', to.params.attemptId)
-
-      // Kiểm tra xem attemptId có hợp lệ không
-      if (!to.params.attemptId) {
-        console.log('❌ No attemptId provided, redirecting to Home')
-        return next({ name: 'Home' })
-      }
-
-      // Thêm timeout để tránh chờ quá lâu
-      const statusPromise = quizAttemptService.getAttemptStatus(to.params.attemptId)
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout')), 5000),
-      )
-
-      const { status } = await Promise.race([statusPromise, timeoutPromise])
-      console.log('🔍 Attempt status:', status)
-
-      if (['SUBMITTED', 'COMPLETED', 'CANCELLED', 'EXPIRED'].includes(status)) {
-        console.log('❌ Attempt already completed, redirecting to Home')
-        return next({ name: 'Home' })
-      }
-
-      console.log('✅ Attempt status valid, allowing access')
-    } catch (e) {
-      console.error('❌ Error checking attempt status:', e)
-
-      // Nếu có lỗi khi kiểm tra status, kiểm tra xem có phải lỗi network không
-      if (
-        e.code === 'NETWORK_ERROR' ||
-        e.message?.includes('Network Error') ||
-        e.message?.includes('Timeout')
-      ) {
-        console.log('⚠️ Network error or timeout, allowing access to avoid infinite redirect')
-        return next()
-      }
-
-      // Nếu là lỗi khác, vẫn cho phép vào để tránh redirect vô hạn
-      console.log('⚠️ Allowing access despite status check error')
-      return next()
-    }
-  }
-
-  // ✅ ADMIN ROUTES CHECK
-  if (to.meta.requiresAdmin === true) {
-    const isAdmin = adminUser || userRole === 'admin' || userRole === 'ADMIN'
-    console.log(
-      '🔍 Admin check - adminUser:',
-      !!adminUser,
-      'userRole:',
-      userRole,
-      'isAdmin:',
-      isAdmin,
-    )
-    console.log('🔍 Route meta:', to.meta)
-    console.log('🔍 RequiresAdmin:', to.meta.requiresAdmin)
-    if (!isAdmin) {
-      console.log('❌ Admin route but no admin user - redirecting to login')
-      return next({ name: 'Login' })
-    }
-    console.log('✅ Admin route - allowing access')
-    return next()
-  }
-
-  // ✅ USER ROUTES CHECK
-  if (to.meta.requiresUser) {
-    if (!token) {
-      console.log('❌ User route but no token - redirecting to login')
-      return next({ name: 'Login' })
-    }
-    console.log('✅ User route - allowing access')
-    return next()
-  }
-
-  // ✅ GENERAL AUTHENTICATED ROUTES
-  if (to.meta.requiresAuth && (token || adminUser)) {
-    console.log('✅ Authenticated route - allowing access')
-    return next()
-  }
-
-  // ✅ LOGIN REDIRECT LOGIC - Allow access to login page even if logged in
+  // ✅ Trang Login: nếu đã đăng nhập thì đẩy ra Dashboard phù hợp
   if (to.name === 'Login') {
-    console.log('✅ Login page - allowing access')
+    if (token || adminUser) {
+      if (isBanned) return next({ name: 'Ban' })
+      return next({ name: isAdmin ? 'AdminDashboard' : 'Dashboard' })
+    }
+    return next() // chưa login -> cho ở lại trang Login
+  }
+
+  // ✅ Trang Ban: luôn cho vào
+  if (to.name === 'Ban') return next()
+
+  // ✅ Các trang public khác
+  if (ALWAYS_ALLOW.has(to.name)) return next()
+
+  // 🔒 Nếu bị ban -> đẩy về /ban
+  if (isBanned) return next({ name: 'Ban' })
+
+  // 🔐 Phần còn lại giữ nguyên
+  if (!to.meta.requiresAuth) return next()
+
+  if (!token && !adminUser) return next({ name: 'Login' })
+
+  if (to.meta.requiresAdmin === true) {
+    if (!isAdmin) return next({ name: 'Login' })
     return next()
   }
 
-  console.log('✅ Default case - allowing access')
-  next()
+  if (to.meta.requiresUser) {
+    if (!token && !adminUser) return next({ name: 'Login' })
+    return next()
+  }
+
+  return next()
 })
+
+
 
 export default router

@@ -29,6 +29,8 @@ public class SecurityConfig {
 
     @Autowired
     private JwtFilter jwtFilter;
+    @Autowired
+    private BannedUserFilter bannedUserFilter;
 
     // CORS
     @Bean
@@ -165,7 +167,8 @@ public class SecurityConfig {
 
                             response.getWriter().write(jsonResponse);
                         }))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(bannedUserFilter, JwtFilter.class);
 
         return http.build();
     }
