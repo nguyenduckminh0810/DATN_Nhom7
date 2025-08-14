@@ -31,9 +31,8 @@ public class Question {
 	@Column(columnDefinition = "TEXT", nullable = false)
 	private String content;
 
-	@ManyToOne
-	@JoinColumn(name = "image_id")
-	private Image image;
+	@OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+	private Set<Image> images = new HashSet<>();
 
 	private int point = 1;
 
@@ -64,14 +63,6 @@ public class Question {
 		this.content = content;
 	}
 
-	public Image getImage() {
-		return image;
-	}
-
-	public void setImage(Image image) {
-		this.image = image;
-	}
-
 	public int getPoint() {
 		return point;
 	}
@@ -88,12 +79,11 @@ public class Question {
 		this.timeLimit = timeLimit;
 	}
 
-	public Question(Long id, Quiz quiz, String content, Image image, int point, int timeLimit) {
+	public Question(Long id, Quiz quiz, String content, int point, int timeLimit) {
 		super();
 		this.id = id;
 		this.quiz = quiz;
 		this.content = content;
-		this.image = image;
 		this.point = point;
 		this.timeLimit = timeLimit;
 	}

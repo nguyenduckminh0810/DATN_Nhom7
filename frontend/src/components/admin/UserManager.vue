@@ -187,6 +187,7 @@ const deleteUser = async (userId) => {
   if (confirm('Bạn có chắc chắn muốn xóa người dùng này không?')) {
     try {
       await api.delete(`/admin/users/${userId}`)
+       alert('Người dùng đã bị xóa.')
       await fetchUsers()
     } catch (err) {
       console.error('Lỗi khi xóa:', err)
