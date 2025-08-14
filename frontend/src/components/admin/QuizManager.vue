@@ -208,6 +208,7 @@ function editQuiz(quiz) {
     id: quiz.id,
     title: quiz.title,
     isPublic: quiz.public ?? quiz.isPublic,
+    creatorName: quiz.creatorName,
     categoryName: quiz.categoryName,
     categoryId: category ? category.id : null
   };
