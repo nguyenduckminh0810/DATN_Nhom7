@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,27 +16,27 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "images")
 public class Image {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private String url;
+	private String url;
 
-    @ManyToOne
-    @JoinColumn(name = "question_id")
-    private Question question;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "question_id")
+	private Question question;
 
-    @ManyToOne
-    @JoinColumn(name = "quiz_id")
-    private Quiz quiz;
+	@ManyToOne
+	@JoinColumn(name = "quiz_id")
+	private Quiz quiz;
 
-    @Column(name = "uploaded_at")
-    private LocalDateTime uploadedAt;
+	@Column(name = "uploaded_at")
+	private LocalDateTime uploadedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        this.uploadedAt = LocalDateTime.now();
-    }
+	@PrePersist
+	protected void onCreate() {
+		this.uploadedAt = LocalDateTime.now();
+	}
 
 	public Long getId() {
 		return id;
@@ -90,4 +91,3 @@ public class Image {
 		super();
 	}
 }
-

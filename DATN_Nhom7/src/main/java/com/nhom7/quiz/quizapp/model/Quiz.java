@@ -56,7 +56,7 @@ public class Quiz {
 	private Long playCount;
 
 	@JsonIgnore
-	@OneToMany(mappedBy = "quiz")
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private Set<QuizTag> quizTags;
 
 	// ✅ THÊM RELATIONSHIP VỚI QUESTIONS
@@ -66,11 +66,27 @@ public class Quiz {
 
 	// Sau này dùng
 	@JsonIgnore
-	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private Set<QuizReview> reviews = new HashSet<>();
 
-	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private Set<Image> images = new HashSet<>();
+
+	@JsonIgnore
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	private Set<Report> reports = new HashSet<>();
+
+	@JsonIgnore
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	private Set<QuizAttempt> attempts = new HashSet<>();
+
+	@JsonIgnore
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	private Set<Result> results = new HashSet<>();
+
+	@JsonIgnore
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	private Set<Comment> comments = new HashSet<>();
 
 	public Long getId() {
 		return id;
