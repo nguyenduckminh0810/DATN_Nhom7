@@ -75,7 +75,7 @@
 
 <script>
 import { ref, onMounted, onUnmounted } from 'vue';
-// import websocketService from '../../services/websocketService.js';
+import websocketService from '../../services/websocketService.js';
 import { useNotificationStore } from '../../stores/notification.js';
 
 export default {
@@ -192,22 +192,22 @@ export default {
       showToastMessage(notification.message, 'info');
     };
 
-    // ✅ INITIALIZE WEBSOCKET (TẠM THỜI DISABLE)
+    // ✅ INITIALIZE WEBSOCKET
     const initializeWebSocket = () => {
-      // ✅ TẠM THỜI DISABLE WEBSOCKET ĐỂ TEST
-      console.log('⚠️ WebSocket temporarily disabled for testing');
-      /*
       const token = localStorage.getItem('token');
       const username = localStorage.getItem('username');
       
       if (token && username) {
+        console.log('🔌 Connecting to WebSocket for admin:', username);
         websocketService.connect(username, token).then(() => {
+          console.log('✅ WebSocket connected for admin');
           websocketService.onNotification(handleWebSocketNotification);
         }).catch(error => {
           console.error('❌ WebSocket connection failed:', error);
         });
+      } else {
+        console.error('❌ Missing token or username for admin WebSocket');
       }
-      */
     };
 
     // ✅ LIFECYCLE HOOKS
@@ -217,7 +217,7 @@ export default {
     });
 
     onUnmounted(() => {
-      // websocketService.disconnect();
+      websocketService.disconnect();
     });
 
     return {

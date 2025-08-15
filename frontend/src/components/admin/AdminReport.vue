@@ -12,6 +12,8 @@ const currentPage = ref(0)
 const totalPages = ref(1)
 const selectedStatus = ref('ALL')
 const pageSize = 10
+// ✅ THÊM REACTIVE DATA CHO ADMIN NOTES
+const adminNotes = ref({})
 
 
 const statusOptions = [
@@ -53,13 +55,33 @@ async function fetchReports(page = 0) {
 
 async function updateReportStatus(reportId, newStatus) {
   try {
-    const response = await axios.put(`http://localhost:8080/api/reports/${reportId}/status`, {
-      status: newStatus
+    // ✅ SỬ DỤNG ADMIN NOTE TỪ REACTIVE DATA
+    const adminNote = adminNotes.value[reportId] || '';
+    const adminResponse = newStatus === 'RESOLVED' 
+      ? (adminNote || 'Báo cáo hợp lệ, quiz đã bị ẩn')
+      : (adminNote || 'Báo cáo không hợp lệ');
+    
+    // ✅ MAP RESOLVED THÀNH APPROVED CHO BACKEND
+    const backendAction = newStatus === 'RESOLVED' ? 'APPROVED' : newStatus;
+    
+    console.log('🔧 Sending report action:', {
+      reportId,
+      action: newStatus,
+      backendAction: backendAction,
+      adminResponse,
+      adminNote
+    });
+    
+    const response = await axios.put(`http://localhost:8080/api/reports/${reportId}/action`, {
+      reportId: reportId,
+      action: backendAction,
+      adminResponse: adminResponse,
+      adminNote: adminNote
     })
     
     console.log('✅ Updated status:', response.data)
     
- 
+    // Reload reports
     await fetchReports(currentPage.value)
 
     alert('Cập nhật trạng thái thành công!')
@@ -226,6 +248,15 @@ const { isDarkMode } = storeToRefs(themeStore)
                 <td class="muted"><small>{{ formatDate(report.createdAt) }}</small></td>
                 <td>
                   <div class="row-actions">
+                    <!-- ✅ THÊM ADMIN NOTE INPUT -->
+                    <div v-if="report.status === 'PENDING'" class="admin-note-section">
+                      <textarea 
+                        v-model="adminNotes[report.id]"
+                        placeholder="Ghi chú của admin (tùy chọn)"
+                        class="admin-note-input"
+                        rows="2"
+                      ></textarea>
+                    </div>
                     
                     <button
                       v-if="report.status === 'PENDING'"
@@ -243,7 +274,6 @@ const { isDarkMode } = storeToRefs(themeStore)
                     >
                       <i class="bi bi-x"></i> Từ chối
                     </button>
-                    
                     
                     <button
                       class="chip danger"
@@ -297,6 +327,19 @@ const { isDarkMode } = storeToRefs(themeStore)
 
 .pagination-bar { display:flex; align-items:center; justify-content:flex-end; gap:8px; padding: 10px 12px; border-top:1px solid var(--border-color); }
 .pg-btn { border:1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); border-radius:8px; width:32px; height:28px; display:flex; align-items:center; justify-content:center; }
+
+/* ✅ CSS CHO ADMIN NOTE */
+.admin-note-section { margin-bottom: 8px; }
+.admin-note-input { 
+  width: 100%; 
+  padding: 6px 8px; 
+  border: 1px solid var(--border-color); 
+  border-radius: 6px; 
+  background: var(--bg-primary); 
+  color: var(--text-primary); 
+  font-size: 12px; 
+  resize: vertical; 
+}
 
 /* Dark/Light adjustments */
 .admin-reports.is-light .title-card { background:#ffffff; border-color: rgba(2,6,23,0.12); }

@@ -24,9 +24,8 @@ export const useThemeStore = defineStore('theme', () => {
     if (savedTheme !== null) {
       try { isDarkMode.value = JSON.parse(savedTheme) } catch { isDarkMode.value = savedTheme === 'true' }
     } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      isDarkMode.value = prefersDark
+      // ✅ MẶC ĐỊNH LÀ LIGHT MODE
+      isDarkMode.value = false
     }
     applyTheme()
   }
@@ -44,15 +43,15 @@ export const useThemeStore = defineStore('theme', () => {
     window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark: isDarkMode.value } }))
   }
 
-  // Watch for system theme changes
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-  mediaQuery.addEventListener('change', (e) => {
-    // Only auto-switch if user hasn't manually set a preference
-    if (localStorage.getItem('app-dark-mode') === null) {
-      isDarkMode.value = e.matches
-      applyTheme()
-    }
-  })
+  // Watch for system theme changes (disabled - default to light mode)
+  // const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  // mediaQuery.addEventListener('change', (e) => {
+  //   // Only auto-switch if user hasn't manually set a preference
+  //   if (localStorage.getItem('app-dark-mode') === null) {
+  //     isDarkMode.value = e.matches
+  //     applyTheme()
+  //   }
+  // })
 
   return {
     isDarkMode,

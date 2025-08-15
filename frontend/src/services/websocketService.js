@@ -1,10 +1,6 @@
 // ✅ WEBSOCKET SERVICE CHO FRONTEND
-// import SockJS from 'sockjs-client';
-// import { Stomp } from '@stomp/stompjs';
-
-// ✅ TẠM THỜI DISABLE WEBSOCKET ĐỂ TEST FRONTEND
-const SockJS = null;
-const Stomp = null;
+import SockJS from 'sockjs-client';
+import { Stomp } from '@stomp/stompjs';
 
 class WebSocketService {
     constructor() {
@@ -19,13 +15,6 @@ class WebSocketService {
     connect(username, token) {
         return new Promise((resolve, reject) => {
             try {
-                // ✅ TẠM THỜI DISABLE WEBSOCKET
-                console.log('⚠️ WebSocket temporarily disabled for testing');
-                this.connected = false;
-                resolve({ connected: false, message: 'WebSocket disabled for testing' });
-                
-                // ✅ CODE GỐC (COMMENT LẠI)
-                /*
                 // ✅ TẠO SOCKJS CONNECTION
                 const socket = new SockJS('http://localhost:8080/ws');
                 
@@ -58,7 +47,6 @@ class WebSocketService {
                         reject(error);
                     }
                 );
-                */
                 
             } catch (error) {
                 console.error('❌ Error creating WebSocket connection:', error);
@@ -69,23 +57,21 @@ class WebSocketService {
 
     // ✅ SUBSCRIBE TO NOTIFICATIONS
     subscribeToNotifications(username) {
-        // ✅ TẠM THỜI DISABLE WEBSOCKET
-        console.log('⚠️ WebSocket subscription disabled for testing');
-        return;
-        
-        // ✅ CODE GỐC (COMMENT LẠI)
-        /*
         if (!this.stompClient || !this.connected) {
             console.error('❌ WebSocket not connected');
             return;
         }
 
         try {
+            const subscriptionPath = `/user/${username}/queue/notifications`;
+            console.log('🔌 Subscribing to:', subscriptionPath);
+            
             // ✅ SUBSCRIBE TO USER-SPECIFIC QUEUE
-            this.stompClient.subscribe(`/user/${username}/queue/notifications`, (message) => {
+            this.stompClient.subscribe(subscriptionPath, (message) => {
                 try {
+                    console.log('📨 Raw message received:', message);
                     const notification = JSON.parse(message.body);
-                    console.log('📨 Received notification:', notification);
+                    console.log('📨 Parsed notification:', notification);
                     
                     // ✅ GỌI TẤT CẢ CALLBACKS
                     this.notificationCallbacks.forEach(callback => {
@@ -98,6 +84,7 @@ class WebSocketService {
                     
                 } catch (error) {
                     console.error('❌ Error parsing notification:', error);
+                    console.error('❌ Message body:', message.body);
                 }
             });
             
@@ -106,7 +93,6 @@ class WebSocketService {
         } catch (error) {
             console.error('❌ Error subscribing to notifications:', error);
         }
-        */
     }
 
     // ✅ XỬ LÝ RECONNECT

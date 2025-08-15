@@ -21,6 +21,11 @@ public class ReportDTO {
     // Quiz info (OUTPUT)
     private String quizTitle;
     private String quizCreator;
+    
+    // ✅ THÊM FIELDS CHO ADMIN RESPONSE
+    private String adminResponse;
+    private LocalDateTime resolvedAt;
+    private String resolvedBy;
 
     // Constructor rỗng (cho tạo mới từ request)
     public ReportDTO() {}
@@ -46,6 +51,13 @@ public class ReportDTO {
             if (report.getQuiz().getUser() != null) {
                 this.quizCreator = report.getQuiz().getUser().getFullName();
             }
+        }
+        
+        // ✅ THÊM ADMIN RESPONSE INFO
+        this.adminResponse = report.getAdminResponse();
+        this.resolvedAt = report.getResolvedAt();
+        if (report.getResolvedBy() != null) {
+            this.resolvedBy = report.getResolvedBy().getFullName();
         }
     }
 
@@ -130,5 +142,27 @@ public class ReportDTO {
     }
     public void setQuizCreator(String quizCreator) { 
         this.quizCreator = quizCreator; 
+    }
+    
+    // ✅ GETTERS VÀ SETTERS CHO ADMIN RESPONSE
+    public String getAdminResponse() { 
+        return adminResponse; 
+    }
+    public void setAdminResponse(String adminResponse) { 
+        this.adminResponse = adminResponse; 
+    }
+    
+    public LocalDateTime getResolvedAt() { 
+        return resolvedAt; 
+    }
+    public void setResolvedAt(LocalDateTime resolvedAt) { 
+        this.resolvedAt = resolvedAt; 
+    }
+    
+    public String getResolvedBy() { 
+        return resolvedBy; 
+    }
+    public void setResolvedBy(String resolvedBy) { 
+        this.resolvedBy = resolvedBy; 
     }
 }
