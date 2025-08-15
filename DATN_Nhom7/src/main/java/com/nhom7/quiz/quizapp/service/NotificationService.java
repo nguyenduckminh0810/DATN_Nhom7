@@ -2,6 +2,7 @@ package com.nhom7.quiz.quizapp.service;
 
 import com.nhom7.quiz.quizapp.model.Notification;
 import com.nhom7.quiz.quizapp.model.User;
+import com.nhom7.quiz.quizapp.model.Report;
 import com.nhom7.quiz.quizapp.model.dto.NotificationDTO;
 import com.nhom7.quiz.quizapp.repository.NotificationRepo;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
@@ -73,6 +74,9 @@ public class NotificationService {
                     relatedEntityId, relatedEntityType, actionUrl, false, savedNotification.getCreatedAt());
 
             // ✅ GỬI QUA WEBSOCKET
+            System.out.println("🔌 Sending WebSocket message to user: " + user.getUsername());
+            System.out.println("🔌 Message content: " + notificationDTO);
+            
             messagingTemplate.convertAndSendToUser(
                     user.getUsername(), // ✅ DESTINATION USER
                     "/queue/notifications", // ✅ QUEUE PATH
@@ -234,5 +238,97 @@ public class NotificationService {
     public void sendQuizCompletedNotification(Long quizId, String quizTitle, String userName, int score) {
         // Tránh spam admin: sự kiện hoàn thành quiz chỉ dành cho user
         System.out.println("ℹ️ Skipped admin notification QUIZ_COMPLETED for user activity.");
+    }
+
+    // ✅ NEW REPORT NOTIFICATION (CHO ADMIN)
+    public void sendNewReportNotification(Report report) {
+        try {
+            System.out.println("🔧 NotificationService.sendNewReportNotification called:");
+            System.out.println("🔧 Report ID: " + report.getId());
+            System.out.println("🔧 Reporter: " + report.getUser().getFullName());
+            System.out.println("🔧 Quiz: " + report.getQuiz().getTitle());
+            System.out.println("🔧 Reason: " + report.getReason());
+            
+            String title = "Báo cáo mới cần xử lý";
+            String content = "User " + report.getUser().getFullName() + " đã báo cáo quiz '" + 
+                           report.getQuiz().getTitle() + "' với lý do: " + report.getReason();
+            String actionUrl = "/admin/reports";
+            
+            System.out.println("🔧 Admin notification details:");
+            System.out.println("🔧 Title: " + title);
+            System.out.println("🔧 Content: " + content);
+            System.out.println("🔧 Action URL: " + actionUrl);
+            
+            // ✅ GỬI NOTIFICATION CHO TẤT CẢ ADMIN
+            sendNotificationToAdmins(
+                "REPORT_SUBMITTED",
+                title,
+                content,
+                "HIGH",
+                report.getId(),
+                "REPORT",
+                actionUrl
+            );
+            
+            System.out.println("✅ Đã gửi notification cho admin về report mới");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi khi gửi notification cho admin: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // ✅ REPORT ACTION NOTIFICATION (CHO USER ĐÃ BÁO CÁO)
+    public void sendReportActionNotification(Report report, User admin) {
+        try {
+            System.out.println("🔧 NotificationService.sendReportActionNotification called:");
+            System.out.println("🔧 Report ID: " + report.getId());
+            System.out.println("🔧 Report Status: " + report.getStatus());
+            System.out.println("🔧 Admin: " + admin.getFullName());
+            
+            User reporter = report.getUser(); // User đã gửi báo cáo
+            String action = report.getStatus();
+            
+            System.out.println("🔧 Reporter: " + reporter.getUsername() + " (ID: " + reporter.getId() + ")");
+            
+            // ✅ SỬA LOGIC: MAP RESOLVED THÀNH APPROVED CHO NOTIFICATION
+            boolean isApproved = action.equals("APPROVED") || action.equals("RESOLVED");
+            
+            String title = isApproved ? 
+                "Báo cáo của bạn đã được chấp nhận" : 
+                "Báo cáo của bạn đã bị từ chối";
+            
+            String content = isApproved ?
+                "Admin " + admin.getFullName() + " đã chấp nhận báo cáo về quiz: " + report.getQuiz().getTitle() :
+                "Admin " + admin.getFullName() + " đã từ chối báo cáo về quiz: " + report.getQuiz().getTitle() + 
+                ". Lý do: " + report.getAdminResponse();
+            
+            String priority = isApproved ? "HIGH" : "NORMAL";
+            String actionUrl = "/quiz/" + report.getQuiz().getId();
+            
+            System.out.println("🔧 Notification details:");
+            System.out.println("🔧 Title: " + title);
+            System.out.println("🔧 Content: " + content);
+            System.out.println("🔧 Priority: " + priority);
+            System.out.println("🔧 Action URL: " + actionUrl);
+            
+            // ✅ GỬI NOTIFICATION QUA WEBSOCKET
+            sendNotification(
+                reporter.getId(),
+                "REPORT_ACTION",
+                title,
+                content,
+                priority,
+                report.getQuiz().getId(),
+                "QUIZ",
+                actionUrl
+            );
+            
+            System.out.println("✅ Đã gửi report action notification cho user: " + reporter.getUsername());
+            
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi khi gửi report action notification: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

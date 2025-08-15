@@ -25,6 +25,7 @@ import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.Report;
 import com.nhom7.quiz.quizapp.model.User;
 import com.nhom7.quiz.quizapp.model.dto.ReportDTO;
+import com.nhom7.quiz.quizapp.model.dto.ReportActionDTO;
 import com.nhom7.quiz.quizapp.repository.ReportRepo;
 import com.nhom7.quiz.quizapp.service.QuizService;
 import com.nhom7.quiz.quizapp.service.ReportService;
@@ -261,6 +262,63 @@ public class ReportController {
         }
 
         return ResponseEntity.ok("Đã xử lý report và kiểm tra user bị report");
+    }
+
+    // ✅ ENDPOINT MỚI: ADMIN ACTION VỚI REPORT
+    @PutMapping("/{reportId}/action")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> handleReportAction(
+            @PathVariable Long reportId,
+            @RequestBody ReportActionDTO actionDTO,
+            Authentication authentication) {
+        
+        System.out.println("🔧 ===== REPORT ACTION ENDPOINT CALLED =====");
+        System.out.println("🔧 Report ID: " + reportId);
+        System.out.println("🔧 Action DTO: " + actionDTO);
+        
+        try {
+            // ✅ LẤY ADMIN ĐANG THỰC HIỆN ACTION
+            User admin = authUser(authentication);
+            
+            // ✅ DEBUG: In ra thông tin action
+            System.out.println("🔧 Admin " + admin.getFullName() + " thực hiện action: " + actionDTO.getAction());
+            System.out.println("🔧 Report ID: " + reportId);
+            System.out.println("🔧 Admin Response: " + actionDTO.getAdminResponse());
+            System.out.println("🔧 Admin Note: " + actionDTO.getAdminNote());
+            System.out.println("🔧 Full ActionDTO: " + actionDTO);
+            
+            // ✅ XỬ LÝ REPORT ACTION
+            Report updatedReport = reportService.handleReportAction(
+                reportId, 
+                actionDTO.getAction(), 
+                actionDTO.getAdminResponse(), 
+                admin
+            );
+            
+            // ✅ TRẢ VỀ RESPONSE THÀNH CÔNG
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "SUCCESS");
+            response.put("message", "Đã xử lý report thành công");
+            response.put("report", new ReportDTO(updatedReport));
+            response.put("action", actionDTO.getAction());
+            response.put("adminName", admin.getFullName());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("status", "ERROR");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi khi xử lý report action: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("status", "ERROR");
+            errorResponse.put("message", "Có lỗi xảy ra khi xử lý report");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 
 }

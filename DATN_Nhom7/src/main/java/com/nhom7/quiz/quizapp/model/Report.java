@@ -44,8 +44,19 @@ public class Report {
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
+	// ✅ THÊM FIELDS MỚI CHO ADMIN ACTION
+	@Column(name = "admin_response", columnDefinition = "TEXT")
+	private String adminResponse;
+
+	@Column(name = "resolved_at")
+	private LocalDateTime resolvedAt;
+
+	@ManyToOne
+	@JoinColumn(name = "resolved_by")
+	private User resolvedBy;
+
 	public Report(Long id, User user, Quiz quiz, Comment comment, String reason, String status,
-			User reportedUser, LocalDateTime createdAt) {
+			User reportedUser, LocalDateTime createdAt, String adminResponse, LocalDateTime resolvedAt, User resolvedBy) {
 		super();
 		this.id = id;
 		this.user = user;
@@ -55,6 +66,9 @@ public class Report {
 		this.status = status;
 		this.reportedUser = reportedUser;
 		this.createdAt = createdAt;
+		this.adminResponse = adminResponse;
+		this.resolvedAt = resolvedAt;
+		this.resolvedBy = resolvedBy;
 	}
 
 	public Report() {
@@ -123,6 +137,31 @@ public class Report {
 
 	public void setReportedUser(User reportedUser) {
 		this.reportedUser = reportedUser;
+	}
+
+	// ✅ GETTERS/SETTERS CHO FIELDS MỚI
+	public String getAdminResponse() {
+		return adminResponse;
+	}
+
+	public void setAdminResponse(String adminResponse) {
+		this.adminResponse = adminResponse;
+	}
+
+	public LocalDateTime getResolvedAt() {
+		return resolvedAt;
+	}
+
+	public void setResolvedAt(LocalDateTime resolvedAt) {
+		this.resolvedAt = resolvedAt;
+	}
+
+	public User getResolvedBy() {
+		return resolvedBy;
+	}
+
+	public void setResolvedBy(User resolvedBy) {
+		this.resolvedBy = resolvedBy;
 	}
 
 }

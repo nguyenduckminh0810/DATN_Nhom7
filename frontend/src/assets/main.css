@@ -52,9 +52,9 @@
   --link-color: #ffffff;
   --link-hover: #f1f5f9;
   /* App background (dark) */
-  --app-background: linear-gradient(135deg, #0b1220 0%, #0f172a 100%);
+  --app-background: linear-gradient(135deg, #0b1220 0%, #1e293b 100%);
   /* Card header theme */
-  --card-header-bg: rgba(255, 255, 255, 0.08);
+  --card-header-bg: #1e293b;
   --card-header-text: #e5e7eb;
 }
 
@@ -104,6 +104,12 @@ a:hover, a:focus, .panel-header a:hover, .card-header a:hover, .section-title a:
 .card-header-custom::before,
 .modal-header::before {
   background: none !important;
+}
+
+/* ✅ CHỈ LOẠI BỎ SHADOW EFFECTS TRONG DARK MODE */
+:root[data-theme="dark"] * {
+  box-shadow: none !important;
+  text-shadow: none !important;
 }
   
   /* Remove white gaps */
