@@ -16,14 +16,31 @@ export function useLogin() {
   const initializeToken = () => {
     const savedToken = localStorage.getItem('token')
     const savedUserId = localStorage.getItem('userId')
-    const savedUsername = localStorage.getItem('rememberMe') === '1'
-      ? localStorage.getItem('username') : null
+    const savedUsername = localStorage.getItem('username')
+    
     if (savedToken) {
       token.value = savedToken
       status.value = 'loggedIn'
       if (savedUserId) userId.value = savedUserId
     }
-    if (savedUsername) username.value = savedUsername
+    
+    // ✅ LUÔN LẤY USERNAME TỪ LOCALSTORAGE NẾU CÓ
+    if (savedUsername) {
+      username.value = savedUsername
+    } else {
+      // ✅ THỬ LẤY TỪ USER OBJECT
+      try {
+        const userStr = localStorage.getItem('user')
+        if (userStr) {
+          const user = JSON.parse(userStr)
+          if (user.username) {
+            username.value = user.username
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing user object:', e)
+      }
+    }
   }
 
   const isLoading = computed(() => status.value === 'loggingIn')
@@ -45,11 +62,16 @@ export function useLogin() {
       if (data.status === 'SUCCESS') {
         const jwt = data.token || data.accessToken
         const user = data.user || {}
-        // lưu
+        
+        // Lưu thông tin đăng nhập
+        const finalUsername = user.username || username.value
         localStorage.setItem('token', jwt)
         localStorage.setItem('user', JSON.stringify(user))
-        localStorage.setItem('username', user.username || username.value)
+        localStorage.setItem('username', finalUsername)
         localStorage.removeItem('banned')    // 👈 rất quan trọng khi unban
+        
+        // Cập nhật state
+        username.value = finalUsername
         token.value = jwt
         status.value = 'loggedIn'
 
