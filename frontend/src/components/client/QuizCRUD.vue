@@ -85,6 +85,28 @@ onMounted(async () => {
   isLoading.value = true
   try {
     userId.value = await getUserId()
+    
+    // ✅ ĐẢM BẢO USERNAME ĐƯỢC KHỞI TẠO ĐÚNG CÁCH
+    if (!username.value) {
+      const savedUsername = localStorage.getItem('username')
+      if (savedUsername) {
+        username.value = savedUsername
+      } else {
+        // Thử lấy từ user object
+        try {
+          const userStr = localStorage.getItem('user')
+          if (userStr) {
+            const user = JSON.parse(userStr)
+            if (user.username) {
+              username.value = user.username
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing user object:', e)
+        }
+      }
+    }
+    
     await Promise.all([fetchCategories(), fetchQuizzes()])
   } finally {
     isLoading.value = false
@@ -355,8 +377,16 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-const importQuiz = async () => {
-  if (!canImport.value) return
+async function importQuiz() {
+  if (!selectedExcelFile.value || !importQuizTitle.value.trim() || !importCategoryId.value) {
+    alert('Vui lòng điền đầy đủ thông tin và chọn file Excel!')
+    return
+  }
+
+  if (!username.value) {
+    alert('Không thể xác định người dùng. Vui lòng đăng nhập lại!')
+    return
+  }
 
   isImporting.value = true
   importResult.value = null
@@ -373,7 +403,6 @@ const importQuiz = async () => {
     // ✅ THÊM IMAGE VÀO FORMDATA
     if (importSelectedImage.value) {
       formData.append('image', importSelectedImage.value)
-      console.log('📸 Adding image to import:', importSelectedImage.value.name)
     }
 
     const response = await api.post(
@@ -445,7 +474,6 @@ function handleImportImageUpload(event) {
 
     importSelectedImage.value = file
     importPreviewUrl.value = URL.createObjectURL(file)
-    console.log('✅ Import image selected:', file.name)
   }
 }
 
