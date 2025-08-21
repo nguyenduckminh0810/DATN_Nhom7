@@ -31,11 +31,7 @@
           </RouterLink>
 
           <!-- Categories Dropdown -->
-          <div
-            class="nav-item dropdown"
-            @mouseenter="handleDropdownHover"
-            @mouseleave="handleDropdownLeave"
-          >
+          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
             <div class="nav-content" @click="handleDropdownClick">
               <i class="bi bi-tags"></i>
               <span>Danh mục</span>
@@ -63,11 +59,7 @@
                   <small class="link-desc">Tạo & sửa danh mục</small>
                 </div>
               </RouterLink>
-              <RouterLink
-                to="/admin/categories/trash"
-                class="dropdown-link"
-                @click="closeAllDropdowns"
-              >
+              <RouterLink to="/admin/categories/trash" class="dropdown-link" @click="closeAllDropdowns">
                 <i class="bi bi-trash3"></i>
                 <div class="link-content">
                   <span class="link-title">Thùng rác</span>
@@ -82,9 +74,6 @@
             <div class="nav-content">
               <i class="bi bi-flag"></i>
               <span>Báo cáo</span>
-              <span v-if="reportCount > 0" class="navbar-notification-badge">{{
-                reportCount
-              }}</span>
             </div>
           </RouterLink>
 
@@ -103,36 +92,24 @@
         <!-- ✅ ADMIN NOTIFICATION COMPONENT (VISIBLE) -->
         <AdminNotificationComponent ref="notificationComponent" />
         <!-- Dark Mode Toggle -->
-        <button
-          @click="themeStore.toggleTheme"
-          class="theme-toggle-btn"
-          :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'"
-        >
+        <button @click="themeStore.toggleTheme" class="theme-toggle-btn"
+          :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'">
           <i :class="themeStore.isDarkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
         </button>
 
         <!-- Admin Profile -->
-        <div
-          class="user-menu dropdown"
-          @mouseenter="handleUserDropdownHover"
-          @mouseleave="handleUserDropdownLeave"
-        >
+        <div class="user-menu dropdown" @mouseenter="handleUserDropdownHover" @mouseleave="handleUserDropdownLeave">
           <div class="user-trigger" @click="handleUserDropdownClick">
             <div class="user-avatar">
-              <img
-                v-if="avatarUrl"
-                :src="avatarUrl"
-                alt="Admin Avatar"
-                class="avatar-image"
-                @error="handleAvatarError"
-              />
+              <img v-if="avatarUrl" :src="avatarUrl" alt="Admin Avatar" class="avatar-image"
+                @error="handleAvatarError" />
               <i v-else class="bi bi-person-circle"></i>
             </div>
             <div class="user-info">
               <div class="user-name-row">
                 <span class="user-name">{{
                   adminInfo?.fullName || adminInfo?.username || 'Admin'
-                }}</span>
+                  }}</span>
               </div>
               <small class="user-status">Online</small>
             </div>
@@ -142,13 +119,8 @@
           <div class="user-dropdown">
             <div class="user-profile-header">
               <div class="profile-avatar">
-                <img
-                  v-if="avatarUrl"
-                  :src="avatarUrl"
-                  alt="Admin Avatar"
-                  class="profile-avatar-image"
-                  @error="handleAvatarError"
-                />
+                <img v-if="avatarUrl" :src="avatarUrl" alt="Admin Avatar" class="profile-avatar-image"
+                  @error="handleAvatarError" />
                 <i v-else class="bi bi-person-circle"></i>
               </div>
               <div class="profile-info">
@@ -156,7 +128,7 @@
                 <small>{{ adminInfo?.role || 'Admin' }}</small>
                 <small class="profile-email">{{
                   adminInfo?.email || 'admin@quizmaster.com'
-                }}</small>
+                  }}</small>
               </div>
             </div>
 
@@ -176,7 +148,7 @@
                 <span>Thông báo</span>
                 <span v-if="notificationCount > 0" class="notification-badge">{{
                   notificationCount
-                }}</span>
+                  }}</span>
               </button>
               <button @click="logout" class="user-dropdown-link logout-link">
                 <i class="bi bi-box-arrow-right"></i>
@@ -534,7 +506,7 @@ onUnmounted(() => {
   // Remove mouse leave listeners
   const dropdowns = document.querySelectorAll('.nav-item.dropdown')
   dropdowns.forEach((dropdown) => {
-    dropdown.removeEventListener('mouseleave', () => {})
+    dropdown.removeEventListener('mouseleave', () => { })
   })
 })
 </script>
