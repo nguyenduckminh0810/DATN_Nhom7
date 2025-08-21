@@ -3,6 +3,8 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/utils/axios'
 import { useUserStore } from '@/stores/user'
+import ResumeQuizModal from './ResumeQuizModal.vue'
+import { quizResumeService, progressStorageService, autoSaveService } from '@/services/quizResumeService'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,13 +13,13 @@ const attemptId = route.params.attemptId
 let quizId = route.params.quizId
 
 const userStore = useUserStore()
-let userId = route.params.userId
+let userId = localStorage.getItem('userId') 
   || userStore?.user?.id
+  || route.params.userId
   || (() => {
     try { return JSON.parse(localStorage.getItem('user') || '{}')?.id }
     catch { return null }
   })()
-  || localStorage.getItem('userId')
 const questions = ref([])
 const currentQuestionIndex = ref(0)
 // Chỉ số xa nhất đã đạt tới để khóa thanh tiến độ không lùi khi quay lại
@@ -33,6 +35,12 @@ const showNextAnimation = ref(false)
 const quizTitle = ref('')
 const startTime = ref(null) // Thêm thời gian bắt đầu
 let timer = null
+
+// ✅ RESUME QUIZ STATE
+const showResumeModal = ref(false)
+const attemptData = ref(null)
+const currentAttemptId = ref(null)
+let autoSaveIntervalId = null
 
 // Computed properties
 const currentQuestion = computed(() => questions.value[currentQuestionIndex.value])
@@ -93,11 +101,15 @@ function startTimer() {
 
 onMounted(async () => {
   try {
+    console.info('🚀 CHECK start - Kiểm tra attempt dở cho quiz:', quizId)
+    
     // Nếu đang ở flow attemptId thì lấy câu hỏi theo attempt
     if (attemptId) {
+      console.info('📋 Đang ở flow attemptId, load attempt hiện tại')
       const { quizAttemptService } = await import('@/services/quizAttemptService')
       const resp = await quizAttemptService.getAttemptQuestions(attemptId)
       quizId = resp.quizId
+      currentAttemptId.value = attemptId
       quizTitle.value = resp.quizTitle || 'Quiz'
       const questionList = resp.questions || []
 
@@ -107,7 +119,7 @@ onMounted(async () => {
             const ansRes = await api.get(`/answer/${question.id}`)
             return { ...question, answers: ansRes.data || [] }
           } catch (err) {
-            console.error(`Lỗi khi lấy answers cho câu hỏi ID ${question.id}:`, err)
+            console.error(`Lỗi khi lấy answers cho câu hỏi ${question.id}:`, err)
             return { ...question, answers: [] }
           }
         }),
@@ -116,65 +128,41 @@ onMounted(async () => {
       questions.value = enrichedQuestions
       isLoading.value = false
       startTimer()
+      startAutoSave() // Bắt đầu auto-save cho attempt hiện tại
       return
     }
 
-    // Fallback: flow cũ theo quizId
-    const quizRes = await api.get(`/quiz/${quizId}`)
-    quizTitle.value = quizRes.data.title || 'Quiz'
-    const res = await api.get(`/question/play/${quizId}`)
-    const questionList = res.data
-
-    const enrichedQuestions = await Promise.all(
-      questionList.map(async (question) => {
-        try {
-          const ansRes = await api.get(`/answer/${question.id}`)
-          return { ...question, answers: ansRes.data || [] }
-        } catch (err) {
-          console.error(`Lỗi khi lấy answers cho câu hỏi ID ${question.id}:`, err)
-          return { ...question, answers: [] }
+    // ✅ FLOW MỚI: Kiểm tra attempt dở trước khi tạo mới
+    if (quizId) {
+      try {
+        const response = await quizResumeService.checkInProgressAttempt(quizId)
+        console.info('🔍 CHECK ok - Response:', response)
+        
+        if (response.hasInProgressAttempt) {
+          console.info('📋 OPEN MODAL - Có attempt dở, hiển thị modal resume')
+          attemptData.value = response.attemptData
+          showResumeModal.value = true
+          // Không load questions ngay, đợi user quyết định
+          return
+        } else {
+          console.info('✅ CHECK 204 - Không có attempt dở, tạo attempt mới')
+          await createNewAttempt()
         }
-      }),
-    )
-
-    questions.value = enrichedQuestions
-    isLoading.value = false
-    startTimer()
+      } catch (error) {
+        console.error('❌ Lỗi khi kiểm tra attempt dở:', error)
+        // Fallback: tạo attempt mới
+        await createNewAttempt()
+      }
+    }
   } catch (err) {
     console.error('Lỗi khi tải câu hỏi:', err)
     isLoading.value = false
   }
 })
 
-onBeforeUnmount(() => {
-  clearInterval(timer)
-})
+// ✅ onBeforeUnmount đã được override ở cuối file với cleanup auto-save
 
-function selectAnswer(questionId, answerId) {
-  // Không cho chọn nếu câu đã khóa
-  if (lockedQuestionIds.value.has(questionId)) return
-  selectedAnswers.value[questionId] = answerId
-
-  // Visual feedback
-  const answerElement = document.getElementById(`answer-${answerId}`)
-  if (answerElement) {
-    answerElement.style.transform = 'scale(0.95)'
-    setTimeout(() => {
-      answerElement.style.transform = 'scale(1)'
-    }, 150)
-  }
-}
-
-function nextQuestion() {
-  if (currentQuestionIndex.value < questions.value.length - 1) {
-    // Khi chuyển câu, cũng khóa câu hiện tại để tránh quay lại sửa
-    if (currentQuestion.value?.id) lockedQuestionIds.value.add(currentQuestion.value.id)
-    goToQuestion(currentQuestionIndex.value + 1)
-  } else {
-    clearInterval(timer)
-    submitQuiz()
-  }
-}
+// ✅ Functions selectAnswer và nextQuestion đã được override ở cuối file với auto-save
 
 function prevQuestion() {
   if (currentQuestionIndex.value > 0) {
@@ -211,7 +199,13 @@ async function submitQuiz() {
 
   try {
     let resultId
-    if (attemptId) {
+    if (currentAttemptId.value) {
+      // ✅ Sử dụng currentAttemptId từ resume flow
+      const { quizAttemptService } = await import('@/services/quizAttemptService')
+      const resp = await quizAttemptService.submitAttempt(currentAttemptId.value, answerList, timeTaken)
+      resultId = resp.resultId
+    } else if (attemptId) {
+      // Fallback: flow cũ theo attemptId
       const { quizAttemptService } = await import('@/services/quizAttemptService')
       const resp = await quizAttemptService.submitAttempt(attemptId, answerList, timeTaken)
       resultId = resp.resultId
@@ -219,7 +213,7 @@ async function submitQuiz() {
       // Fallback flow cũ
       const token = localStorage.getItem('token')
       const payload = { quizId: parseInt(quizId), userId: parseInt(userId), answers: answerList, timeTaken }
-      const res = await api.post('http://localhost:8080/api/result/submit', payload, { headers: { Authorization: `Bearer ${token}` } })
+      const res = await api.post('/result/submit', payload)
       resultId = res.data.resultId
       try { localStorage.setItem(`quiz_completed_${quizId}_${userId}`, '1') } catch { }
     }
@@ -233,6 +227,233 @@ async function submitQuiz() {
     alert('Có lỗi xảy ra khi nộp bài. Vui lòng thử lại!')
   }
 }
+
+// ✅ RESUME QUIZ FUNCTIONS
+async function createNewAttempt() {
+  try {
+    console.info('🆕 NEW-ATTEMPT - Tạo attempt mới cho quiz:', quizId)
+    const response = await quizResumeService.createNewAttempt(quizId)
+    
+    if (response.success) {
+      currentAttemptId.value = response.attemptId
+      console.info('✅ NEW-ATTEMPT ok - Attempt ID:', response.attemptId)
+      
+      // Load questions cho attempt mới
+      await loadQuestionsForNewAttempt()
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi tạo attempt mới:', error)
+    alert('Có lỗi xảy ra khi tạo attempt mới. Vui lòng thử lại!')
+  }
+}
+
+async function loadQuestionsForNewAttempt() {
+  try {
+    const quizRes = await api.get(`/quiz/${quizId}`)
+    quizTitle.value = quizRes.data.title || 'Quiz'
+    const res = await api.get(`/question/play/${quizId}`)
+    const questionList = res.data
+
+    const enrichedQuestions = await Promise.all(
+      questionList.map(async (question) => {
+        try {
+          const ansRes = await api.get(`/answer/${question.id}`)
+          return { ...question, answers: ansRes.data || [] }
+        } catch (err) {
+          console.error(`Lỗi khi lấy answers cho câu hỏi ${question.id}:`, err)
+          return { ...question, answers: [] }
+        }
+      }),
+    )
+
+    questions.value = enrichedQuestions
+    isLoading.value = false
+    startTimer()
+    startAutoSave() // Bắt đầu auto-save cho attempt mới
+  } catch (err) {
+    console.error('Lỗi khi tải câu hỏi cho attempt mới:', err)
+    isLoading.value = false
+  }
+}
+
+// ✅ HANDLE RESUME MODAL EVENTS
+function handleResume(resumeData) {
+  console.info('🔄 CONTINUE - Resume attempt:', resumeData.attemptId)
+  
+  currentAttemptId.value = resumeData.attemptId
+  
+  // Khôi phục tiến độ
+  currentQuestionIndex.value = resumeData.currentQuestionIndex
+  furthestQuestionIndex.value = resumeData.currentQuestionIndex
+  
+  // Khôi phục đáp án đã chọn
+  if (resumeData.answersJson) {
+    try {
+      const answers = JSON.parse(resumeData.answersJson)
+      selectedAnswers.value = answers
+    } catch (error) {
+      console.error('Lỗi khi parse answers JSON:', error)
+      selectedAnswers.value = {}
+    }
+  }
+  
+  // Load questions và khôi phục state
+  loadQuestionsForResume(resumeData)
+}
+
+/**
+ * ✅ Đóng modal resume
+ */
+function closeResumeModal() {
+  showResumeModal.value = false
+}
+
+function handleNewAttempt() {
+  console.info('🔄 RESTART - User chọn làm lại từ đầu')
+  
+  // Tạo attempt mới
+  createNewAttempt()
+}
+
+async function loadQuestionsForResume(resumeData) {
+  try {
+    const quizRes = await api.get(`/quiz/${resumeData.quizId}`)
+    quizTitle.value = quizRes.data.title || 'Quiz'
+    const res = await api.get(`/question/play/${resumeData.quizId}`)
+    const questionList = res.data
+
+    const enrichedQuestions = await Promise.all(
+      questionList.map(async (question) => {
+        try {
+          const ansRes = await api.get(`/answer/${question.id}`)
+          return { ...question, answers: ansRes.data || [] }
+        } catch (err) {
+          console.error(`Lỗi khi lấy answers cho câu hỏi ${question.id}:`, err)
+          return { ...question, answers: [] }
+        }
+      }),
+    )
+
+    questions.value = enrichedQuestions
+    isLoading.value = false
+    
+    // Khôi phục thời gian còn lại nếu có
+    if (resumeData.timeRemaining && resumeData.timeRemaining > 0) {
+      countdown.value = resumeData.timeRemaining
+    }
+    
+    startTimer()
+    startAutoSave() // Bắt đầu auto-save cho attempt resume
+  } catch (err) {
+    console.error('Lỗi khi tải câu hỏi cho resume:', err)
+    isLoading.value = false
+  }
+}
+
+// ✅ AUTO-SAVE FUNCTIONS
+function startAutoSave() {
+  if (autoSaveIntervalId) {
+    autoSaveService.stopAutoSave(autoSaveIntervalId)
+  }
+  
+  console.info('💾 AUTOSAVE scheduled - Bắt đầu auto-save mỗi 30 giây')
+  autoSaveIntervalId = autoSaveService.startAutoSave(
+    quizId, 
+    currentAttemptId.value, 
+    saveProgressCallback, 
+    30000 // 30 giây
+  )
+}
+
+function saveProgressCallback() {
+  if (!currentAttemptId.value) return
+  
+  const progressData = {
+    questionIndex: currentQuestionIndex.value,
+    timeRemaining: countdown.value,
+    answers: selectedAnswers.value
+  }
+  
+  console.info('💾 AUTOSAVE sent - Lưu tiến độ:', progressData)
+  
+  // Lưu vào localStorage trước
+  progressStorageService.saveProgress(
+    quizId, 
+    currentAttemptId.value, 
+    currentQuestionIndex.value, 
+    countdown.value, 
+    selectedAnswers.value
+  )
+  
+  // Gửi lên server
+  quizResumeService.saveProgress(
+    currentAttemptId.value,
+    currentQuestionIndex.value,
+    countdown.value,
+    selectedAnswers.value
+  ).then(() => {
+    console.info('💾 AUTOSAVE ok - Đã lưu tiến độ thành công')
+  }).catch((error) => {
+    console.error('💾 AUTOSAVE error - Lỗi khi lưu tiến độ:', error)
+  })
+}
+
+// ✅ ENHANCED ANSWER SELECTION WITH AUTO-SAVE
+function selectAnswer(questionId, answerId) {
+  // Không cho chọn nếu câu đã khóa
+  if (lockedQuestionIds.value.has(questionId)) return
+  
+  const oldAnswer = selectedAnswers.value[questionId]
+  selectedAnswers.value[questionId] = answerId
+
+  // Visual feedback
+  const answerElement = document.getElementById(`answer-${answerId}`)
+  if (answerElement) {
+    answerElement.style.transform = 'scale(0.95)'
+    setTimeout(() => {
+      answerElement.style.transform = 'scale(1)'
+    }, 150)
+  }
+  
+  // ✅ AUTO-SAVE khi chọn đáp án (debounce 2 giây)
+  if (oldAnswer !== answerId) {
+    console.info('💾 AUTOSAVE scheduled - Chọn đáp án mới, lưu tiến độ sau 2 giây')
+    setTimeout(() => {
+      if (currentAttemptId.value) {
+        saveProgressCallback()
+      }
+    }, 2000)
+  }
+}
+
+// ✅ ENHANCED NAVIGATION WITH AUTO-SAVE
+function nextQuestion() {
+  if (currentQuestionIndex.value < questions.value.length - 1) {
+    // Khi chuyển câu, cũng khóa câu hiện tại để tránh quay lại sửa
+    if (currentQuestion.value?.id) lockedQuestionIds.value.add(currentQuestion.value.id)
+    
+    // ✅ AUTO-SAVE khi chuyển câu
+    if (currentAttemptId.value) {
+      console.info('💾 AUTOSAVE scheduled - Chuyển câu, lưu tiến độ sau 1 giây')
+      setTimeout(() => {
+        saveProgressCallback()
+      }, 1000)
+    }
+    
+    goToQuestion(currentQuestionIndex.value + 1)
+  } else {
+    clearInterval(timer)
+    submitQuiz()
+  }
+}
+
+// ✅ CLEANUP ON UNMOUNT
+onBeforeUnmount(() => {
+  clearInterval(timer)
+  if (autoSaveIntervalId) {
+    autoSaveService.stopAutoSave(autoSaveIntervalId)
+  }
+})
 </script>
 
 <template>
@@ -388,6 +609,16 @@ async function submitQuiz() {
         </button>
       </div>
     </div>
+    
+    <!-- ✅ RESUME QUIZ MODAL -->
+    <ResumeQuizModal
+      v-if="showResumeModal"
+      :quiz-id="parseInt(quizId)"
+      :attempt-data="attemptData"
+      @resume="handleResume"
+      @new-attempt="handleNewAttempt"
+      @close="closeResumeModal"
+    />
   </div>
 </template>
 

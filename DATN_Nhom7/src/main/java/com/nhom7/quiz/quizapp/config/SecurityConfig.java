@@ -95,6 +95,7 @@ public class SecurityConfig {
                                 "/api/quiz/user/**",
                                 "/api/quiz-attempts/**",
                                 "/api/quiz/create-quiz-with-image", // ✅ Tạo quiz cần auth
+                                "/api/quiz-resume/**", // ✅ Resume quiz endpoints
                                 "/api/answer/**",
                                 "/api/result/**")
                         .hasAnyRole("USER", "ADMIN")

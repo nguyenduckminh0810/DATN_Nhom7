@@ -99,13 +99,10 @@ async function playQuiz(quizId) {
     return
   }
   console.log('🎮 Playing quiz:', quizId, 'for user:', userId)
-  try {
-    const { quizAttemptService } = await import('@/services/quizAttemptService')
-    const resp = await quizAttemptService.startAttempt(quizId)
-    router.push({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
-  } catch (e) {
-    console.error('Không thể bắt đầu attempt:', e)
-  }
+  
+  // ✅ CHỈ CHUYỂN TRANG, KHÔNG TẠO ATTEMPT
+  // Attempt sẽ được tạo sau khi kiểm tra resume trong PlayQuiz.vue
+  router.push({ name: 'PlayQuizSimple', params: { quizId: quizId } })
 }
 
 function goToQuizDetail(quizId) {
