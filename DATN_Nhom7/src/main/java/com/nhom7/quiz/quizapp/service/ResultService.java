@@ -9,11 +9,18 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import com.nhom7.quiz.quizapp.model.Answer;
 import com.nhom7.quiz.quizapp.model.Quiz;
 import com.nhom7.quiz.quizapp.model.Result;
 import com.nhom7.quiz.quizapp.model.User;
+import com.nhom7.quiz.quizapp.model.QuizAttempt;
+import com.nhom7.quiz.quizapp.model.AttemptStatus;
+import com.nhom7.quiz.quizapp.model.QuizAttemptProgress;
 import com.nhom7.quiz.quizapp.model.dto.CorrectAnswerDTO;
 import com.nhom7.quiz.quizapp.model.dto.EvaluationResult;
 import com.nhom7.quiz.quizapp.model.dto.QuizSubmissionDTO;
@@ -21,7 +28,11 @@ import com.nhom7.quiz.quizapp.repository.AnswerRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
 import com.nhom7.quiz.quizapp.repository.ResultRepo;
 import com.nhom7.quiz.quizapp.repository.UserRepo;
+import com.nhom7.quiz.quizapp.repository.QuizAttemptRepo;
+import com.nhom7.quiz.quizapp.repository.QuizAttemptProgressRepo;
+import com.nhom7.quiz.quizapp.service.NotificationService;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ResultService {
@@ -42,6 +53,12 @@ public class ResultService {
 
     @Autowired
     private NotificationService notificationService;
+    
+    @Autowired
+    private QuizAttemptRepo quizAttemptRepo;
+    
+    @Autowired
+    private QuizAttemptProgressRepo quizAttemptProgressRepo;
 
     // Kiểm tra quyền admin
     private void checkAdminPermission() {
@@ -139,6 +156,34 @@ public class ResultService {
         result.setCompletedAt(LocalDateTime.now());
         result.setTimeTaken(timeTakenSec);
         resultRepo.save(result);
+        
+        // ✅ CẬP NHẬT STATUS CỦA QUIZ ATTEMPT THÀNH SUBMITTED
+        try {
+            // Tìm attempt mới nhất của user cho quiz này
+            Pageable pageable = PageRequest.of(0, 1, Sort.by("attemptedAt").descending());
+            Page<QuizAttempt> attemptsPage = quizAttemptRepo.findByUserIdAndQuizId(user.getId(), quiz.getId(), pageable);
+            List<QuizAttempt> attempts = attemptsPage.getContent();
+            if (!attempts.isEmpty()) {
+                QuizAttempt latestAttempt = attempts.get(0);
+                if (latestAttempt.getStatus() == AttemptStatus.IN_PROGRESS) {
+                    latestAttempt.setStatus(AttemptStatus.SUBMITTED);
+                    latestAttempt.setScore(score);
+                    latestAttempt.setTimeTaken(timeTakenSec);
+                    quizAttemptRepo.save(latestAttempt);
+                    
+                    // Xóa progress nếu có
+                    Optional<QuizAttemptProgress> progressOpt = quizAttemptProgressRepo.findByAttemptId(latestAttempt.getId());
+                    if (progressOpt.isPresent()) {
+                        quizAttemptProgressRepo.delete(progressOpt.get());
+                    }
+                    
+                    System.out.println("✅ Đã cập nhật QuizAttempt ID " + latestAttempt.getId() + " thành SUBMITTED");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Lỗi khi cập nhật QuizAttempt status: " + e.getMessage());
+            // Không throw error vì đây không phải lỗi nghiêm trọng
+        }
 
         // Thông báo (giữ nguyên)
         try { notificationService.sendQuizResultNotification(user.getId(), quiz.getId(), quiz.getTitle(), score); } catch (Exception ignore) {}

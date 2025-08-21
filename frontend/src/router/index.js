@@ -126,6 +126,12 @@ const routes = [
         meta: { requiresAuth: true, requiresUser: true },
       },
       {
+        path: 'quiz/:quizId/play',
+        name: 'PlayQuizSimple',
+        component: PlayQuiz,
+        meta: { requiresAuth: true, requiresUser: true },
+      },
+      {
         path: 'attempt/:attemptId/play',
         name: 'PlayAttempt',
         component: PlayQuiz,
