@@ -161,7 +161,7 @@ async function fetchAnswersForQuestion(questionId) {
   try {
     const { data } = await api.get(`/answer/${questionId}`, auth)
     answersMap.value[questionId] = data
-  } catch {}
+  } catch { }
 }
 
 async function fetchQuestionsByQuizId() {
@@ -411,7 +411,7 @@ async function previewQuiz() {
     const { quizAttemptService } = await import('@/services/quizAttemptService')
     const resp = await quizAttemptService.startAttempt(quizId)
     router.push({ name: 'PlayAttempt', params: { attemptId: resp.attemptId } })
-  } catch {}
+  } catch { }
 }
 
 function switchTab(tabName) {
@@ -581,32 +581,18 @@ watch(
                   {{ quizStats.totalQuestions }} câu hỏi
                 </span>
                 <!-- Bỏ tổng điểm trong header -->
-                <span
-                  class="meta-item"
-                  :class="{
-                    'text-success': quizStats.hasAnswers,
-                    'text-warning': !quizStats.hasAnswers,
-                  }"
-                >
-                  <i
-                    :class="
-                      quizStats.hasAnswers ? 'bi bi-check-circle' : 'bi bi-exclamation-triangle'
-                    "
-                  ></i>
+                <span class="meta-item" :class="{
+                  'text-success': quizStats.hasAnswers,
+                  'text-warning': !quizStats.hasAnswers,
+                }">
+                  <i :class="quizStats.hasAnswers ? 'bi bi-check-circle' : 'bi bi-exclamation-triangle'
+                    "></i>
                   {{ quizStats.hasAnswers ? 'Hoàn tất' : 'Chưa hoàn tất' }}
                 </span>
               </div>
             </div>
           </div>
-          <div class="header-actions">
-            <button
-              @click="previewQuiz"
-              class="btn btn-primary d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm custom-preview-btn"
-            >
-              <i class="bi bi-eye-fill fs-5"></i>
-              <span class="fw-semibold">Xem trước</span>
-            </button>
-          </div>
+
         </div>
       </div>
     </div>
@@ -618,27 +604,16 @@ watch(
           <!-- Navigation Tabs -->
           <div class="nav-tabs-container">
             <nav class="nav nav-tabs">
-              <button
-                class="nav-link"
-                :class="{ active: activeTab === 'info' }"
-                @click="switchTab('info')"
-              >
+              <button class="nav-link" :class="{ active: activeTab === 'info' }" @click="switchTab('info')">
                 <i class="bi bi-info-circle"></i>
                 <span>Thông tin Quiz</span>
               </button>
-              <button
-                class="nav-link"
-                :class="{ active: activeTab === 'questions' }"
-                @click="switchTab('questions')"
-              >
+              <button class="nav-link" :class="{ active: activeTab === 'questions' }" @click="switchTab('questions')">
                 <i class="bi bi-list-ul"></i>
                 <span>Câu hỏi ({{ questions.length }})</span>
               </button>
-              <button
-                class="nav-link"
-                :class="{ active: activeTab === 'add-question' }"
-                @click="switchTab('add-question')"
-              >
+              <button class="nav-link" :class="{ active: activeTab === 'add-question' }"
+                @click="switchTab('add-question')">
                 <i class="bi bi-plus-circle"></i>
                 <span>Thêm câu hỏi</span>
               </button>
@@ -659,16 +634,9 @@ watch(
                 <div class="card-body">
                   <form @submit.prevent="updateQuizInfo" class="quiz-form">
                     <div class="form-group">
-                      <label class="form-label"
-                        >Tiêu đề Quiz <span class="required-asterisk">*</span></label
-                      >
-                      <input
-                        type="text"
-                        class="form-control"
-                        :class="{ 'is-invalid': validationErrors.title }"
-                        v-model="quizInfo.title"
-                        placeholder="Nhập tiêu đề quiz..."
-                      />
+                      <label class="form-label">Tiêu đề Quiz <span class="required-asterisk">*</span></label>
+                      <input type="text" class="form-control" :class="{ 'is-invalid': validationErrors.title }"
+                        v-model="quizInfo.title" placeholder="Nhập tiêu đề quiz..." />
                       <div v-if="validationErrors.title" class="invalid-feedback">
                         {{ validationErrors.title }}
                       </div>
@@ -676,12 +644,8 @@ watch(
 
                     <div class="form-group">
                       <label class="form-label">Mô tả</label>
-                      <textarea
-                        class="form-control"
-                        v-model="quizInfo.description"
-                        rows="3"
-                        placeholder="Mô tả ngắn về quiz này..."
-                      ></textarea>
+                      <textarea class="form-control" v-model="quizInfo.description" rows="3"
+                        placeholder="Mô tả ngắn về quiz này..."></textarea>
                     </div>
 
                     <div class="row">
@@ -704,13 +668,8 @@ watch(
                           <label class="form-label">Hình ảnh Quiz</label>
 
                           <div class="file-upload">
-                            <input
-                              type="file"
-                              id="imageFileInput"
-                              class="form-control"
-                              accept="image/*"
-                              @change="handleImageFileSelect"
-                            />
+                            <input type="file" id="imageFileInput" class="form-control" accept="image/*"
+                              @change="handleImageFileSelect" />
                             <small class="form-text">
                               Chọn file hình ảnh (tối đa 5MB) • Hỗ trợ: JPG, PNG, WEBP...
                             </small>
@@ -719,13 +678,8 @@ watch(
                             <div v-if="imagePreview" class="image-preview-container">
                               <div class="image-preview">
                                 <img :src="imagePreview" alt="Quiz image preview" />
-                                <button
-                                  type="button"
-                                  class="remove-image-btn"
-                                  @click="clearImage"
-                                  :disabled="isUploadingImage"
-                                  title="Xoá ảnh"
-                                >
+                                <button type="button" class="remove-image-btn" @click="clearImage"
+                                  :disabled="isUploadingImage" title="Xoá ảnh">
                                   <i class="bi bi-x-lg"></i>
                                 </button>
                               </div>
@@ -736,11 +690,7 @@ watch(
                     </div>
 
                     <div class="form-actions">
-                      <button
-                        type="submit"
-                        class="btn btn-primary"
-                        :disabled="isSaving || isUploadingImage"
-                      >
+                      <button type="submit" class="btn btn-primary" :disabled="isSaving || isUploadingImage">
                         <i class="bi bi-check-lg" v-if="!isSaving && !isUploadingImage"></i>
                         <i class="bi bi-arrow-clockwise spin" v-else></i>
                         <span>
@@ -804,31 +754,21 @@ watch(
                     <!-- Bulk Select Header -->
                     <div class="bulk-select-header" v-if="questions.length > 1">
                       <label class="checkbox-container">
-                        <input
-                          type="checkbox"
-                          :checked="selectedQuestions.length === questions.length"
-                          @change="selectAllQuestions"
-                        />
+                        <input type="checkbox" :checked="selectedQuestions.length === questions.length"
+                          @change="selectAllQuestions" />
                         <span class="checkmark"></span>
                         <span class="label">Chọn tất cả</span>
                       </label>
                     </div>
 
                     <!-- Question Items -->
-                    <div
-                      v-for="(question, index) in filteredQuestions"
-                      :key="question.id"
-                      class="question-item"
-                      :class="{ editing: editingQuestion?.id === question.id }"
-                    >
+                    <div v-for="(question, index) in filteredQuestions" :key="question.id" class="question-item"
+                      :class="{ editing: editingQuestion?.id === question.id }">
                       <div class="question-header">
                         <div class="question-meta">
                           <label class="checkbox-container">
-                            <input
-                              type="checkbox"
-                              :checked="selectedQuestions.includes(question.id)"
-                              @change="toggleQuestionSelection(question.id)"
-                            />
+                            <input type="checkbox" :checked="selectedQuestions.includes(question.id)"
+                              @change="toggleQuestionSelection(question.id)" />
                             <span class="checkmark"></span>
                           </label>
                           <span class="question-number">Câu {{ index + 1 }}</span>
@@ -839,34 +779,18 @@ watch(
                           </span>
                         </div>
                         <div class="question-actions">
-                          <button
-                            @click="duplicateQuestion(question)"
-                            class="action-btn"
-                            title="Nhân bản"
-                          >
+                          <button @click="duplicateQuestion(question)" class="action-btn" title="Nhân bản">
                             <i class="bi bi-copy"></i>
                           </button>
-                          <button
-                            @click="startEditQuestion(question)"
-                            class="action-btn"
-                            title="Chỉnh sửa"
-                            v-if="editingQuestion?.id !== question.id"
-                          >
+                          <button @click="startEditQuestion(question)" class="action-btn" title="Chỉnh sửa"
+                            v-if="editingQuestion?.id !== question.id">
                             <i class="bi bi-pencil"></i>
                           </button>
-                          <button
-                            @click="cancelEdit"
-                            class="action-btn"
-                            title="Huỷ"
-                            v-if="editingQuestion?.id === question.id"
-                          >
+                          <button @click="cancelEdit" class="action-btn" title="Huỷ"
+                            v-if="editingQuestion?.id === question.id">
                             <i class="bi bi-x-lg"></i>
                           </button>
-                          <button
-                            @click="deleteQuestion(question.id)"
-                            class="action-btn danger"
-                            title="Xoá"
-                          >
+                          <button @click="deleteQuestion(question.id)" class="action-btn danger" title="Xoá">
                             <i class="bi bi-trash"></i>
                           </button>
                         </div>
@@ -876,12 +800,8 @@ watch(
                       <div v-if="editingQuestion?.id !== question.id" class="question-content">
                         <div class="question-text">{{ question.content }}</div>
                         <div class="answers-list" v-if="answersMap[question.id]">
-                          <div
-                            v-for="answer in answersMap[question.id]"
-                            :key="answer.id"
-                            class="answer-item"
-                            :class="{ correct: answer.correct }"
-                          >
+                          <div v-for="answer in answersMap[question.id]" :key="answer.id" class="answer-item"
+                            :class="{ correct: answer.correct }">
                             <div class="answer-indicator">
                               <i v-if="answer.correct" class="bi bi-check-circle-fill"></i>
                               <i v-else class="bi bi-circle"></i>
@@ -896,12 +816,8 @@ watch(
                         <form @submit.prevent="saveAllChanges">
                           <div class="form-group">
                             <label class="form-label">Nội dung câu hỏi</label>
-                            <textarea
-                              class="form-control"
-                              :class="{ 'is-invalid': validationErrors.content }"
-                              v-model="editingQuestion.content"
-                              rows="3"
-                            ></textarea>
+                            <textarea class="form-control" :class="{ 'is-invalid': validationErrors.content }"
+                              v-model="editingQuestion.content" rows="3"></textarea>
                             <div v-if="validationErrors.content" class="invalid-feedback">
                               {{ validationErrors.content }}
                             </div>
@@ -909,20 +825,12 @@ watch(
 
                           <div class="form-group">
                             <label class="form-label">Câu trả lời</label>
-                            <div
-                              v-for="(answer, i) in answersMap[question.id]"
-                              :key="answer.id"
-                              class="answer-input-group"
-                            >
+                            <div v-for="(answer, i) in answersMap[question.id]" :key="answer.id"
+                              class="answer-input-group">
                               <div class="input-group">
                                 <div class="input-group-text">
-                                  <input
-                                    class="form-check-input"
-                                    type="radio"
-                                    :name="'correct-' + question.id"
-                                    :checked="answer.correct"
-                                    @change="setCorrectAnswer(question.id, answer.id)"
-                                  />
+                                  <input class="form-check-input" type="radio" :name="'correct-' + question.id"
+                                    :checked="answer.correct" @change="setCorrectAnswer(question.id, answer.id)" />
                                 </div>
                                 <input type="text" class="form-control" v-model="answer.content" />
                               </div>
@@ -939,15 +847,9 @@ watch(
                               <i class="bi bi-clock"></i>
                               Thời gian (giây)
                             </label>
-                            <input
-                              type="number"
-                              class="form-control"
-                              :class="{ 'is-invalid': validationErrors.timeLimit }"
-                              v-model="editingQuestion.timeLimit"
-                              min="0"
-                              max="300"
-                              placeholder="30"
-                            />
+                            <input type="number" class="form-control"
+                              :class="{ 'is-invalid': validationErrors.timeLimit }" v-model="editingQuestion.timeLimit"
+                              min="0" max="300" placeholder="30" />
                             <div v-if="validationErrors.timeLimit" class="invalid-feedback">
                               {{ validationErrors.timeLimit }}
                             </div>
@@ -960,11 +862,7 @@ watch(
                               <i class="bi bi-arrow-clockwise spin" v-else></i>
                               <span>{{ isSaving ? 'Đang lưu...' : 'Lưu tất cả thay đổi' }}</span>
                             </button>
-                            <button
-                              type="button"
-                              @click="cancelEdit"
-                              class="btn btn-outline-secondary"
-                            >
+                            <button type="button" @click="cancelEdit" class="btn btn-outline-secondary">
                               <i class="bi bi-x-lg"></i>
                               Huỷ
                             </button>
@@ -989,55 +887,31 @@ watch(
                 <div class="card-body">
                   <form @submit.prevent="createQuestion" class="question-form">
                     <div class="form-group">
-                      <label class="form-label"
-                        >Nội dung câu hỏi <span class="required-asterisk">*</span></label
-                      >
-                      <textarea
-                        class="form-control"
-                        :class="{ 'is-invalid': validationErrors.content }"
-                        v-model="newQuestion.content"
-                        rows="4"
-                        placeholder="Nhập nội dung câu hỏi..."
-                      ></textarea>
+                      <label class="form-label">Nội dung câu hỏi <span class="required-asterisk">*</span></label>
+                      <textarea class="form-control" :class="{ 'is-invalid': validationErrors.content }"
+                        v-model="newQuestion.content" rows="4" placeholder="Nhập nội dung câu hỏi..."></textarea>
                       <div v-if="validationErrors.content" class="invalid-feedback">
                         {{ validationErrors.content }}
                       </div>
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label"
-                        >Câu trả lời <span class="required-asterisk">*</span></label
-                      >
+                      <label class="form-label">Câu trả lời <span class="required-asterisk">*</span></label>
                       <div class="answers-input">
-                        <div
-                          v-for="(answer, i) in newQuestion.answers"
-                          :key="i"
-                          class="answer-input-group"
-                        >
+                        <div v-for="(answer, i) in newQuestion.answers" :key="i" class="answer-input-group">
                           <div class="input-group">
                             <div class="input-group-text">
-                              <input
-                                class="form-check-input"
-                                type="radio"
-                                name="new-question-correct"
-                                :checked="answer.correct"
-                                @change="setNewCorrectAnswer(i)"
-                              />
+                              <input class="form-check-input" type="radio" name="new-question-correct"
+                                :checked="answer.correct" @change="setNewCorrectAnswer(i)" />
                             </div>
-                            <input
-                              type="text"
-                              class="form-control"
-                              v-model="answer.content"
-                              :placeholder="'Câu trả lời ' + (i + 1)"
-                            />
+                            <input type="text" class="form-control" v-model="answer.content"
+                              :placeholder="'Câu trả lời ' + (i + 1)" />
                           </div>
                         </div>
                         <div v-if="validationErrors.answers" class="invalid-feedback d-block">
                           {{ validationErrors.answers }}
                         </div>
-                        <small class="form-text"
-                          >Chọn một câu trả lời đúng bằng cách click vào radio button</small
-                        >
+                        <small class="form-text">Chọn một câu trả lời đúng bằng cách click vào radio button</small>
                       </div>
                     </div>
 
@@ -1048,15 +922,8 @@ watch(
                         <i class="bi bi-clock"></i>
                         Thời gian (giây) <span class="required-asterisk">*</span>
                       </label>
-                      <input
-                        type="number"
-                        class="form-control"
-                        :class="{ 'is-invalid': validationErrors.timeLimit }"
-                        v-model="newQuestion.timeLimit"
-                        min="0"
-                        max="300"
-                        placeholder="30"
-                      />
+                      <input type="number" class="form-control" :class="{ 'is-invalid': validationErrors.timeLimit }"
+                        v-model="newQuestion.timeLimit" min="0" max="300" placeholder="30" />
                       <div v-if="validationErrors.timeLimit" class="invalid-feedback">
                         {{ validationErrors.timeLimit }}
                       </div>
@@ -1069,12 +936,8 @@ watch(
                         <i class="bi bi-arrow-clockwise spin" v-else></i>
                         <span>{{ isSaving ? 'Đang thêm...' : 'Thêm câu hỏi' }}</span>
                       </button>
-                      <button
-                        type="button"
-                        @click="switchTab('questions')"
-                        class="btn btn-outline-secondary"
-                        v-if="questions.length > 0"
-                      >
+                      <button type="button" @click="switchTab('questions')" class="btn btn-outline-secondary"
+                        v-if="questions.length > 0">
                         <i class="bi bi-list-ul"></i>
                         Xem danh sách
                       </button>
@@ -1181,14 +1044,7 @@ watch(
               <i class="bi bi-clock"></i>
               Thời gian (giây) cho tất cả câu hỏi
             </label>
-            <input
-              type="number"
-              class="form-control"
-              v-model="globalTimeLimit"
-              min="0"
-              max="300"
-              placeholder="30"
-            />
+            <input type="number" class="form-control" v-model="globalTimeLimit" min="0" max="300" placeholder="30" />
             <small class="form-text">0 (không giới hạn) hoặc 5–300 giây</small>
           </div>
           <div class="alert alert-info">
@@ -1691,12 +1547,12 @@ watch(
   transition: all 0.3s ease;
 }
 
-.checkbox-container input:checked + .checkmark {
+.checkbox-container input:checked+.checkmark {
   background: #667eea;
   border-color: #667eea;
 }
 
-.checkbox-container input:checked + .checkmark::after {
+.checkbox-container input:checked+.checkmark::after {
   content: '✓';
   position: absolute;
   top: -2px;
@@ -1965,7 +1821,8 @@ watch(
 .answer-input-group .form-check-input {
   width: 18px;
   height: 18px;
-  accent-color: #2ed573; /* xanh */
+  accent-color: #2ed573;
+  /* xanh */
 }
 
 /* Viền bo tròn cho chính input đáp án (radio ở ngoài) */
