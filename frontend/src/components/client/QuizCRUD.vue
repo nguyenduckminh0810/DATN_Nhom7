@@ -85,7 +85,7 @@ onMounted(async () => {
   isLoading.value = true
   try {
     userId.value = await getUserId()
-    
+
     // ✅ ĐẢM BẢO USERNAME ĐƯỢC KHỞI TẠO ĐÚNG CÁCH
     if (!username.value) {
       const savedUsername = localStorage.getItem('username')
@@ -106,7 +106,7 @@ onMounted(async () => {
         }
       }
     }
-    
+
     await Promise.all([fetchCategories(), fetchQuizzes()])
   } finally {
     isLoading.value = false
@@ -883,10 +883,10 @@ const resetForm = () => {
                                 <div class="file-info-compact">
                                   <span class="file-name-compact">{{
                                     selectedExcelFile.name
-                                    }}</span>
+                                  }}</span>
                                   <small class="file-size-compact">{{
                                     formatFileSize(selectedExcelFile.size)
-                                    }}</small>
+                                  }}</small>
                                 </div>
                                 <button @click="removeExcelFile" type="button" class="btn-remove-compact">
                                   <i class="bi bi-x"></i>
@@ -2766,8 +2766,8 @@ spinner-ring:nth-child(3) {}
 
 .btn-remove-compact {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: 8px;
+  right: 8px;
   background: #dc3545;
   color: white;
   border: none;
@@ -3245,5 +3245,55 @@ spinner-ring:nth-child(3) {}
 .qr-placeholder small {
   color: #6c757d;
   font-size: 0.8rem;
+}
+
+/* Giữ layout hiện tại của khối file */
+.file-selected-compact {
+  position: relative;
+  /* tạo context cho nút bên trong */
+}
+
+/* Ghi đè riêng cho nút remove trong khối file đã chọn */
+.file-selected-compact .btn-remove-compact {
+  position: static;
+  /* bỏ absolute */
+  margin-left: auto;
+  /* đẩy nút sang phải trong flex row */
+  width: 28px;
+  height: 28px;
+}
+
+.file-selected-compact {
+  position: relative;
+}
+
+.file-selected-compact .btn-remove-compact {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+}
+
+.file-selected-compact {
+  position: relative;
+}
+
+.file-selected-compact .btn-remove-compact {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
+  /* kéo ra ngoài góc một nửa kích thước */
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  padding: 0;
+  display: flex;
+  /* căn giữa icon */
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  /* tránh lệch do line-height */
+  font-size: 14px;
+  /* kích thước icon */
 }
 </style>
