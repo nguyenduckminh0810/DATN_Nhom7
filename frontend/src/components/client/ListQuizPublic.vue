@@ -528,19 +528,20 @@ function handleImageError(event) {
 
 /* Quiz Card */
 .quiz-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   backdrop-filter: blur(20px);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px var(--shadow-color);
+  border: 1px solid var(--border-color);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
 .quiz-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 50px var(--shadow-color);
+  border-color: var(--primary-color);
 }
 
 /* Quiz Image */
@@ -548,6 +549,7 @@ function handleImageError(event) {
   position: relative;
   height: 200px;
   overflow: hidden;
+  background: var(--bg-secondary);
 }
 
 .quiz-image {
@@ -567,7 +569,7 @@ function handleImageError(event) {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -580,7 +582,7 @@ function handleImageError(event) {
 }
 
 .play-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -590,7 +592,7 @@ function handleImageError(event) {
   cursor: pointer;
   transition: all 0.3s ease;
   transform: translateY(20px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 25px var(--shadow-color);
 }
 
 .play-btn.hovered {
@@ -599,7 +601,7 @@ function handleImageError(event) {
 
 .play-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 15px 35px var(--shadow-color);
 }
 
 .play-btn i {
@@ -610,6 +612,8 @@ function handleImageError(event) {
 /* Quiz Content */
 .quiz-content {
   padding: 25px;
+  background: var(--card-bg);
+  color: var(--text-primary);
 }
 
 .quiz-header {
@@ -622,21 +626,20 @@ function handleImageError(event) {
 .quiz-title {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #333;
+  color: var(--text-primary);
   margin: 0;
   cursor: pointer;
   transition: color 0.3s ease;
   flex: 1;
   margin-right: 15px;
   line-height: 1.4;
-
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .quiz-title:hover {
-  color: #667eea;
+  color: var(--primary-color);
 }
 
 .quiz-actions {
@@ -655,15 +658,17 @@ function handleImageError(event) {
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.9rem;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
 }
 
 .report-btn {
-  background: rgba(220, 53, 69, 0.1);
-  color: #dc3545;
+  background: var(--danger-bg);
+  color: var(--danger-color);
 }
 
 .report-btn:hover {
-  background: #dc3545;
+  background: var(--danger-color);
   color: white;
   transform: scale(1.1);
 }
@@ -679,17 +684,17 @@ function handleImageError(event) {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
 .meta-item i {
-  color: #667eea;
+  color: var(--primary-color);
   font-size: 0.8rem;
 }
 
 .quiz-description {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.95rem;
   line-height: 1.5;
   margin-bottom: 20px;
@@ -712,6 +717,8 @@ function handleImageError(event) {
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 0.8rem;
+  background: var(--success-color);
+  color: white;
   font-weight: 600;
 }
 

@@ -816,17 +816,20 @@ watch(
 
 <style scoped>
 .modal-xl {
-  max-width: 90%;
+  max-width: 700px !important;
+  width: 90% !important;
 }
 
 .modal-content {
-  min-height: 400px;
+  max-height: 70vh !important;
+  overflow-y: auto !important;
   /* ✅ TRÁNH LAYOUT SHIFT */
   transition: all 0.3s ease;
 }
 
 .modal-body {
-  min-height: 300px;
+  max-height: 50vh !important;
+  overflow-y: auto !important;
   /* ✅ TRÁNH LAYOUT SHIFT */
 }
 
@@ -881,17 +884,17 @@ watch(
 }
 
 .quiz-status-badge.public {
-  background: rgba(40, 167, 69, 0.9);
-  color: white;
+  background: var(--success-color) !important;
+  color: white !important;
 }
 
 .quiz-status-badge.private {
-  background: rgba(108, 117, 125, 0.9);
-  color: white;
+  background: var(--text-muted) !important;
+  color: white !important;
 }
 
 .quiz-title {
-  color: #2c3e50;
+  color: var(--text-primary) !important;
   font-weight: 700;
 }
 
@@ -906,14 +909,24 @@ watch(
   align-items: center;
   gap: 8px;
   font-size: 0.9rem;
+  color: var(--text-primary) !important;
+}
+
+.meta-item strong {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+}
+
+.meta-item span {
+  color: var(--text-secondary) !important;
 }
 
 .section-title {
-  color: #2c3e50;
+  color: var(--text-primary) !important;
   font-weight: 600;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--border-color) !important;
 }
 
 .stats-grid {
@@ -927,9 +940,11 @@ watch(
   align-items: center;
   gap: 12px;
   padding: 1rem;
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 12px;
   transition: transform 0.2s ease;
+  box-shadow: 0 2px 8px var(--shadow-color) !important;
 }
 
 .stat-card:hover {
@@ -978,34 +993,307 @@ watch(
 .stat-number {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--text-primary) !important;
   line-height: 1;
 }
 
 .stat-label {
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--text-secondary) !important;
   font-weight: 500;
 }
 
 .questions-preview {
-  background: #f8f9fa;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 12px;
   padding: 1rem;
+  box-shadow: 0 2px 8px var(--shadow-color) !important;
 }
 
 /* Pagination for questions */
 .questions-pagination .page-info {
   font-weight: 600;
-  color: #495057;
+  color: var(--text-primary) !important;
+}
+
+/* Responsive modal sizing */
+@media (max-width: 768px) {
+  .modal-xl {
+    max-width: 95% !important;
+    width: 95% !important;
+    margin: 10px auto !important;
+  }
+  
+  .modal-content {
+    max-height: 75vh !important;
+  }
+  
+  .modal-body {
+    max-height: 60vh !important;
+  }
+}
+
+/* Compact layout để tiết kiệm không gian */
+.modal-header {
+  padding: 0.75rem 1rem !important;
+}
+
+.modal-body {
+  padding: 1rem !important;
+}
+
+.modal-footer {
+  padding: 0.75rem 1rem !important;
+}
+
+/* Giảm margin và padding cho các section */
+.row.mb-4 {
+  margin-bottom: 1rem !important;
+}
+
+.section-title {
+  margin-bottom: 0.75rem !important;
+  padding-bottom: 0.25rem !important;
+}
+
+/* Giảm kích thước stat cards */
+.stat-card {
+  padding: 0.75rem !important;
+}
+
+.stat-icon {
+  width: 40px !important;
+  height: 40px !important;
+  font-size: 1rem !important;
+}
+
+.stat-number {
+  font-size: 1.25rem !important;
+}
+
+.stat-label {
+  font-size: 0.75rem !important;
+}
+
+/* Giảm kích thước quiz image */
+.quiz-image {
+  height: 150px !important;
+}
+
+/* Giảm gap trong stats grid */
+.stats-grid {
+  gap: 0.75rem !important;
+}
+
+/* Ẩn một số phần không cần thiết khi modal nhỏ */
+@media (max-height: 600px) {
+  .quiz-meta .meta-item:nth-child(n+4) {
+    display: none !important;
+  }
+  
+  .questions-preview {
+    display: none !important;
+  }
+  
+  .modal-body {
+    max-height: 45vh !important;
+  }
+}
+
+/* Ẩn thêm phần khi modal rất nhỏ */
+@media (max-height: 500px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  
+  .stat-card {
+    padding: 0.5rem !important;
+  }
+  
+  .stat-icon {
+    width: 35px !important;
+    height: 35px !important;
+    font-size: 0.9rem !important;
+  }
+  
+  .stat-number {
+    font-size: 1.1rem !important;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* Dark mode support for modal header */
+.modal-header {
+  background: var(--card-header-bg) !important;
+  color: var(--card-header-text) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Dark mode support for modal content */
+.modal-content {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+/* Tối ưu layout cho modal nhỏ */
+@media (max-width: 700px) {
+  .row .col-md-4 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  .row .col-md-8 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .quiz-image {
+    height: 120px !important;
+    max-width: 200px !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+}
+
+/* Đảm bảo modal luôn vừa màn hình */
+.modal.show {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Đảm bảo tất cả text đều có màu sắc phù hợp cho dark mode */
+.badge {
+  color: white !important;
+}
+
+.badge.bg-secondary {
+  background: var(--text-muted) !important;
+  color: white !important;
+}
+
+/* Đảm bảo pagination text có màu sắc phù hợp */
+.questions-pagination .page-info {
+  color: var(--text-primary) !important;
+}
+
+/* Đảm bảo các button có màu sắc phù hợp */
+.btn-close {
+  color: var(--text-primary) !important;
+}
+
+.btn-close-white {
+  color: white !important;
+}
+
+/* Đảm bảo loading spinner có màu sắc phù hợp */
+.loading-fade {
+  color: var(--text-secondary) !important;
+}
+
+/* Đảm bảo leaderboard component có màu sắc phù hợp cho dark mode */
+.leaderboard-container * {
+  color-scheme: light dark;
+}
+
+/* Đảm bảo leaderboard title có màu sắc phù hợp */
+.leaderboard-container h5,
+.leaderboard-container h6 {
+  color: var(--text-primary) !important;
+}
+
+/* Đảm bảo leaderboard text có màu sắc phù hợp */
+.leaderboard-container p,
+.leaderboard-container span {
+  color: var(--text-secondary) !important;
+}
+
+/* Đảm bảo leaderboard buttons có màu sắc phù hợp */
+.leaderboard-container .btn {
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.leaderboard-container .btn-primary {
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+.leaderboard-container .btn-outline-primary {
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.leaderboard-container .btn-outline-primary:hover {
+  background: var(--primary-color) !important;
+  color: white !important;
+}
+
+/* Đảm bảo leaderboard items có màu sắc phù hợp */
+.leaderboard-container .leaderboard-item,
+.leaderboard-container .rank-item {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.leaderboard-container .leaderboard-item:hover,
+.leaderboard-container .rank-item:hover {
+  background: var(--bg-secondary) !important;
+  border-color: var(--primary-color) !important;
+}
+
+/* Đảm bảo rank badges có màu sắc phù hợp */
+.leaderboard-container .rank-badge {
+  color: white !important;
+}
+
+.leaderboard-container .rank-1 {
+  background: linear-gradient(135deg, #ffd700, #ffb347) !important;
+  color: #8b4513 !important;
+}
+
+.leaderboard-container .rank-2 {
+  background: linear-gradient(135deg, #c0c0c0, #a8a8a8) !important;
+  color: #2f2f2f !important;
+}
+
+.leaderboard-container .rank-3 {
+  background: linear-gradient(135deg, #cd7f32, #b8860b) !important;
+  color: #2f1b14 !important;
+}
+
+/* Đảm bảo score và time text có màu sắc phù hợp */
+.leaderboard-container .score {
+  color: var(--success-color) !important;
+  font-weight: 600 !important;
+}
+
+.leaderboard-container .time {
+  color: var(--text-secondary) !important;
+  font-size: 0.875rem !important;
+}
+
+/* Đảm bảo player count badge có màu sắc phù hợp */
+.leaderboard-container .player-count {
+  background: var(--primary-color) !important;
+  color: white !important;
+  border: none !important;
 }
 
 .question-item {
-  background: white;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px var(--shadow-color) !important;
 }
 
 .question-header {
@@ -1018,27 +1306,27 @@ watch(
 
 .question-number {
   font-weight: 600;
-  color: #495057;
+  color: var(--text-primary) !important;
 }
 
 .question-points {
-  background: #28a745;
-  color: white;
+  background: var(--success-color) !important;
+  color: white !important;
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 0.8rem;
 }
 
 .question-time {
-  background: #17a2b8;
-  color: white;
+  background: var(--info-color) !important;
+  color: white !important;
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 0.8rem;
 }
 
 .question-content {
-  color: #2c3e50;
+  color: var(--text-primary) !important;
   line-height: 1.5;
 }
 
@@ -1052,9 +1340,11 @@ watch(
 }
 
 .recent-activity {
-  background: #f8f9fa;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 12px;
   padding: 1rem;
+  box-shadow: 0 2px 8px var(--shadow-color) !important;
 }
 
 .activity-item {
@@ -1062,11 +1352,11 @@ watch(
   align-items: flex-start;
   gap: 12px;
   padding: 1rem;
-  background: white;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 12px;
   margin-bottom: 0.75rem;
   transition: all 0.2s ease;
-  border: 1px solid #f1f3f4;
 }
 
 .activity-item:hover {
@@ -1093,14 +1383,14 @@ watch(
 
 .activity-text {
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--text-primary) !important;
   line-height: 1.4;
   margin-bottom: 0.25rem;
 }
 
 .activity-time {
   font-size: 0.75rem;
-  color: #6c757d;
+  color: var(--text-secondary) !important;
   font-weight: 400;
 }
 
@@ -1231,8 +1521,8 @@ watch(
   height: 35px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--border-color) !important;
+  box-shadow: 0 2px 4px var(--shadow-color) !important;
 }
 
 /* ✅ SHOW MORE BUTTON STYLING */
@@ -1271,21 +1561,24 @@ watch(
 
 /* Leaderboard Pagination Styles */
 .leaderboard-container {
-  background: #f8f9fa;
+  background: var(--card-bg) !important;
   border-radius: 8px;
   padding: 20px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 2px 8px var(--shadow-color) !important;
 }
 
 .pagination-controls {
-  background: white;
+  background: var(--card-bg) !important;
   border-radius: 6px;
   padding: 15px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 2px 4px var(--shadow-color) !important;
 }
 
 .pagination-info {
   font-size: 0.875rem;
+  color: var(--text-secondary) !important;
 }
 
 .pagination-buttons {
@@ -1295,7 +1588,7 @@ watch(
 
 .page-info {
   font-weight: 600;
-  color: #495057;
+  color: var(--text-primary) !important;
   min-width: 80px;
   text-align: center;
 }

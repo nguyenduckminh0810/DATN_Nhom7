@@ -18,13 +18,13 @@
           <p class="mb-1 small"><i class="bi bi-envelope-fill me-2"></i>quizmaster@example.com</p>
           <p class="mb-2 small"><i class="bi bi-telephone-fill me-2"></i>+84 123 456 789</p>
           <div class="d-flex gap-2">
-            <a href="#" class="btn btn-outline-light btn-sm rounded-circle"
+            <a href="https://www.facebook.com/" class="btn btn-outline-light btn-sm rounded-circle"
               ><i class="bi bi-facebook"></i
             ></a>
-            <a href="#" class="btn btn-outline-light btn-sm rounded-circle"
+            <a href="https://www.instagram.com/" class="btn btn-outline-light btn-sm rounded-circle"
               ><i class="bi bi-instagram"></i
             ></a>
-            <a href="#" class="btn btn-outline-light btn-sm rounded-circle"
+            <a href="https://www.linkedin.com/" class="btn btn-outline-light btn-sm rounded-circle"
               ><i class="bi bi-linkedin"></i
             ></a>
           </div>
