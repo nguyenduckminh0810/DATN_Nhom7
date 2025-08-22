@@ -238,10 +238,13 @@ const resetForm = () => {
 .join-quiz-card {
   background: var(--card-bg);
   border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px var(--shadow-color);
   overflow: hidden;
   width: 100%;
   max-width: 500px;
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
+  position: relative;
 }
 
 .card-header {
@@ -250,17 +253,22 @@ const resetForm = () => {
   padding: 30px;
   text-align: center;
   border-bottom: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
 .header-icon {
   font-size: 3rem;
   margin-bottom: 10px;
+  color: var(--primary-color);
 }
 
 .header-title {
   font-size: 2rem;
   font-weight: 700;
   margin: 0 0 10px 0;
+  color: var(--text-primary);
 }
 
 .header-subtitle {
@@ -271,6 +279,9 @@ const resetForm = () => {
 
 .card-body {
   padding: 30px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border-top: 1px solid var(--border-color);
 }
 
 .code-input-section {
@@ -285,75 +296,92 @@ const resetForm = () => {
 .code-input {
   width: 100%;
   padding: 15px 20px;
-  border: 2px solid #e1e5e9;
+  border: 2px solid var(--input-border);
   border-radius: 10px;
   font-size: 1.2rem;
   font-weight: 600;
   text-align: center;
   letter-spacing: 2px;
   transition: all 0.3s ease;
-  box-sizing: border-box; /* Ensure padding and border are included in width */
+  box-sizing: border-box;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  min-height: 50px;
+}
+
+.code-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+  font-weight: 500;
 }
 
 .code-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-shadow);
+  background: var(--input-bg);
+  color: var(--text-primary);
 }
 
 .code-input.error {
-  border-color: #e74c3c;
+  border-color: var(--danger-color);
+  background: var(--danger-bg);
 }
 
 .code-input.success {
-  border-color: #28a745;
+  border-color: var(--success-color);
+  background: var(--success-bg);
 }
 
 .input-decoration {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #e1e5e9;
-  color: #666;
-  padding: 5px 15px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  white-space: nowrap;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.code-input:not(:placeholder-shown) + .input-decoration,
-.code-input:focus + .input-decoration {
-  opacity: 0;
+  display: none; /* Ẩn hoàn toàn text "CODE" */
 }
 
 .join-btn {
   width: 100%;
   padding: 15px 25px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
   border-radius: 10px;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ensure button text is always visible */
+.join-btn span {
+  position: relative;
+  z-index: 2;
+  color: white;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .join-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  transform: translateY(-3px);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+  border-color: rgba(59, 130, 246, 0.4);
 }
 
 .join-btn:disabled {
-  opacity: 0.6;
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2);
+  border-color: rgba(107, 114, 128, 0.3);
 }
 
 .spin {
@@ -366,7 +394,7 @@ const resetForm = () => {
 }
 
 .error-message {
-  color: #e74c3c;
+  color: var(--danger-color);
   font-size: 0.9rem;
   margin: 0;
   display: flex;
@@ -379,13 +407,16 @@ const resetForm = () => {
   border-radius: 15px;
   padding: 25px;
   margin-top: 20px;
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(5px);
 }
 
 .preview-card {
   background: var(--card-bg);
   border-radius: 10px;
   padding: 20px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 5px 15px var(--shadow-color);
+  border: 1px solid var(--border-color);
 }
 
 .preview-header {
@@ -414,7 +445,7 @@ const resetForm = () => {
 }
 
 .quiz-status {
-  background: #28a745;
+  background: var(--success-color);
   color: white;
   padding: 5px 12px;
   border-radius: 20px;
@@ -430,7 +461,7 @@ const resetForm = () => {
 .start-btn {
   flex: 1;
   padding: 12px 20px;
-  background: #28a745;
+  background: var(--success-color);
   color: white;
   border: none;
   border-radius: 8px;
@@ -444,25 +475,25 @@ const resetForm = () => {
 }
 
 .start-btn:hover {
-  background: #218838;
+  background: var(--success-dark);
   transform: translateY(-1px);
 }
 
 .start-btn:disabled {
-  background: #6c757d;
+  background: var(--text-muted);
   cursor: not-allowed;
   opacity: 0.6;
   transform: none;
 }
 
 .start-btn:disabled:hover {
-  background: #6c757d;
+  background: var(--text-muted);
   transform: none;
 }
 
 .reset-btn {
   padding: 12px 20px;
-  background: #6c757d;
+  background: var(--text-muted);
   color: white;
   border: none;
   border-radius: 8px;
@@ -475,7 +506,7 @@ const resetForm = () => {
 }
 
 .reset-btn:hover {
-  background: #5a6268;
+  background: var(--text-secondary);
 }
 
 .instructions {
@@ -483,13 +514,16 @@ const resetForm = () => {
   border-radius: 10px;
   padding: 20px;
   margin-top: 20px;
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(5px);
 }
 
 .instruction-card {
   background: var(--card-bg);
   border-radius: 10px;
   padding: 20px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 5px 15px var(--shadow-color);
+  border: 1px solid var(--border-color);
 }
 
 .instruction-list {
@@ -506,7 +540,7 @@ const resetForm = () => {
 
 .instruction-icon {
   font-size: 1.5rem;
-  color: #1976d2;
+  color: var(--primary-color);
   margin-right: 15px;
   flex-shrink: 0;
 }

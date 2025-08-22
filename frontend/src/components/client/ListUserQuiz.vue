@@ -798,7 +798,7 @@ onMounted(async () => {
 }
 
 .quiz-description {
-  color: rgba(255, 255, 255, 0.9);
+  color: #e0e0e0;
   font-size: 0.95rem;
   line-height: 1.5;
   margin-bottom: 20px;
@@ -806,7 +806,7 @@ onMounted(async () => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .quiz-meta {
@@ -819,10 +819,10 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.9);
+  color: #f0f0f0;
   font-size: 0.9rem;
   font-weight: 600;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .author-info i {
@@ -832,18 +832,22 @@ onMounted(async () => {
 }
 
 .quiz-status {
-  background: rgba(255, 107, 157, 0.3);
+  background: rgba(255, 107, 157, 0.2);
   backdrop-filter: blur(10px);
   padding: 4px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 107, 157, 0.5);
+  border: 1px solid rgba(255, 107, 157, 0.4);
 }
 
 .status-text {
   color: #ff6b9d;
   font-size: 0.8rem;
-  font-weight: 600;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 107, 157, 0.15);
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 107, 157, 0.3);
 }
 
 .quiz-extra {
@@ -857,21 +861,25 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.18);
-  color: #1a202c;
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
   font-size: 0.92rem;
   font-weight: 600;
   border-radius: 12px;
   padding: 4px 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .badge.play-count i {
-  color: #00b8d4;
+  color: #00d4ff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .badge.created-at i {
   color: #ff6b9d;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .card-overlay {
@@ -1330,5 +1338,100 @@ onMounted(async () => {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* ✅ EMPTY STATE STYLES - TĂNG ĐỘ TƯƠNG PHẢN CHO DARK MODE */
+.empty-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 40px 20px;
+}
+
+.empty-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  padding: 50px 40px;
+  text-align: center;
+  max-width: 500px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: #00d4ff;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.empty-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 15px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.empty-message {
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  margin-bottom: 30px;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+/* ✅ TĂNG ĐỘ TƯƠNG PHẢN CHO NÚT CREATE */
+.empty-card .create-btn {
+  background: linear-gradient(45deg, #00d4ff, #00b8d4);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  padding: 18px 36px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.empty-card .create-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(0, 212, 255, 0.6);
+  background: linear-gradient(45deg, #00b8d4, #0288d1);
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.empty-card .create-btn:active {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+}
+
+/* ✅ RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+  .empty-card {
+    padding: 40px 30px;
+    margin: 0 20px;
+  }
+  
+  .empty-title {
+    font-size: 1.5rem;
+  }
+  
+  .empty-message {
+    font-size: 1rem;
+  }
+  
+  .empty-card .create-btn {
+    padding: 16px 32px;
+    font-size: 1.1rem;
+  }
 }
 </style>

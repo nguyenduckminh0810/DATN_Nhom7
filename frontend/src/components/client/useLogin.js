@@ -78,7 +78,9 @@ export function useLogin() {
         await getUserId().then((id) => id && localStorage.setItem('userId', id))
 
         // 👇 Điều hướng ngay tại đây
-        const target = (user.role || '').toUpperCase() === 'ADMIN' ? 'AdminDashboard' : 'Dashboard'
+        const userRole = (user.role || '').toUpperCase()
+        const target = userRole === 'ADMIN' ? 'AdminDashboard' : 'Dashboard'
+        console.log('🔍 Login redirect:', { userRole, target, user })
         router.replace({ name: target })
 
         return { success: true, user }

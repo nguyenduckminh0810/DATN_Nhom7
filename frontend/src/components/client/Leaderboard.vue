@@ -329,14 +329,15 @@ onMounted(async () => {
 <style scoped>
 /* ===== Theme tokens ===== */
 :root {
-  --bg: #ffffff;
-  --card: #ffffff;
-  --border: rgba(0, 0, 0, 0.08);
-  --text: #1f2937;
-  --muted: #6b7280;
-  --success: #16a34a;
-  --accent1: #667eea;
-  --accent2: #764ba2;
+  /* Sử dụng global CSS variables để đồng bộ với hệ thống theme */
+  --bg: var(--app-background);
+  --card: var(--card-bg);
+  --border: var(--border-color);
+  --text: var(--text-primary);
+  --muted: var(--text-secondary);
+  --success: var(--success-color);
+  --accent1: var(--primary-color);
+  --accent2: var(--primary-dark);
 
   --gold1: #ffe98a;
   --gold2: #f59e0b;
@@ -345,19 +346,58 @@ onMounted(async () => {
   --bronze1: #ffd1a3;
   --bronze2: #c08457;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b0f19;
-    --card: #0f1525;
-    --border: rgba(255, 255, 255, 0.08);
-    --text: #e5e7eb;
-    --muted: #9ca3af;
-  }
-}
 
 /* Utility (để dùng cho icon đồng) */
 .text-bronze {
   color: var(--bronze2);
+}
+
+/* Đảm bảo tất cả text đều có màu sắc phù hợp cho dark mode */
+.leaderboard-header h6 {
+  color: var(--text-primary) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.leaderboard-header .badge {
+  background: var(--primary-color) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.score-info .score-value {
+  color: var(--success-color) !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.score-info .time-taken {
+  color: var(--text-secondary) !important;
+  font-size: 0.875rem !important;
+}
+
+.pagination-info small {
+  color: var(--text-secondary) !important;
+}
+
+.page-info {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+.btn-outline-primary {
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.btn-outline-primary:hover {
+  background: var(--primary-color) !important;
+  color: white !important;
+}
+
+.btn-outline-primary:disabled {
+  color: var(--text-muted) !important;
+  border-color: var(--border-color) !important;
+  opacity: 0.6 !important;
 }
 
 /* ===== Container ===== */
@@ -394,14 +434,17 @@ onMounted(async () => {
   margin-bottom: 10px;
   border-radius: 14px;
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--card) 88%, transparent);
+  background: var(--card) !important;
   transition:
     box-shadow 0.18s ease,
     transform 0.15s ease;
+  box-shadow: 0 2px 8px var(--shadow-color) !important;
 }
 .leaderboard-item:hover {
   transform: translateX(2px);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 10px 22px var(--shadow-color) !important;
+  background: var(--bg-secondary) !important;
+  border-color: var(--primary-color) !important;
 }
 
 /* Rank badge (1–3 = medal, còn lại là số) */
@@ -421,11 +464,12 @@ onMounted(async () => {
   border-radius: 50%;
   color: #fff;
   font-size: 0.9rem;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 16px var(--shadow-color) !important;
 }
 .rank-number {
   font-weight: 900;
-  color: var(--muted);
+  color: var(--text-primary) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* User info */
@@ -450,9 +494,12 @@ onMounted(async () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text-primary) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 .user-details small {
-  color: var(--muted);
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
 }
 
 /* Score block */

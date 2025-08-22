@@ -305,12 +305,24 @@ router.beforeEach((to, from, next) => {
   const role = (user?.role || '').toUpperCase()
   const isAdmin = !!adminUser || role === 'ADMIN'
   const isBanned = localStorage.getItem('banned') === '1' || role === 'BANNED'
+  
+  console.log('🔍 Navigation Guard:', { 
+    to: to.name, 
+    from: from.name, 
+    token: !!token, 
+    adminUser: !!adminUser, 
+    userRole: role, 
+    isAdmin, 
+    isBanned 
+  })
 
   // ✅ Trang Login: nếu đã đăng nhập thì đẩy ra Dashboard phù hợp
   if (to.name === 'Login') {
     if (token || adminUser) {
       if (isBanned) return next({ name: 'Ban' })
-      return next({ name: isAdmin ? 'AdminDashboard' : 'Dashboard' })
+      const redirectTarget = isAdmin ? 'AdminDashboard' : 'Dashboard'
+      console.log('🔍 Login redirect:', { isAdmin, redirectTarget })
+      return next({ name: redirectTarget })
     }
     return next() // chưa login -> cho ở lại trang Login
   }
@@ -319,7 +331,15 @@ router.beforeEach((to, from, next) => {
   if (to.name === 'Ban') return next()
 
   // ✅ Các trang public khác
-  if (ALWAYS_ALLOW.has(to.name)) return next()
+  if (ALWAYS_ALLOW.has(to.name)) {
+    // ✅ Nếu user đã đăng nhập và đang vào Home -> redirect về Dashboard
+    if (to.name === 'Home' && (token || adminUser) && !isBanned) {
+      const redirectTarget = isAdmin ? 'AdminDashboard' : 'Dashboard'
+      console.log('🔍 Home redirect:', { isAdmin, redirectTarget })
+      return next({ name: redirectTarget })
+    }
+    return next()
+  }
 
   // 🔒 Nếu bị ban -> đẩy về /ban
   if (isBanned) return next({ name: 'Ban' })
@@ -336,6 +356,7 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresUser) {
     if (!token && !adminUser) return next({ name: 'Login' })
+    // ✅ USER đã đăng nhập -> cho phép vào
     return next()
   }
 
