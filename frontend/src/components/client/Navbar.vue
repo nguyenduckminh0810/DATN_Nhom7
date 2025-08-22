@@ -589,16 +589,12 @@ const handleUserDropdownLeave = (event) => {
             <div class="dropdown-divider"></div>
 
             <!-- Admin quick access (compact) -->
-            <RouterLink
-              v-if="isAdmin"
-              to="/admin/dashboard"
-              class="user-dropdown-link admin-link compact-link"
-              @click="closeAllDropdowns"
-            >
+            <RouterLink v-if="isAdmin" to="/admin/dashboard" class="user-dropdown-link admin-link compact-link"
+              @click="closeAllDropdowns">
               <i class="bi bi-speedometer2"></i>
               <span>Admin Panel</span>
             </RouterLink>
-            
+
 
             <!-- Menu Items - Show user menu items for all users -->
             <div v-if="userMenuItems && userMenuItems.length > 0">
@@ -607,21 +603,21 @@ const handleUserDropdownLeave = (event) => {
                 <RouterLink v-if="item.link" :to="item.link" class="user-dropdown-link" @click="closeAllDropdowns">
                   <i :class="item.icon"></i>
                   <span>{{ item.label }}</span>
-                  <span v-if="notificationStore.unreadCount > 0 && item.label === 'Thông báo'" class="notification-badge">{{ notificationStore.unreadCount }}</span>
+                  <span v-if="notificationStore.unreadCount > 0 && item.label === 'Thông báo'"
+                    class="notification-badge">{{ notificationStore.unreadCount }}</span>
                 </RouterLink>
 
-                <a v-else-if="item.action" href="#" class="user-dropdown-link"
-                  @click="showNotifications($event)"
-                >
+                <a v-else-if="item.action" href="#" class="user-dropdown-link" @click="showNotifications($event)">
                   <i :class="item.icon"></i>
                   <span>{{ item.label }}</span>
-                  <span v-if="notificationStore.unreadCount > 0 && item.label === 'Thông báo'" class="notification-badge">{{ notificationStore.unreadCount }}</span>
+                  <span v-if="notificationStore.unreadCount > 0 && item.label === 'Thông báo'"
+                    class="notification-badge">{{ notificationStore.unreadCount }}</span>
                 </a>
               </template>
             </div>
 
             <!-- Inline notifications panel inside dropdown -->
-            <div class="dropdown-divider"></div>
+
             <div class="dropdown-notifications">
               <NotificationComponent ref="notificationComponent" />
             </div>
@@ -1150,6 +1146,7 @@ const handleUserDropdownLeave = (event) => {
 .dropdown-notifications :deep(.notification-bell) {
   display: none;
 }
+
 .dropdown-notifications :deep(.notification-panel) {
   position: fixed;
   top: calc(80px + 8px);

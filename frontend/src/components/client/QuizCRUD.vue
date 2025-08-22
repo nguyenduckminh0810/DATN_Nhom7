@@ -550,47 +550,7 @@ const resetForm = () => {
 <template>
   <div class="quiz-crud-container">
     <!-- Animated Background Elements -->
-    <div class="background-decorations">
-      <div class="floating-orb orb-1"></div>
-      <div class="floating-orb orb-2"></div>
-      <div class="floating-orb orb-3"></div>
-      <div class="floating-orb orb-4"></div>
-    </div>
 
-    <!-- Enhanced Hero Section -->
-    <div class="hero-section">
-      <div class="container">
-        <div class="row justify-content-center">
-          <div class="col-lg-8 text-center">
-            <div class="hero-content">
-              <div class="hero-icon">
-                <i class="bi bi-puzzle"></i>
-              </div>
-              <h1 class="hero-title">Quản lý Quiz của bạn</h1>
-              <p class="hero-subtitle">
-                Tạo, chỉnh sửa và quản lý bộ sưu tập quiz một cách dễ dàng với giao diện hiện đại
-              </p>
-              <div class="hero-stats">
-                <div class="stat-item">
-                  <span class="stat-number">{{ quizzes.length }}</span>
-                  <span class="stat-label">Quiz</span>
-                </div>
-                <div class="stat-divider"></div>
-                <div class="stat-item">
-                  <span class="stat-number">{{ categories.length }}</span>
-                  <span class="stat-label">Danh mục</span>
-                </div>
-                <div class="stat-divider"></div>
-                <div class="stat-item">
-                  <span class="stat-number">∞</span>
-                  <span class="stat-label">Khả năng</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div class="container py-5">
       <!-- Loading Spinner -->
@@ -965,99 +925,7 @@ const resetForm = () => {
         </div>
 
         <!-- Enhanced Quiz List Section -->
-        <div class="row justify-content-center">
-          <div class="col-xl-12">
-            <div class="quiz-list-section">
-              <div class="section-header">
-                <div class="section-icon">
-                  <i class="bi bi-collection"></i>
-                </div>
-                <h3 class="section-title">
-                  Quiz của bạn
-                  <span class="quiz-count-enhanced">{{ quizzes.length }}</span>
-                </h3>
-                <p class="section-subtitle">Quản lý và chỉnh sửa các quiz đã tạo</p>
-              </div>
 
-              <!-- Loading Quiz List -->
-              <div v-if="loadingQuizzes" class="loading-quiz-section">
-                <div class="quiz-skeleton" v-for="n in 6" :key="n">
-                  <div class="skeleton-image"></div>
-                  <div class="skeleton-content">
-                    <div class="skeleton-line large"></div>
-                    <div class="skeleton-line medium"></div>
-                    <div class="skeleton-line small"></div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Enhanced Empty State -->
-              <div v-else-if="quizzes.length === 0" class="empty-state-enhanced">
-                <div class="empty-icon">
-                  <i class="bi bi-inbox"></i>
-                </div>
-                <h4 class="empty-title">Chưa có quiz nào</h4>
-                <p class="empty-text">Hãy tạo quiz đầu tiên để bắt đầu hành trình của bạn!</p>
-                <div class="empty-decoration">
-                  <div class="decoration-dot dot-1"></div>
-                  <div class="decoration-dot dot-2"></div>
-                  <div class="decoration-dot dot-3"></div>
-                </div>
-              </div>
-
-              <!-- Enhanced Quiz Grid -->
-              <div v-else class="quiz-grid-enhanced">
-                <div v-for="quiz in quizzes" :key="quiz.id" class="quiz-card-enhanced">
-                  <div class="card-inner">
-                    <div class="quiz-image-container-enhanced">
-                      <img :src="getQuizImageUrl(quiz.id)" alt="Quiz Image" class="quiz-image-enhanced"
-                        loading="lazy" />
-                      <div class="image-overlay"></div>
-                      <div class="quiz-status-enhanced">
-                        <span :class="['status-badge-enhanced', quiz.public ? 'public' : 'private']">
-                          <i :class="quiz.public ? 'bi bi-globe2' : 'bi bi-lock'"></i>
-                          {{ quiz.public ? 'Công khai' : 'Riêng tư' }}
-                        </span>
-
-                        <!-- 🔔 Badge cảnh báo nếu chưa có question -->
-                        <span v-if="getQuestionCount(quiz) === 0" class="status-badge-empty">
-                          <i class="bi bi-exclamation-triangle"></i> Chưa có question
-                        </span>
-                      </div>
-                    </div>
-
-                    <div class="quiz-content-enhanced">
-                      <h5 class="quiz-title-enhanced">{{ quiz.title }}</h5>
-                      <p class="quiz-category-enhanced" v-if="quiz.category">
-                        <i class="bi bi-tag-fill me-1"></i>
-                        {{ quiz.category.name }}
-                      </p>
-
-                      <div class="quiz-actions-enhanced">
-                        <button class="action-btn-enhanced play-btn-enhanced" @click="playQuiz(quiz.id)"
-                          :disabled="getQuestionCount(quiz) === 0"
-                          :title="getQuestionCount(quiz) === 0 ? 'Quiz chưa có question' : 'Chơi quiz'">
-                          <i class="bi bi-play-fill"></i>
-                          <span>Chơi</span>
-                        </button>
-                        <button class="action-btn-enhanced edit-btn-enhanced" @click="editQuiz(quiz.id)"
-                          title="Chỉnh sửa">
-                          <i class="bi bi-pencil-square"></i>
-                          <span>Sửa</span>
-                        </button>
-                        <button class="action-btn-enhanced delete-btn-enhanced" @click="deleteQuiz(quiz.id)"
-                          title="Xóa quiz">
-                          <i class="bi bi-trash3"></i>
-                          <span>Xóa</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
