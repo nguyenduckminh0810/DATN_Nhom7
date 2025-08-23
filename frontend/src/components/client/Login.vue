@@ -131,7 +131,7 @@ async function handleSubmit(e) {
         const user = JSON.parse(localStorage.getItem('user') || '{}')
         console.log('Logged in as role:', user.role)
         if (user.role?.toUpperCase() === 'ADMIN') {
-        router.push({ name: 'AdminCategories' })
+            router.push({ name: 'AdminCategories' })
         } else {
             router.push({ name: 'Home', params: { userId: user.id } })
 
@@ -228,8 +228,7 @@ async function handleSubmit(e) {
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" class="login-btn" :disabled="isLoading || !username.trim() || !password.trim()"
-                    :class="{ 'loading': isLoading }">
+                <button type="submit" class="login-btn" :class="{ 'loading': isLoading }">
                     <span v-if="!isLoading" class="btn-content">
                         <i class="bi bi-box-arrow-in-right"></i>
                         <span>Đăng nhập</span>

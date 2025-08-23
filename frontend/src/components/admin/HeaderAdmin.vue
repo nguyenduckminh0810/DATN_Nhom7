@@ -109,7 +109,7 @@
               <div class="user-name-row">
                 <span class="user-name">{{
                   adminInfo?.fullName || adminInfo?.username || 'Admin'
-                  }}</span>
+                }}</span>
               </div>
               <small class="user-status">Online</small>
             </div>
@@ -128,7 +128,7 @@
                 <small>{{ adminInfo?.role || 'Admin' }}</small>
                 <small class="profile-email">{{
                   adminInfo?.email || 'admin@quizmaster.com'
-                  }}</small>
+                }}</small>
               </div>
             </div>
 
@@ -148,7 +148,7 @@
                 <span>Thông báo</span>
                 <span v-if="notificationCount > 0" class="notification-badge">{{
                   notificationCount
-                  }}</span>
+                }}</span>
               </button>
               <button @click="logout" class="user-dropdown-link logout-link">
                 <i class="bi bi-box-arrow-right"></i>
@@ -1057,5 +1057,14 @@ onUnmounted(() => {
   .navbar-container {
     height: 70px;
   }
+}
+
+.admin-notification {
+  position: absolute;
+  top: 5px;
+  /* chỉnh lại cho cân đối */
+  right: 10px;
+  z-index: 100;
+  /* cao hơn nội dung khác */
 }
 </style>

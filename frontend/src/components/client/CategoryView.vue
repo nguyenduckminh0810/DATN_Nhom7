@@ -89,7 +89,6 @@
                 <i class="bi bi-calendar3"></i>
                 {{ formatDate(category.createdAt) }}
               </div>
-              <div class="category-id">ID: {{ category.id }}</div>
             </div>
           </div>
         </div>
