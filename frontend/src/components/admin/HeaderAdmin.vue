@@ -1,180 +1,71 @@
-<template>
-  <header id="header" class="modern-navbar fixed-top">
-    <div class="navbar-container">
-      <!-- Logo Section -->
-      <div class="brand-section">
-        <div @click="handleLogoClick" class="brand-link" style="cursor: pointer">
-          <div class="logo-wrapper">
-            <h1 class="nabla">QuizMaster</h1>
-            <span class="brand-subtitle">Admin Panel</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Main Navigation -->
-      <nav class="main-nav">
-        <div class="nav-group">
-          <!-- Home Page -->
-          <div @click="handleHomeClick" class="nav-item" style="cursor: pointer">
-            <div class="nav-content">
-              <i class="bi bi-house"></i>
-              <span>Trang chủ</span>
-            </div>
-          </div>
-
-          <!-- Dashboard -->
-          <RouterLink to="/admin/dashboard" class="nav-item" active-class="router-link-active">
-            <div class="nav-content">
-              <i class="bi bi-speedometer2"></i>
-              <span>Dashboard</span>
-            </div>
-          </RouterLink>
-
-          <!-- Categories Dropdown -->
-          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
-            <div class="nav-content" @click="handleDropdownClick">
-              <i class="bi bi-tags"></i>
-              <span>Danh mục</span>
-              <i class="bi bi-chevron-down dropdown-arrow"></i>
-            </div>
-            <div class="dropdown-panel">
-              <RouterLink to="/admin/all-users" class="dropdown-link" @click="closeAllDropdowns">
-                <i class="bi bi-people"></i>
-                <div class="link-content">
-                  <span class="link-title">Quản lý User</span>
-                  <small class="link-desc">Quản lý người dùng</small>
-                </div>
-              </RouterLink>
-              <RouterLink to="/admin/all-quizzes" class="dropdown-link" @click="closeAllDropdowns">
-                <i class="bi bi-journal-code"></i>
-                <div class="link-content">
-                  <span class="link-title">Quản lý Quiz</span>
-                  <small class="link-desc">Quản lý quiz</small>
-                </div>
-              </RouterLink>
-              <RouterLink to="/admin/categories" class="dropdown-link" @click="closeAllDropdowns">
-                <i class="bi bi-folder2"></i>
-                <div class="link-content">
-                  <span class="link-title">Quản lý Danh mục</span>
-                  <small class="link-desc">Tạo & sửa danh mục</small>
-                </div>
-              </RouterLink>
-              <RouterLink to="/admin/categories/trash" class="dropdown-link" @click="closeAllDropdowns">
-                <i class="bi bi-trash3"></i>
-                <div class="link-content">
-                  <span class="link-title">Thùng rác</span>
-                  <small class="link-desc">Danh mục đã xóa</small>
-                </div>
-              </RouterLink>
-            </div>
-          </div>
-
-          <!-- Reports -->
-          <RouterLink to="/admin/reports" class="nav-item" active-class="router-link-active">
-            <div class="nav-content">
-              <i class="bi bi-flag"></i>
-              <span>Báo cáo</span>
-            </div>
-          </RouterLink>
-
-          <!-- Analytics -->
-          <RouterLink to="/admin/analytics" class="nav-item" active-class="router-link-active">
-            <div class="nav-content">
-              <i class="bi bi-graph-up"></i>
-              <span>Thống kê</span>
-            </div>
-          </RouterLink>
-        </div>
-      </nav>
-
-      <!-- User Section -->
-      <div class="user-section">
-        <!-- ✅ ADMIN NOTIFICATION COMPONENT (VISIBLE) -->
-        <AdminNotificationComponent ref="notificationComponent" />
-        <!-- Dark Mode Toggle -->
-        <button @click="themeStore.toggleTheme" class="theme-toggle-btn"
-          :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'">
-          <i :class="themeStore.isDarkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
-        </button>
-
-        <!-- Admin Profile -->
-        <div class="user-menu dropdown" @mouseenter="handleUserDropdownHover" @mouseleave="handleUserDropdownLeave">
-          <div class="user-trigger" @click="handleUserDropdownClick">
-            <div class="user-avatar">
-              <img v-if="avatarUrl" :src="avatarUrl" alt="Admin Avatar" class="avatar-image"
-                @error="handleAvatarError" />
-              <i v-else class="bi bi-person-circle"></i>
-            </div>
-            <div class="user-info">
-              <div class="user-name-row">
-                <span class="user-name">{{
-                  adminInfo?.fullName || adminInfo?.username || 'Admin'
-                }}</span>
-              </div>
-              <small class="user-status">Online</small>
-            </div>
-            <i class="bi bi-chevron-down user-arrow"></i>
-          </div>
-
-          <div class="user-dropdown">
-            <div class="user-profile-header">
-              <div class="profile-avatar">
-                <img v-if="avatarUrl" :src="avatarUrl" alt="Admin Avatar" class="profile-avatar-image"
-                  @error="handleAvatarError" />
-                <i v-else class="bi bi-person-circle"></i>
-              </div>
-              <div class="profile-info">
-                <strong>{{ adminInfo?.fullName || adminInfo?.username || 'Administrator' }}</strong>
-                <small>{{ adminInfo?.role || 'Admin' }}</small>
-                <small class="profile-email">{{
-                  adminInfo?.email || 'admin@quizmaster.com'
-                }}</small>
-              </div>
-            </div>
-
-            <div class="dropdown-divider"></div>
-
-            <div class="profile-actions">
-              <RouterLink to="/admin/profile" class="user-dropdown-link">
-                <i class="bi bi-person"></i>
-                <span>Hồ sơ cá nhân</span>
-              </RouterLink>
-              <RouterLink to="/admin/settings" class="user-dropdown-link">
-                <i class="bi bi-gear"></i>
-                <span>Cài đặt</span>
-              </RouterLink>
-              <button @click="showNotifications" class="user-dropdown-link">
-                <i class="bi bi-bell"></i>
-                <span>Thông báo</span>
-                <span v-if="notificationCount > 0" class="notification-badge">{{
-                  notificationCount
-                }}</span>
-              </button>
-              <button @click="logout" class="user-dropdown-link logout-link">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Đăng xuất</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
-</template>
-
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, RouterLink } from 'vue-router'
+import { useLogin } from '@/components/client/useLogin'
+import { computed, watch, onMounted, onUnmounted, ref } from 'vue'
 import api from '@/utils/axios'
 import { useThemeStore } from '@/stores/theme'
-import AdminNotificationComponent from './AdminNotificationComponent.vue'
+import { useNotificationStore } from '@/stores/notification'
+import NotificationComponent from '../NotificationComponent.vue'
+import { storeToRefs } from 'pinia' // ✅ thêm
 
+// Define component name for Vue DevTools
+defineOptions({
+  name: 'MainNavbar',
+})
+
+const { logout, username, message, userId, getUserId, token } = useLogin()
 const router = useRouter()
 const themeStore = useThemeStore()
-const adminInfo = ref(null)
-const reportCount = ref(5)
+const notificationStore = useNotificationStore()
 const notificationComponent = ref(null)
-const notificationCount = ref(0)
+
+// 🔁 Lấy ref re-active từ Pinia
+const { unreadCount } = storeToRefs(notificationStore)
+
+const isLoggedIn = computed(() => !!token.value)
+const userProfile = ref(null)
+
+// ✅ CHECK USER ROLE
+const isAdmin = computed(() => {
+  const isAdminUser = userProfile.value?.role === 'admin' || userProfile.value?.role === 'ADMIN'
+  console.log('🔍 isAdmin computed:', isAdminUser, 'userProfile:', userProfile.value)
+  return isAdminUser
+})
+
+const isUser = computed(() => {
+  const isRegularUser =
+    userProfile.value?.role === 'user' ||
+    userProfile.value?.role === 'USER' ||
+    !userProfile.value?.role
+  console.log('🔍 isUser computed:', isRegularUser, 'userProfile:', userProfile.value)
+  return isRegularUser
+})
+
+// ✅ ROLE-BASED MENU ITEMS
+const userMenuItems = computed(() => {
+  const items = [
+    {
+      label: 'Hồ sơ cá nhân',
+      icon: 'bi bi-person',
+      link: '/profile',
+      description: 'Xem và chỉnh sửa thông tin cá nhân',
+    },
+    {
+      label: 'Thùng rác',
+      icon: 'bi bi-trash3',
+      link: '/trash',
+      description: 'Quiz đã xóa',
+    },
+    {
+      label: 'Thông báo',
+      icon: 'bi bi-bell',
+      action: 'notifications',
+      description: 'Xem thông báo mới',
+      badge: unreadCount.value, // ✅ bám ref từ storeToRefs
+    },
+  ]
+  return items
+})
 
 // ✅ LẤY THÔNG TIN PROFILE VÀ AVATAR
 async function fetchUserProfile() {
@@ -189,89 +80,203 @@ async function fetchUserProfile() {
 
     const response = await api.get('/user/profile')
 
-    adminInfo.value = response.data
-    console.log('🔍 Admin Profile loaded:', response.data)
+    userProfile.value = response.data
+    console.log('🔍 User Profile loaded:', response.data)
     console.log('🔍 Avatar URL:', response.data.avatarUrl)
   } catch (error) {
-    console.error('Error fetching admin profile:', error)
+    console.error('Error fetching user profile:', error)
 
-    // Nếu lỗi 401, có thể token đã hết hạn
-    if (error.response?.status === 401) {
+    // Nếu lỗi 401 hoặc 403, có thể token đã hết hạn hoặc không hợp lệ
+    if (error.response?.status === 401 || error.response?.status === 403) {
       console.log('❌ Token expired or invalid, clearing localStorage')
-      localStorage.clear()
-      adminInfo.value = null
+      localStorage.removeItem('token')
+      localStorage.removeItem('userId')
+      localStorage.removeItem('username')
+      userProfile.value = null
 
-      // Redirect về login page
-      router.push('/login')
+      // Redirect về login page nếu đang ở trang cần authentication
+      if (router.currentRoute.value.path !== '/login' && router.currentRoute.value.path !== '/') {
+        router.push('/login')
+      }
     }
-  }
-}
-
-// ✅ LOAD NOTIFICATION COUNT
-async function loadNotificationCount() {
-  try {
-    const response = await api.get('/notifications/unread/count')
-    notificationCount.value = response.data.count
-    console.log('🔔 Admin notification count loaded:', notificationCount.value)
-  } catch (error) {
-    console.error('Error loading notification count:', error)
-    notificationCount.value = 0
   }
 }
 
 // Avatar URL computed
 const avatarUrl = computed(() => {
-  if (adminInfo.value?.avatarUrl) {
+  if (userProfile.value?.avatarUrl) {
     // Nếu avatarUrl bắt đầu bằng /api/ hoặc /uploads/
     if (
-      adminInfo.value.avatarUrl.startsWith('/api/') ||
-      adminInfo.value.avatarUrl.startsWith('/uploads/')
+      userProfile.value.avatarUrl.startsWith('/api/') ||
+      userProfile.value.avatarUrl.startsWith('/uploads/')
     ) {
-      return `http://localhost:8080${adminInfo.value.avatarUrl}`
+      return `http://localhost:8080${userProfile.value.avatarUrl}`
     }
     // Nếu là URL đầy đủ
-    if (adminInfo.value.avatarUrl.startsWith('http')) {
-      return adminInfo.value.avatarUrl
+    if (userProfile.value.avatarUrl.startsWith('http')) {
+      return userProfile.value.avatarUrl
     }
     // Nếu là đường dẫn tương đối
-    return `http://localhost:8080${adminInfo.value.avatarUrl}`
+    return `http://localhost:8080${userProfile.value.avatarUrl}`
   }
   return null
 })
 
+function login() {
+  router.push('/login')
+}
+
+// ✅ FUNCTION XỬ LÝ NAVIGATION THÔNG MINH
 function handleLogoClick() {
-  router.push({ name: 'Dashboard' })
-}
-
-function handleHomeClick() {
-  router.push({ name: 'Dashboard' })
-}
-
-// ✅ SHOW NOTIFICATIONS
-const showNotifications = () => {
-  console.log('🔔 Show notifications clicked from Admin Header')
-  console.log('🔍 notificationComponent.value:', notificationComponent.value)
-  if (notificationComponent.value) {
-    console.log('🔍 notificationComponent methods:', Object.keys(notificationComponent.value))
-    // ✅ Trigger toggle panel trực tiếp
-    notificationComponent.value.toggleNotificationPanel()
-    console.log('✅ AdminNotificationComponent found and toggle called')
+  if (isLoggedIn.value) {
+    // Nếu đã login -> dashboard
+    router.push('/dashboard')
   } else {
-    console.log('❌ AdminNotificationComponent not found')
+    // Nếu chưa login -> home
+    router.push('/')
   }
 }
 
-function logout() {
-  // ✅ Clear all localStorage completely
-  localStorage.clear()
-
-  // ✅ Redirect to login page
-  router.push('/login')
-  console.log('✅ Admin logout completed - redirected to login')
-
-  // ✅ Force refresh immediately
-  window.location.reload()
+// ✅ SWITCH TO ADMIN PANEL
+const switchToAdminPanel = () => {
+  router.push('/admin/dashboard')
 }
+
+// ✅ SWITCH TO USER PANEL
+const switchToUserPanel = () => {
+  router.push('/dashboard')
+}
+
+// ✅ SHOW NOTIFICATIONS: đóng dropdown trước khi mở panel để tránh chồng chéo
+const showNotifications = (event) => {
+  if (event) {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+  // Đóng mọi dropdown
+  closeAllDropdowns()
+  // Mở panel sau khi dropdown đóng
+  setTimeout(() => {
+    if (notificationComponent.value) {
+      notificationComponent.value.toggleNotificationPanel()
+    }
+  }, 0)
+}
+
+// ✅ LOGOUT FOR NAVBAR
+const logoutForNavbar = () => {
+  // Để composable useLogin xử lý việc bảo lưu username khi rememberMe=1
+  const remembered = localStorage.getItem('rememberMe') === '1'
+  const rememberedUsername = remembered ? localStorage.getItem('username') : null
+
+  logout()
+  // ✅ Reset user profile & UI
+  userProfile.value = null
+  closeAllDropdowns()
+  // ❌ KHÔNG gán avatarUrl (computed) -> nó tự null khi userProfile=null
+  // avatarUrl.value = null
+
+  // Không xóa toàn bộ localStorage để giữ lại username/rememberMe nếu người dùng đã tick
+  if (remembered && rememberedUsername) {
+    localStorage.setItem('username', rememberedUsername)
+    localStorage.setItem('rememberMe', '1')
+  }
+
+  // ✅ Redirect to login page after logout
+  router.push('/login')
+  console.log('✅ Logout completed - redirected to login (preserved rememberMe if enabled)')
+}
+
+watch(message, (newVal) => {
+  if (newVal === 'SUCCESS' && !username.value) {
+    username.value = localStorage.getItem('username')
+    fetchUserProfile() // ✅ Lấy profile khi login thành công
+  }
+})
+
+// ✅ Lấy profile khi component mount nếu đã login
+watch(isLoggedIn, (newVal) => {
+  // ✅ Chỉ load profile nếu có token
+  const token = localStorage.getItem('token')
+  if (newVal && token) {
+    fetchUserProfile()
+  } else {
+    // ✅ Reset profile khi không login
+    userProfile.value = null
+  }
+})
+
+// ✅ Watch for token changes
+watch(
+  () => localStorage.getItem('token'),
+  (newToken) => {
+    if (!newToken) {
+      // ✅ Reset profile khi token bị xóa
+      userProfile.value = null
+      console.log('✅ Token removed - reset user profile')
+    }
+  },
+)
+
+// ✅ REFRESH PROFILE KHI ROUTE THAY ĐỔI (để load avatar mới)
+watch(
+  () => router.currentRoute.value.path,
+  () => {
+    // ✅ Chỉ reload profile nếu user thực sự đã login và có token
+    const token = localStorage.getItem('token')
+    if (isLoggedIn.value && token) {
+      fetchUserProfile()
+    }
+  },
+)
+
+// ✅ Lấy profile khi component mount nếu đã login
+onMounted(() => {
+  // ✅ Chỉ load profile nếu có token
+  const token = localStorage.getItem('token')
+  if (isLoggedIn.value && token) {
+    fetchUserProfile()
+    // ✅ Khởi tạo notification store
+    notificationStore.initialize().then(async () => {
+      // Đồng bộ badge ngay sau initialize nếu server đã ghi nhận đã đọc hết
+      const countBefore = unreadCount.value
+      await notificationStore.loadUnreadCount()
+      if (unreadCount.value === 0 && countBefore !== 0) {
+        await notificationStore.loadNotifications()
+      }
+    })
+  }
+
+  // Add click outside listener
+  document.addEventListener('click', handleClickOutside)
+
+  // Add mouse leave listeners for dropdowns
+  const dropdowns = document.querySelectorAll('.nav-item.dropdown')
+  dropdowns.forEach((dropdown) => {
+    dropdown.addEventListener('mouseleave', () => {
+      setTimeout(() => {
+        const panel = dropdown.querySelector('.dropdown-panel')
+        if (panel && !dropdown.matches(':hover')) {
+          panel.style.opacity = '0'
+          panel.style.visibility = 'hidden'
+          panel.style.transform = 'translateX(-50%) translateY(-10px)'
+          dropdown.classList.remove('active')
+        }
+      }, 100)
+    })
+  })
+})
+
+onUnmounted(() => {
+  // Remove click outside listener
+  document.removeEventListener('click', handleClickOutside)
+
+  // Remove mouse leave listeners
+  const dropdowns = document.querySelectorAll('.nav-item.dropdown')
+  dropdowns.forEach((dropdown) => {
+    dropdown.removeEventListener('mouseleave', () => { })
+  })
+})
 
 // ✅ Xử lý lỗi avatar
 function handleAvatarError(event) {
@@ -280,6 +285,15 @@ function handleAvatarError(event) {
   const fallbackIcon = event.target.nextElementSibling
   if (fallbackIcon) {
     fallbackIcon.style.display = 'block'
+  }
+}
+
+// ✅ GO TO HISTORY
+function goToHistory() {
+  if (isLoggedIn.value) {
+    router.push('/history')
+  } else {
+    router.push('/login')
   }
 }
 
@@ -332,6 +346,37 @@ const closeAllDropdowns = () => {
   userMenus.forEach((menu) => {
     menu.classList.remove('active')
   })
+
+  // ✅ KHÔNG Ẩn notification panel khi close dropdown
+  // Notification panel sẽ được đóng bằng nút X hoặc click outside
+}
+
+// ✅ CLICK OUTSIDE TO CLOSE
+const handleClickOutside = (event) => {
+  if (!event.target.closest('.dropdown')) {
+    closeAllDropdowns()
+  }
+}
+
+// ✅ USER DROPDOWN HANDLING
+const handleUserDropdownClick = (event) => {
+  event.preventDefault()
+  event.stopPropagation()
+
+  const userMenu = event.currentTarget.closest('.user-menu')
+  const userDropdown = userMenu.querySelector('.user-dropdown')
+
+  // Close all other dropdowns first
+  closeAllDropdowns()
+
+  // Toggle user dropdown
+  if (userDropdown.style.display === 'block') {
+    userDropdown.style.display = 'none'
+    userMenu.classList.remove('active')
+  } else {
+    userDropdown.style.display = 'block'
+    userMenu.classList.add('active')
+  }
 }
 
 // ✅ HOVER DROPDOWN HANDLING
@@ -362,27 +407,6 @@ const handleDropdownLeave = (event) => {
       dropdown.classList.remove('active')
     }
   }, 150)
-}
-
-// ✅ USER DROPDOWN HANDLING
-const handleUserDropdownClick = (event) => {
-  event.preventDefault()
-  event.stopPropagation()
-
-  const userMenu = event.currentTarget.closest('.user-menu')
-  const userDropdown = userMenu.querySelector('.user-dropdown')
-
-  // Close all other dropdowns first
-  closeAllDropdowns()
-
-  // Toggle user dropdown
-  if (userDropdown.style.display === 'block') {
-    userDropdown.style.display = 'none'
-    userMenu.classList.remove('active')
-  } else {
-    userDropdown.style.display = 'block'
-    userMenu.classList.add('active')
-  }
 }
 
 // ✅ USER DROPDOWN HOVER HANDLING
@@ -416,100 +440,204 @@ const handleUserDropdownLeave = (event) => {
     }
   }, 150)
 }
-
-// ✅ CLICK OUTSIDE TO CLOSE
-const handleClickOutside = (event) => {
-  if (
-    !event.target.closest('.dropdown') &&
-    !event.target.closest('.user-menu') &&
-    !event.target.closest('.notification-dropdown')
-  ) {
-    closeAllDropdowns()
-  }
-}
-
-onMounted(async () => {
-  // Load admin info from multiple sources
-  await loadAdminInfo()
-  await fetchUserProfile()
-  await loadNotificationCount()
-
-  // ✅ DEBUG: Check if notificationComponent is available
-  console.log('🔍 AdminNotificationComponent ref:', notificationComponent.value)
-
-  // Add click outside listener
-  document.addEventListener('click', handleClickOutside)
-
-  // Add mouse leave listeners for dropdowns
-  const dropdowns = document.querySelectorAll('.nav-item.dropdown')
-  dropdowns.forEach((dropdown) => {
-    dropdown.addEventListener('mouseleave', () => {
-      setTimeout(() => {
-        const panel = dropdown.querySelector('.dropdown-panel')
-        if (panel && !dropdown.matches(':hover')) {
-          panel.style.opacity = '0'
-          panel.style.visibility = 'hidden'
-          panel.style.transform = 'translateX(-50%) translateY(-10px)'
-          dropdown.classList.remove('active')
-        }
-      }, 100)
-    })
-  })
-})
-
-async function loadAdminInfo() {
-  try {
-    // Try to get from admin_user first
-    const adminUserStr = localStorage.getItem('admin_user')
-    if (adminUserStr) {
-      adminInfo.value = JSON.parse(adminUserStr)
-      console.log('✅ Admin user loaded from admin_user:', adminInfo.value)
-      return
-    }
-
-    // Try to get from user data
-    const userInfo = localStorage.getItem('user')
-    if (userInfo) {
-      const userData = JSON.parse(userInfo)
-      if (userData.role === 'admin' || userData.role === 'ADMIN') {
-        adminInfo.value = userData
-        console.log('✅ Admin user loaded from user data:', adminInfo.value)
-        return
-      }
-    }
-
-    // Try to get from localStorage user data
-    const username = localStorage.getItem('username')
-    const userId = localStorage.getItem('userId')
-    if (username && userId) {
-      adminInfo.value = {
-        username: username,
-        id: userId,
-        role: 'admin',
-        fullName: username,
-      }
-      console.log('✅ Admin user loaded from localStorage:', adminInfo.value)
-      return
-    }
-
-    console.log('❌ No admin user found')
-    adminInfo.value = null
-  } catch (error) {
-    console.error('Error loading admin info:', error)
-    adminInfo.value = null
-  }
-}
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-
-  // Remove mouse leave listeners
-  const dropdowns = document.querySelectorAll('.nav-item.dropdown')
-  dropdowns.forEach((dropdown) => {
-    dropdown.removeEventListener('mouseleave', () => { })
-  })
-})
 </script>
+
+<template>
+  <header id="header" class="modern-navbar fixed-top">
+    <div class="navbar-container">
+      <!-- Logo Section -->
+      <div class="brand-section">
+        <div @click="handleLogoClick" class="brand-link" style="cursor: pointer">
+          <div class="logo-wrapper">
+            <h1 class="nabla">QuizMaster</h1>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Navigation -->
+      <nav class="main-nav">
+        <div class="nav-group">
+          <div @click="handleLogoClick" class="nav-item" style="cursor: pointer">
+            <div class="nav-content">
+              <i class="bi bi-house"></i>
+              <span>Trang chủ</span>
+            </div>
+          </div>
+
+          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
+            <div class="nav-content" @click="handleDropdownClick">
+              <i class="bi bi-puzzle"></i>
+              <span>Quiz</span>
+              <i class="bi bi-chevron-down dropdown-arrow"></i>
+            </div>
+            <div class="dropdown-panel">
+              <RouterLink to="/quiz-crud" class="dropdown-link" @click="closeAllDropdowns">
+                <i class="bi bi-plus-circle"></i>
+                <div class="link-content">
+                  <span class="link-title">Tạo Quiz</span>
+                  <small class="link-desc">Tạo quiz mới</small>
+                </div>
+              </RouterLink>
+              <RouterLink to="/join-quiz" class="dropdown-link" @click="closeAllDropdowns">
+                <i class="bi bi-key"></i>
+                <div class="link-content">
+                  <span class="link-title">Tham gia Quiz</span>
+                  <small class="link-desc">Nhập mã code</small>
+                </div>
+              </RouterLink>
+              <RouterLink to="/my-quizzes" class="dropdown-link" @click="closeAllDropdowns">
+                <i class="bi bi-collection"></i>
+                <div class="link-content">
+                  <span class="link-title">Quiz của tôi</span>
+                  <small class="link-desc">Quản lý quiz</small>
+                </div>
+              </RouterLink>
+              <RouterLink to="/public-quizzes" class="dropdown-link" @click="closeAllDropdowns">
+                <i class="bi bi-globe"></i>
+                <div class="link-content">
+                  <span class="link-title">Quiz công khai</span>
+                  <small class="link-desc">Khám phá quiz</small>
+                </div>
+              </RouterLink>
+            </div>
+          </div>
+
+          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
+            <div class="nav-content" @click="handleDropdownClick">
+              <i class="bi bi-folder2"></i>
+              <span>Danh mục</span>
+              <i class="bi bi-chevron-down dropdown-arrow"></i>
+            </div>
+            <div class="dropdown-panel">
+              <RouterLink :to="{ name: 'CategoryView' }" class="dropdown-link" @click="closeAllDropdowns">
+                <i class="bi bi-grid"></i>
+                <div class="link-content">
+                  <span class="link-title">Xem danh mục</span>
+                  <small class="link-desc">Duyệt theo chủ đề</small>
+                </div>
+              </RouterLink>
+              <RouterLink v-if="isAdmin" :to="{ name: 'AdminCategories' }" class="dropdown-link"
+                @click="closeAllDropdowns">
+                <i class="bi bi-gear"></i>
+                <div class="link-content">
+                  <span class="link-title">Quản lý</span>
+                  <small class="link-desc">Tạo & sửa danh mục</small>
+                </div>
+              </RouterLink>
+            </div>
+          </div>
+
+          <a @click="goToHistory" class="nav-item" style="cursor: pointer">
+            <div class="nav-content">
+              <i class="bi bi-graph-up"></i>
+              <span>Thống kê</span>
+            </div>
+          </a>
+
+          <RouterLink to="/global-leaderboard" class="nav-item">
+            <div class="nav-content">
+              <i class="bi bi-trophy"></i>
+              <span>Bảng xếp hạng</span>
+            </div>
+          </RouterLink>
+        </div>
+      </nav>
+
+      <!-- User Section -->
+      <div class="user-section">
+        <!-- Dark Mode Toggle -->
+        <button @click="themeStore.toggleTheme" class="theme-toggle-btn"
+          :title="themeStore.isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'">
+          <i :class="themeStore.isDarkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
+        </button>
+
+        <div v-if="!isLoggedIn" class="auth-actions">
+          <RouterLink to="/register" class="btn btn-ghost"> Đăng ký </RouterLink>
+          <button @click="login" class="btn btn-primary">
+            <i class="bi bi-box-arrow-in-right"></i>
+            Đăng nhập
+          </button>
+        </div>
+
+        <!-- ✅ Notification moved into profile dropdown -->
+
+        <div v-if="isLoggedIn" class="user-menu dropdown" @mouseenter="handleUserDropdownHover"
+          @mouseleave="handleUserDropdownLeave">
+          <div class="user-trigger" @click="handleUserDropdownClick">
+            <div class="user-avatar">
+              <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="avatar-image" @error="handleAvatarError" />
+              <i v-else class="bi bi-person-circle"></i>
+            </div>
+            <div class="user-info">
+              <div class="user-name-row">
+                <span class="user-name">{{ userProfile?.fullName || username }}</span>
+              </div>
+              <small class="user-status">Online</small>
+            </div>
+            <i class="bi bi-chevron-down user-arrow"></i>
+          </div>
+
+          <div class="user-dropdown">
+            <div class="user-profile-header">
+              <div class="profile-avatar">
+                <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="profile-avatar-image"
+                  @error="handleAvatarError" />
+                <i v-else class="bi bi-person-circle"></i>
+              </div>
+              <div class="profile-info">
+                <strong>{{ userProfile?.fullName || username }}</strong>
+                <small>{{ userProfile?.role || 'Thành viên' }}</small>
+              </div>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <!-- Admin quick access (compact) -->
+            <RouterLink v-if="isAdmin" to="/admin/dashboard" class="user-dropdown-link admin-link compact-link"
+              @click="closeAllDropdowns">
+              <i class="bi bi-speedometer2"></i>
+              <span>Admin Panel</span>
+            </RouterLink>
+
+
+            <!-- Menu Items - Show user menu items for all users -->
+            <div v-if="userMenuItems && userMenuItems.length > 0">
+              <!-- User Menu Items -->
+              <template v-for="(item, index) in userMenuItems" :key="`user-item-${index}`">
+                <RouterLink v-if="item.link" :to="item.link" class="user-dropdown-link" @click="closeAllDropdowns">
+                  <i :class="item.icon"></i>
+                  <span>{{ item.label }}</span>
+                  <span v-if="unreadCount > 0 && item.label === 'Thông báo'" class="notification-badge">{{ unreadCount
+                  }}</span>
+                </RouterLink>
+
+                <a v-else-if="item.action" href="#" class="user-dropdown-link" @click="showNotifications($event)">
+                  <i :class="item.icon"></i>
+                  <span>{{ item.label }}</span>
+                  <span v-if="unreadCount > 0 && item.label === 'Thông báo'" class="notification-badge">{{ unreadCount
+                  }}</span>
+                </a>
+              </template>
+            </div>
+
+            <!-- Inline notifications panel inside dropdown -->
+
+            <div class="dropdown-notifications">
+              <NotificationComponent ref="notificationComponent" />
+            </div>
+
+            <!-- Logout Button - Always show -->
+            <div class="dropdown-divider"></div>
+            <a href="#" class="user-dropdown-link logout-link" @click.prevent="logoutForNavbar">
+              <i class="bi bi-box-arrow-right"></i>
+              <span>Đăng xuất</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+</template>
 
 <style scoped>
 /* Logo styles giữ nguyên */
