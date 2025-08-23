@@ -47,35 +47,33 @@
           </p>
         </div>
 
-        <!-- Quiz Preview (Quizizz Style) -->
-        <div v-if="quizInfo" class="quiz-preview">
-          <div class="preview-card">
-            <div class="preview-header">
-              <div class="quiz-info">
-                <h3 class="quiz-title">{{ quizInfo.title }}</h3>
-                <div class="quiz-meta">
-                  <span class="creator">
-                    <i class="bi bi-person-circle"></i>
-                    {{ quizInfo.creator }}
-                  </span>
-                  <span class="category">
-                    <i class="bi bi-tag"></i>
-                    {{ quizInfo.category?.name || 'Không phân loại' }}
-                  </span>
-                </div>
+        <!-- Quiz Found - Direct Start -->
+        <div v-if="quizInfo" class="quiz-found">
+          <div class="found-card">
+            <div class="found-header">
+              <i class="bi bi-check-circle-fill success-icon"></i>
+              <h3>Đã tìm thấy quiz!</h3>
+            </div>
+            
+            <div class="quiz-basic-info">
+              <div class="quiz-title">
+                <i class="bi bi-quiz"></i>
+                <span>{{ getQuizTitle(quizInfo.quiz) }}</span>
               </div>
-              <div class="quiz-status">
-                <span class="status-badge">
-                  <i class="bi bi-globe"></i>
-                  Công khai
-                </span>
+              <div class="quiz-code" v-if="quizInfo.quiz?.quizCode">
+                <i class="bi bi-hash"></i>
+                <span>Mã: {{ quizInfo.quiz.quizCode }}</span>
               </div>
             </div>
             
-            <div class="preview-actions">
+            <div class="start-message">
+              <p>Quiz sẽ tự động bắt đầu trong vài giây...</p>
+            </div>
+            
+            <div class="found-actions">
               <button @click="startQuiz" class="start-btn" :disabled="!quizInfo?.quiz?.quizId">
                 <i class="bi bi-play-fill"></i>
-                Bắt đầu làm bài
+                Bắt đầu làm bài ngay
               </button>
               <button @click="resetForm" class="reset-btn">
                 <i class="bi bi-arrow-left"></i>
@@ -177,6 +175,24 @@ const joinQuiz = async () => {
       quizInfo.value = response.data
       console.log('✅ Quiz found:', response.data)
       console.log('✅ Quiz ID:', response.data.quiz?.quizId)
+      console.log('🔍 Full quiz object:', response.data.quiz)
+      console.log('🔍 Quiz title:', response.data.quiz?.title)
+      console.log('🔍 Quiz creatorName:', response.data.quiz?.creatorName)
+      console.log('🔍 Quiz creator:', response.data.quiz?.creator)
+      console.log('🔍 Quiz category:', response.data.quiz?.category)
+      console.log('🔍 Quiz questions:', response.data.quiz?.questions)
+      console.log('🔍 Quiz timeLimit:', response.data.quiz?.timeLimit)
+      console.log('🔍 Quiz difficulty:', response.data.quiz?.difficulty)
+      console.log('🔍 Quiz quizCode:', response.data.quiz?.quizCode)
+      console.log('🔍 Quiz createdAt:', response.data.quiz?.createdAt)
+      
+      // Debug cấu trúc dữ liệu
+      debugQuizData(response.data.quiz)
+      
+      // Tự động bắt đầu quiz sau 1 giây
+      setTimeout(() => {
+        startQuiz()
+      }, 1000)
     } else {
       hasError.value = true
       errorMessage.value = response.data.message || 'Mã code không đúng'
@@ -222,6 +238,139 @@ const resetForm = () => {
   quizInfo.value = null
   hasError.value = false
   errorMessage.value = ''
+}
+
+// Helper functions để hiển thị thông tin quiz
+const getQuizTitle = (quiz) => {
+  if (!quiz) return 'Không có tiêu đề'
+  
+  // Tìm kiếm từ nhiều nguồn khác nhau
+  const title = quiz.title || quiz.quizName || quiz.name || quiz.quizTitle
+  if (title) return title
+  
+  // Fallback
+  return 'Không có tiêu đề'
+}
+
+const getCreatorName = (quiz) => {
+  if (!quiz) return 'Không xác định'
+  
+  // Tìm kiếm từ nhiều nguồn khác nhau
+  if (quiz.creatorName) return quiz.creatorName // Thêm creatorName
+  if (quiz.creator) return quiz.creator
+  if (quiz.user) return quiz.user.fullName || quiz.user.username || 'Không xác định'
+  if (quiz.createdBy) return quiz.createdBy
+  if (quiz.author) return quiz.author
+  if (quiz.owner) return quiz.owner
+  
+  // Fallback - hiển thị thông tin có sẵn
+  return 'Thông tin sẽ hiển thị khi bắt đầu quiz'
+}
+
+const getCategoryName = (category) => {
+  if (!category) return 'Không phân loại'
+  
+  // Tìm kiếm từ nhiều nguồn khác nhau
+  if (typeof category === 'string') return category
+  if (category.name) return category.name
+  if (category.categoryName) return category.categoryName
+  if (category.title) return category.title
+  
+  // Fallback - hiển thị thông tin có sẵn
+  return 'Thông tin sẽ hiển thị khi bắt đầu quiz'
+}
+
+const getStatusText = (isPublic) => {
+  if (isPublic === true || isPublic === 'true') return 'Công khai'
+  if (isPublic === false || isPublic === 'false') return 'Riêng tư'
+  return 'Không xác định'
+}
+
+const getStatusIcon = (isPublic) => {
+  if (isPublic === true || isPublic === 'true') return 'bi bi-globe'
+  if (isPublic === false || isPublic === 'false') return 'bi bi-lock'
+  return 'bi bi-question-circle'
+}
+
+const getStatusClass = (isPublic) => {
+  if (isPublic === true || isPublic === 'true') return 'status-public'
+  if (isPublic === false || isPublic === 'false') return 'status-private'
+  return 'status-unknown'
+}
+
+const getQuestionCount = (quiz) => {
+  if (!quiz) return 'Thông tin sẽ hiển thị khi bắt đầu quiz'
+  
+  // Tìm kiếm từ nhiều nguồn khác nhau
+  if (quiz.questionCount) return `${quiz.questionCount} câu hỏi`
+  if (quiz.questions && Array.isArray(quiz.questions)) return `${quiz.questions.length} câu hỏi`
+  if (quiz.totalQuestions) return `${quiz.totalQuestions} câu hỏi`
+  if (quiz.numberOfQuestions) return `${quiz.numberOfQuestions} câu hỏi`
+  
+  // Fallback - hiển thị thông tin có sẵn
+  return 'Thông tin sẽ hiển thị khi bắt đầu quiz'
+}
+
+const getTimeLimit = (quiz) => {
+  if (!quiz) return 'Thông tin sẽ hiển thị khi bắt đầu quiz'
+  
+  // Tìm kiếm từ nhiều nguồn khác nhau
+  if (quiz.timeLimit) return `${quiz.timeLimit} phút`
+  if (quiz.duration) return `${quiz.duration} phút`
+  if (quiz.timeAllowed) return `${quiz.timeAllowed} phút`
+  if (quiz.maxTime) return `${quiz.maxTime} phút`
+  
+  // Fallback - hiển thị thông tin có sẵn
+  return 'Thông tin sẽ hiển thị khi bắt đầu quiz'
+}
+
+const getDifficulty = (quiz) => {
+  if (!quiz) return 'Thông tin sẽ hiển thị khi bắt đầu quiz'
+  
+  // Tìm kiếm từ nhiều nguồn khác nhau
+  if (quiz.difficulty) {
+    const diff = quiz.difficulty.toLowerCase()
+    if (diff === 'easy' || diff === 'dễ') return 'Dễ'
+    if (diff === 'medium' || diff === 'trung bình') return 'Trung bình'
+    if (diff === 'hard' || diff === 'khó') return 'Khó'
+    return quiz.difficulty
+  }
+  
+  // Fallback - hiển thị thông tin có sẵn
+  return 'Thông tin sẽ hiển thị khi bắt đầu quiz'
+}
+
+// Debug function để kiểm tra cấu trúc dữ liệu
+const debugQuizData = (quiz) => {
+  if (!quiz) {
+    console.log('❌ Quiz object is null/undefined')
+    return
+  }
+  
+  console.log('🔍 Debug Quiz Data Structure:')
+  console.log('  - quiz.title:', quiz.title)
+  console.log('  - quiz.quizName:', quiz.quizName)
+  console.log('  - quiz.name:', quiz.name)
+  console.log('  - quiz.quizTitle:', quiz.quizTitle)
+  console.log('  - quiz.creatorName:', quiz.creatorName) // Thêm creatorName
+  console.log('  - quiz.creator:', quiz.creator)
+  console.log('  - quiz.user:', quiz.user)
+  console.log('  - quiz.createdBy:', quiz.createdBy)
+  console.log('  - quiz.author:', quiz.author)
+  console.log('  - quiz.owner:', quiz.owner)
+  console.log('  - quiz.category:', quiz.category)
+  console.log('  - quiz.questionCount:', quiz.questionCount)
+  console.log('  - quiz.totalQuestions:', quiz.totalQuestions)
+  console.log('  - quiz.numberOfQuestions:', quiz.numberOfQuestions)
+  console.log('  - quiz.questions:', quiz.questions)
+  console.log('  - quiz.timeLimit:', quiz.timeLimit)
+  console.log('  - quiz.duration:', quiz.duration)
+  console.log('  - quiz.timeAllowed:', quiz.timeAllowed)
+  console.log('  - quiz.maxTime:', quiz.maxTime)
+  console.log('  - quiz.difficulty:', quiz.difficulty)
+  console.log('  - quiz.isPublic:', quiz.isPublic)
+  console.log('  - quiz.quizCode:', quiz.quizCode) // Thêm quizCode
+  console.log('  - quiz.createdAt:', quiz.createdAt) // Thêm createdAt
 }
 </script>
 
@@ -445,12 +594,175 @@ const resetForm = () => {
 }
 
 .quiz-status {
+  display: flex;
+  align-items: center;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.status-public {
   background: var(--success-color);
   color: white;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  border-color: var(--success-color);
+}
+
+.status-private {
+  background: var(--warning-color);
+  color: white;
+  border-color: var(--warning-color);
+}
+
+.status-unknown {
+  background: var(--text-muted);
+  color: white;
+  border-color: var(--text-muted);
+}
+
+.quiz-details {
+  display: flex;
+  gap: 20px;
+  margin: 20px 0;
+  padding: 15px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.detail-item i {
+  color: var(--primary-color);
+  font-size: 1rem;
+}
+
+.info-notice {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.info-notice i {
+  margin-right: 8px;
+  font-size: 1.1rem;
+}
+
+.quiz-found {
+  margin-top: 2rem;
+}
+
+.found-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.found-header {
+  margin-bottom: 1.5rem;
+}
+
+.success-icon {
+  font-size: 3rem;
+  color: #10b981;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.found-header h3 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
   font-weight: 600;
+  margin: 0;
+}
+
+.quiz-basic-info {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+}
+
+.quiz-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.quiz-title i {
+  color: var(--primary-color);
+  font-size: 1.3rem;
+}
+
+.quiz-code {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.quiz-code i {
+  color: var(--primary-color);
+}
+
+.start-message {
+  margin-bottom: 2rem;
+}
+
+.start-message p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.found-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.found-actions .start-btn {
+  min-width: 200px;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.found-actions .reset-btn {
+  min-width: 200px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
 }
 
 .preview-actions {
