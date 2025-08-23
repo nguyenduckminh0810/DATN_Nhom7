@@ -39,9 +39,6 @@
                 <button class="btn primary" @click="relogin">
                     Đăng nhập tài khoản khác
                 </button>
-                <button class="btn ghost" @click="goHome">
-                    Về trang chủ
-                </button>
                 <button class="btn link" @click="contact">
                     Liên hệ hỗ trợ
                 </button>
@@ -57,6 +54,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useLogin } from './client/useLogin'
+const { logout } = useLogin()
 
 const router = useRouter()
 const user = ref(null)
@@ -76,6 +75,7 @@ const relogin = () => {
     localStorage.removeItem('userId')
     localStorage.removeItem('admin_user')
     localStorage.removeItem('banned') // cho phép vào trang login
+    logout()
     router.replace({ name: 'Login' })
 }
 
