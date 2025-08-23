@@ -356,7 +356,8 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresUser) {
     if (!token && !adminUser) return next({ name: 'Login' })
-    // ✅ USER đã đăng nhập -> cho phép vào
+    
+    // ✅ Admin và User đều có thể truy cập user routes
     return next()
   }
 

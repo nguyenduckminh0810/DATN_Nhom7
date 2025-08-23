@@ -56,7 +56,26 @@ const adminUser = ref(null)
 
 // ✅ CHECK AUTHORIZATION
 const isAuthorized = computed(() => {
-  return adminUser.value !== null
+  // ✅ Kiểm tra nhiều nguồn để đảm bảo chính xác
+  const token = localStorage.getItem('token')
+  const adminUserStr = localStorage.getItem('admin_user')
+  const userInfo = localStorage.getItem('user')
+  
+  let isAdmin = false
+  
+  if (adminUserStr) {
+    isAdmin = true
+  } else if (userInfo) {
+    try {
+      const userData = JSON.parse(userInfo)
+      isAdmin = userData.role === 'admin' || userData.role === 'ADMIN'
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }
+  
+  const authorized = token && isAdmin
+  return authorized
 })
 
 // ✅ LOAD ADMIN USER
@@ -65,7 +84,6 @@ const loadAdminUser = () => {
     // ✅ Kiểm tra token trước
     const token = localStorage.getItem('token')
     if (!token) {
-      console.log('❌ No token found, clearing admin user')
       adminUser.value = null
       return
     }
@@ -74,7 +92,6 @@ const loadAdminUser = () => {
     const adminUserStr = localStorage.getItem('admin_user')
     if (adminUserStr) {
       adminUser.value = JSON.parse(adminUserStr)
-      console.log('✅ Admin user loaded from admin_user:', adminUser.value)
       return
     }
 
@@ -84,12 +101,24 @@ const loadAdminUser = () => {
       const userData = JSON.parse(userInfo)
       if (userData.role === 'admin' || userData.role === 'ADMIN') {
         adminUser.value = userData
-        console.log('✅ Admin user loaded from user data:', adminUser.value)
         return
       }
     }
 
-    console.log('❌ No admin user found')
+    // ✅ Kiểm tra thêm từ localStorage trực tiếp
+    const directUserInfo = localStorage.getItem('user')
+    if (directUserInfo) {
+      try {
+        const directUserData = JSON.parse(directUserInfo)
+        if (directUserData.role === 'admin' || directUserData.role === 'ADMIN') {
+          adminUser.value = directUserData
+          return
+        }
+      } catch (e) {
+        // Ignore parsing errors
+      }
+    }
+
     adminUser.value = null
   } catch (error) {
     console.error('Error loading admin user:', error)

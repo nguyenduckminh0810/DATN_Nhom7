@@ -129,12 +129,15 @@ async function handleSubmit(e) {
         // router.push('/dashboard')
 
         const user = JSON.parse(localStorage.getItem('user') || '{}')
-        console.log('Logged in as role:', user.role)
+        console.log('🔍 Login.vue - User role:', user.role)
+        console.log('🔍 Login.vue - Redirecting...')
+        
         if (user.role?.toUpperCase() === 'ADMIN') {
-            router.push({ name: 'AdminCategories' })
+            console.log('🔍 Login.vue - Redirecting ADMIN to AdminDashboard')
+            router.push({ name: 'AdminDashboard' })  // ✅ Redirect ADMIN về AdminDashboard
         } else {
-            router.push({ name: 'Home', params: { userId: user.id } })
-
+            console.log('🔍 Login.vue - Redirecting USER to Dashboard')
+            router.push({ name: 'Dashboard' })  // ✅ Redirect USER về ClientDashboard
         }
     }
 }

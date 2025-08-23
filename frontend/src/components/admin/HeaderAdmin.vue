@@ -27,9 +27,21 @@ const userProfile = ref(null)
 
 // ✅ CHECK USER ROLE
 const isAdmin = computed(() => {
-  const isAdminUser = userProfile.value?.role === 'admin' || userProfile.value?.role === 'ADMIN'
-  console.log('🔍 isAdmin computed:', isAdminUser, 'userProfile:', userProfile.value)
-  return isAdminUser
+  // Kiểm tra nhiều nguồn để đảm bảo chính xác
+  const adminUserStr = localStorage.getItem('admin_user')
+  if (adminUserStr) return true
+  
+  const userInfo = localStorage.getItem('user')
+  if (userInfo) {
+    try {
+      const userData = JSON.parse(userInfo)
+      return userData.role === 'admin' || userData.role === 'ADMIN'
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }
+  
+  return userProfile.value?.role === 'admin' || userProfile.value?.role === 'ADMIN'
 })
 
 const isUser = computed(() => {
@@ -129,7 +141,7 @@ function login() {
 // ✅ FUNCTION XỬ LÝ NAVIGATION THÔNG MINH
 function handleLogoClick() {
   if (isLoggedIn.value) {
-    // Nếu đã login -> dashboard
+    // Nếu đã login -> luôn chuyển về client dashboard
     router.push('/dashboard')
   } else {
     // Nếu chưa login -> home
@@ -457,87 +469,62 @@ const handleUserDropdownLeave = (event) => {
       <!-- Main Navigation -->
       <nav class="main-nav">
         <div class="nav-group">
-          <div @click="handleLogoClick" class="nav-item" style="cursor: pointer">
+          <RouterLink to="/dashboard" class="nav-item">
             <div class="nav-content">
               <i class="bi bi-house"></i>
               <span>Trang chủ</span>
             </div>
-          </div>
+          </RouterLink>
 
-          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
-            <div class="nav-content" @click="handleDropdownClick">
-              <i class="bi bi-puzzle"></i>
-              <span>Quiz</span>
-              <i class="bi bi-chevron-down dropdown-arrow"></i>
-            </div>
-            <div class="dropdown-panel">
-              <RouterLink to="/quiz-crud" class="dropdown-link" @click="closeAllDropdowns">
-                <i class="bi bi-plus-circle"></i>
-                <div class="link-content">
-                  <span class="link-title">Tạo Quiz</span>
-                  <small class="link-desc">Tạo quiz mới</small>
-                </div>
-              </RouterLink>
-              <RouterLink to="/join-quiz" class="dropdown-link" @click="closeAllDropdowns">
-                <i class="bi bi-key"></i>
-                <div class="link-content">
-                  <span class="link-title">Tham gia Quiz</span>
-                  <small class="link-desc">Nhập mã code</small>
-                </div>
-              </RouterLink>
-              <RouterLink to="/my-quizzes" class="dropdown-link" @click="closeAllDropdowns">
-                <i class="bi bi-collection"></i>
-                <div class="link-content">
-                  <span class="link-title">Quiz của tôi</span>
-                  <small class="link-desc">Quản lý quiz</small>
-                </div>
-              </RouterLink>
-              <RouterLink to="/public-quizzes" class="dropdown-link" @click="closeAllDropdowns">
-                <i class="bi bi-globe"></i>
-                <div class="link-content">
-                  <span class="link-title">Quiz công khai</span>
-                  <small class="link-desc">Khám phá quiz</small>
-                </div>
-              </RouterLink>
-            </div>
-          </div>
-
-          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
-            <div class="nav-content" @click="handleDropdownClick">
-              <i class="bi bi-folder2"></i>
-              <span>Danh mục</span>
-              <i class="bi bi-chevron-down dropdown-arrow"></i>
-            </div>
-            <div class="dropdown-panel">
-              <RouterLink :to="{ name: 'CategoryView' }" class="dropdown-link" @click="closeAllDropdowns">
-                <i class="bi bi-grid"></i>
-                <div class="link-content">
-                  <span class="link-title">Xem danh mục</span>
-                  <small class="link-desc">Duyệt theo chủ đề</small>
-                </div>
-              </RouterLink>
-              <RouterLink v-if="isAdmin" :to="{ name: 'AdminCategories' }" class="dropdown-link"
-                @click="closeAllDropdowns">
-                <i class="bi bi-gear"></i>
-                <div class="link-content">
-                  <span class="link-title">Quản lý</span>
-                  <small class="link-desc">Tạo & sửa danh mục</small>
-                </div>
-              </RouterLink>
-            </div>
-          </div>
-
-          <a @click="goToHistory" class="nav-item" style="cursor: pointer">
+          <RouterLink to="/admin/dashboard" class="nav-item">
             <div class="nav-content">
-              <i class="bi bi-graph-up"></i>
+              <i class="bi bi-speedometer2"></i>
+              <span>Dashboard</span>
+            </div>
+          </RouterLink>
+
+          <div class="nav-item dropdown" @mouseenter="handleDropdownHover" @mouseleave="handleDropdownLeave">
+            <div class="nav-content" @click="handleDropdownClick">
+              <i class="bi bi-people"></i>
+              <span>Quản lý</span>
+              <i class="bi bi-chevron-down dropdown-arrow"></i>
+            </div>
+            <div class="dropdown-panel">
+              <RouterLink to="/admin/all-users" class="dropdown-link" @click="closeAllDropdowns">
+                <i class="bi bi-person-gear"></i>
+                <div class="link-content">
+                  <span class="link-title">Quản lý User</span>
+                  <small class="link-desc">Xem và quản lý người dùng</small>
+                </div>
+              </RouterLink>
+              <RouterLink to="/admin/all-quizzes" class="dropdown-link" @click="closeAllDropdowns">
+                <i class="bi bi-puzzle"></i>
+                <div class="link-content">
+                  <span class="link-title">Quản lý Quiz</span>
+                  <small class="link-desc">Xem và quản lý tất cả quiz</small>
+                </div>
+              </RouterLink>
+            </div>
+          </div>
+
+          <RouterLink to="/admin/categories" class="nav-item">
+            <div class="nav-content">
+              <i class="bi bi-tags"></i>
+              <span>Danh mục</span>
+            </div>
+          </RouterLink>
+
+          <RouterLink to="/admin/analytics" class="nav-item">
+            <div class="nav-content">
+              <i class="bi bi-bar-chart"></i>
               <span>Thống kê</span>
             </div>
-          </a>
+          </RouterLink>
 
-          <RouterLink to="/global-leaderboard" class="nav-item">
+          <RouterLink to="/admin/reports" class="nav-item">
             <div class="nav-content">
-              <i class="bi bi-trophy"></i>
-              <span>Bảng xếp hạng</span>
+              <i class="bi bi-flag"></i>
+              <span>Báo cáo</span>
             </div>
           </RouterLink>
         </div>
@@ -599,7 +586,6 @@ const handleUserDropdownLeave = (event) => {
               <span>Admin Panel</span>
             </RouterLink>
 
-
             <!-- Menu Items - Show user menu items for all users -->
             <div v-if="userMenuItems && userMenuItems.length > 0">
               <!-- User Menu Items -->
@@ -656,6 +642,8 @@ const handleUserDropdownLeave = (event) => {
   background-clip: text;
   font-size: 1.8rem;
 }
+
+
 
 .nabla:hover {
   animation: glitch 0.5s linear;
@@ -759,6 +747,8 @@ const handleUserDropdownLeave = (event) => {
   padding: 0.5rem;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-wrap: nowrap;
+  overflow: visible;
 }
 
 .nav-item {
@@ -769,6 +759,8 @@ const handleUserDropdownLeave = (event) => {
   border-radius: 30px;
   transition: all 0.3s ease;
   cursor: pointer;
+  white-space: nowrap;
+  min-width: fit-content;
 }
 
 .nav-content {
@@ -777,6 +769,19 @@ const handleUserDropdownLeave = (event) => {
   gap: 0.5rem;
   font-weight: 500;
   font-size: 0.95rem;
+  white-space: nowrap;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.nav-content i {
+  flex-shrink: 0;
+  width: auto;
+}
+
+.nav-content span {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .nav-item:hover,

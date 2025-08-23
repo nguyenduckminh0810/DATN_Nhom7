@@ -77,11 +77,8 @@ export function useLogin() {
 
         await getUserId().then((id) => id && localStorage.setItem('userId', id))
 
-        // 👇 Điều hướng ngay tại đây
-        const userRole = (user.role || '').toUpperCase()
-        const target = userRole === 'ADMIN' ? 'AdminDashboard' : 'Dashboard'
-        console.log('🔍 Login redirect:', { userRole, target, user })
-        router.replace({ name: target })
+        // 👇 Không redirect ở đây nữa, để Login.vue xử lý
+        console.log('🔍 Login successful:', { userRole: (user.role || '').toUpperCase(), user })
 
         return { success: true, user }
       } else {
