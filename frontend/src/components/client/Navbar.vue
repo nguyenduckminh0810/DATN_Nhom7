@@ -6,6 +6,7 @@ import api from '@/utils/axios'
 import { useThemeStore } from '@/stores/theme'
 import { useNotificationStore } from '@/stores/notification'
 import NotificationComponent from '../NotificationComponent.vue'
+import { storeToRefs } from 'pinia'
 
 // Define component name for Vue DevTools
 defineOptions({
@@ -17,10 +18,11 @@ const router = useRouter()
 const themeStore = useThemeStore()
 const notificationStore = useNotificationStore()
 const notificationComponent = ref(null)
+const { unreadCount } = storeToRefs(notificationStore)
 
 const isLoggedIn = computed(() => !!token.value)
 const userProfile = ref(null)
-const notificationCount = computed(() => notificationStore.unreadCount || 0)
+const notificationCount = computed(() => unreadCount.value || 0)
 
 // ✅ CHECK USER ROLE
 const isAdmin = computed(() => {
@@ -170,7 +172,7 @@ const logoutForNavbar = () => {
   // ✅ Reset user profile & UI
   userProfile.value = null
   closeAllDropdowns()
-  avatarUrl.value = null
+  // ❗ Không set avatarUrl (là computed), chỉ cần reset userProfile
 
   // Không xóa toàn bộ localStorage để giữ lại username/rememberMe nếu người dùng đã tick
   if (remembered && rememberedUsername) {
@@ -226,6 +228,18 @@ watch(
   },
 )
 
+// ✅ Hàm cập nhật badge + danh sách ngay sau khi nộp bài
+async function refreshNotificationsAfterSubmit() {
+  try {
+    // gọi API count trước để badge nhảy nhanh
+    await notificationStore.loadUnreadCount()
+    // rồi load danh sách (nếu panel đang mở)
+    await notificationStore.loadNotifications()
+  } catch (e) {
+    console.error('Failed to refresh notifications after submit:', e)
+  }
+}
+
 // ✅ Lấy profile khi component mount nếu đã login
 onMounted(() => {
   // ✅ Chỉ load profile nếu có token
@@ -235,9 +249,9 @@ onMounted(() => {
     // ✅ Khởi tạo notification store
     notificationStore.initialize().then(async () => {
       // Đồng bộ badge ngay sau initialize nếu server đã ghi nhận đã đọc hết
-      const countBefore = notificationStore.unreadCount
+      const countBefore = unreadCount.value
       await notificationStore.loadUnreadCount()
-      if (notificationStore.unreadCount === 0 && countBefore !== 0) {
+      if (unreadCount.value === 0 && countBefore !== 0) {
         await notificationStore.loadNotifications()
       }
     })
@@ -261,6 +275,9 @@ onMounted(() => {
       }, 100)
     })
   })
+
+  // ✅ Lắng nghe sự kiện nộp bài từ PlayQuiz/QuizResult
+  window.addEventListener('quiz-submitted', refreshNotificationsAfterSubmit)
 })
 
 onUnmounted(() => {
@@ -272,6 +289,9 @@ onUnmounted(() => {
   dropdowns.forEach((dropdown) => {
     dropdown.removeEventListener('mouseleave', () => { })
   })
+
+  // Hủy đăng ký sự kiện toàn cục
+  window.removeEventListener('quiz-submitted', refreshNotificationsAfterSubmit)
 })
 
 // ✅ Xử lý lỗi avatar
@@ -595,7 +615,6 @@ const handleUserDropdownLeave = (event) => {
               <span>Admin Panel</span>
             </RouterLink>
 
-
             <!-- Menu Items - Show user menu items for all users -->
             <div v-if="userMenuItems && userMenuItems.length > 0">
               <!-- User Menu Items -->
@@ -603,21 +622,20 @@ const handleUserDropdownLeave = (event) => {
                 <RouterLink v-if="item.link" :to="item.link" class="user-dropdown-link" @click="closeAllDropdowns">
                   <i :class="item.icon"></i>
                   <span>{{ item.label }}</span>
-                  <span v-if="notificationStore.unreadCount > 0 && item.label === 'Thông báo'"
-                    class="notification-badge">{{ notificationStore.unreadCount }}</span>
+                  <span v-if="unreadCount > 0 && item.label === 'Thông báo'" class="notification-badge">{{ unreadCount
+                  }}</span>
                 </RouterLink>
 
                 <a v-else-if="item.action" href="#" class="user-dropdown-link" @click="showNotifications($event)">
                   <i :class="item.icon"></i>
                   <span>{{ item.label }}</span>
-                  <span v-if="notificationStore.unreadCount > 0 && item.label === 'Thông báo'"
-                    class="notification-badge">{{ notificationStore.unreadCount }}</span>
+                  <span v-if="unreadCount > 0 && item.label === 'Thông báo'" class="notification-badge">{{ unreadCount
+                  }}</span>
                 </a>
               </template>
             </div>
 
             <!-- Inline notifications panel inside dropdown -->
-
             <div class="dropdown-notifications">
               <NotificationComponent ref="notificationComponent" />
             </div>

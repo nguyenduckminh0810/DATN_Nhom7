@@ -3,8 +3,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useLogin } from './useLogin'
 import api from '@/utils/axios'
-import Leaderboard from './Leaderboard.vue' // Thêm import Leaderboard
+import Leaderboard from './Leaderboard.vue'
 import { useUserStore } from '@/stores/user'
+
+/* ✅ THÊM: Store thông báo để cập nhật badge ngay */
+import { useNotificationStore } from '@/stores/notification'
+import { storeToRefs } from 'pinia'
 
 const { username } = useLogin()
 const route = useRoute()
@@ -23,11 +27,38 @@ const review = ref({
 })
 const submitting = ref(false)
 const successMessage = ref('')
-const quizId = ref(null) // Thêm quizId để lưu trữ
-const leaderboardRef = ref(null) // Thêm ref để control Leaderboard
+const quizId = ref(null)
+const leaderboardRef = ref(null)
 
 const userStore = useUserStore()
 const currentUserId = computed(() => userStore.getUserId())
+
+/* ✅ THÊM: khởi tạo store thông báo */
+const notificationStore = useNotificationStore()
+const { unreadCount } = storeToRefs(notificationStore)
+
+/* ✅ THÊM: tăng badge 1 lần/ket qua, tránh tăng trùng */
+function bumpUnreadOptimisticOnce() {
+  const key = `notif_bumped_result_${resultId}`
+  try {
+    if (typeof window !== 'undefined' && !localStorage.getItem(key)) {
+      if (typeof notificationStore.bumpUnread === 'function') {
+        notificationStore.bumpUnread(1)
+      } else {
+        notificationStore.unreadCount = Number(unreadCount.value || 0) + 1
+      }
+      localStorage.setItem(key, '1')
+
+      // Cho Navbar/Notification panel biết để tự reload nếu cần
+      window.dispatchEvent(new Event('quiz-submitted'))
+
+      // Đồng bộ lại số chính xác từ server (không chặn UI)
+      notificationStore.loadUnreadCount?.().catch(() => { })
+    }
+  } catch (e) {
+    console.warn('Không thể bump unread lạc quan:', e)
+  }
+}
 
 onMounted(async () => {
   // Tải dữ liệu kết quả an toàn từ BE bằng resultId
@@ -36,6 +67,9 @@ onMounted(async () => {
     score.value = resResult.data.score || 0
     correctAnswers.value = resResult.data.correctAnswers || []
     selectedAnswers.value = resResult.data.selectedAnswers || []
+
+    // ✅ Thêm: sau khi có result hợp lệ -> bump badge nếu chưa bump
+    bumpUnreadOptimisticOnce()
 
     // ✅ Fallback: đọc selections từ localStorage nếu BE không trả
     if (
@@ -56,7 +90,7 @@ onMounted(async () => {
             selectedAnswers.value = parsed
           }
         }
-      } catch {}
+      } catch { }
     }
 
     // Lấy quizId từ result data
@@ -104,8 +138,6 @@ onMounted(async () => {
   setTimeout(() => {
     isLoaded.value = true
   }, 500)
-
-  // Không đọc/xóa dữ liệu localStorage nữa
 })
 
 // Watch quizId để reload Leaderboard
@@ -331,16 +363,11 @@ const submitReview = async () => {
   <div class="quiz-result-container">
     <!-- Animated Background -->
     <div class="background-animation">
-      <div
-        class="floating-element"
-        v-for="n in 15"
-        :key="n"
-        :style="{
-          left: Math.random() * 100 + '%',
-          animationDelay: Math.random() * 3 + 's',
-          animationDuration: 3 + Math.random() * 2 + 's',
-        }"
-      >
+      <div class="floating-element" v-for="n in 15" :key="n" :style="{
+        left: Math.random() * 100 + '%',
+        animationDelay: Math.random() * 3 + 's',
+        animationDuration: 3 + Math.random() * 2 + 's',
+      }">
         {{ ['🎉', '⭐', '🏆', '🎊', '✨'][Math.floor(Math.random() * 5)] }}
       </div>
     </div>
@@ -376,45 +403,18 @@ const submitReview = async () => {
                 <div class="score-circle-container">
                   <svg class="score-circle" width="200" height="200" viewBox="0 0 200 200">
                     <!-- Background Circle -->
-                    <circle
-                      cx="100"
-                      cy="100"
-                      :r="radius"
-                      fill="none"
-                      stroke="rgba(255, 255, 255, 0.2)"
-                      stroke-width="8"
-                    />
+                    <circle cx="100" cy="100" :r="radius" fill="none" stroke="rgba(255, 255, 255, 0.2)"
+                      stroke-width="8" />
                     <!-- Progress Circle -->
-                    <circle
-                      cx="100"
-                      cy="100"
-                      :r="radius"
-                      fill="none"
-                      :stroke="scoreColor"
-                      stroke-width="8"
-                      stroke-linecap="round"
-                      :stroke-dasharray="circumference"
-                      :stroke-dashoffset="isLoaded ? dashOffset : circumference"
-                      transform="rotate(-90 100 100)"
-                      class="progress-ring"
-                    />
+                    <circle cx="100" cy="100" :r="radius" fill="none" :stroke="scoreColor" stroke-width="8"
+                      stroke-linecap="round" :stroke-dasharray="circumference"
+                      :stroke-dashoffset="isLoaded ? dashOffset : circumference" transform="rotate(-90 100 100)"
+                      class="progress-ring" />
                     <!-- Score Text -->
-                    <text
-                      x="100"
-                      y="95"
-                      text-anchor="middle"
-                      dominant-baseline="middle"
-                      class="score-text"
-                    >
+                    <text x="100" y="95" text-anchor="middle" dominant-baseline="middle" class="score-text">
                       {{ isLoaded ? score : 0 }}
                     </text>
-                    <text
-                      x="100"
-                      y="115"
-                      text-anchor="middle"
-                      dominant-baseline="middle"
-                      class="score-unit"
-                    >
+                    <text x="100" y="115" text-anchor="middle" dominant-baseline="middle" class="score-unit">
                       điểm
                     </text>
                   </svg>
@@ -495,13 +495,9 @@ const submitReview = async () => {
           </div>
           <div class="card-body">
             <div class="results-list">
-              <div
-                v-for="(result, index) in combinedResults"
-                :key="result.questionId"
-                class="result-item"
+              <div v-for="(result, index) in combinedResults" :key="result.questionId" class="result-item"
                 :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }"
-                :style="{ animationDelay: index * 0.1 + 's' }"
-              >
+                :style="{ animationDelay: index * 0.1 + 's' }">
                 <div class="result-number">
                   <span class="number">{{ result.questionNumber }}</span>
                   <div class="result-indicator">
@@ -512,10 +508,7 @@ const submitReview = async () => {
                 <div class="result-content">
                   <div class="result-info">
                     <span class="label">Câu trả lời của bạn:</span>
-                    <span
-                      class="value"
-                      :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }"
-                    >
+                    <span class="value" :class="{ correct: result.isCorrect, incorrect: !result.isCorrect }">
                       {{ result.selectedAnswerId || 'Không chọn' }}
                     </span>
                     <span v-if="result.selectedAnswerContent" class="answer-content">
@@ -527,7 +520,7 @@ const submitReview = async () => {
                     <span class="value correct">{{ result.correctAnswerId || '?' }}</span>
                     <span v-if="result.correctAnswerContent" class="answer-content correct">{{
                       result.correctAnswerContent
-                    }}</span>
+                      }}</span>
                   </div>
                 </div>
               </div>
@@ -536,11 +529,7 @@ const submitReview = async () => {
         </div>
 
         <!-- Bảng xếp hạng -->
-        <div
-          class="result-card leaderboard-card"
-          :class="{ loaded: isLoaded }"
-          v-if="quizId && !reviewOnly"
-        >
+        <div class="result-card leaderboard-card" :class="{ loaded: isLoaded }" v-if="quizId && !reviewOnly">
           <div class="card-header">
             <h3 class="card-title">
               <i class="bi bi-trophy"></i>
@@ -570,18 +559,10 @@ const submitReview = async () => {
             </div>
             <div class="mb-3">
               <label for="reviewText">Ý kiến của bạn:</label>
-              <textarea
-                v-model="review.reviewText"
-                class="form-control"
-                rows="3"
-                placeholder="Viết cảm nhận của bạn..."
-              ></textarea>
+              <textarea v-model="review.reviewText" class="form-control" rows="3"
+                placeholder="Viết cảm nhận của bạn..."></textarea>
             </div>
-            <button
-              @click="submitReview"
-              class="btn btn-primary"
-              :disabled="review.rating === '' || submitting"
-            >
+            <button @click="submitReview" class="btn btn-primary" :disabled="review.rating === '' || submitting">
               <i class="bi bi-send-fill me-2"></i> Gửi đánh giá
             </button>
             <div v-if="successMessage" class="alert alert-success mt-2">{{ successMessage }}</div>
@@ -652,6 +633,7 @@ const submitReview = async () => {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
@@ -707,6 +689,7 @@ const submitReview = async () => {
 }
 
 @keyframes bounce {
+
   0%,
   20%,
   50%,
