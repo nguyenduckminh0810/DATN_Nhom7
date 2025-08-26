@@ -83,4 +83,26 @@ public interface QuizAttemptRepo extends JpaRepository<QuizAttempt, Long> {
     
     // Tìm attempt theo quiz và status
     List<QuizAttempt> findByQuizIdAndStatus(Long quizId, AttemptStatus status);
+    
+    // ✅ THÊM CÁC METHOD CHO LỊCH SỬ - CHỈ LẤY ATTEMPT ĐÃ HOÀN THÀNH
+    
+    // Tìm completed attempts theo user (cho lịch sử)
+    @Query("SELECT qa FROM QuizAttempt qa WHERE qa.user.id = :userId AND qa.status = 'SUBMITTED' ORDER BY qa.attemptedAt DESC")
+    Page<QuizAttempt> findCompletedByUserIdOrderByAttemptedAtDesc(@Param("userId") Long userId, Pageable pageable);
+    
+    // Tìm completed attempts theo quiz (cho lịch sử)
+    @Query("SELECT qa FROM QuizAttempt qa WHERE qa.quiz.id = :quizId AND qa.status = 'SUBMITTED' ORDER BY qa.attemptedAt DESC")
+    Page<QuizAttempt> findCompletedByQuizIdOrderByAttemptedAtDesc(@Param("quizId") Long quizId, Pageable pageable);
+    
+    // Tìm completed attempts theo user và quiz (cho lịch sử)
+    @Query("SELECT qa FROM QuizAttempt qa WHERE qa.user.id = :userId AND qa.quiz.id = :quizId AND qa.status = 'SUBMITTED' ORDER BY qa.attemptedAt DESC")
+    Page<QuizAttempt> findCompletedByUserIdAndQuizIdOrderByAttemptedAtDesc(@Param("userId") Long userId, @Param("quizId") Long quizId, Pageable pageable);
+    
+    // Tìm tất cả completed attempts (cho admin xem lịch sử)
+    @Query("SELECT qa FROM QuizAttempt qa WHERE qa.status = 'SUBMITTED' ORDER BY qa.attemptedAt DESC")
+    Page<QuizAttempt> findAllCompletedOrderByAttemptedAtDesc(Pageable pageable);
+    
+    // Tìm completed attempts theo quiz cho summary (không phân trang)
+    @Query("SELECT qa FROM QuizAttempt qa WHERE qa.quiz.id = :quizId AND qa.status = 'SUBMITTED' ORDER BY qa.attemptedAt DESC")
+    List<QuizAttempt> findCompletedByQuizIdOrderByAttemptedAtDesc(@Param("quizId") Long quizId);
 }
