@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/utils/axios'
 
@@ -12,7 +12,8 @@ const quizId = route.params.quizId
 // ===== State =====
 const questions = ref([])
 const answersMap = ref({})
-const quizInfo = ref({ id: quizId, title: '', description: '', category: '', image: '' })
+const quizInfo = ref({ id: quizId, title: '', description: '', category: '', image: '', isPublic: true })
+const isPublicRef = ref(true) // Separate reactive ref for isPublic
 const activeTab = ref('info')
 const isLoading = ref(false)
 const isSaving = ref(false)
@@ -107,6 +108,27 @@ const validateEditQuestion = (question) => {
   return errors
 }
 
+// ===== Utility Functions =====
+function notify(message, type = 'info') {
+  console.log(`[${type.toUpperCase()}] ${message}`)
+  // Sử dụng alert tạm thời, có thể thay bằng toast notification sau
+  alert(`${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'} ${message}`)
+}
+
+// ===== Privacy Functions =====
+function setQuizPrivacy(isPublic) {
+  console.log('🔍 Setting quiz privacy to:', isPublic)
+  console.log('🔍 isPublic type:', typeof isPublic)
+  
+  // Update both refs
+  quizInfo.value.isPublic = isPublic
+  isPublicRef.value = isPublic
+  
+  console.log('🔍 QuizInfo after privacy change:', quizInfo.value)
+  console.log('🔍 isPublicRef value:', isPublicRef.value)
+  console.log('🔍 Quiz privacy changed to:', isPublic ? 'Public' : 'Private')
+}
+
 // ===== Image (FILE ONLY) =====
 function handleImageFileSelect(e) {
   const file = e.target.files?.[0]
@@ -150,9 +172,39 @@ function clearImage() {
 async function fetchQuizInfo() {
   try {
     const { data } = await api.get(`/quiz/${quizId}`, auth)
-    quizInfo.value = { ...quizInfo.value, ...data }
+    console.log('🔍 Fetched quiz data:', data)
+    console.log('🔍 API response keys:', Object.keys(data))
+    console.log('🔍 API isPublic value:', data.isPublic)
+    console.log('🔍 API public value:', data.public)
+    console.log('🔍 API isPublic type:', typeof data.isPublic)
+    
+    // Check both possible field names from API
+    let publicValue = data.isPublic
+    if (publicValue === undefined) {
+      publicValue = data.public
+    }
+    if (publicValue === undefined) {
+      publicValue = true // default value
+    }
+    
+    // Ensure boolean type
+    publicValue = Boolean(publicValue)
+    
+    // Update both refs
+    quizInfo.value = {
+      ...quizInfo.value,
+      ...data,
+      isPublic: publicValue
+    }
+    isPublicRef.value = publicValue
+    
+    console.log('🔍 Updated quizInfo:', quizInfo.value)
+    console.log('🔍 Final isPublic in fetchQuizInfo:', quizInfo.value.isPublic)
+    console.log('🔍 Final isPublicRef in fetchQuizInfo:', isPublicRef.value)
+    
     if (quizInfo.value.image) imagePreview.value = `/api/image/quiz/${quizId}`
-  } catch {
+  } catch (error) {
+    console.error('🔍 Error fetching quiz info:', error)
     notify('Không thể tải thông tin quiz', 'error')
   }
 }
@@ -203,10 +255,44 @@ async function updateQuizInfo() {
 
     const payload = {
       ...quizInfo.value,
+      isPublic: Boolean(isPublicRef.value), // Ensure boolean type
       image: imageFilename,
       category: quizInfo.value.category || null,
     }
-    await api.put(`/quiz/${quizId}`, payload, authJson)
+    console.log('🔍 Updating quiz with payload:', payload)
+    console.log('🔍 Payload keys:', Object.keys(payload))
+    console.log('🔍 Payload isPublic value:', payload.isPublic)
+    console.log('🔍 Payload isPublic type:', typeof payload.isPublic)
+    console.log('🔍 isPublic value:', payload.isPublic)
+    console.log('🔍 Full quizInfo before update:', quizInfo.value)
+    
+    const response = await api.put(`/quiz/${quizId}`, payload, authJson)
+    console.log('🔍 API response:', response)
+
+    // Cập nhật UI trực tiếp từ payload để đảm bảo đồng bộ ngay lập tức
+    quizInfo.value.title = payload.title
+    quizInfo.value.isPublic = Boolean(payload.isPublic)
+    quizInfo.value.category = payload.category
+    
+    // Update separate ref (already set from payload, but ensure consistency)
+    isPublicRef.value = Boolean(payload.isPublic)
+    
+    console.log('🔍 QuizInfo updated after save (from payload):', quizInfo.value)
+    console.log('🔍 isPublic value after update:', quizInfo.value.isPublic)
+    console.log('🔍 isPublicRef value after update:', isPublicRef.value)
+    console.log('🔍 isPublic type:', typeof quizInfo.value.isPublic)
+    
+    // Force Vue reactivity update by creating new object
+    quizInfo.value = { ...quizInfo.value }
+    
+    // Cũng cập nhật từ API response nếu có data
+    if (response.data && Object.keys(response.data).length > 0) {
+      console.log('🔍 API response data:', response.data)
+      // Chỉ cập nhật các field khác, không ghi đè isPublic đã set
+      const { isPublic: responseIsPublic, ...otherFields } = response.data
+      quizInfo.value = { ...quizInfo.value, ...otherFields }
+      console.log('🔍 Final quizInfo after API merge:', quizInfo.value)
+    }
 
     quizInfo.value.image = imageFilename
     imagePreview.value = imageFilename ? `/api/image/quiz/${quizId}` : ''
@@ -214,6 +300,14 @@ async function updateQuizInfo() {
 
     notify('Cập nhật thông tin quiz thành công!', 'success')
     validationErrors.value = {}
+    
+    // Force Vue to update the UI
+    await nextTick()
+    console.log('🔍 After nextTick - Final quizInfo:', quizInfo.value)
+    console.log('🔍 After nextTick - isPublic:', quizInfo.value.isPublic)
+    
+    // Không cần gọi fetchQuizInfo() nữa vì đã cập nhật trực tiếp
+    // await fetchQuizInfo()
   } catch {
     notify('Cập nhật thất bại!', 'error')
   } finally {
@@ -542,6 +636,8 @@ async function setTimeForAllQuestions() {
 
 // ===== Lifecycle & watches =====
 onMounted(async () => {
+  console.log('🔍 EditQuiz component mounted')
+  console.log('🔍 Initial quizInfo:', quizInfo.value)
   await Promise.all([fetchQuizInfo(), fetchQuestionsByQuizId()])
 })
 
@@ -560,6 +656,23 @@ watch(
     if (Object.keys(validationErrors.value).length) validationErrors.value = {}
   },
   { deep: true },
+)
+
+// Watch quizInfo changes for debugging
+watch(
+  quizInfo,
+  (newVal, oldVal) => {
+    console.log('🔍 QuizInfo changed:', newVal)
+    console.log('🔍 isPublic value in watch:', newVal.isPublic)
+    console.log('🔍 QuizInfo keys:', Object.keys(newVal))
+    
+    // Log thay đổi cụ thể của isPublic
+    if (oldVal && newVal.isPublic !== oldVal.isPublic) {
+      console.log('🔍 isPublic changed from', oldVal.isPublic, 'to', newVal.isPublic)
+      console.log('🔍 UI should update now!')
+    }
+  },
+  { deep: true }
 )
 </script>
 
@@ -661,11 +774,13 @@ watch(
                             <option value="technology">Công nghệ</option>
                           </select>
                         </div>
-                      </div>
-                      <div class="col-md-6">
+                        
                         <!-- Hình ảnh Quiz (FILE ONLY) -->
                         <div class="form-group">
-                          <label class="form-label">Hình ảnh Quiz</label>
+                          <label class="form-label">
+                            <i class="bi bi-image me-2"></i>
+                            Hình ảnh Quiz
+                          </label>
 
                           <div class="file-upload">
                             <input type="file" id="imageFileInput" class="form-control" accept="image/*"
@@ -682,6 +797,46 @@ watch(
                                   :disabled="isUploadingImage" title="Xoá ảnh">
                                   <i class="bi bi-x-lg"></i>
                                 </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label class="form-label">
+                            <i class="bi bi-shield-check me-2"></i>
+                            Quyền riêng tư
+                          </label>
+                          <div class="privacy-toggle-container">
+                            <div class="privacy-option" :class="{ active: isPublicRef === true }" @click="setQuizPrivacy(true)">
+                              <div class="privacy-option-inner">
+                                <div class="privacy-icon">
+                                  <i class="bi bi-globe2"></i>
+                                </div>
+                                <div class="privacy-content">
+                                  <div class="privacy-label">Công khai</div>
+                                  <div class="privacy-description">Ai cũng có thể tham gia</div>
+                                </div>
+                                <div class="privacy-checkmark" v-if="isPublicRef === true">
+                                  <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div class="privacy-option" :class="{ active: isPublicRef === false }" @click="setQuizPrivacy(false)">
+                              <div class="privacy-option-inner">
+                                <div class="privacy-icon">
+                                  <i class="bi bi-lock-fill"></i>
+                                </div>
+                                <div class="privacy-content">
+                                  <div class="privacy-label">Riêng tư</div>
+                                  <div class="privacy-description">Chỉ người có code mới tham gia được</div>
+                                </div>
+                                <div class="privacy-checkmark" v-if="isPublicRef === false">
+                                  <i class="bi bi-check-circle-fill"></i>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1386,6 +1541,12 @@ watch(
   margin-bottom: 20px;
 }
 
+/* Giảm khoảng cách giữa các form-group trong cùng một cột */
+.col-md-6 .form-group + .form-group {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
 .form-label {
   font-weight: 600;
   color: #333;
@@ -2012,7 +2173,175 @@ watch(
     width: 100%;
     max-width: 300px;
   }
+
+  .privacy-toggle-container {
+    gap: 12px;
+  }
+
+  .privacy-option-inner {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .privacy-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+  }
+
+  .privacy-label {
+    font-size: 1rem;
+  }
+
+  .privacy-description {
+    font-size: 0.85rem;
+  }
+
+  .privacy-checkmark {
+    top: 12px;
+    right: 12px;
+    font-size: 1.2rem;
+  }
 }
+
+/* Privacy Toggle Styles */
+.privacy-toggle-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.privacy-option {
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.privacy-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.privacy-option:hover {
+  border-color: #2563eb;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.2);
+}
+
+.privacy-option.active {
+  border-color: #2563eb;
+  background: #2563eb;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+}
+
+.privacy-option.active::before {
+  opacity: 0;
+}
+
+.privacy-option-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.privacy-option.active .privacy-option-inner {
+  color: white;
+}
+
+.privacy-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: #333;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.privacy-option.active .privacy-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.privacy-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.privacy-label {
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+  color: #1f2937;
+  letter-spacing: -0.02em;
+}
+
+.privacy-description {
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.privacy-option.active .privacy-label {
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.privacy-option.active .privacy-description {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.privacy-checkmark {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: var(--success-color);
+  font-size: 1.4rem;
+  z-index: 2;
+  animation: checkmarkPop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.privacy-option.active .privacy-checkmark {
+  color: white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+
 
 @media (max-width: 576px) {
   .quiz-header {
@@ -2030,6 +2359,35 @@ watch(
   .question-content,
   .question-edit-form {
     padding: 15px;
+  }
+
+  .privacy-toggle-container {
+    gap: 10px;
+  }
+
+  .privacy-option-inner {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .privacy-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .privacy-label {
+    font-size: 0.95rem;
+  }
+
+  .privacy-description {
+    font-size: 0.8rem;
+  }
+
+  .privacy-checkmark {
+    top: 10px;
+    right: 10px;
+    font-size: 1.1rem;
   }
 }
 </style>

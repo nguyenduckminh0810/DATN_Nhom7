@@ -182,9 +182,24 @@ public class QuizController {
 	@PutMapping("/{id}")
 	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
 	public ResponseEntity<Quiz> updateQuiz(@PathVariable Long id, @RequestBody Quiz quiz) {
-		return quizService.updateQuiz(id, quiz)
-				.map(updatedQuiz -> ResponseEntity.ok().body(updatedQuiz))
-				.orElse(ResponseEntity.notFound().build());
+		System.out.println("🔄 [QuizController] updateQuiz called for ID: " + id);
+		System.out.println("🔄 [QuizController] Request body quiz isPublic: " + quiz.isPublic());
+		
+		try {
+			Optional<Quiz> result = quizService.updateQuiz(id, quiz);
+			if (result.isPresent()) {
+				Quiz updatedQuiz = result.get();
+				System.out.println("🔄 [QuizController] Quiz updated successfully - Final isPublic: " + updatedQuiz.isPublic());
+				return ResponseEntity.ok().body(updatedQuiz);
+			} else {
+				System.out.println("❌ [QuizController] Quiz not found for ID: " + id);
+				return ResponseEntity.notFound().build();
+			}
+		} catch (Exception e) {
+			System.err.println("❌ [QuizController] Error updating quiz: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
 	}
 
 	@DeleteMapping("/{id}")

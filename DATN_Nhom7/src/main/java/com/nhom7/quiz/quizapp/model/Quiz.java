@@ -1,6 +1,7 @@
 package com.nhom7.quiz.quizapp.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ public class Quiz {
 	private Category category;
 
 	@Column(name = "is_public")
+	@JsonProperty("isPublic")
 	private boolean isPublic;
 
 	@Column(name = "created_at")
@@ -120,6 +122,7 @@ public class Quiz {
 		this.category = category;
 	}
 
+	@JsonProperty("isPublic")
 	public boolean isPublic() {
 		return isPublic;
 	}
