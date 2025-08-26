@@ -159,11 +159,19 @@ public class QuizService {
 	}
 
 	// Cập nhật quiz
+	@Transactional
 	public Optional<Quiz> updateQuiz(Long id, Quiz updatedQuiz) {
+		System.out.println("🔄 [QuizService] Starting updateQuiz for ID: " + id);
+		System.out.println("🔄 [QuizService] Updated quiz isPublic: " + updatedQuiz.isPublic());
+		
 		return quizRepo.findById(id).map(quiz -> {
+			System.out.println("🔄 [QuizService] Found existing quiz - Current isPublic: " + quiz.isPublic());
+			
 			quiz.setTitle(updatedQuiz.getTitle());
 			quiz.setPublic(updatedQuiz.isPublic());
 			quiz.setCategory(updatedQuiz.getCategory());
+
+			System.out.println("🔄 [QuizService] After setting - Quiz isPublic: " + quiz.isPublic());
 
 			// ✅ CẬP NHẬT IMAGE NẾU CÓ
 			if (updatedQuiz.getImage() != null && !updatedQuiz.getImage().trim().isEmpty()) {
@@ -186,7 +194,10 @@ public class QuizService {
 			// ✅ CẬP NHẬT QUIZ.IMAGE FIELD
 			quiz.setImage(updatedQuiz.getImage());
 
-			return quizRepo.save(quiz);
+			Quiz savedQuiz = quizRepo.save(quiz);
+			System.out.println("🔄 [QuizService] After save - Saved quiz isPublic: " + savedQuiz.isPublic());
+			
+			return savedQuiz;
 		});
 	}
 
