@@ -42,11 +42,11 @@ function toQuizHistory() {
     }
 }
 
-// ✅ Reset status when component mounts
+//  Reset status when component mounts
 import { onMounted } from 'vue'
 
 onMounted(() => {
-    // ✅ Reset status to ensure clean state
+    //  Reset status to ensure clean state
     status.value = 'loggedOut'
     message.value = ''
     // nếu trước đó user chọn ghi nhớ → khôi phục username
@@ -81,18 +81,18 @@ function togglePassword() {
 }
 
 async function handleSubmit(e) {
-    e.preventDefault() // ✅ PREVENT DEFAULT FORM SUBMISSION
-    console.log('🔐 Login attempt:', { username: username.value, password: password.value ? '***' : 'empty' })
-    console.log('📍 Current URL:', window.location.href)
-    console.log('🔄 Preventing form submission...')
+    e.preventDefault() //  PREVENT DEFAULT FORM SUBMISSION
+    console.log(' Login attempt:', { username: username.value, password: password.value ? '***' : 'empty' })
+    console.log(' Current URL:', window.location.href)
+    console.log(' Preventing form submission...')
 
     if (!username.value.trim() || !password.value.trim()) {
-        message.value = '❌ Vui lòng nhập đầy đủ thông tin!'
-        console.log('❌ Form validation failed')
+        message.value = ' Vui lòng nhập đầy đủ thông tin!'
+        console.log(' Form validation failed')
         return
     }
 
-    console.log('✅ Form validation passed, calling login()')
+    console.log(' Form validation passed, calling login()')
     const result = await login()
 
     if (result.success) {
@@ -124,20 +124,20 @@ async function handleSubmit(e) {
             localStorage.removeItem('rememberMe')
             // Không can thiệp xóa Keychain: trình duyệt sẽ quản lý theo người dùng
         }
-        // ✅ REDIRECT TO USER DASHBOARD FOR ALL USERS
-        // console.log('🚀 Redirecting to user dashboard')
+        //  REDIRECT TO USER DASHBOARD FOR ALL USERS
+        // console.log(' Redirecting to user dashboard')
         // router.push('/dashboard')
 
         const user = JSON.parse(localStorage.getItem('user') || '{}')
-        console.log('🔍 Login.vue - User role:', user.role)
-        console.log('🔍 Login.vue - Redirecting...')
-        
+        console.log(' Login.vue - User role:', user.role)
+        console.log(' Login.vue - Redirecting...')
+
         if (user.role?.toUpperCase() === 'ADMIN') {
-            console.log('🔍 Login.vue - Redirecting ADMIN to AdminDashboard')
-            router.push({ name: 'AdminDashboard' })  // ✅ Redirect ADMIN về AdminDashboard
+            console.log(' Login.vue - Redirecting ADMIN to AdminDashboard')
+            router.push({ name: 'AdminDashboard' })  //  Redirect ADMIN về AdminDashboard
         } else {
-            console.log('🔍 Login.vue - Redirecting USER to Dashboard')
-            router.push({ name: 'Dashboard' })  // ✅ Redirect USER về ClientDashboard
+            console.log(' Login.vue - Redirecting USER to Dashboard')
+            router.push({ name: 'Dashboard' })  //  Redirect USER về ClientDashboard
         }
     }
 }

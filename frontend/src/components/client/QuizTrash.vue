@@ -33,12 +33,8 @@
       <div v-for="quiz in quizzes" :key="quiz.id" class="quiz-card deleted">
         <!-- Quiz Image -->
         <div class="quiz-image">
-          <img 
-            :src="quiz.image ? `/api/image/quiz/${quiz.id}` : '/img/hero-img.png'"
-            :alt="quiz.title"
-            @error="handleImageError"
-            @load="handleImageLoad"
-          />
+          <img :src="quiz.image ? `/api/image/quiz/${quiz.id}` : '/img/hero-img.png'" :alt="quiz.title"
+            @error="handleImageError" @load="handleImageLoad" />
           <div class="deleted-overlay">
             <i class="bi bi-trash3"></i>
             <span>Đã xóa</span>
@@ -54,19 +50,11 @@
 
         <!-- Action Buttons -->
         <div class="quiz-actions">
-          <button 
-            class="restore-btn" 
-            @click="restoreQuiz(quiz.id)"
-            title="Khôi phục quiz"
-          >
+          <button class="restore-btn" @click="restoreQuiz(quiz.id)" title="Khôi phục quiz">
             <i class="bi bi-arrow-clockwise"></i>
             Khôi phục
           </button>
-          <button 
-            class="delete-btn" 
-            @click="hardDeleteQuiz(quiz.id)"
-            title="Xóa hoàn toàn"
-          >
+          <button class="delete-btn" @click="hardDeleteQuiz(quiz.id)" title="Xóa hoàn toàn">
             <i class="bi bi-trash3-fill"></i>
             Xóa vĩnh viễn
           </button>
@@ -76,23 +64,15 @@
 
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="pagination">
-      <button 
-        :disabled="currentPage === 0" 
-        @click="changePage(currentPage - 1)"
-        class="page-btn"
-      >
+      <button :disabled="currentPage === 0" @click="changePage(currentPage - 1)" class="page-btn">
         <i class="bi bi-chevron-left"></i>
       </button>
-      
+
       <span class="page-info">
         Trang {{ currentPage + 1 }} / {{ totalPages }}
       </span>
-      
-      <button 
-        :disabled="currentPage === totalPages - 1" 
-        @click="changePage(currentPage + 1)"
-        class="page-btn"
-      >
+
+      <button :disabled="currentPage === totalPages - 1" @click="changePage(currentPage + 1)" class="page-btn">
         <i class="bi bi-chevron-right"></i>
       </button>
     </div>
@@ -138,7 +118,7 @@ const fetchDeletedQuizzes = async (page = 0) => {
 
   loading.value = true
   try {
-    console.log('🔄 Fetching deleted quizzes for user:', userId, 'page:', page)
+    console.log(' Fetching deleted quizzes for user:', userId, 'page:', page)
     const response = await api.get(`/quiz/user/${userId}/deleted/paginated`, {
       params: {
         page: page,
@@ -147,16 +127,16 @@ const fetchDeletedQuizzes = async (page = 0) => {
     })
 
     const data = response.data
-    console.log('📊 Received deleted quiz data:', data)
-    
+    console.log(' Received deleted quiz data:', data)
+
     quizzes.value = data.quizzes || []
     currentPage.value = data.currentPage || 0
     totalPages.value = data.totalPages || 0
     totalItems.value = data.totalItems || 0
-    
-    console.log('✅ Deleted quizzes loaded successfully')
+
+    console.log(' Deleted quizzes loaded successfully')
   } catch (error) {
-    console.error('❌ Error fetching deleted quizzes:', error)
+    console.error(' Error fetching deleted quizzes:', error)
     showToast('Có lỗi xảy ra khi tải danh sách quiz đã xóa', 'error')
   } finally {
     loading.value = false
@@ -168,20 +148,20 @@ const restoreQuiz = async (quizId) => {
   if (!confirm('Bạn có chắc chắn muốn khôi phục quiz này?')) {
     return
   }
-  
+
   try {
     const response = await api.post(`/quiz/${quizId}/restore`)
-    
+
     if (response.status === 200 && response.data && response.data.success) {
       showToast(response.data.message || 'Quiz đã được khôi phục thành công!', 'success')
-      
-      console.log('✅ Quiz restored successfully, refreshing list...')
+
+      console.log(' Quiz restored successfully, refreshing list...')
       await fetchDeletedQuizzes(currentPage.value)
-      console.log('✅ Deleted quiz list refreshed')
-      
+      console.log(' Deleted quiz list refreshed')
+
       // Thông báo cho các component khác
-      window.dispatchEvent(new CustomEvent('quizRestored', { 
-        detail: { quizId: quizId } 
+      window.dispatchEvent(new CustomEvent('quizRestored', {
+        detail: { quizId: quizId }
       }))
     } else {
       showToast('Có lỗi xảy ra khi khôi phục quiz. Vui lòng thử lại.', 'error')
@@ -197,20 +177,20 @@ const hardDeleteQuiz = async (quizId) => {
   if (!confirm('Bạn có chắc chắn muốn xóa hoàn toàn quiz này? Hành động này không thể hoàn tác và sẽ xóa vĩnh viễn tất cả dữ liệu liên quan.')) {
     return
   }
-  
+
   try {
     const response = await api.delete(`/quiz/${quizId}/hard`)
-    
+
     if (response.status === 200 && response.data && response.data.success) {
       showToast(response.data.message || 'Quiz đã được xóa hoàn toàn!', 'success')
-      
-      console.log('✅ Quiz hard deleted successfully, refreshing list...')
+
+      console.log(' Quiz hard deleted successfully, refreshing list...')
       await fetchDeletedQuizzes(currentPage.value)
-      console.log('✅ Deleted quiz list refreshed')
-      
+      console.log(' Deleted quiz list refreshed')
+
       // Thông báo cho các component khác
-      window.dispatchEvent(new CustomEvent('quizHardDeleted', { 
-        detail: { quizId: quizId } 
+      window.dispatchEvent(new CustomEvent('quizHardDeleted', {
+        detail: { quizId: quizId }
       }))
     } else {
       showToast('Có lỗi xảy ra khi xóa quiz. Vui lòng thử lại.', 'error')
@@ -255,7 +235,7 @@ const handleImageLoad = (event) => {
 // Listen for quiz events
 onMounted(() => {
   fetchDeletedQuizzes()
-  
+
   // Listen for quiz deletion events
   window.addEventListener('quizDeleted', () => {
     fetchDeletedQuizzes(currentPage.value)
@@ -318,8 +298,13 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-state {
@@ -434,7 +419,8 @@ onMounted(() => {
   gap: 10px;
 }
 
-.restore-btn, .delete-btn {
+.restore-btn,
+.delete-btn {
   flex: 1;
   padding: 10px;
   border: none;
@@ -532,6 +518,7 @@ onMounted(() => {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -542,15 +529,15 @@ onMounted(() => {
   .quiz-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .section-header {
     flex-direction: column;
     gap: 15px;
     text-align: center;
   }
-  
+
   .quiz-actions {
     flex-direction: column;
   }
 }
-</style> 
+</style>

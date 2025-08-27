@@ -6,7 +6,7 @@ import api from '@/utils/axios'
 import Leaderboard from './Leaderboard.vue'
 import { useUserStore } from '@/stores/user'
 
-/* ✅ THÊM: Store thông báo để cập nhật badge ngay */
+/*  THÊM: Store thông báo để cập nhật badge ngay */
 import { useNotificationStore } from '@/stores/notification'
 import { storeToRefs } from 'pinia'
 
@@ -33,11 +33,11 @@ const leaderboardRef = ref(null)
 const userStore = useUserStore()
 const currentUserId = computed(() => userStore.getUserId())
 
-/* ✅ THÊM: khởi tạo store thông báo */
+/*  THÊM: khởi tạo store thông báo */
 const notificationStore = useNotificationStore()
 const { unreadCount } = storeToRefs(notificationStore)
 
-/* ✅ THÊM: tăng badge 1 lần/ket qua, tránh tăng trùng */
+/*  THÊM: tăng badge 1 lần/ket qua, tránh tăng trùng */
 function bumpUnreadOptimisticOnce() {
   const key = `notif_bumped_result_${resultId}`
   try {
@@ -68,10 +68,10 @@ onMounted(async () => {
     correctAnswers.value = resResult.data.correctAnswers || []
     selectedAnswers.value = resResult.data.selectedAnswers || []
 
-    // ✅ Thêm: sau khi có result hợp lệ -> bump badge nếu chưa bump
+    //  Thêm: sau khi có result hợp lệ -> bump badge nếu chưa bump
     bumpUnreadOptimisticOnce()
 
-    // ✅ Fallback: đọc selections từ localStorage nếu BE không trả
+    //  Fallback: đọc selections từ localStorage nếu BE không trả
     if (
       (!selectedAnswers.value || selectedAnswers.value.length === 0) &&
       typeof window !== 'undefined'
@@ -96,7 +96,7 @@ onMounted(async () => {
     // Lấy quizId từ result data
     quizId.value = resResult.data.quizId || resResult.data.quiz?.id
 
-    console.log('📊 Result data loaded:', {
+    console.log(' Result data loaded:', {
       score: score.value,
       quizId: quizId.value,
       correctAnswersCount: correctAnswers.value.length,
@@ -109,7 +109,7 @@ onMounted(async () => {
   // Load questions data (để hiển thị chi tiết đẹp; có thể bỏ nếu không cần)
   if (quizId.value) {
     try {
-      console.log('❓ Loading questions for quiz ID:', quizId.value)
+      console.log(' Loading questions for quiz ID:', quizId.value)
       const res = await api.get(`/question/play/${quizId.value}`)
       const questionList = res.data
 
@@ -126,12 +126,12 @@ onMounted(async () => {
       )
 
       questions.value = enrichedQuestions
-      console.log('✅ Questions loaded successfully:', enrichedQuestions.length)
+      console.log(' Questions loaded successfully:', enrichedQuestions.length)
     } catch (err) {
       console.error('Lỗi khi tải câu hỏi:', err)
     }
   } else {
-    console.warn('⚠️ No quizId found, skipping questions loading')
+    console.warn(' No quizId found, skipping questions loading')
   }
 
   // Animation delay
@@ -143,7 +143,7 @@ onMounted(async () => {
 // Watch quizId để reload Leaderboard
 watch(quizId, (newQuizId) => {
   if (newQuizId && leaderboardRef.value) {
-    console.log('🔄 QuizId changed, reloading leaderboard:', newQuizId)
+    console.log(' QuizId changed, reloading leaderboard:', newQuizId)
     // Leaderboard sẽ tự động reload khi prop thay đổi
   }
 })
@@ -520,7 +520,7 @@ const submitReview = async () => {
                     <span class="value correct">{{ result.correctAnswerId || '?' }}</span>
                     <span v-if="result.correctAnswerContent" class="answer-content correct">{{
                       result.correctAnswerContent
-                      }}</span>
+                    }}</span>
                   </div>
                 </div>
               </div>

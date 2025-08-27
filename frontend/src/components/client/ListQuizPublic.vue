@@ -63,7 +63,7 @@ async function fetchPublicQuizzes(page = 0) {
     totalPages.value = res.data.totalPages
   } catch (err) {
     error.value = 'Không thể tải quiz công khai.'
-    console.error('❌ Error fetching public quizzes:', err)
+    console.error(' Error fetching public quizzes:', err)
   } finally {
     isLoading.value = false
   }
@@ -71,7 +71,7 @@ async function fetchPublicQuizzes(page = 0) {
 
 const fetchPublicQuizzesDebounced = debounce(fetchPublicQuizzes, 300)
 
-// ✅ THÊM METHOD ĐỂ REFRESH DANH SÁCH
+//  THÊM METHOD ĐỂ REFRESH DANH SÁCH
 const refreshPublicQuizzes = () => {
   quizCache.clear() // Xóa cache
   fetchPublicQuizzes(currentPage.value) // Tải lại data
@@ -80,7 +80,7 @@ const refreshPublicQuizzes = () => {
 onMounted(() => {
   fetchPublicQuizzes()
 
-  // ✅ THÊM EVENT LISTENER ĐỂ LẮNG NGHE KHI CÓ QUIZ BỊ XÓA
+  //  THÊM EVENT LISTENER ĐỂ LẮNG NGHE KHI CÓ QUIZ BỊ XÓA
   window.addEventListener('quizDeleted', refreshPublicQuizzes)
 })
 
@@ -93,14 +93,14 @@ function goToPage(page) {
 async function playQuiz(quizId) {
   const userId = localStorage.getItem('userId')
   if (!userId) {
-    console.error('❌ Missing userId - user not logged in')
+    console.error(' Missing userId - user not logged in')
     // Có thể chuyển hướng đến trang login
     router.push({ name: 'Login' })
     return
   }
-  console.log('🎮 Playing quiz:', quizId, 'for user:', userId)
-  
-  // ✅ CHỈ CHUYỂN TRANG, KHÔNG TẠO ATTEMPT
+  console.log(' Playing quiz:', quizId, 'for user:', userId)
+
+  //  CHỈ CHUYỂN TRANG, KHÔNG TẠO ATTEMPT
   // Attempt sẽ được tạo sau khi kiểm tra resume trong PlayQuiz.vue
   router.push({ name: 'PlayQuizSimple', params: { quizId: quizId } })
 }
@@ -142,11 +142,11 @@ const showDetailModal = ref(false)
 const selectedQuizId = ref(null)
 
 const openDetailModal = (quizId) => {
-  console.log('🔍 Opening detail modal for quiz ID:', quizId)
+  console.log(' Opening detail modal for quiz ID:', quizId)
   selectedQuizId.value = quizId
   showDetailModal.value = true
   console.log(
-    '✅ Modal state - showDetailModal:',
+    ' Modal state - showDetailModal:',
     showDetailModal.value,
     'selectedQuizId:',
     selectedQuizId.value,
@@ -188,11 +188,6 @@ function handleImageError(event) {
           Quiz Công Khai
         </h1>
         <p class="hero-subtitle">Khám phá hàng ngàn quiz thú vị được chia sẻ bởi cộng đồng</p>
-      </div>
-      <div class="hero-decoration">
-        <div class="floating-icon">🧠</div>
-        <div class="floating-icon">📚</div>
-        <div class="floating-icon">🏆</div>
       </div>
     </div>
 

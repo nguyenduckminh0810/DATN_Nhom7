@@ -19,7 +19,6 @@ public class Category {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // ✅ THÊM FIELDS CHO SOFT DELETE
     @Column(name = "deleted")
     private Boolean deleted = false;
 

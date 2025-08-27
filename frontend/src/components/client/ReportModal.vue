@@ -75,7 +75,7 @@ import api from '@/utils/axios'
 const { userId, getUserId } = useLogin()
 const emit = defineEmits(['reported'])
 
-// ✅ SỬA: Dùng reactive object thay vì biến thường
+//  SỬA: Dùng reactive object thay vì biến thường
 const quizState = reactive({
   currentQuizData: null,
 })
@@ -98,7 +98,7 @@ async function openModal(quizData) {
   error.value = ''
   success.value = ''
 
-  // ✅ KIỂM TRA USER ĐÃ ĐĂNG NHẬP CHƯA
+  //  KIỂM TRA USER ĐÃ ĐĂNG NHẬP CHƯA
   if (!userId.value) {
     try {
       await getUserId()
@@ -169,7 +169,7 @@ async function submitReport() {
     await api.post('/reports', reportData)
 
     success.value = 'Báo cáo đã được gửi thành công! Cảm ơn bạn đã góp ý.'
-    error.value = '' // ✅ Clear mọi lỗi nếu gửi thành công
+    error.value = '' //  Clear mọi lỗi nếu gửi thành công
 
     emit('reported', quizData)
 
@@ -192,7 +192,7 @@ async function submitReport() {
       }
     }, 1500) // Cho user thấy success ít nhất 1.5s
   } catch (err) {
-    success.value = '' // ✅ Nếu lỗi, clear success
+    success.value = '' //  Nếu lỗi, clear success
     if (err.response?.status === 409) {
       error.value = 'Bạn đã báo cáo quiz này rồi!'
     }

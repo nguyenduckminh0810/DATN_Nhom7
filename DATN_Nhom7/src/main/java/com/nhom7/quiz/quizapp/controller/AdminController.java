@@ -6,12 +6,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-// ✅ Removed unused Bean import
+
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-// ✅ Removed unused BCryptPasswordEncoder import
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,7 +48,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 @RestController
 @RequestMapping("/api/admin")
-// ✅ REMOVED class-level PreAuthorize - will add method-level where needed
+
 public class AdminController {
         @Autowired
         private CategoryRepo categoryRepo;
@@ -61,7 +61,7 @@ public class AdminController {
         @Autowired
         private NotificationService notificationService;
 
-        // ✅ ADMIN LOGIN - PUBLIC (không cần PreAuthorize)
+        // ADMIN LOGIN - PUBLIC (không cần PreAuthorize)
         @PostMapping("/login")
         public ResponseEntity<?> adminLogin(@RequestBody LoginRequest loginRequest) {
                 // Phương thức để xác thực người dùng
@@ -69,7 +69,6 @@ public class AdminController {
                                 loginRequest.getPassword());
                 return switch (result.status()) {
                         case SUCCESS -> {
-                                // ✅ Generate JWT token for admin
                                 String token = jwtUtil.generateToken(result.user().getUsername(),
                                                 result.user().getRole());
                                 yield ResponseEntity.ok(Map.of(
@@ -102,7 +101,7 @@ public class AdminController {
         @Autowired
         private com.nhom7.quiz.quizapp.service.AdminService.DashboardService dashboardService;
 
-        // ✅ ADMIN ONLY - Lấy danh sách người dùng
+        // ADMIN ONLY - Lấy danh sách người dùng
         @GetMapping("/all-users")
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<Page<UserDTO>> getAllUsers(
@@ -115,7 +114,7 @@ public class AdminController {
                 return ResponseEntity.ok(adminService.getAllUsers(page, size, search, role));
         }
 
-        // ✅ ADMIN ONLY - Cập nhật user
+        // ADMIN ONLY - Cập nhật user
         @PutMapping("/users/{id}")
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<?> updateUser(@PathVariable Long id,
@@ -125,7 +124,7 @@ public class AdminController {
                 User currentUser = userRepo.findByUsername(currentUsername)
                                 .orElseThrow(() -> new UsernameNotFoundException("Not found"));
 
-                // ❌ Chặn tự ĐỔI ROLE của chính mình
+                // Chặn tự ĐỔI ROLE của chính mình
                 if (currentUser.getId().equals(id)
                                 && dto.getRole() != null
                                 && !dto.getRole().equalsIgnoreCase(currentUser.getRole())) {
@@ -134,12 +133,12 @@ public class AdminController {
                                                         "Bạn không thể đổi vai trò của chính mình"));
                 }
 
-                // ✅ Không đặt check “tự xoá” ở đây (để ở DELETE)
+                // Không đặt check “tự xoá” ở đây (để ở DELETE)
                 UserDTO updated = adminService.updateUser(id, dto);
                 return ResponseEntity.ok(updated);
         }
 
-        // ✅ ADMIN ONLY - Thêm user
+        // ADMIN ONLY - Thêm user
         @Autowired
         private PasswordEncoder passwordEncoder;
 
@@ -157,7 +156,7 @@ public class AdminController {
                 return ResponseEntity.ok(saved);
         }
 
-        // ✅ ADMIN ONLY - Xoá user
+        // ADMIN ONLY - Xoá user
         @DeleteMapping("/users/{id}")
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<?> deleteUser(@PathVariable Long id) {
@@ -187,18 +186,18 @@ public class AdminController {
                 user.setRole("BANNED");
                 userRepo.save(user);
 
-                // ✅ GỬI NOTIFICATION CHO USER
+                // GỬI NOTIFICATION CHO USER
                 try {
                         notificationService.sendAccountStatusNotification(user.getId(), true);
-                        System.out.println("✅ Sent ban notification to user: " + user.getUsername());
+                        System.out.println("Sent ban notification to user: " + user.getUsername());
                 } catch (Exception e) {
-                        System.err.println("❌ Error sending ban notification: " + e.getMessage());
+                        System.err.println("Error sending ban notification: " + e.getMessage());
                 }
 
                 return ResponseEntity.ok("Người dùng đã bị ban.");
         }
 
-        // ✅ ADMIN ONLY - Test ban user
+        // ADMIN ONLY - Test ban user
         @PostMapping("/test-ban/{id}")
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<String> testBan(@PathVariable Long id) {
@@ -206,7 +205,7 @@ public class AdminController {
                 return ResponseEntity.ok("Đã kiểm tra và xử lý ban nếu đủ report");
         }
 
-        // ✅ Attempts today by hour for dashboard chart
+        // Attempts today by hour for dashboard chart
         @GetMapping("/stats/attempts-today")
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<AttemptsByHourDTO> getAttemptsTodayByHour(
@@ -343,7 +342,7 @@ public class AdminController {
         @Autowired
         private CategoryService categoryService;
 
-        // ✅ SOFT DELETE CATEGORY
+        // Xoá mềm danh mục
         @DeleteMapping("/categories/{id}")
         public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
                 try {
@@ -355,7 +354,7 @@ public class AdminController {
                 }
         }
 
-        // ✅ HARD DELETE CATEGORY
+        // Xoá hoàn toàn danh mục(cứng)
         @DeleteMapping("/categories/{id}/hard")
         public ResponseEntity<?> hardDeleteCategory(@PathVariable Long id) {
                 try {
@@ -367,7 +366,7 @@ public class AdminController {
                 }
         }
 
-        // ✅ RESTORE CATEGORY
+        // RESTORE CATEGORY
         @PutMapping("/categories/{id}/restore")
         public ResponseEntity<?> restoreCategory(@PathVariable Long id) {
                 try {
@@ -379,7 +378,7 @@ public class AdminController {
                 }
         }
 
-        // ✅ GET DELETED CATEGORIES
+        // GET DELETED CATEGORIES
         @GetMapping("/categories/deleted")
         public ResponseEntity<?> getDeletedCategories() {
                 try {
@@ -404,7 +403,6 @@ public class AdminController {
                 return ResponseEntity.ok(tagDTOs);
         }
 
-        // ===== Analytics endpoints (ADMIN) =====
         @Autowired
         private com.nhom7.quiz.quizapp.service.AdminService.AnalyticsService analyticsService;
         @Autowired

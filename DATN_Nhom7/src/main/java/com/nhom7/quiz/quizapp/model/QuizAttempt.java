@@ -36,14 +36,12 @@ public class QuizAttempt {
 	private LocalDateTime attemptedAt = LocalDateTime.now();
 
 	@Column(name = "time_taken", nullable = false)
-	private int timeTaken; // đơn vị giây
-	
-	// ✅ THÊM TRẠNG THÁI ATTEMPT
+	private int timeTaken;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
 	private AttemptStatus status = AttemptStatus.IN_PROGRESS;
-	
-	// ✅ THÊM RELATIONSHIP VỚI PROGRESS
+
 	@OneToOne(mappedBy = "attempt", cascade = jakarta.persistence.CascadeType.ALL, fetch = jakarta.persistence.FetchType.LAZY)
 	private QuizAttemptProgress progress;
 
@@ -94,7 +92,7 @@ public class QuizAttempt {
 	public void setAttemptedAt(LocalDateTime attemptedAt) {
 		this.attemptedAt = attemptedAt;
 	}
-	
+
 	// ✅ GETTERS VÀ SETTERS CHO STATUS
 	public AttemptStatus getStatus() {
 		return status;
@@ -103,7 +101,7 @@ public class QuizAttempt {
 	public void setStatus(AttemptStatus status) {
 		this.status = status;
 	}
-	
+
 	// ✅ GETTERS VÀ SETTERS CHO PROGRESS
 	public QuizAttemptProgress getProgress() {
 		return progress;
@@ -128,32 +126,32 @@ public class QuizAttempt {
 		super();
 		this.status = AttemptStatus.IN_PROGRESS;
 	}
-	
+
 	// ✅ HELPER METHODS
 	public boolean isInProgress() {
 		return AttemptStatus.IN_PROGRESS.equals(this.status);
 	}
-	
+
 	public boolean isSubmitted() {
 		return AttemptStatus.SUBMITTED.equals(this.status);
 	}
-	
+
 	public boolean isCompleted() {
 		return AttemptStatus.COMPLETED.equals(this.status);
 	}
-	
+
 	public boolean isAbandoned() {
 		return AttemptStatus.ABANDONED.equals(this.status);
 	}
-	
+
 	public void markAsSubmitted() {
 		this.status = AttemptStatus.SUBMITTED;
 	}
-	
+
 	public void markAsCompleted() {
 		this.status = AttemptStatus.COMPLETED;
 	}
-	
+
 	public void markAsAbandoned() {
 		this.status = AttemptStatus.ABANDONED;
 		if (this.progress != null) {

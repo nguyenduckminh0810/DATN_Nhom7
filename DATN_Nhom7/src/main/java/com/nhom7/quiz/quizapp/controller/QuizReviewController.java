@@ -28,18 +28,18 @@ public class QuizReviewController {
     @GetMapping("/{quizId}/reviews")
     public ResponseEntity<?> getReviewsForQuiz(@PathVariable Long quizId) {
         try {
-            System.out.println("📋 Getting reviews for quiz ID: " + quizId);
+            System.out.println("Getting reviews for quiz ID: " + quizId);
             List<QuizReview> reviews = reviewService.getReviewsForQuiz(quizId);
-            
-            // ✅ CONVERT TO DTO ĐỂ TRÁNH LAZY LOADING ISSUES
+
+            // CONVERT TO DTO ĐỂ TRÁNH LAZY LOADING ISSUES
             List<ReviewDTO> reviewDTOs = reviews.stream()
                     .map(ReviewDTO::new)
                     .collect(Collectors.toList());
-            
-            System.out.println("✅ Found " + reviewDTOs.size() + " reviews, converted to DTOs");
+
+            System.out.println("Found " + reviewDTOs.size() + " reviews, converted to DTOs");
             return ResponseEntity.ok(reviewDTOs);
         } catch (Exception e) {
-            System.err.println("❌ Error getting reviews for quiz " + quizId + ": " + e.getMessage());
+            System.err.println("Error getting reviews for quiz " + quizId + ": " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(new ArrayList<ReviewDTO>());
         }

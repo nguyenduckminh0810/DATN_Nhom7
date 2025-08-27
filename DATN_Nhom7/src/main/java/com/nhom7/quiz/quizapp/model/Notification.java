@@ -34,7 +34,6 @@ public class Notification {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    // ✅ THÊM CÁC FIELD MỚI CHO WEBSOCKET
     @Column(name = "notification_type", length = 50, nullable = false)
     private String notificationType;
 
@@ -57,7 +56,8 @@ public class Notification {
     @Column(name = "action_url", length = 255)
     private String actionUrl; // URL để navigate khi click notification
 
-    public Notification() {}
+    public Notification() {
+    }
 
     public Notification(User user, String content, String notificationType, String title) {
         this.user = user;
@@ -69,9 +69,8 @@ public class Notification {
         this.priority = "NORMAL";
     }
 
-    // ✅ CONSTRUCTOR ĐẦY ĐỦ
-    public Notification(User user, String content, String notificationType, String title, 
-                       String priority, Long relatedEntityId, String relatedEntityType, String actionUrl) {
+    public Notification(User user, String content, String notificationType, String title,
+            String priority, Long relatedEntityId, String relatedEntityType, String actionUrl) {
         this.user = user;
         this.content = content;
         this.notificationType = notificationType;
@@ -175,4 +174,3 @@ public class Notification {
         this.actionUrl = actionUrl;
     }
 }
-

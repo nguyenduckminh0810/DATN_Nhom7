@@ -54,15 +54,15 @@ import HeaderAdmin from '@/components/admin/HeaderAdmin.vue'
 const router = useRouter()
 const adminUser = ref(null)
 
-// ✅ CHECK AUTHORIZATION
+//  CHECK AUTHORIZATION
 const isAuthorized = computed(() => {
-  // ✅ Kiểm tra nhiều nguồn để đảm bảo chính xác
+  //  Kiểm tra nhiều nguồn để đảm bảo chính xác
   const token = localStorage.getItem('token')
   const adminUserStr = localStorage.getItem('admin_user')
   const userInfo = localStorage.getItem('user')
-  
+
   let isAdmin = false
-  
+
   if (adminUserStr) {
     isAdmin = true
   } else if (userInfo) {
@@ -73,15 +73,15 @@ const isAuthorized = computed(() => {
       // Ignore parsing errors
     }
   }
-  
+
   const authorized = token && isAdmin
   return authorized
 })
 
-// ✅ LOAD ADMIN USER
+//  LOAD ADMIN USER
 const loadAdminUser = () => {
   try {
-    // ✅ Kiểm tra token trước
+    //  Kiểm tra token trước
     const token = localStorage.getItem('token')
     if (!token) {
       adminUser.value = null
@@ -105,7 +105,7 @@ const loadAdminUser = () => {
       }
     }
 
-    // ✅ Kiểm tra thêm từ localStorage trực tiếp
+    //  Kiểm tra thêm từ localStorage trực tiếp
     const directUserInfo = localStorage.getItem('user')
     if (directUserInfo) {
       try {
@@ -126,7 +126,7 @@ const loadAdminUser = () => {
   }
 }
 
-// ✅ NAVIGATION FUNCTIONS
+//  NAVIGATION FUNCTIONS
 const goBack = () => {
   router.go(-1)
 }
@@ -139,19 +139,19 @@ const goLogin = () => {
   router.push('/login')
 }
 
-// ✅ MOUNTED
+//  MOUNTED
 onMounted(() => {
   loadAdminUser()
 
   // Watch for changes in localStorage
   window.addEventListener('storage', (e) => {
     if (e.key === 'admin_user' || e.key === 'user' || e.key === 'token') {
-      // ✅ Chỉ reload nếu có token
+      //  Chỉ reload nếu có token
       const token = localStorage.getItem('token')
       if (token) {
         loadAdminUser()
       } else {
-        // ✅ Nếu không có token, clear admin user
+        //  Nếu không có token, clear admin user
         adminUser.value = null
       }
     }

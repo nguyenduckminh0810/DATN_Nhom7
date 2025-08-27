@@ -44,7 +44,7 @@ public class Report {
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
-	// ✅ THÊM FIELDS MỚI CHO ADMIN ACTION
+	// THÊM FIELDS MỚI CHO ADMIN ACTION
 	@Column(name = "admin_response", columnDefinition = "TEXT")
 	private String adminResponse;
 
@@ -56,7 +56,8 @@ public class Report {
 	private User resolvedBy;
 
 	public Report(Long id, User user, Quiz quiz, Comment comment, String reason, String status,
-			User reportedUser, LocalDateTime createdAt, String adminResponse, LocalDateTime resolvedAt, User resolvedBy) {
+			User reportedUser, LocalDateTime createdAt, String adminResponse, LocalDateTime resolvedAt,
+			User resolvedBy) {
 		super();
 		this.id = id;
 		this.user = user;

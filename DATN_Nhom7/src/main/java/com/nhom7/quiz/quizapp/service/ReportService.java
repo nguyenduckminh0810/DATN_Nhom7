@@ -54,11 +54,11 @@ public class ReportService {
         if (authentication == null) {
             throw new AccessDeniedException("Không có quyền truy cập");
         }
-        
+
         // Admin có thể xem tất cả
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
-        
+
         if (!isAdmin) {
             // User thường chỉ có thể xem báo cáo của mình
             String currentUsername = authentication.getName();
@@ -102,13 +102,13 @@ public class ReportService {
         report.setReportedUser(quiz.getUser());
 
         Report savedReport = reportRepo.save(report);
-        
-        // ✅ GỬI NOTIFICATION CHO ADMIN KHI CÓ REPORT MỚI
+
+        // GỬI NOTIFICATION CHO ADMIN KHI CÓ REPORT MỚI
         try {
             notificationService.sendNewReportNotification(savedReport);
-            System.out.println("✅ Đã gửi notification cho admin về report mới: " + savedReport.getId());
+            System.out.println(" Đã gửi notification cho admin về report mới: " + savedReport.getId());
         } catch (Exception e) {
-            System.err.println("❌ Lỗi khi gửi notification cho admin: " + e.getMessage());
+            System.err.println(" Lỗi khi gửi notification cho admin: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -118,14 +118,14 @@ public class ReportService {
     // Lấy tất cả báo cáo với phân trang (chỉ admin)
     public Page<Report> getAllReports(int page, int size) {
         checkAdminPermission();
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return reportRepo.findAll(pageable);
     }
 
     public Page<Report> getReportsByStatus(String status, int page, int size) {
         checkAdminPermission();
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return reportRepo.findByStatus(status, pageable);
     }
@@ -133,7 +133,7 @@ public class ReportService {
     // Cập nhật trạng thái báo cáo (chỉ admin)
     public Report updateReportStatus(Long reportId, String newStatus) {
         checkAdminPermission();
-        
+
         Optional<Report> reportOpt = reportRepo.findById(reportId);
         if (reportOpt.isEmpty()) {
             throw new IllegalArgumentException("Báo cáo không tồn tại!");
@@ -155,7 +155,7 @@ public class ReportService {
                 reportedQuiz.setPublic(false);
                 quizRepo.save(reportedQuiz);
 
-                System.out.println("🔒 Quiz ID " + reportedQuiz.getId() + " đã được ẩn do báo cáo được phê duyệt");
+                System.out.println(" Quiz ID " + reportedQuiz.getId() + " đã được ẩn do báo cáo được phê duyệt");
             }
         }
 
@@ -186,7 +186,7 @@ public class ReportService {
     // Thống kê báo cáo (chỉ admin)
     public Map<String, Object> getReportStats() {
         checkAdminPermission();
-        
+
         Map<String, Object> stats = new HashMap<>();
 
         // Tổng số báo cáo
@@ -201,8 +201,8 @@ public class ReportService {
         stats.put("pendingReports", pendingReports);
         stats.put("resolvedReports", resolvedReports);
         stats.put("rejectedReports", rejectedReports);
-        
-        // ✅ THÊM APPROVED STATS (MAP TỪ RESOLVED)
+
+        // THÊM APPROVED STATS (MAP TỪ RESOLVED)
         stats.put("approvedReports", resolvedReports);
 
         // Phần trăm
@@ -222,7 +222,7 @@ public class ReportService {
     // Xóa báo cáo (chỉ admin)
     public boolean deleteReport(Long reportId) {
         checkAdminPermission();
-        
+
         if (reportRepo.existsById(reportId)) {
             reportRepo.deleteById(reportId);
             return true;
@@ -237,20 +237,20 @@ public class ReportService {
     }
 
     private boolean isValidStatus(String status) {
-        return status.equals("PENDING") || status.equals("RESOLVED") || status.equals("REJECTED") || 
-               status.equals("APPROVED"); // ✅ THÊM APPROVED
+        return status.equals("PENDING") || status.equals("RESOLVED") || status.equals("REJECTED") ||
+                status.equals("APPROVED"); // THÊM APPROVED
     }
 
-    // ✅ METHOD MỚI: XỬ LÝ ADMIN ACTION VỚI NOTIFICATION
+    // METHOD MỚI: XỬ LÝ ADMIN ACTION VỚI NOTIFICATION
     public Report handleReportAction(Long reportId, String action, String adminResponse, User admin) {
         checkAdminPermission();
-        
-        System.out.println("🔧 ReportService.handleReportAction called:");
-        System.out.println("🔧 Report ID: " + reportId);
-        System.out.println("🔧 Action: " + action);
-        System.out.println("🔧 Admin Response: " + adminResponse);
-        System.out.println("🔧 Admin: " + admin.getFullName());
-        
+
+        System.out.println(" ReportService.handleReportAction called:");
+        System.out.println(" Report ID: " + reportId);
+        System.out.println(" Action: " + action);
+        System.out.println(" Admin Response: " + adminResponse);
+        System.out.println(" Admin: " + admin.getFullName());
+
         Optional<Report> reportOpt = reportRepo.findById(reportId);
         if (reportOpt.isEmpty()) {
             throw new IllegalArgumentException("Báo cáo không tồn tại!");
@@ -258,49 +258,51 @@ public class ReportService {
 
         Report report = reportOpt.get();
         String oldStatus = report.getStatus();
-        
-        System.out.println("🔧 Found report: " + report.getId() + ", old status: " + oldStatus);
-        
-        // ✅ CẬP NHẬT REPORT
-        // ✅ MAP APPROVED THÀNH RESOLVED ĐỂ TƯƠNG THÍCH VỚI DATABASE
+
+        System.out.println(" Found report: " + report.getId() + ", old status: " + oldStatus);
+
+        // CẬP NHẬT REPORT
+        // MAP APPROVED THÀNH RESOLVED ĐỂ TƯƠNG THÍCH VỚI DATABASE
         String dbStatus = "APPROVED".equals(action) ? "RESOLVED" : action;
         report.setStatus(dbStatus);
         report.setAdminResponse(adminResponse);
         report.setResolvedAt(LocalDateTime.now());
         report.setResolvedBy(admin);
-        
-        // ✅ XỬ LÝ QUIZ KHI APPROVED
-        System.out.println("🔧 Checking quiz hiding logic:");
-        System.out.println("🔧 Action: " + action);
-        System.out.println("🔧 Old Status: " + oldStatus);
-        System.out.println("🔧 Should hide quiz: " + ("APPROVED".equals(action) && !"RESOLVED".equals(oldStatus)));
-        
+
+        // XỬ LÝ QUIZ KHI APPROVED
+        System.out.println(" Checking quiz hiding logic:");
+        System.out.println(" Action: " + action);
+        System.out.println(" Old Status: " + oldStatus);
+        System.out.println(" Should hide quiz: " + ("APPROVED".equals(action) && !"RESOLVED".equals(oldStatus)));
+
         if ("APPROVED".equals(action) && !"RESOLVED".equals(oldStatus)) {
             Quiz reportedQuiz = report.getQuiz();
             if (reportedQuiz != null) {
-                System.out.println("🔧 Quiz before hiding - ID: " + reportedQuiz.getId() + ", isPublic: " + reportedQuiz.isPublic());
+                System.out.println(
+                        " Quiz before hiding - ID: " + reportedQuiz.getId() + ", isPublic: " + reportedQuiz.isPublic());
                 reportedQuiz.setPublic(false);
                 quizRepo.save(reportedQuiz);
-                System.out.println("🔒 Quiz ID " + reportedQuiz.getId() + " đã được ẩn do báo cáo được chấp nhận");
-                System.out.println("🔧 Quiz after hiding - ID: " + reportedQuiz.getId() + ", isPublic: " + reportedQuiz.isPublic());
+                System.out.println(" Quiz ID " + reportedQuiz.getId() + " đã được ẩn do báo cáo được chấp nhận");
+                System.out.println(
+                        " Quiz after hiding - ID: " + reportedQuiz.getId() + ", isPublic: " + reportedQuiz.isPublic());
             } else {
-                System.out.println("❌ Quiz is null, cannot hide");
+                System.out.println(" Quiz is null, cannot hide");
             }
         } else {
-            System.out.println("ℹ️ Quiz hiding condition not met - Action: " + action + ", Old Status: " + oldStatus);
+            System.out.println("Quiz hiding condition not met - Action: " + action + ", Old Status: " + oldStatus);
         }
-        
+
         Report savedReport = reportRepo.save(report);
-        
-        // ✅ GỬI NOTIFICATION CHO USER ĐÃ BÁO CÁO
+
+        // GỬI NOTIFICATION CHO USER ĐÃ BÁO CÁO
         try {
             notificationService.sendReportActionNotification(savedReport, admin);
-            System.out.println("✅ Đã gửi notification cho user: " + savedReport.getUser().getUsername());
+            System.out.println(" Đã gửi notification cho user: " + savedReport.getUser().getUsername());
         } catch (Exception e) {
-            System.err.println("❌ Lỗi khi gửi notification: " + e.getMessage());
+            System.err.println(" Lỗi khi gửi notification: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return savedReport;
     }
 }

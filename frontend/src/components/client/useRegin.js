@@ -67,16 +67,16 @@ export function useRegin() {
         status.value = 'SUCCESS'
 
         // Đảm bảo rằng user được đăng nhập
-        console.log('✅ Registration successful, user logged in automatically')
+        console.log(' Registration successful, user logged in automatically')
 
         // Tự động chuyển hướng đến dashboard sau 2 giây
         setTimeout(() => {
           // Đảm bảo token đã được lưu trước khi chuyển hướng
           if (localStorage.getItem('token')) {
-            console.log('✅ Token found, redirecting to dashboard')
+            console.log(' Token found, redirecting to dashboard')
             router.push('/dashboard')
           } else {
-            console.error('❌ Token not found after registration')
+            console.error(' Token not found after registration')
             router.push('/login')
           }
         }, 2000)

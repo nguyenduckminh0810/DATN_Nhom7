@@ -29,20 +29,21 @@ public class ResultController {
     @PostMapping("/submit")
     public ResponseEntity<EvaluationResult> submitResult(@RequestBody QuizSubmissionDTO submission) {
         try {
-            System.out.println("📝 Submitting quiz result for user: " + submission.getUserId());
-            System.out.println("📝 Quiz ID: " + submission.getQuizId());
-            System.out.println("📝 Time taken: " + submission.getTimeTaken() + " seconds");
-            
+            System.out.println("Submitting quiz result for user: " + submission.getUserId());
+            System.out.println("Quiz ID: " + submission.getQuizId());
+            System.out.println("Time taken: " + submission.getTimeTaken() + " seconds");
+
             EvaluationResult result = resultService.evaluateAndSave(submission);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            System.err.println("❌ Error submitting quiz result: " + e.getMessage());
+            System.err.println("Error submitting quiz result: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
     }
 
-    // Lấy chi tiết kết quả theo resultId (để FE hiển thị, tránh dùng score trên URL)
+    // Lấy chi tiết kết quả theo resultId (để FE hiển thị, tránh dùng score trên
+    // URL)
     @GetMapping("/{resultId}")
     public ResponseEntity<?> getResultById(@PathVariable Long resultId) {
         return resultService.getResultDetail(resultId)

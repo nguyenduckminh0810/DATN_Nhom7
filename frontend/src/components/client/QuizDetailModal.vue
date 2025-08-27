@@ -1,11 +1,7 @@
 <template>
-  <div
-    v-if="showModal"
-    class="modal fade show d-block"
-    tabindex="-1"
-    style="background-color: rgba(0, 0, 0, 0.5); z-index: 1050"
-  >
-    <!-- ✅ LOADING SPINNER -->
+  <div v-if="showModal" class="modal fade show d-block" tabindex="-1"
+    style="background-color: rgba(0, 0, 0, 0.5); z-index: 1050">
+    <!--  LOADING SPINNER -->
     <LoadingSpinner :loading="loading" message="Đang tải thông tin chi tiết..." />
 
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -25,12 +21,7 @@
             <div class="row mb-4">
               <div class="col-md-4">
                 <div class="quiz-image-container">
-                  <img
-                    :src="quizImageUrl"
-                    :alt="quizDetail.title"
-                    class="quiz-image"
-                    @error="handleImageError"
-                  />
+                  <img :src="quizImageUrl" :alt="quizDetail.title" class="quiz-image" @error="handleImageError" />
                   <!-- Ẩn nhãn công khai/riêng tư theo yêu cầu -->
                 </div>
               </div>
@@ -41,9 +32,7 @@
                 <div class="quiz-meta mb-3">
                   <div class="meta-item">
                     <i class="bi bi-person-circle text-primary"></i>
-                    <span
-                      ><strong>Tác giả:</strong> {{ quizDetail.creatorName || 'Không rõ' }}</span
-                    >
+                    <span><strong>Tác giả:</strong> {{ quizDetail.creatorName || 'Không rõ' }}</span>
                   </div>
 
                   <div class="meta-item">
@@ -53,21 +42,14 @@
 
                   <div class="meta-item">
                     <i class="bi bi-tag text-warning"></i>
-                    <span
-                      ><strong>Danh mục:</strong>
-                      {{ quizDetail.categoryName || 'Không phân loại' }}</span
-                    >
+                    <span><strong>Danh mục:</strong>
+                      {{ quizDetail.categoryName || 'Không phân loại' }}</span>
                   </div>
 
                   <div class="meta-item" v-if="quizDetail.tags && quizDetail.tags.length">
                     <i class="bi bi-bookmark text-info"></i>
-                    <span
-                      ><strong>Tags:</strong>
-                      <span
-                        class="badge bg-secondary me-1"
-                        v-for="tag in quizDetail.tags"
-                        :key="tag"
-                      >
+                    <span><strong>Tags:</strong>
+                      <span class="badge bg-secondary me-1" v-for="tag in quizDetail.tags" :key="tag">
                         {{ tag }}
                       </span>
                     </span>
@@ -159,42 +141,30 @@
                 <div class="questions-preview">
                   <!-- Preview 3 câu đầu khi chưa mở xem tất cả -->
                   <template v-if="!showAllQuestions">
-                    <div
-                      class="question-item"
-                      v-for="(question, index) in questions.slice(0, 3)"
-                      :key="question.id"
-                    >
+                    <div class="question-item" v-for="(question, index) in questions.slice(0, 3)" :key="question.id">
                       <div class="question-header">
                         <span class="question-number">Câu {{ index + 1 }}</span>
                         <span class="question-time">{{
                           question.timeLimit === 0 ? '∞' : question.timeLimit + 's'
-                        }}</span>
+                          }}</span>
                       </div>
                       <div class="question-content">
                         {{ question.content }}
                       </div>
                       <div class="question-image" v-if="question.image">
-                        <img
-                          :src="question.image"
-                          :alt="'Hình ảnh câu hỏi ' + (index + 1)"
-                          class="img-fluid"
-                        />
+                        <img :src="question.image" :alt="'Hình ảnh câu hỏi ' + (index + 1)" class="img-fluid" />
                       </div>
                     </div>
                   </template>
 
                   <!-- Xem tất cả: hiển thị phân trang -->
                   <template v-else>
-                    <div
-                      class="question-item"
-                      v-for="(question, idx) in paginatedQuestions"
-                      :key="question.id"
-                    >
+                    <div class="question-item" v-for="(question, idx) in paginatedQuestions" :key="question.id">
                       <div class="question-header">
                         <span class="question-number">Câu {{ questionsPageStart + idx + 1 }}</span>
                         <span class="question-time">{{
                           question.timeLimit === 0 ? '∞' : question.timeLimit + 's'
-                        }}</span>
+                          }}</span>
                       </div>
                       <div class="question-content">
                         {{ question.content }}
@@ -203,21 +173,13 @@
 
                     <div v-if="totalQuestionPages > 1" class="questions-pagination mt-2">
                       <div class="d-flex justify-content-between align-items-center">
-                        <button
-                          class="btn btn-outline-primary btn-sm"
-                          @click="previousQuestionsPage"
-                          :disabled="currentQuestionsPage === 1"
-                        >
+                        <button class="btn btn-outline-primary btn-sm" @click="previousQuestionsPage"
+                          :disabled="currentQuestionsPage === 1">
                           <i class="bi bi-chevron-left"></i> Trước
                         </button>
-                        <span class="page-info"
-                          >Trang {{ currentQuestionsPage }} / {{ totalQuestionPages }}</span
-                        >
-                        <button
-                          class="btn btn-outline-primary btn-sm"
-                          @click="nextQuestionsPage"
-                          :disabled="currentQuestionsPage >= totalQuestionPages"
-                        >
+                        <span class="page-info">Trang {{ currentQuestionsPage }} / {{ totalQuestionPages }}</span>
+                        <button class="btn btn-outline-primary btn-sm" @click="nextQuestionsPage"
+                          :disabled="currentQuestionsPage >= totalQuestionPages">
                           Sau <i class="bi bi-chevron-right"></i>
                         </button>
                       </div>
@@ -261,11 +223,7 @@
                     <i class="bi bi-play-circle text-success"></i>
                     Lượt chơi gần đây
                   </h6>
-                  <div
-                    class="activity-item"
-                    v-for="attempt in recentAttempts.slice(0, 3)"
-                    :key="attempt.id"
-                  >
+                  <div class="activity-item" v-for="attempt in recentAttempts.slice(0, 3)" :key="attempt.id">
                     <div class="activity-avatar">
                       <i class="bi bi-person-circle"></i>
                     </div>
@@ -294,18 +252,10 @@
                     <i class="bi bi-chat-dots text-primary"></i>
                     Bình luận gần đây
                   </h6>
-                  <div
-                    class="activity-item comment-item"
-                    v-for="comment in displayedComments"
-                    :key="comment.id"
-                  >
+                  <div class="activity-item comment-item" v-for="comment in displayedComments" :key="comment.id">
                     <div class="activity-avatar">
-                      <img
-                        :src="comment.userAvatarUrl || '/img/default-avatar.png'"
-                        :alt="comment.userFullName || comment.username"
-                        class="avatar-img"
-                        @error="handleAvatarError"
-                      />
+                      <img :src="comment.userAvatarUrl || '/img/default-avatar.png'"
+                        :alt="comment.userFullName || comment.username" class="avatar-img" @error="handleAvatarError" />
                     </div>
                     <div class="activity-content">
                       <div class="activity-text">
@@ -315,16 +265,10 @@
                       <div class="activity-time">{{ formatTimeAgo(comment.createdAt) }}</div>
                       <div class="comment-rating" v-if="comment.rating">
                         <div class="stars">
-                          <i
-                            v-for="star in 5"
-                            :key="star"
-                            class="bi"
-                            :class="
-                              star <= comment.rating
-                                ? 'bi-star-fill text-warning'
-                                : 'bi-star text-muted'
-                            "
-                          ></i>
+                          <i v-for="star in 5" :key="star" class="bi" :class="star <= comment.rating
+                              ? 'bi-star-fill text-warning'
+                              : 'bi-star text-muted'
+                            "></i>
                         </div>
                       </div>
                     </div>
@@ -332,14 +276,8 @@
 
                   <!-- Show more comments button -->
                   <div v-if="comments.length > 3" class="text-center mt-3">
-                    <button
-                      class="btn btn-outline-primary btn-sm"
-                      @click="showAllComments = !showAllComments"
-                    >
-                      <i
-                        class="bi"
-                        :class="showAllComments ? 'bi-chevron-up' : 'bi-chevron-down'"
-                      ></i>
+                    <button class="btn btn-outline-primary btn-sm" @click="showAllComments = !showAllComments">
+                      <i class="bi" :class="showAllComments ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                       {{
                         showAllComments
                           ? 'Ẩn bớt'
@@ -363,10 +301,7 @@
                   <Leaderboard :quizId="props.quizId" :limit="10" ref="leaderboardRef" />
 
                   <!-- Pagination Controls -->
-                  <div
-                    class="pagination-controls mt-3"
-                    v-if="leaderboardData && leaderboardData.length > 0"
-                  >
+                  <div class="pagination-controls mt-3" v-if="leaderboardData && leaderboardData.length > 0">
                     <div class="d-flex justify-content-between align-items-center">
                       <div class="pagination-info">
                         <small class="text-muted">
@@ -378,11 +313,8 @@
                       </div>
 
                       <div class="pagination-buttons">
-                        <button
-                          class="btn btn-outline-primary btn-sm me-2"
-                          @click="previousPage"
-                          :disabled="currentPage === 1"
-                        >
+                        <button class="btn btn-outline-primary btn-sm me-2" @click="previousPage"
+                          :disabled="currentPage === 1">
                           <i class="bi bi-chevron-left"></i> Trước
                         </button>
 
@@ -390,11 +322,8 @@
                           Trang {{ currentPage }} / {{ totalPages }}
                         </span>
 
-                        <button
-                          class="btn btn-outline-primary btn-sm ms-2"
-                          @click="nextPage"
-                          :disabled="currentPage >= totalPages"
-                        >
+                        <button class="btn btn-outline-primary btn-sm ms-2" @click="nextPage"
+                          :disabled="currentPage >= totalPages">
                           Sau <i class="bi bi-chevron-right"></i>
                         </button>
                       </div>
@@ -488,7 +417,7 @@ const quizStats = computed(() => {
     0,
   )
 
-  // ✅ SỬ DỤNG DỮ LIỆU TỪ ENDPOINT THỐNG KÊ CÔNG KHAI
+  //  SỬ DỤNG DỮ LIỆU TỪ ENDPOINT THỐNG KÊ CÔNG KHAI
   return {
     totalQuestions,
     totalPoints,
@@ -519,86 +448,86 @@ const loadedQuizId = ref(null)
 const loadingTimeout = ref(null)
 
 const loadQuizDetail = async () => {
-  // ✅ DEBOUNCE ĐỂ TRÁNH MULTIPLE CALLS
+  //  DEBOUNCE ĐỂ TRÁNH MULTIPLE CALLS
   if (loadingTimeout.value) {
     clearTimeout(loadingTimeout.value)
   }
 
   loadingTimeout.value = setTimeout(async () => {
     if (loading.value) {
-      console.log('⏳ Already loading, skipping...')
+      console.log(' Already loading, skipping...')
       return
     }
 
     if (!props.quizId) {
-      console.log('❌ No quiz ID provided')
+      console.log(' No quiz ID provided')
       return
     }
 
-    console.log('🔄 Loading quiz detail for ID:', props.quizId)
+    console.log(' Loading quiz detail for ID:', props.quizId)
     loading.value = true
 
     try {
-      // ✅ LOAD TẤT CẢ CÙNG LÚC THAY VÌ SEQUENTIAL
+      //  LOAD TẤT CẢ CÙNG LÚC THAY VÌ SEQUENTIAL
       const [quizRes, questionsRes, attemptsRes, reviewsRes, statsRes] = await Promise.allSettled([
         api.get(`/quiz/detail/${props.quizId}`),
-        api.get(`/question/play/${props.quizId}`), // ✅ SỬA: Dùng endpoint play cho tất cả quiz
+        api.get(`/question/play/${props.quizId}`), //  SỬA: Dùng endpoint play cho tất cả quiz
         api.get(`/quiz-attempts/public/recent/${props.quizId}`),
         api.get(`/quizzes/${props.quizId}/reviews`),
-        api.get(`/quiz/public/stats/${props.quizId}`), // ✅ THÊM: Lấy thống kê công khai
+        api.get(`/quiz/public/stats/${props.quizId}`), //  THÊM: Lấy thống kê công khai
       ])
 
-      // ✅ XỬ LÝ KẾT QUẢ
+      //  XỬ LÝ KẾT QUẢ
       if (quizRes.status === 'fulfilled') {
-        console.log('✅ Quiz detail response:', quizRes.value.data)
+        console.log(' Quiz detail response:', quizRes.value.data)
         quizDetail.value = quizRes.value.data
       } else {
-        console.error('❌ Quiz detail error:', quizRes.reason)
+        console.error(' Quiz detail error:', quizRes.reason)
         quizDetail.value = null
       }
 
       // Xử lý reviews riêng biệt
       if (reviewsRes.status === 'fulfilled') {
-        console.log('✅ Reviews response:', reviewsRes.value.data)
+        console.log(' Reviews response:', reviewsRes.value.data)
         comments.value = reviewsRes.value.data || []
       } else {
-        console.warn('⚠️ Reviews error:', reviewsRes.reason)
+        console.warn(' Reviews error:', reviewsRes.reason)
         comments.value = []
       }
 
       if (questionsRes.status === 'fulfilled') {
-        console.log('✅ Questions response:', questionsRes.value.data)
+        console.log(' Questions response:', questionsRes.value.data)
         questions.value = questionsRes.value.data
       } else {
-        console.error('❌ Questions error:', questionsRes.reason)
+        console.error(' Questions error:', questionsRes.reason)
         // Với endpoint play, không cần kiểm tra 403 nữa
         questions.value = []
       }
 
       if (attemptsRes.status === 'fulfilled') {
-        console.log('✅ Recent attempts response:', attemptsRes.value.data)
+        console.log(' Recent attempts response:', attemptsRes.value.data)
         recentAttempts.value = attemptsRes.value.data || []
       } else {
-        console.warn('⚠️ Recent attempts error:', attemptsRes.reason)
+        console.warn(' Recent attempts error:', attemptsRes.reason)
         recentAttempts.value = []
       }
 
       if (statsRes.status === 'fulfilled') {
-        console.log('✅ Public stats response:', statsRes.value.data)
+        console.log(' Public stats response:', statsRes.value.data)
         // Update quizDetail with public stats if available
         quizDetail.value = { ...quizDetail.value, ...statsRes.value.data }
       } else {
-        console.warn('⚠️ Public stats error:', statsRes.reason)
+        console.warn(' Public stats error:', statsRes.reason)
       }
     } catch (error) {
-      console.error('❌ Lỗi khi tải chi tiết quiz:', error)
+      console.error(' Lỗi khi tải chi tiết quiz:', error)
       quizDetail.value = null
       questions.value = []
       recentAttempts.value = []
     } finally {
       loading.value = false
     }
-  }, 100) // ✅ DEBOUNCE 100MS
+  }, 100) //  DEBOUNCE 100MS
 }
 
 const formatDate = (dateString) => {
@@ -652,12 +581,12 @@ const playQuiz = async () => {
   if (quizDetail.value) {
     const userId = localStorage.getItem('userId')
     if (!userId) {
-      console.error('❌ Missing userId - user not logged in')
+      console.error(' Missing userId - user not logged in')
       // Có thể chuyển hướng đến trang login
       router.push({ name: 'Login' })
       return
     }
-    console.log('🎮 Playing quiz:', quizDetail.value.id, 'for user:', userId)
+    console.log(' Playing quiz:', quizDetail.value.id, 'for user:', userId)
     try {
       const { quizAttemptService } = await import('@/services/quizAttemptService')
       const resp = await quizAttemptService.startAttempt(quizDetail.value.id)
@@ -713,18 +642,18 @@ const isQuizCreator = computed(() => {
   const currentUserId = localStorage.getItem('userId')
   const creatorId = quizDetail.value?.creatorId
 
-  console.log('🔍 Checking quiz creator:')
+  console.log(' Checking quiz creator:')
   console.log('  - Current user ID:', currentUserId, '(type:', typeof currentUserId, ')')
   console.log('  - Creator ID:', creatorId, '(type:', typeof creatorId, ')')
   console.log('  - Quiz detail:', quizDetail.value)
 
   // Kiểm tra null/undefined
   if (!currentUserId) {
-    console.log('❌ Current user ID is null/undefined')
+    console.log(' Current user ID is null/undefined')
     return false
   }
   if (!creatorId) {
-    console.log('❌ Creator ID is null/undefined')
+    console.log(' Creator ID is null/undefined')
     return false
   }
 
@@ -746,7 +675,7 @@ const isQuizCreator = computed(() => {
 // const isPublicQuiz = computed(() => {
 //   if (!quizDetail.value) return false
 //   const isPublic = quizDetail.value.isPublic || quizDetail.value.public || quizDetail.value.is_public || quizDetail.value.status === 'PUBLIC' || quizDetail.value.status === 'public'
-//   console.log('🔍 Quiz isPublic:', isPublic, 'Quiz detail:', quizDetail.value)
+//   console.log(' Quiz isPublic:', isPublic, 'Quiz detail:', quizDetail.value)
 //   return isPublic
 // })
 
@@ -754,7 +683,7 @@ const isQuizCreator = computed(() => {
 watch(
   () => props.quizId,
   (newQuizId) => {
-    console.log('👀 Quiz ID changed to:', newQuizId)
+    console.log(' Quiz ID changed to:', newQuizId)
     if (newQuizId && props.showModal && newQuizId !== loadedQuizId.value) {
       loadedQuizId.value = newQuizId
       loadQuizDetail()
@@ -766,7 +695,7 @@ watch(
 watch(
   () => props.showModal,
   (show) => {
-    console.log('👀 Modal show changed to:', show)
+    console.log(' Modal show changed to:', show)
     if (show && props.quizId && props.quizId !== loadedQuizId.value) {
       loadedQuizId.value = props.quizId
       loadQuizDetail()
@@ -823,17 +752,17 @@ watch(
 .modal-content {
   max-height: 70vh !important;
   overflow-y: auto !important;
-  /* ✅ TRÁNH LAYOUT SHIFT */
+  /*  TRÁNH LAYOUT SHIFT */
   transition: all 0.3s ease;
 }
 
 .modal-body {
   max-height: 50vh !important;
   overflow-y: auto !important;
-  /* ✅ TRÁNH LAYOUT SHIFT */
+  /*  TRÁNH LAYOUT SHIFT */
 }
 
-/* ✅ SMOOTH TRANSITIONS */
+/*  SMOOTH TRANSITIONS */
 .quiz-image-container {
   transition: opacity 0.3s ease;
 }
@@ -850,7 +779,7 @@ watch(
   transition: opacity 0.3s ease;
 }
 
-/* ✅ LOADING STATES */
+/*  LOADING STATES */
 .loading-fade {
   opacity: 0.6;
   pointer-events: none;
@@ -1024,11 +953,11 @@ watch(
     width: 95% !important;
     margin: 10px auto !important;
   }
-  
+
   .modal-content {
     max-height: 75vh !important;
   }
-  
+
   .modal-body {
     max-height: 60vh !important;
   }
@@ -1091,11 +1020,11 @@ watch(
   .quiz-meta .meta-item:nth-child(n+4) {
     display: none !important;
   }
-  
+
   .questions-preview {
     display: none !important;
   }
-  
+
   .modal-body {
     max-height: 45vh !important;
   }
@@ -1106,21 +1035,21 @@ watch(
   .stats-grid {
     grid-template-columns: repeat(3, 1fr) !important;
   }
-  
+
   .stat-card {
     padding: 0.5rem !important;
   }
-  
+
   .stat-icon {
     width: 35px !important;
     height: 35px !important;
     font-size: 0.9rem !important;
   }
-  
+
   .stat-number {
     font-size: 1.1rem !important;
   }
-  
+
   .stat-label {
     font-size: 0.7rem !important;
   }
@@ -1146,12 +1075,12 @@ watch(
     max-width: 100% !important;
     margin-bottom: 1rem !important;
   }
-  
+
   .row .col-md-8 {
     flex: 0 0 100% !important;
     max-width: 100% !important;
   }
-  
+
   .quiz-image {
     height: 120px !important;
     max-width: 200px !important;
@@ -1525,7 +1454,7 @@ watch(
   box-shadow: 0 2px 4px var(--shadow-color) !important;
 }
 
-/* ✅ SHOW MORE BUTTON STYLING */
+/*  SHOW MORE BUTTON STYLING */
 .btn-outline-primary.btn-sm {
   font-size: 0.8rem;
   padding: 0.375rem 0.75rem;

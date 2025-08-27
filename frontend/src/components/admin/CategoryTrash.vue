@@ -69,12 +69,7 @@
             <div class="table-controls">
               <div class="search-box">
                 <i class="bi bi-search"></i>
-                <input
-                  v-model="searchTerm"
-                  type="text"
-                  placeholder="Tìm kiếm danh mục..."
-                  class="search-input"
-                />
+                <input v-model="searchTerm" type="text" placeholder="Tìm kiếm danh mục..." class="search-input" />
               </div>
               <select v-model="sortBy" class="sort-select">
                 <option value="deletedAt">Xóa gần nhất</option>
@@ -102,12 +97,8 @@
             </div>
 
             <div v-else class="categories-grid">
-              <div
-                v-for="(category, index) in filteredCategories"
-                :key="category.id"
-                class="category-card deleted"
-                :style="{ 'animation-delay': `${index * 0.1}s` }"
-              >
+              <div v-for="(category, index) in filteredCategories" :key="category.id" class="category-card deleted"
+                :style="{ 'animation-delay': `${index * 0.1}s` }">
                 <div class="card-header">
                   <div class="category-info">
                     <div class="category-name">
@@ -131,18 +122,10 @@
                   </div>
 
                   <div class="card-actions">
-                    <button
-                      @click="restoreCategory(category)"
-                      class="btn-restore"
-                      title="Khôi phục"
-                    >
+                    <button @click="restoreCategory(category)" class="btn-restore" title="Khôi phục">
                       <i class="bi bi-arrow-clockwise"></i>
                     </button>
-                    <button
-                      @click="confirmHardDelete(category)"
-                      class="btn-hard-delete"
-                      title="Xóa hoàn toàn"
-                    >
+                    <button @click="confirmHardDelete(category)" class="btn-hard-delete" title="Xóa hoàn toàn">
                       <i class="bi bi-trash3-fill"></i>
                     </button>
                   </div>
@@ -211,11 +194,7 @@
             <i class="bi bi-x-circle"></i>
             Hủy
           </button>
-          <button
-            @click="hardDeleteCategory"
-            class="btn-confirm-hard-delete"
-            :disabled="isHardDeleting"
-          >
+          <button @click="hardDeleteCategory" class="btn-confirm-hard-delete" :disabled="isHardDeleting">
             <i v-if="isHardDeleting" class="bi bi-arrow-clockwise spin"></i>
             <i v-else class="bi bi-trash3-fill"></i>
             {{ isHardDeleting ? 'Đang xóa...' : 'Xóa hoàn toàn' }}
@@ -464,10 +443,12 @@ onMounted(() => {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
   }
+
   50% {
     transform: translateY(-20px) rotate(180deg);
   }
@@ -541,9 +522,11 @@ onMounted(() => {
 .stat-card.danger {
   border-left: 4px solid var(--danger-color);
 }
+
 .stat-card.warning {
   border-left: 4px solid var(--warning-color);
 }
+
 .stat-card.info {
   border-left: 4px solid var(--info-color);
 }
@@ -562,9 +545,11 @@ onMounted(() => {
 .stat-card.danger .stat-icon {
   background: linear-gradient(135deg, var(--danger-color), #ff6b9d);
 }
+
 .stat-card.warning .stat-icon {
   background: linear-gradient(135deg, var(--warning-color), #ffb142);
 }
+
 .stat-card.info .stat-icon {
   background: linear-gradient(135deg, var(--info-color), #5352ed);
 }
@@ -579,6 +564,7 @@ onMounted(() => {
   color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
+
 .stat-label {
   color: var(--text-secondary);
   font-size: 0.9rem;
@@ -722,6 +708,7 @@ onMounted(() => {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -732,10 +719,12 @@ onMounted(() => {
   color: var(--text-muted);
   margin-bottom: 1rem;
 }
+
 .empty-state h3 {
   color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
+
 .empty-state p {
   color: var(--text-secondary);
 }
@@ -930,6 +919,7 @@ onMounted(() => {
     opacity: 0;
     transform: translateY(-50px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1168,6 +1158,7 @@ onMounted(() => {
     opacity: 0;
     transform: translateX(100%);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);

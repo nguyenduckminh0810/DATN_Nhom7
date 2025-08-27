@@ -53,10 +53,10 @@ public class ResultService {
 
     @Autowired
     private NotificationService notificationService;
-    
+
     @Autowired
     private QuizAttemptRepo quizAttemptRepo;
-    
+
     @Autowired
     private QuizAttemptProgressRepo quizAttemptProgressRepo;
 
@@ -135,17 +135,20 @@ public class ResultService {
             Long qid = ans.getQuestionId();
             Long correctId = qidToCorrect.get(qid);
             correctAnswers.add(new CorrectAnswerDTO(qid, correctId));
-            if (correctId != null && correctId.equals(ans.getAnswerId())) correctCount++;
+            if (correctId != null && correctId.equals(ans.getAnswerId()))
+                correctCount++;
         }
 
         int totalQuestions = qidToCorrect.size();
-        if (totalQuestions <= 0) totalQuestions = submission.getAnswers() != null ? submission.getAnswers().size() : 0;
+        if (totalQuestions <= 0)
+            totalQuestions = submission.getAnswers() != null ? submission.getAnswers().size() : 0;
         int score = (int) Math.round(100.0 * correctCount / Math.max(totalQuestions, 1));
         score = Math.max(0, Math.min(100, score));
 
         // Time taken an toàn (giây)
         int timeTakenSec = 0;
-        if (submission.getTimeTaken() != null && submission.getTimeTaken() >= 0 && submission.getTimeTaken() <= 24 * 3600) {
+        if (submission.getTimeTaken() != null && submission.getTimeTaken() >= 0
+                && submission.getTimeTaken() <= 24 * 3600) {
             timeTakenSec = submission.getTimeTaken();
         }
 
@@ -156,12 +159,13 @@ public class ResultService {
         result.setCompletedAt(LocalDateTime.now());
         result.setTimeTaken(timeTakenSec);
         resultRepo.save(result);
-        
-        // ✅ CẬP NHẬT STATUS CỦA QUIZ ATTEMPT THÀNH SUBMITTED
+
+        // CẬP NHẬT STATUS CỦA QUIZ ATTEMPT THÀNH SUBMITTED
         try {
             // Tìm attempt mới nhất của user cho quiz này
             Pageable pageable = PageRequest.of(0, 1, Sort.by("attemptedAt").descending());
-            Page<QuizAttempt> attemptsPage = quizAttemptRepo.findByUserIdAndQuizId(user.getId(), quiz.getId(), pageable);
+            Page<QuizAttempt> attemptsPage = quizAttemptRepo.findByUserIdAndQuizId(user.getId(), quiz.getId(),
+                    pageable);
             List<QuizAttempt> attempts = attemptsPage.getContent();
             if (!attempts.isEmpty()) {
                 QuizAttempt latestAttempt = attempts.get(0);
@@ -170,24 +174,31 @@ public class ResultService {
                     latestAttempt.setScore(score);
                     latestAttempt.setTimeTaken(timeTakenSec);
                     quizAttemptRepo.save(latestAttempt);
-                    
+
                     // Xóa progress nếu có
-                    Optional<QuizAttemptProgress> progressOpt = quizAttemptProgressRepo.findByAttemptId(latestAttempt.getId());
+                    Optional<QuizAttemptProgress> progressOpt = quizAttemptProgressRepo
+                            .findByAttemptId(latestAttempt.getId());
                     if (progressOpt.isPresent()) {
                         quizAttemptProgressRepo.delete(progressOpt.get());
                     }
-                    
-                    System.out.println("✅ Đã cập nhật QuizAttempt ID " + latestAttempt.getId() + " thành SUBMITTED");
+
+                    System.out.println(" Đã cập nhật QuizAttempt ID " + latestAttempt.getId() + " thành SUBMITTED");
                 }
             }
         } catch (Exception e) {
-            System.err.println("⚠️ Lỗi khi cập nhật QuizAttempt status: " + e.getMessage());
+            System.err.println(" Lỗi khi cập nhật QuizAttempt status: " + e.getMessage());
             // Không throw error vì đây không phải lỗi nghiêm trọng
         }
 
         // Thông báo (giữ nguyên)
-        try { notificationService.sendQuizResultNotification(user.getId(), quiz.getId(), quiz.getTitle(), score); } catch (Exception ignore) {}
-        try { notificationService.sendQuizCompletedNotification(quiz.getId(), quiz.getTitle(), user.getUsername(), score); } catch (Exception ignore) {}
+        try {
+            notificationService.sendQuizResultNotification(user.getId(), quiz.getId(), quiz.getTitle(), score);
+        } catch (Exception ignore) {
+        }
+        try {
+            notificationService.sendQuizCompletedNotification(quiz.getId(), quiz.getTitle(), user.getUsername(), score);
+        } catch (Exception ignore) {
+        }
 
         return new EvaluationResult(result.getId(), score, correctAnswers);
     }

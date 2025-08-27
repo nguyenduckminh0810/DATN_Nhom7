@@ -11,24 +11,24 @@ const token = ref('')
 const message = ref('')
 
 export function useLogin() {
-  const router = useRouter()   // 👈 lấy router trong composable
+  const router = useRouter()   //  lấy router trong composable
 
   const initializeToken = () => {
     const savedToken = localStorage.getItem('token')
     const savedUserId = localStorage.getItem('userId')
     const savedUsername = localStorage.getItem('username')
-    
+
     if (savedToken) {
       token.value = savedToken
       status.value = 'loggedIn'
       if (savedUserId) userId.value = savedUserId
     }
-    
-    // ✅ LUÔN LẤY USERNAME TỪ LOCALSTORAGE NẾU CÓ
+
+    //  LUÔN LẤY USERNAME TỪ LOCALSTORAGE NẾU CÓ
     if (savedUsername) {
       username.value = savedUsername
     } else {
-      // ✅ THỬ LẤY TỪ USER OBJECT
+      //  THỬ LẤY TỪ USER OBJECT
       try {
         const userStr = localStorage.getItem('user')
         if (userStr) {
@@ -62,14 +62,14 @@ export function useLogin() {
       if (data.status === 'SUCCESS') {
         const jwt = data.token || data.accessToken
         const user = data.user || {}
-        
+
         // Lưu thông tin đăng nhập
         const finalUsername = user.username || username.value
         localStorage.setItem('token', jwt)
         localStorage.setItem('user', JSON.stringify(user))
         localStorage.setItem('username', finalUsername)
-        localStorage.removeItem('banned')    // 👈 rất quan trọng khi unban
-        
+        localStorage.removeItem('banned')    //  rất quan trọng khi unban
+
         // Cập nhật state
         username.value = finalUsername
         token.value = jwt
@@ -77,12 +77,12 @@ export function useLogin() {
 
         await getUserId().then((id) => id && localStorage.setItem('userId', id))
 
-        // 👇 Không redirect ở đây nữa, để Login.vue xử lý
-        console.log('🔍 Login successful:', { userRole: (user.role || '').toUpperCase(), user })
+        //  Không redirect ở đây nữa, để Login.vue xử lý
+        console.log(' Login successful:', { userRole: (user.role || '').toUpperCase(), user })
 
         return { success: true, user }
       } else {
-        message.value = data.message || '❌ Có lỗi xảy ra!'
+        message.value = data.message || ' Có lỗi xảy ra!'
         status.value = 'loggedOut'; resetForm()
         return { success: false }
       }
@@ -93,9 +93,9 @@ export function useLogin() {
       }
       message.value =
         err.response?.data?.message ||
-        (err.response?.status === 401 ? '❌ Tên đăng nhập hoặc mật khẩu không đúng!' :
-          err.response?.status === 429 ? '🚫 Quá nhiều lần thử đăng nhập!' :
-            '❌ Đăng nhập thất bại!')
+        (err.response?.status === 401 ? ' Tên đăng nhập hoặc mật khẩu không đúng!' :
+          err.response?.status === 429 ? ' Quá nhiều lần thử đăng nhập!' :
+            ' Đăng nhập thất bại!')
       status.value = 'loggedOut'; resetForm()
       return { success: false }
     }

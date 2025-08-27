@@ -24,42 +24,46 @@ public class LeaderboardService {
     // Xếp hạng theo quiz cụ thể
     public List<LeaderboardEntry> getQuizLeaderboard(Long quizId, int limit) {
         try {
-            System.out.println("🔍 Getting quiz leaderboard for quizId: " + quizId + ", limit: " + limit);
+            System.out.println("Getting quiz leaderboard for quizId: " + quizId + ", limit: " + limit);
 
             List<Result> results = resultRepo.findTopByQuizIdOrderByScoreDescTimeTakenAsc(
                     quizId, PageRequest.of(0, limit));
 
-            System.out.println("✅ Found " + results.size() + " results for quiz " + quizId);
+            System.out.println("Found " + results.size() + " results for quiz " + quizId);
 
             return results.stream()
                     .map(this::convertToLeaderboardEntry)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            System.err.println("❌ Error in getQuizLeaderboard: " + e.getMessage());
+            System.err.println("Error in getQuizLeaderboard: " + e.getMessage());
             e.printStackTrace();
             return new ArrayList<>(); // Trả về list rỗng thay vì null
         }
     }
 
-    // ✅ Xếp hạng theo quiz cụ thể với pagination thực sự
-    public org.springframework.data.domain.Page<LeaderboardEntry> getQuizLeaderboardPaginated(Long quizId, int page, int size) {
+    // Xếp hạng theo quiz cụ thể với pagination thực sự
+    public org.springframework.data.domain.Page<LeaderboardEntry> getQuizLeaderboardPaginated(Long quizId, int page,
+            int size) {
         try {
-            System.out.println("🔍 Getting paginated quiz leaderboard for quizId: " + quizId + ", page: " + page + ", size: " + size);
+            System.out.println(
+                    "Getting paginated quiz leaderboard for quizId: " + quizId + ", page: " + page + ", size: " + size);
 
             // Sử dụng Pageable để phân trang
             org.springframework.data.domain.Pageable pageable = PageRequest.of(page, size);
-            org.springframework.data.domain.Page<Result> resultsPage = resultRepo.findByQuizIdOrderByScoreDescTimeTakenAsc(quizId, pageable);
+            org.springframework.data.domain.Page<Result> resultsPage = resultRepo
+                    .findByQuizIdOrderByScoreDescTimeTakenAsc(quizId, pageable);
 
-            System.out.println("✅ Found " + resultsPage.getContent().size() + " results for page " + page + 
-                             ", total: " + resultsPage.getTotalElements() + 
-                             ", pages: " + resultsPage.getTotalPages());
+            System.out.println("Found " + resultsPage.getContent().size() + " results for page " + page +
+                    ", total: " + resultsPage.getTotalElements() +
+                    ", pages: " + resultsPage.getTotalPages());
 
             // Convert Page<Result> thành Page<LeaderboardEntry>
-            org.springframework.data.domain.Page<LeaderboardEntry> leaderboardPage = resultsPage.map(this::convertToLeaderboardEntry);
-            
+            org.springframework.data.domain.Page<LeaderboardEntry> leaderboardPage = resultsPage
+                    .map(this::convertToLeaderboardEntry);
+
             return leaderboardPage;
         } catch (Exception e) {
-            System.err.println("❌ Error in getQuizLeaderboardPaginated: " + e.getMessage());
+            System.err.println("Error in getQuizLeaderboardPaginated: " + e.getMessage());
             e.printStackTrace();
             // Trả về empty page
             return org.springframework.data.domain.Page.empty(PageRequest.of(page, size));
@@ -82,7 +86,7 @@ public class LeaderboardService {
                     String username = (String) row[1];
                     String fullName = (String) row[2];
                     String avatarUrl = (String) row[3];
-                    // ✅ Sửa lỗi cast - chuyển Long thành Integer
+                    // Sửa lỗi cast - chuyển Long thành Integer
                     Long totalScoreLong = (Long) row[4];
                     Integer totalScore = totalScoreLong != null ? totalScoreLong.intValue() : 0;
                     Long attemptCount = (Long) row[5];
@@ -97,7 +101,7 @@ public class LeaderboardService {
                     entries.add(entry);
                     rank++;
                 } catch (Exception e) {
-                    System.err.println("❌ Error processing row " + rank + ": " + e.getMessage());
+                    System.err.println("Error processing row " + rank + ": " + e.getMessage());
                     // Tiếp tục với row tiếp theo thay vì dừng toàn bộ
                     continue;
                 }
@@ -105,7 +109,7 @@ public class LeaderboardService {
 
             return entries;
         } catch (Exception e) {
-            System.err.println("❌ Error in getGlobalLeaderboard: " + e.getMessage());
+            System.err.println("Error in getGlobalLeaderboard: " + e.getMessage());
             e.printStackTrace();
             return new ArrayList<>(); // Trả về list rỗng thay vì null
         }
@@ -141,22 +145,22 @@ public class LeaderboardService {
 
         try {
             if (totalScore >= 1000) {
-                badges.add("🏆 Master");
+                badges.add("Master");
             } else if (totalScore >= 500) {
-                badges.add("🥇 Expert");
+                badges.add("Expert");
             } else if (totalScore >= 200) {
-                badges.add("🥈 Advanced");
+                badges.add("Advanced");
             }
 
             if (attemptCount != null && attemptCount >= 50) {
-                badges.add("📚 Dedicated");
+                badges.add("Dedicated");
             } else if (attemptCount != null && attemptCount >= 20) {
-                badges.add("📖 Active");
+                badges.add("Active");
             }
         } catch (Exception e) {
-            System.err.println("❌ Error calculating badges: " + e.getMessage());
+            System.err.println("Error calculating badges: " + e.getMessage());
             // Trả về badge mặc định nếu có lỗi
-            badges.add("🎯 New Player");
+            badges.add("New Player");
         }
 
         return badges;
@@ -169,7 +173,7 @@ public class LeaderboardService {
         try {
             // 100% chính xác
             if (result.getScore() >= 100) {
-                badges.add("💯 Perfect Score");
+                badges.add("Perfect Score");
             }
 
             // Nhanh nhất (có timeTaken)
@@ -181,7 +185,7 @@ public class LeaderboardService {
                         .toList();
 
                 if (!fastestResults.isEmpty() && fastestResults.get(0).getId().equals(result.getId())) {
-                    badges.add("⚡ Speed Demon");
+                    badges.add("Speed Demon");
                 }
             }
 
@@ -192,18 +196,18 @@ public class LeaderboardService {
                     .toList();
 
             if (top3ByScore.stream().anyMatch(r -> r.getId().equals(result.getId()))) {
-                badges.add("🥉 Top 3");
+                badges.add("Top 3");
             }
 
             // Streak badge (3+ quizzes today)
             long todayAttempts = resultRepo.countByUserIdAndCompletedAtToday(result.getUser().getId());
             if (todayAttempts >= 3) {
-                badges.add("🔥 Streak Master");
+                badges.add("Streak Master");
             }
         } catch (Exception e) {
-            System.err.println("❌ Error calculating quiz badges: " + e.getMessage());
+            System.err.println("Error calculating quiz badges: " + e.getMessage());
             // Trả về badge mặc định nếu có lỗi
-            badges.add("🎯 Quiz Player");
+            badges.add("Quiz Player");
         }
 
         return badges;
@@ -212,7 +216,7 @@ public class LeaderboardService {
     // Chuyển đổi Result thành LeaderboardEntry
     private LeaderboardEntry convertToLeaderboardEntry(Result result) {
         try {
-            System.out.println("🔍 Converting result for user: " + result.getUser().getUsername() + ", score: "
+            System.out.println("Converting result for user: " + result.getUser().getUsername() + ", score: "
                     + result.getScore());
 
             List<Result> allQuizResults = resultRepo.findByQuiz_Id(result.getQuiz().getId());
@@ -231,10 +235,10 @@ public class LeaderboardService {
                     result.getQuiz().getId(),
                     result.getQuiz().getTitle());
 
-            System.out.println("✅ Converted to LeaderboardEntry: " + entry.getUsername() + " - " + entry.getScore());
+            System.out.println("Converted to LeaderboardEntry: " + entry.getUsername() + " - " + entry.getScore());
             return entry;
         } catch (Exception e) {
-            System.err.println("❌ Error converting result to LeaderboardEntry: " + e.getMessage());
+            System.err.println("Error converting result to LeaderboardEntry: " + e.getMessage());
             e.printStackTrace();
 
             // Trả về entry mặc định nếu có lỗi
@@ -246,7 +250,7 @@ public class LeaderboardService {
                     0,
                     0,
                     0,
-                    List.of("🎯 Player"),
+                    List.of("Player"),
                     LocalDateTime.now(),
                     null,
                     "Unknown Quiz");
@@ -269,7 +273,7 @@ public class LeaderboardService {
         }
     }
 
-    // 🔐 ADMIN METHODS - Thống kê cho admin
+    // ADMIN METHODS - Thống kê cho admin
     public int getTotalUsers() {
         // TODO: Implement actual user count
         return 150; // Placeholder

@@ -27,49 +27,23 @@
         <div class="row g-3">
           <div class="col-md-3">
             <label class="form-label">Người dùng</label>
-            <input 
-              v-model="filters.user" 
-              type="text" 
-              class="form-control" 
-              placeholder="Tìm theo tên user..."
-            />
+            <input v-model="filters.user" type="text" class="form-control" placeholder="Tìm theo tên user..." />
           </div>
           <div class="col-md-3">
             <label class="form-label">Quiz</label>
-            <input 
-              v-model="filters.quiz" 
-              type="text" 
-              class="form-control" 
-              placeholder="Tìm theo tên quiz..."
-            />
+            <input v-model="filters.quiz" type="text" class="form-control" placeholder="Tìm theo tên quiz..." />
           </div>
           <div class="col-md-2">
             <label class="form-label">Điểm từ</label>
-            <input 
-              v-model="filters.minScore" 
-              type="number" 
-              class="form-control" 
-              min="0" 
-              max="100"
-            />
+            <input v-model="filters.minScore" type="number" class="form-control" min="0" max="100" />
           </div>
           <div class="col-md-2">
             <label class="form-label">Điểm đến</label>
-            <input 
-              v-model="filters.maxScore" 
-              type="number" 
-              class="form-control" 
-              min="0" 
-              max="100"
-            />
+            <input v-model="filters.maxScore" type="number" class="form-control" min="0" max="100" />
           </div>
           <div class="col-md-2">
             <label class="form-label">Ngày từ</label>
-            <input 
-              v-model="filters.startDate" 
-              type="date" 
-              class="form-control"
-            />
+            <input v-model="filters.startDate" type="date" class="form-control" />
           </div>
         </div>
         <div class="row mt-3">
@@ -144,13 +118,8 @@
                 <td>
                   <div class="d-flex align-items-center">
                     <div class="avatar-sm me-2">
-                      <img 
-                        v-if="attempt.user?.avatarUrl" 
-                        :src="attempt.user.avatarUrl" 
-                        class="rounded-circle"
-                        width="32" 
-                        height="32"
-                      />
+                      <img v-if="attempt.user?.avatarUrl" :src="attempt.user.avatarUrl" class="rounded-circle"
+                        width="32" height="32" />
                       <i v-else class="bi bi-person-circle text-muted"></i>
                     </div>
                     <div>
@@ -196,7 +165,7 @@
           </table>
         </div>
       </div>
-      
+
       <!-- Pagination -->
       <div class="card-footer">
         <nav>
@@ -206,12 +175,7 @@
                 <i class="bi bi-chevron-left"></i>
               </button>
             </li>
-            <li 
-              v-for="page in visiblePages" 
-              :key="page" 
-              class="page-item"
-              :class="{ active: page === currentPage }"
-            >
+            <li v-for="page in visiblePages" :key="page" class="page-item" :class="{ active: page === currentPage }">
               <button @click="changePage(page)" class="page-link">{{ page }}</button>
             </li>
             <li class="page-item" :class="{ disabled: currentPage === totalPages }">
@@ -275,7 +239,7 @@
 import { ref, computed, onMounted } from 'vue'
 import api from '@/utils/axios'
 
-// ✅ REACTIVE DATA
+//  REACTIVE DATA
 const attempts = ref([])
 const totalItems = ref(0)
 const currentPage = ref(1)
@@ -322,21 +286,21 @@ const stats = ref([
   }
 ])
 
-// ✅ COMPUTED PROPERTIES
+//  COMPUTED PROPERTIES
 const totalPages = computed(() => Math.ceil(totalItems.value / pageSize.value))
 
 const visiblePages = computed(() => {
   const pages = []
   const start = Math.max(1, currentPage.value - 2)
   const end = Math.min(totalPages.value, currentPage.value + 2)
-  
+
   for (let i = start; i <= end; i++) {
     pages.push(i)
   }
   return pages
 })
 
-// ✅ METHODS
+//  METHODS
 const loadAttempts = async () => {
   try {
     const params = {
@@ -344,11 +308,11 @@ const loadAttempts = async () => {
       size: pageSize.value,
       ...filters.value
     }
-    
+
     const response = await api.get('/admin/all-attempts', { params })
     attempts.value = response.data.content || response.data
     totalItems.value = response.data.totalElements || response.data.length
-    
+
     updateStats()
   } catch (error) {
     console.error('Error loading attempts:', error)
@@ -357,12 +321,12 @@ const loadAttempts = async () => {
 
 const updateStats = () => {
   if (attempts.value.length === 0) return
-  
+
   const totalAttempts = attempts.value.length
   const avgScore = attempts.value.reduce((sum, a) => sum + (a.score || 0), 0) / totalAttempts
   const avgTime = attempts.value.reduce((sum, a) => sum + (a.timeTaken || 0), 0) / totalAttempts
   const passRate = (attempts.value.filter(a => (a.score || 0) >= 50).length / totalAttempts) * 100
-  
+
   stats.value[0].value = totalAttempts
   stats.value[1].value = `${avgScore.toFixed(1)}%`
   stats.value[2].value = `${Math.round(avgTime / 60)} phút`
@@ -404,7 +368,7 @@ const closeModal = () => {
 
 const deleteAttempt = async (id) => {
   if (!confirm('Bạn có chắc muốn xóa attempt này?')) return
-  
+
   try {
     await api.delete(`/admin/attempts/${id}`)
     loadAttempts()
@@ -422,7 +386,7 @@ const exportData = () => {
   alert('Tính năng xuất Excel sẽ được implement sau')
 }
 
-// ✅ UTILITY FUNCTIONS
+//  UTILITY FUNCTIONS
 const formatDate = (date) => {
   return new Date(date).toLocaleString('vi-VN')
 }
@@ -449,7 +413,7 @@ const getStatusText = (score) => {
   return score >= 50 ? 'Đỗ' : 'Trượt'
 }
 
-// ✅ WATCHERS
+//  WATCHERS
 const pageSizeComputed = computed({
   get: () => pageSize.value,
   set: (newValue) => {
@@ -459,7 +423,7 @@ const pageSizeComputed = computed({
   }
 })
 
-// ✅ MOUNTED
+//  MOUNTED
 onMounted(() => {
   loadAttempts()
 })
@@ -488,4 +452,4 @@ onMounted(() => {
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
 }
-</style> 
+</style>

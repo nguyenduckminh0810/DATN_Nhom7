@@ -88,7 +88,7 @@ const passwordStrength = computed(() => {
     return Math.min(strength, 5)
 })
 
-// ✅ checklist & flag cho “mật khẩu mới”
+//  checklist & flag cho “mật khẩu mới”
 const newPasswordHints = computed(() => {
     const p = passwordForm.value.newPassword || ''
     return {
@@ -781,7 +781,7 @@ const canSubmit = computed(() =>
                                                     </span>
                                                 </div>
 
-                                                <!-- ✅ checklist điều kiện -->
+                                                <!--  checklist điều kiện -->
                                                 <ul v-if="passwordForm.newPassword" class="hint-list">
                                                     <li :class="{ ok: !newPasswordHints.tooShort8 }">Tối thiểu 8 ký tự
                                                     </li>
@@ -1591,7 +1591,7 @@ const canSubmit = computed(() =>
     min-width: 80px;
 }
 
-/* ✅ bổ sung hiển thị lỗi & checklist */
+/*  bổ sung hiển thị lỗi & checklist */
 .input-error {
     border-color: #ff4757 !important;
     box-shadow: 0 0 0 .2rem rgba(255, 71, 87, .15) !important;

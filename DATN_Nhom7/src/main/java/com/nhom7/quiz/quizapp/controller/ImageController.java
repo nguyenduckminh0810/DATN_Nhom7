@@ -25,29 +25,28 @@ public class ImageController {
     @Autowired
     private ImageService imageService;
 
-    
     @GetMapping("/image/quiz/{quizId}")
     public ResponseEntity<Resource> getImageByQuizId(@PathVariable Long quizId) throws IOException {
-        System.out.println("🖼️ Image request for quiz ID: " + quizId);
-        
+        System.out.println("Image request for quiz ID: " + quizId);
+
         Image image = imageService.getImageByQuizId(quizId);
-        
-        // ✅ DEBUG: Kiểm tra image từ database
-        System.out.println("🔍 Image from database: " + image);
+
+        // DEBUG: Kiểm tra image từ database
+        System.out.println("Image from database: " + image);
         if (image != null) {
-            System.out.println("🔍 Image URL: " + image.getUrl());
-            System.out.println("🔍 Image Quiz ID: " + (image.getQuiz() != null ? image.getQuiz().getId() : "NULL"));
+            System.out.println("Image URL: " + image.getUrl());
+            System.out.println("Image Quiz ID: " + (image.getQuiz() != null ? image.getQuiz().getId() : "NULL"));
         }
 
         if (image == null || image.getUrl() == null) {
-            System.out.println("❌ No image found for quiz ID: " + quizId);
+            System.out.println(" No image found for quiz ID: " + quizId);
             return ResponseEntity.notFound().build();
         }
 
         String imageUrl = image.getUrl();
         String filename;
-        
-        // ✅ FIX: Handle different URL formats properly
+
+        // FIX: Handle different URL formats properly
         if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
             // External URL - extract filename
             filename = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
@@ -58,21 +57,21 @@ public class ImageController {
             // Just filename
             filename = imageUrl;
         }
-        
+
         Path filePath = Paths.get(uploadDir, filename);
 
         if (!Files.exists(filePath)) {
-            System.out.println("❌ Image file not found: " + filePath);
+            System.out.println("Image file not found: " + filePath);
             return ResponseEntity.notFound().build();
         }
 
         String contentType = Files.probeContentType(filePath);
         ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(filePath));
-        System.out.println("✅ Image found: " + image);
-        System.out.println("✅ Image URL: " + imageUrl);
-        System.out.println("✅ Extracted filename: " + filename);
-        System.out.println("✅ File path: " + filePath);
-        System.out.println("✅ File exists: " + Files.exists(filePath));
+        System.out.println("Image found: " + image);
+        System.out.println("Image URL: " + imageUrl);
+        System.out.println("Extracted filename: " + filename);
+        System.out.println("File path: " + filePath);
+        System.out.println("File exists: " + Files.exists(filePath));
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType != null
@@ -82,7 +81,6 @@ public class ImageController {
                 .body(resource);
     }
 
-    
     @PostMapping("/upload/image")
     public ResponseEntity<?> uploadImage(@RequestParam("image") MultipartFile file) {
         try {
@@ -145,7 +143,7 @@ public class ImageController {
     public ResponseEntity<Resource> getUploadedImage(@PathVariable String filename) {
         try {
             Path filePath = Paths.get(uploadDir).resolve(filename);
-            
+
             if (!Files.exists(filePath)) {
                 return ResponseEntity.notFound().build();
             }
@@ -166,7 +164,7 @@ public class ImageController {
         }
     }
 
-    // ✅ ENDPOINT MỚI: XỬ LÝ URL THÀNH FILENAME
+    // ENDPOINT MỚI: XỬ LÝ URL THÀNH FILENAME
     @PostMapping("/upload/url")
     public ResponseEntity<?> uploadImageFromUrl(@RequestParam("imageUrl") String imageUrl) {
         try {
@@ -177,7 +175,7 @@ public class ImageController {
             // Download image from URL
             URL url = new URL(imageUrl);
             String originalFilename = Paths.get(url.getPath()).getFileName().toString();
-            
+
             // Generate new filename
             String fileExtension = "";
             if (originalFilename.contains(".")) {
@@ -200,23 +198,22 @@ public class ImageController {
             }
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Download thành công",
-                "filename", newFilename
-            ));
+                    "success", true,
+                    "message", "Download thành công",
+                    "filename", newFilename));
 
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "Lỗi khi download: " + e.getMessage()));
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "message", "Lỗi khi download: " + e.getMessage()));
         }
     }
 
-    
     @GetMapping("/upload/avatars/{filename}")
     public ResponseEntity<Resource> getAvatarImage(@PathVariable String filename) {
         try {
             String avatarDir = "uploads/avatars";
             Path filePath = Paths.get(avatarDir).resolve(filename);
-            
+
             if (!Files.exists(filePath)) {
                 return ResponseEntity.notFound().build();
             }

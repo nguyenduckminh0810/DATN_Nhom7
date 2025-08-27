@@ -39,12 +39,12 @@ const importSelectedImage = ref(null)
 const importPreviewUrl = ref(null)
 const importIsPublic = ref(true)
 
-// ✅ THÊM STATE CHO QUIZ CODE
+//  THÊM STATE CHO QUIZ CODE
 const showCodeModal = ref(false)
 const quizCode = ref('')
 const quizInfo = ref(null)
 
-// ✅ HELPER: LẤY SỐ CÂU HỎI CỦA QUIZ (support nhiều field khác nhau)
+//  HELPER: LẤY SỐ CÂU HỎI CỦA QUIZ (support nhiều field khác nhau)
 const getQuestionCount = (q) => {
   return q?.questionCount ?? q?.totalQuestions ?? q?.numQuestions ??
     (Array.isArray(q?.questions) ? q.questions.length : 0) ?? 0
@@ -86,7 +86,7 @@ onMounted(async () => {
   try {
     userId.value = await getUserId()
 
-    // ✅ ĐẢM BẢO USERNAME ĐƯỢC KHỞI TẠO ĐÚNG CÁCH
+    //  ĐẢM BẢO USERNAME ĐƯỢC KHỞI TẠO ĐÚNG CÁCH
     if (!username.value) {
       const savedUsername = localStorage.getItem('username')
       if (savedUsername) {
@@ -132,17 +132,17 @@ async function fetchCategories() {
 // Fetch quizzes
 async function fetchQuizzes() {
   try {
-    // ✅ SỬA: CHỈ LẤY QUIZ CỦA USER HIỆN TẠI
+    //  SỬA: CHỈ LẤY QUIZ CỦA USER HIỆN TẠI
     const response = await api.get(`/quiz/user/${userId.value}/paginated`, {
       params: { page: 0, size: 50 } // Lấy nhiều quiz hơn
     })
-    console.log('🔍 Fetch quizzes response:', response.data)
+    console.log(' Fetch quizzes response:', response.data)
     quizzes.value = response.data.quizzes || response.data
-    console.log('✅ Quizzes loaded:', quizzes.value.length)
+    console.log(' Quizzes loaded:', quizzes.value.length)
 
-    // ✅ DEBUG: Kiểm tra từng quiz
+    //  DEBUG: Kiểm tra từng quiz
     quizzes.value.forEach((quiz, index) => {
-      console.log(`📝 Quiz ${index + 1}:`, {
+      console.log(` Quiz ${index + 1}:`, {
         id: quiz.id,
         title: quiz.title,
         isPublic: quiz.isPublic,
@@ -174,7 +174,7 @@ async function createQuiz() {
       formData.append('image', selectedImage.value)
     }
 
-    // ✅ THỰC HIỆN POST VÀ LẤY RESPONSE
+    //  THỰC HIỆN POST VÀ LẤY RESPONSE
     const response = await api.post(
       '/quiz/create-quiz-with-image',
       formData,
@@ -185,14 +185,14 @@ async function createQuiz() {
       }
     )
 
-    // ✅ LẤY quizId từ response
+    //  LẤY quizId từ response
     const quizId = response.data.quiz?.id || response.data.id
     const quizCode = response.data.quiz?.quizCode || response.data.quizCode
 
     message.value = 'Tạo quiz thành công!'
     messageType.value = 'success'
 
-    // ✅ HIỂN THỊ QUIZ CODE VÀ LƯU QUIZ INFO
+    //  HIỂN THỊ QUIZ CODE VÀ LƯU QUIZ INFO
     if (quizCode) {
       showQuizCode(quizCode, quizId)
     }
@@ -215,7 +215,7 @@ function editQuiz(quizId) {
   const quiz = quizzes.value.find((q) => q.id === quizId)
   if (!quiz) return
 
-  // ✅ Nhắc nếu chưa có question (nhưng vẫn cho vào trang Sửa)
+  //  Nhắc nếu chưa có question (nhưng vẫn cho vào trang Sửa)
   if (getQuestionCount(quiz) === 0) {
     message.value = 'Quiz này chưa có question — hãy thêm question sau khi vào trang Sửa.'
     messageType.value = 'error'
@@ -278,12 +278,12 @@ async function playQuiz(quizId) {
   }
 }
 
-// ✅ COMPUTED CHO IMPORT EXCEL
+//  COMPUTED CHO IMPORT EXCEL
 const canImport = computed(() => {
   return importQuizTitle.value.trim() && importCategoryId.value && selectedExcelFile.value
 })
 
-// ✅ METHODS CHO IMPORT EXCEL
+//  METHODS CHO IMPORT EXCEL
 const downloadTemplate = () => {
   // Tạo file Excel template thực sự với thư viện xlsx
   const sampleData = [
@@ -339,9 +339,9 @@ const downloadTemplate = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Câu hỏi');
     XLSX.writeFile(workbook, 'quiz-template.xlsx');
-    console.log('✅ Excel template downloaded successfully');
+    console.log(' Excel template downloaded successfully');
   } catch (error) {
-    console.error('❌ Error creating Excel template:', error);
+    console.error(' Error creating Excel template:', error);
   }
 }
 
@@ -400,7 +400,7 @@ async function importQuiz() {
     formData.append('username', username.value)
     formData.append('isPublic', importIsPublic.value)
 
-    // ✅ THÊM IMAGE VÀO FORMDATA
+    //  THÊM IMAGE VÀO FORMDATA
     if (importSelectedImage.value) {
       formData.append('image', importSelectedImage.value)
     }
@@ -422,7 +422,7 @@ async function importQuiz() {
       message.value = 'Import quiz thành công!'
       messageType.value = 'success'
 
-      // ✅ HIỂN THỊ QUIZ CODE CHO IMPORT
+      //  HIỂN THỊ QUIZ CODE CHO IMPORT
       if (response.data.quiz?.quizCode) {
         showQuizCode(response.data.quiz.quizCode, response.data.quiz.id)
       } else if (response.data.quizCode && response.data.id) {
@@ -482,11 +482,11 @@ function removeImportImage() {
   importPreviewUrl.value = null
 }
 
-// ✅ HIỂN THỊ QUIZ CODE
+//  HIỂN THỊ QUIZ CODE
 const showQuizCode = (code, quizId = null) => {
   quizCode.value = code
   if (quizId) {
-    // ✅ LƯU QUIZ INFO ĐỂ SHARE
+    //  LƯU QUIZ INFO ĐỂ SHARE
     quizInfo.value = {
       quizId: quizId,
       quizCode: code
@@ -495,7 +495,7 @@ const showQuizCode = (code, quizId = null) => {
   showCodeModal.value = true
 }
 
-// ✅ COPY CODE
+//  COPY CODE
 const copyQuizCode = async () => {
   try {
     await navigator.clipboard.writeText(quizCode.value)
@@ -508,10 +508,10 @@ const copyQuizCode = async () => {
   }
 }
 
-// ✅ SHARE CODE
+//  SHARE CODE
 const shareCode = async () => {
   try {
-    // ✅ TẠO LINK TRỰC TIẾP ĐẾN QUIZ PLAY PAGE
+    //  TẠO LINK TRỰC TIẾP ĐẾN QUIZ PLAY PAGE
     const userId = localStorage.getItem('userId') || '1'
     const quizId = quizInfo.value?.quizId
     const shareUrl = `${window.location.origin}/quiz/${quizId}/${userId}/play`
@@ -536,7 +536,7 @@ const shareCode = async () => {
   }
 }
 
-// ✅ RESET FORM
+//  RESET FORM
 const resetForm = () => {
   title.value = ''
   description.value = ''
@@ -573,7 +573,7 @@ const resetForm = () => {
             <div class="create-quiz-card">
               <div class="card-glow"></div>
               <div class="card-header-custom">
-                <!-- ✅ TAB NAVIGATION -->
+                <!--  TAB NAVIGATION -->
                 <div class="tab-navigation">
                   <button @click="activeTab = 'create'" :class="['tab-btn', { active: activeTab === 'create' }]">
                     <i class="bi bi-plus-circle-fill"></i>
@@ -585,7 +585,7 @@ const resetForm = () => {
                   </button>
                 </div>
 
-                <!-- ✅ TAB CONTENT HEADER -->
+                <!--  TAB CONTENT HEADER -->
                 <div class="tab-content-header">
                   <div v-if="activeTab === 'create'" class="header-info">
                     <h3 class="header-title">Tạo Quiz Mới</h3>
@@ -599,7 +599,7 @@ const resetForm = () => {
               </div>
 
               <div class="card-body-custom">
-                <!-- ✅ TAB 1: TẠO MỚI -->
+                <!--  TAB 1: TẠO MỚI -->
                 <div v-if="activeTab === 'create'" class="tab-content-panel">
                   <form @submit.prevent="createQuiz" class="import-form-compact">
                     <div class="row g-3">
@@ -723,13 +723,13 @@ const resetForm = () => {
                   </form>
                 </div>
 
-                <!-- ✅ TAB 2: IMPORT EXCEL -->
+                <!--  TAB 2: IMPORT EXCEL -->
                 <div v-if="activeTab === 'import'" class="tab-content-panel">
                   <div class="import-excel-section">
                     <!-- Template Download - Compact -->
                     <div class="template-section-compact">
                       <div class="template-header-compact">
-                        <h4>📋 File mẫu Excel</h4>
+                        <h4> File mẫu Excel</h4>
                         <button @click="downloadTemplate" class="template-btn-compact">
                           <i class="bi bi-download"></i>
                           Tải mẫu
@@ -738,7 +738,7 @@ const resetForm = () => {
 
                       <!-- Template Info -->
                       <div class="template-info-compact">
-                        <p><strong>📊 Cấu trúc file Excel:</strong></p>
+                        <p><strong> Cấu trúc file Excel:</strong></p>
                         <ul>
                           <li><strong>A:</strong> STT (1, 2, 3...)</li>
                           <li><strong>B:</strong> Câu hỏi</li>
@@ -948,14 +948,14 @@ const resetForm = () => {
     </div>
   </div>
 
-  <!-- ✅ QUIZ CODE MODAL -->
+  <!--  QUIZ CODE MODAL -->
   <div v-if="showCodeModal" class="modal-overlay" @click="showCodeModal = false">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <div class="success-icon">
           <i class="bi bi-check-circle-fill"></i>
         </div>
-        <h3>🎉 Quiz đã được tạo thành công!</h3>
+        <h3> Quiz đã được tạo thành công!</h3>
         <button @click="showCodeModal = false" class="modal-close">
           <i class="bi bi-x-lg"></i>
         </button>
@@ -979,7 +979,7 @@ const resetForm = () => {
               </div>
             </div>
 
-            <!-- ✅ QR CODE CHO LOCALHOST -->
+            <!--  QR CODE CHO LOCALHOST -->
             <div class="qr-section">
               <h5>QR Code để tham gia</h5>
               <div class="qr-container">
@@ -2556,7 +2556,7 @@ spinner-ring:nth-child(3) {}
   }
 }
 
-/* ✅ TAB SYSTEM STYLES */
+/*  TAB SYSTEM STYLES */
 .tab-navigation {
   display: flex;
   gap: 0;
@@ -2613,7 +2613,7 @@ spinner-ring:nth-child(3) {}
   animation: fadeInUp 0.5s ease;
 }
 
-/* ✅ IMPORT EXCEL STYLES */
+/*  IMPORT EXCEL STYLES */
 .import-excel-section {
   max-width: 100%;
 }

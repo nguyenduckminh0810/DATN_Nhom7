@@ -17,7 +17,8 @@
           <option value="90">90 ngày qua</option>
           <option value="365">1 năm qua</option>
         </select>
-        <button @click="exportExcel" class="btn btn-outline"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</button>
+        <button @click="exportExcel" class="btn btn-outline"><i class="bi bi-file-earmark-excel"></i> Xuất
+          Excel</button>
       </div>
     </div>
 
@@ -112,16 +113,11 @@
           <div class="card-body heatmap-body chart-body">
             <div class="heatmap-grid" v-if="heatmapMatrix && heatmapMatrix.length">
               <div class="heatmap-corner"></div>
-              <div v-for="h in 24" :key="'h'+h" class="heatmap-hour">{{ (h-1) + 'h' }}</div>
+              <div v-for="h in 24" :key="'h' + h" class="heatmap-hour">{{ (h - 1) + 'h' }}</div>
               <template v-for="(row, rIdx) in heatmapMatrix" :key="'r'+rIdx">
                 <div class="heatmap-day">{{ weekDays[rIdx] }}</div>
-                <div
-                  v-for="(val, cIdx) in row"
-                  :key="'c'+rIdx+'-'+cIdx"
-                  class="heat-cell"
-                  :style="{ backgroundColor: heatColor(val) }"
-                  :title="`${weekDays[rIdx]}, ${cIdx}h: ${val}`"
-                ></div>
+                <div v-for="(val, cIdx) in row" :key="'c' + rIdx + '-' + cIdx" class="heat-cell"
+                  :style="{ backgroundColor: heatColor(val) }" :title="`${weekDays[rIdx]}, ${cIdx}h: ${val}`"></div>
               </template>
             </div>
             <div v-else class="text-muted">Chưa có dữ liệu.</div>
@@ -147,7 +143,7 @@ import 'dayjs/locale/vi'
 dayjs.extend(relativeTime)
 dayjs.locale('vi')
 
-// ✅ REACTIVE DATA
+//  REACTIVE DATA
 const selectedPeriod = ref(30)
 // Canvas refs
 const attemptsSeriesCanvas = ref(null)
@@ -167,7 +163,7 @@ let categoryDistributionChart = null
 
 // Dữ liệu động từ BE
 const heatmapMatrix = ref(defaultHeatmap())
-const weekDays = ['Th 2','Th 3','Th 4','Th 5','Th 6','Th 7','CN']
+const weekDays = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN']
 const themeStore = useThemeStore()
 const { isDarkMode } = storeToRefs(themeStore)
 
@@ -218,12 +214,12 @@ function formatLabels(labels) {
   return (labels || []).map(formatDateLabel)
 }
 
-// ✅ METHODS
+//  METHODS
 const loadAnalytics = async () => { await refreshAll() }
 
-const updateStats = (data) => {}
+const updateStats = (data) => { }
 
-const updateCharts = () => {}
+const updateCharts = () => { }
 
 const initCharts = () => {
   if (attemptsSeriesCanvas.value) {
@@ -237,10 +233,12 @@ const initCharts = () => {
   if (usersSeriesCanvas.value) {
     usersSeriesChart = new Chart(usersSeriesCanvas.value.getContext('2d'), {
       type: 'line',
-      data: { labels: [], datasets: [
-        { label: 'Active Users', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.15)', fill: true, tension: 0.35 },
-        { label: 'New Users', data: [], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.15)', fill: true, tension: 0.35 }
-      ] },
+      data: {
+        labels: [], datasets: [
+          { label: 'Active Users', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.15)', fill: true, tension: 0.35 },
+          { label: 'New Users', data: [], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.15)', fill: true, tension: 0.35 }
+        ]
+      },
       options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, callback: (v) => Number.isInteger(v) ? v : '' } } } }
     })
     applyThemeToChart(usersSeriesChart)
@@ -316,10 +314,10 @@ const formatTimeAgo = (timestamp) => {
   return dayjs(timestamp).fromNow()
 }
 
-// ✅ WATCHERS
+//  WATCHERS
 watch(selectedPeriod, () => { refreshAll() })
 
-// ✅ MOUNTED
+//  MOUNTED
 onMounted(() => {
   initCharts()
   loadAnalytics()
@@ -336,8 +334,8 @@ function periodRange(days) {
   const from = new Date()
   from.setDate(to.getDate() - Number(days) + 1)
   const pad = (n) => String(n).padStart(2, '0')
-  const toStr = `${to.getFullYear()}-${pad(to.getMonth()+1)}-${pad(to.getDate())}`
-  const fromStr = `${from.getFullYear()}-${pad(from.getMonth()+1)}-${pad(from.getDate())}`
+  const toStr = `${to.getFullYear()}-${pad(to.getMonth() + 1)}-${pad(to.getDate())}`
+  const fromStr = `${from.getFullYear()}-${pad(from.getMonth() + 1)}-${pad(from.getDate())}`
   return { from: fromStr, to: toStr }
 }
 
@@ -439,62 +437,219 @@ function defaultHeatmap() {
 </script>
 
 <style scoped>
-.admin-analytics { padding: 24px; color: var(--text-primary); }
-.page-header { display:flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.title-card { background: var(--bg-primary); border:1px solid var(--border-color); border-radius: 14px; padding: 10px 14px; box-shadow: 0 6px 18px var(--shadow-color); }
-.page-title { display:flex; align-items:center; gap:12px; }
-.icon-badge { width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:12px; }
-.icon-badge i { font-size:22px; color: var(--info-color); }
-.title-text h1 { font-size:22px; margin:0; }
-.title-text h1::after { content:''; display:block; height:3px; width:80px; margin-top:6px; border-radius:999px; background:linear-gradient(90deg,#667eea 0%, #764ba2 100%); opacity:.6; }
-.title-text p { margin:2px 0 0 0; font-size:13px; color: var(--text-secondary); }
-.page-actions { display:flex; align-items:center; gap:10px; }
-.filter-select { background: var(--bg-primary); color: var(--text-primary); border:1px solid var(--border-color); border-radius:10px; padding:8px 12px; }
-.btn.btn-outline { background: var(--bg-primary); color: var(--text-primary); border:1px solid var(--border-color); border-radius:10px; padding:8px 12px; }
+.admin-analytics {
+  padding: 24px;
+  color: var(--text-primary);
+}
 
-.panel { background: var(--bg-primary); border:1px solid var(--border-color); border-radius: 16px; box-shadow: 0 8px 22px var(--shadow-color); overflow:hidden; }
-.panel-body.no-padding { padding: 0; }
-.table-wrap { width: 100%; overflow-x: auto; }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.title-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: 0 6px 18px var(--shadow-color);
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon-badge {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.icon-badge i {
+  font-size: 22px;
+  color: var(--info-color);
+}
+
+.title-text h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.title-text h1::after {
+  content: '';
+  display: block;
+  height: 3px;
+  width: 80px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  opacity: .6;
+}
+
+.title-text p {
+  margin: 2px 0 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-select {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.btn.btn-outline {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.panel {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 8px 22px var(--shadow-color);
+  overflow: hidden;
+}
+
+.panel-body.no-padding {
+  padding: 0;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
 
 /* Dark/Light tweaks */
-.admin-analytics .title-text h1 { text-shadow: none; letter-spacing: 0.2px; }
-.admin-analytics.is-light .title-card { background:#ffffff; border-color: rgba(2,6,23,0.12); }
-.admin-analytics.is-dark .title-card { background: transparent; border-color: rgba(255,255,255,0.18); box-shadow: none; backdrop-filter: none; }
-.admin-analytics.is-dark .page-title { background: transparent; box-shadow: none; }
-.admin-analytics.is-light .title-text h1 { color:#0b1220; }
-.admin-analytics.is-dark .title-text h1 { color:#f8fafc; }
-.admin-analytics.is-light .title-text h1::after { opacity:.95; background:linear-gradient(90deg,#4338ca 0%, #7c3aed 100%); }
-.admin-analytics.is-dark .title-text h1::after { opacity:.6; }
-.admin-analytics.is-dark .title-text p { color:#cbd5e1; }
-.admin-analytics.is-dark .icon-badge i { color: var(--info-color); }
+.admin-analytics .title-text h1 {
+  text-shadow: none;
+  letter-spacing: 0.2px;
+}
+
+.admin-analytics.is-light .title-card {
+  background: #ffffff;
+  border-color: rgba(2, 6, 23, 0.12);
+}
+
+.admin-analytics.is-dark .title-card {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.admin-analytics.is-dark .page-title {
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-analytics.is-light .title-text h1 {
+  color: #0b1220;
+}
+
+.admin-analytics.is-dark .title-text h1 {
+  color: #f8fafc;
+}
+
+.admin-analytics.is-light .title-text h1::after {
+  opacity: .95;
+  background: linear-gradient(90deg, #4338ca 0%, #7c3aed 100%);
+}
+
+.admin-analytics.is-dark .title-text h1::after {
+  opacity: .6;
+}
+
+.admin-analytics.is-dark .title-text p {
+  color: #cbd5e1;
+}
+
+.admin-analytics.is-dark .icon-badge i {
+  color: var(--info-color);
+}
 
 /* Balanced rows: equal card heights & spacing */
-.row-balanced > [class^='col-'] .card { height: 100%; }
-.chart-body { min-height: 260px; display:flex; align-items:center; }
-.donut-body { justify-content:center; }
+.row-balanced>[class^='col-'] .card {
+  height: 100%;
+}
+
+.chart-body {
+  min-height: 260px;
+  display: flex;
+  align-items: center;
+}
+
+.donut-body {
+  justify-content: center;
+}
 
 /* Dark mode fix for legacy Bootstrap cards/tables used by charts */
-.admin-analytics.is-dark .card { background: transparent; border:1px solid var(--border-color); box-shadow: none; }
+.admin-analytics.is-dark .card {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
 /* Increase contrast for headers in dark mode */
 .admin-analytics.is-dark .card-header,
-.admin-analytics.is-dark .panel-header { 
-  background: rgba(255,255,255,0.10);
-  border-bottom: 1px solid rgba(255,255,255,0.22);
+.admin-analytics.is-dark .panel-header {
+  background: rgba(255, 255, 255, 0.10);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
   color: #f1f5f9;
 }
+
 .admin-analytics.is-dark .card-header h6,
 .admin-analytics.is-dark .panel-header h6,
-.admin-analytics.is-dark .panel-header h3 { 
+.admin-analytics.is-dark .panel-header h3 {
   color: #f8fafc;
   letter-spacing: .2px;
   font-weight: 700;
 }
-.admin-analytics.is-dark .card-body { background: transparent; }
-.admin-analytics.is-dark .table { color: var(--text-primary); }
-.admin-analytics.is-dark .table thead { background: var(--card-header-bg); color: var(--card-header-text); }
-.admin-analytics.is-dark .table tbody tr { background: transparent; }
-.admin-analytics.is-dark .table tbody tr:hover { background: rgba(102,126,234,0.06); }
-.admin-analytics.is-dark .table td, .admin-analytics.is-dark .table th { border-color: var(--border-color); }
+
+.admin-analytics.is-dark .card-body {
+  background: transparent;
+}
+
+.admin-analytics.is-dark .table {
+  color: var(--text-primary);
+}
+
+.admin-analytics.is-dark .table thead {
+  background: var(--card-header-bg);
+  color: var(--card-header-text);
+}
+
+.admin-analytics.is-dark .table tbody tr {
+  background: transparent;
+}
+
+.admin-analytics.is-dark .table tbody tr:hover {
+  background: rgba(102, 126, 234, 0.06);
+}
+
+.admin-analytics.is-dark .table td,
+.admin-analytics.is-dark .table th {
+  border-color: var(--border-color);
+}
+
 .category-color {
   width: 12px;
   height: 12px;
@@ -576,9 +731,22 @@ function defaultHeatmap() {
 }
 
 /* Heatmap */
-.heatmap { display: grid; gap: 6px; }
-.heatmap-row { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; }
-.heat-cell { height: 100%; border-radius: 3px; background: rgba(59,130,246,0.1); }
+.heatmap {
+  display: grid;
+  gap: 6px;
+}
+
+.heatmap-row {
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  gap: 3px;
+}
+
+.heat-cell {
+  height: 100%;
+  border-radius: 3px;
+  background: rgba(59, 130, 246, 0.1);
+}
 
 /* Grid with headers */
 .heatmap-grid {
@@ -589,11 +757,33 @@ function defaultHeatmap() {
   align-items: center;
   width: 100%;
 }
-.heatmap-body { padding-top: 10px; padding-bottom: 10px; }
-.admin-analytics .card .card-body.heatmap-body { min-height: 300px; display:flex; align-items:flex-start; }
+
+.heatmap-body {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.admin-analytics .card .card-body.heatmap-body {
+  min-height: 300px;
+  display: flex;
+  align-items: flex-start;
+}
 
 /* Cleanup equal-width override (reverted to default grid) */
-.heatmap-corner { height: 0; }
-.heatmap-hour { font-size: clamp(10px, 0.8vw, 12px); color: var(--text-secondary); text-align: center; }
-.heatmap-day { font-size: clamp(11px, 0.9vw, 13px); color: var(--text-secondary); padding-right: 6px; text-align: right; }
-</style> 
+.heatmap-corner {
+  height: 0;
+}
+
+.heatmap-hour {
+  font-size: clamp(10px, 0.8vw, 12px);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.heatmap-day {
+  font-size: clamp(11px, 0.9vw, 13px);
+  color: var(--text-secondary);
+  padding-right: 6px;
+  text-align: right;
+}
+</style>

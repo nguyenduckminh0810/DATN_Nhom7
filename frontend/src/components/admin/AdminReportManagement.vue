@@ -1,7 +1,7 @@
 <template>
   <div class="admin-reports-container">
     <div class="reports-header">
-      <h2>📋 Quản lý Báo cáo</h2>
+      <h2>Quản lý Báo cáo</h2>
       <div class="stats-cards">
         <div class="stat-card pending">
           <h3>{{ stats.pendingReports || 0 }}</h3>
@@ -49,7 +49,7 @@
               {{ getStatusLabel(report.status) }}
             </span>
           </div>
-          
+
           <div class="report-content">
             <div class="report-info">
               <p><strong>Quiz:</strong> {{ report.quizTitle }}</p>
@@ -57,26 +57,22 @@
               <p><strong>Lý do:</strong> {{ report.reason }}</p>
               <p><strong>Thời gian:</strong> {{ formatDate(report.createdAt) }}</p>
             </div>
-            
+
             <div v-if="report.adminResponse" class="admin-response">
               <p><strong>Phản hồi admin:</strong> {{ report.adminResponse }}</p>
             </div>
           </div>
-          
-                     <div v-if="report.status === 'PENDING' || report.status === 'pending'" class="report-actions">
-            <button @click="handleReportAction(report.id, 'APPROVED')" 
-                    class="btn-approve">
-              ✅ Chấp nhận
+
+          <div v-if="report.status === 'PENDING' || report.status === 'pending'" class="report-actions">
+            <button @click="handleReportAction(report.id, 'APPROVED')" class="btn-approve">
+              Chấp nhận
             </button>
-            <button @click="handleReportAction(report.id, 'REJECTED')" 
-                    class="btn-reject">
-              ❌ Từ chối
+            <button @click="handleReportAction(report.id, 'REJECTED')" class="btn-reject">
+              Từ chối
             </button>
-            
-                                     <textarea v-model="adminNotes[report.id]" 
-                      placeholder="Ghi chú của admin (tùy chọn)"
-                      class="admin-note"
-                      rows="3"></textarea>
+
+            <textarea v-model="adminNotes[report.id]" placeholder="Ghi chú của admin (tùy chọn)" class="admin-note"
+              rows="3"></textarea>
           </div>
         </div>
 
@@ -109,30 +105,30 @@ export default {
     const selectedStatus = ref('');
     const showSuccess = ref(false);
     const successMessage = ref('');
-    
-    // ✅ THÊM REACTIVE DATA CHO ADMIN NOTES
+
+    // THÊM REACTIVE DATA CHO ADMIN NOTES
     const adminNotes = ref({});
 
     // Load reports
     const loadReports = async () => {
       loading.value = true;
       error.value = '';
-      
+
       try {
         const params = {};
         if (selectedStatus.value) {
           params.status = selectedStatus.value;
         }
-        
+
         const response = await axios.get('/api/reports', { params });
-        // ✅ SỬA ĐỂ LẤY ĐÚNG DATA TỪ BACKEND
-        console.log('🔧 Raw response:', response.data);
+        // SỬA ĐỂ LẤY ĐÚNG DATA TỪ BACKEND
+        console.log('Raw response:', response.data);
         reports.value = response.data.reports || response.data.content || response.data;
-        
-        console.log('✅ Loaded reports:', reports.value);
-        console.log('✅ Reports count:', reports.value.length);
+
+        console.log('Loaded reports:', reports.value);
+        console.log('Reports count:', reports.value.length);
       } catch (err) {
-        console.error('❌ Error loading reports:', err);
+        console.error('Error loading reports:', err);
         error.value = 'Không thể tải danh sách báo cáo';
       } finally {
         loading.value = false;
@@ -144,9 +140,9 @@ export default {
       try {
         const response = await axios.get('/api/reports/stats');
         stats.value = response.data;
-        console.log('✅ Loaded stats:', stats.value);
+        console.log('Loaded stats:', stats.value);
       } catch (err) {
-        console.error('❌ Error loading stats:', err);
+        console.error('Error loading stats:', err);
       }
     };
 
@@ -154,28 +150,28 @@ export default {
     const handleReportAction = async (reportId, action) => {
       try {
         const report = reports.value.find(r => r.id === reportId);
-        
-        // ✅ SỬ DỤNG ADMIN NOTE TỪ REACTIVE DATA
+
+        // SỬ DỤNG ADMIN NOTE TỪ REACTIVE DATA
         const adminNote = adminNotes.value[reportId] || '';
-        const adminResponse = action === 'APPROVED' 
+        const adminResponse = action === 'APPROVED'
           ? (adminNote || 'Báo cáo hợp lệ, quiz đã bị ẩn')
           : (adminNote || 'Báo cáo không hợp lệ');
-        
-        console.log('🔧 Sending report action:', {
+
+        console.log('Sending report action:', {
           reportId,
           action,
           adminResponse,
           adminNote,
           adminNotesValue: adminNotes.value
         });
-        
+
         const response = await axios.put(`/api/reports/${reportId}/action`, {
           reportId,
           action,
           adminResponse,
           adminNote
         });
-        
+
         if (response.data.status === 'SUCCESS') {
           // Update report in list
           const updatedReport = reports.value.find(r => r.id === reportId);
@@ -183,23 +179,23 @@ export default {
             updatedReport.status = action;
             updatedReport.adminResponse = adminResponse;
           }
-          
+
           // Show success message
           successMessage.value = `Đã ${action === 'APPROVED' ? 'chấp nhận' : 'từ chối'} report #${reportId}`;
           showSuccess.value = true;
-          
+
           // Hide success message after 3 seconds
           setTimeout(() => {
             showSuccess.value = false;
           }, 3000);
-          
+
           // Reload stats
           loadStats();
-          
-          console.log('✅ Report action successful:', response.data);
+
+          console.log('Report action successful:', response.data);
         }
       } catch (err) {
-        console.error('❌ Error handling report action:', err);
+        console.error('Error handling report action:', err);
         error.value = 'Có lỗi xảy ra khi xử lý báo cáo';
       }
     };
@@ -209,7 +205,7 @@ export default {
       const labels = {
         'PENDING': 'Chờ xử lý',
         'APPROVED': 'Đã chấp nhận',
-        'RESOLVED': 'Đã chấp nhận', // ✅ MAP RESOLVED THÀNH APPROVED
+        'RESOLVED': 'Đã chấp nhận', // MAP RESOLVED THÀNH APPROVED
         'REJECTED': 'Đã từ chối'
       };
       return labels[status] || status;
@@ -315,7 +311,7 @@ export default {
   border-radius: 8px;
   padding: 20px;
   background: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .report-header {
@@ -380,7 +376,8 @@ export default {
   align-items: flex-start;
 }
 
-.btn-approve, .btn-reject {
+.btn-approve,
+.btn-reject {
   padding: 8px 16px;
   border: none;
   border-radius: 4px;
@@ -417,7 +414,9 @@ export default {
   resize: vertical;
 }
 
-.loading-container, .error-container, .empty-state {
+.loading-container,
+.error-container,
+.empty-state {
   text-align: center;
   padding: 40px;
 }
@@ -433,8 +432,13 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -464,7 +468,7 @@ export default {
   color: white;
   padding: 15px 20px;
   border-radius: 4px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   animation: slideIn 0.3s ease;
 }
@@ -474,6 +478,7 @@ export default {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;

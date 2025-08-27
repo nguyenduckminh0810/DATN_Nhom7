@@ -17,11 +17,11 @@ import com.nhom7.quiz.quizapp.model.Quiz;
 public interface QuizRepo extends JpaRepository<Quiz, Long> {
       boolean existsByIdAndUser_Username(Long id, String username);
 
-      // ✅ CÁC METHOD HIỆN TẠI - CHỈ LẤY QUIZ CHƯA BỊ XÓA
+      // CÁC METHOD HIỆN TẠI - CHỈ LẤY QUIZ CHƯA BỊ XÓA
       @Query("SELECT q FROM Quiz q WHERE q.user.id = :userId AND (q.deleted IS NULL OR q.deleted = false)")
       Page<Quiz> findByUserIdAndDeletedFalse(@Param("userId") Long userId, Pageable pageable);
 
-      // ✅ SỬA: Query để xử lý đúng trường hợp deleted = null
+      // SỬA: Query để xử lý đúng trường hợp deleted = null
       @Query("SELECT q FROM Quiz q WHERE q.isPublic = :isPublic AND (q.deleted IS NULL OR q.deleted = false)")
       Page<Quiz> findByIsPublicAndDeletedFalse(@Param("isPublic") Boolean isPublic, Pageable pageable);
 
@@ -29,11 +29,11 @@ public interface QuizRepo extends JpaRepository<Quiz, Long> {
 
       List<Quiz> findByIsPublicFalseAndDeletedFalseOrderByCreatedAtDesc();
 
-      // ✅ THÊM CÁC METHOD CHO DASHBOARD
+      // THÊM CÁC METHOD CHO DASHBOARD
       @Query("SELECT COUNT(q) FROM Quiz q WHERE q.isPublic = true AND (q.deleted IS NULL OR q.deleted = false)")
       long countByIsPublicTrueAndDeletedFalse();
 
-      // ✅ THÊM CÁC METHOD CHO DEBUG
+      // THÊM CÁC METHOD CHO DEBUG
       long countByUserId(Long userId);
 
       long countByUserIdAndDeletedFalse(Long userId);
@@ -56,7 +56,7 @@ public interface QuizRepo extends JpaRepository<Quiz, Long> {
                   @Param("isPublic") Boolean isPublic,
                   Pageable pageable);
 
-      // ✅ THÊM CÁC METHOD CHO SOFT DELETE
+      // THÊM CÁC METHOD CHO SOFT DELETE
       // Lấy tất cả quiz (kể cả đã xóa) - cho admin
       Page<Quiz> findByUserId(Long userId, Pageable pageable);
 
@@ -74,11 +74,11 @@ public interface QuizRepo extends JpaRepository<Quiz, Long> {
       @Query("UPDATE Quiz q SET q.deleted = false, q.deletedAt = null, q.deletedBy = null WHERE q.id = :id")
       void restoreQuiz(@Param("id") Long id);
 
-      // ✅ THÊM METHOD TÌM QUIZ THEO CODE
+      // THÊM METHOD TÌM QUIZ THEO CODE
       @Query("SELECT q FROM Quiz q WHERE q.quizCode = :quizCode AND (q.deleted IS NULL OR q.deleted = false)")
       Optional<Quiz> findByQuizCode(@Param("quizCode") String quizCode);
 
-      // ✅ THÊM METHOD KIỂM TRA CODE ĐÃ TỒN TẠI
+      // THÊM METHOD KIỂM TRA CODE ĐÃ TỒN TẠI
       boolean existsByQuizCode(String quizCode);
 
       // Tìm kiếm quiz theo trạng thái public và theo category

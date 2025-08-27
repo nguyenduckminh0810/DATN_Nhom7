@@ -6,7 +6,7 @@ import api from '@/utils/axios'
 import { useThemeStore } from '@/stores/theme'
 import { useNotificationStore } from '@/stores/notification'
 import NotificationComponent from '../NotificationComponent.vue'
-import { storeToRefs } from 'pinia' // ✅ thêm
+import { storeToRefs } from 'pinia' // thêm
 
 // Define component name for Vue DevTools
 defineOptions({
@@ -19,18 +19,18 @@ const themeStore = useThemeStore()
 const notificationStore = useNotificationStore()
 const notificationComponent = ref(null)
 
-// 🔁 Lấy ref re-active từ Pinia
+// Lấy ref re-active từ Pinia
 const { unreadCount } = storeToRefs(notificationStore)
 
 const isLoggedIn = computed(() => !!token.value)
 const userProfile = ref(null)
 
-// ✅ CHECK USER ROLE
+// CHECK USER ROLE
 const isAdmin = computed(() => {
   // Kiểm tra nhiều nguồn để đảm bảo chính xác
   const adminUserStr = localStorage.getItem('admin_user')
   if (adminUserStr) return true
-  
+
   const userInfo = localStorage.getItem('user')
   if (userInfo) {
     try {
@@ -40,7 +40,7 @@ const isAdmin = computed(() => {
       // Ignore parsing errors
     }
   }
-  
+
   return userProfile.value?.role === 'admin' || userProfile.value?.role === 'ADMIN'
 })
 
@@ -49,11 +49,11 @@ const isUser = computed(() => {
     userProfile.value?.role === 'user' ||
     userProfile.value?.role === 'USER' ||
     !userProfile.value?.role
-  console.log('🔍 isUser computed:', isRegularUser, 'userProfile:', userProfile.value)
+  console.log('isUser computed:', isRegularUser, 'userProfile:', userProfile.value)
   return isRegularUser
 })
 
-// ✅ ROLE-BASED MENU ITEMS
+// ROLE-BASED MENU ITEMS
 const userMenuItems = computed(() => {
   const items = [
     {
@@ -73,34 +73,34 @@ const userMenuItems = computed(() => {
       icon: 'bi bi-bell',
       action: 'notifications',
       description: 'Xem thông báo mới',
-      badge: unreadCount.value, // ✅ bám ref từ storeToRefs
+      badge: unreadCount.value, // bám ref từ storeToRefs
     },
   ]
   return items
 })
 
-// ✅ LẤY THÔNG TIN PROFILE VÀ AVATAR
+// LẤY THÔNG TIN PROFILE VÀ AVATAR
 async function fetchUserProfile() {
   try {
     const token = localStorage.getItem('token')
     if (!token) {
-      console.log('❌ No token found in localStorage')
+      console.log('No token found in localStorage')
       return
     }
 
-    console.log('🔍 Token found:', token.substring(0, 20) + '...')
+    console.log('Token found:', token.substring(0, 20) + '...')
 
     const response = await api.get('/user/profile')
 
     userProfile.value = response.data
-    console.log('🔍 User Profile loaded:', response.data)
-    console.log('🔍 Avatar URL:', response.data.avatarUrl)
+    console.log('User Profile loaded:', response.data)
+    console.log('Avatar URL:', response.data.avatarUrl)
   } catch (error) {
     console.error('Error fetching user profile:', error)
 
     // Nếu lỗi 401 hoặc 403, có thể token đã hết hạn hoặc không hợp lệ
     if (error.response?.status === 401 || error.response?.status === 403) {
-      console.log('❌ Token expired or invalid, clearing localStorage')
+      console.log('Token expired or invalid, clearing localStorage')
       localStorage.removeItem('token')
       localStorage.removeItem('userId')
       localStorage.removeItem('username')
@@ -138,7 +138,7 @@ function login() {
   router.push('/login')
 }
 
-// ✅ FUNCTION XỬ LÝ NAVIGATION THÔNG MINH
+// FUNCTION XỬ LÝ NAVIGATION THÔNG MINH
 function handleLogoClick() {
   if (isLoggedIn.value) {
     // Nếu đã login -> luôn chuyển về client dashboard
@@ -149,17 +149,17 @@ function handleLogoClick() {
   }
 }
 
-// ✅ SWITCH TO ADMIN PANEL
+// SWITCH TO ADMIN PANEL
 const switchToAdminPanel = () => {
   router.push('/admin/dashboard')
 }
 
-// ✅ SWITCH TO USER PANEL
+// SWITCH TO USER PANEL
 const switchToUserPanel = () => {
   router.push('/dashboard')
 }
 
-// ✅ SHOW NOTIFICATIONS: đóng dropdown trước khi mở panel để tránh chồng chéo
+// SHOW NOTIFICATIONS: đóng dropdown trước khi mở panel để tránh chồng chéo
 const showNotifications = (event) => {
   if (event) {
     event.preventDefault()
@@ -175,17 +175,17 @@ const showNotifications = (event) => {
   }, 0)
 }
 
-// ✅ LOGOUT FOR NAVBAR
+// LOGOUT FOR NAVBAR
 const logoutForNavbar = () => {
   // Để composable useLogin xử lý việc bảo lưu username khi rememberMe=1
   const remembered = localStorage.getItem('rememberMe') === '1'
   const rememberedUsername = remembered ? localStorage.getItem('username') : null
 
   logout()
-  // ✅ Reset user profile & UI
+  // Reset user profile & UI
   userProfile.value = null
   closeAllDropdowns()
-  // ❌ KHÔNG gán avatarUrl (computed) -> nó tự null khi userProfile=null
+  // KHÔNG gán avatarUrl (computed) -> nó tự null khi userProfile=null
   // avatarUrl.value = null
 
   // Không xóa toàn bộ localStorage để giữ lại username/rememberMe nếu người dùng đã tick
@@ -194,47 +194,47 @@ const logoutForNavbar = () => {
     localStorage.setItem('rememberMe', '1')
   }
 
-  // ✅ Redirect to login page after logout
+  // Redirect to login page after logout
   router.push('/login')
-  console.log('✅ Logout completed - redirected to login (preserved rememberMe if enabled)')
+  console.log('Logout completed - redirected to login (preserved rememberMe if enabled)')
 }
 
 watch(message, (newVal) => {
   if (newVal === 'SUCCESS' && !username.value) {
     username.value = localStorage.getItem('username')
-    fetchUserProfile() // ✅ Lấy profile khi login thành công
+    fetchUserProfile() // Lấy profile khi login thành công
   }
 })
 
-// ✅ Lấy profile khi component mount nếu đã login
+// Lấy profile khi component mount nếu đã login
 watch(isLoggedIn, (newVal) => {
-  // ✅ Chỉ load profile nếu có token
+  // Chỉ load profile nếu có token
   const token = localStorage.getItem('token')
   if (newVal && token) {
     fetchUserProfile()
   } else {
-    // ✅ Reset profile khi không login
+    // Reset profile khi không login
     userProfile.value = null
   }
 })
 
-// ✅ Watch for token changes
+// Watch for token changes
 watch(
   () => localStorage.getItem('token'),
   (newToken) => {
     if (!newToken) {
-      // ✅ Reset profile khi token bị xóa
+      // Reset profile khi token bị xóa
       userProfile.value = null
-      console.log('✅ Token removed - reset user profile')
+      console.log('Token removed - reset user profile')
     }
   },
 )
 
-// ✅ REFRESH PROFILE KHI ROUTE THAY ĐỔI (để load avatar mới)
+// REFRESH PROFILE KHI ROUTE THAY ĐỔI (để load avatar mới)
 watch(
   () => router.currentRoute.value.path,
   () => {
-    // ✅ Chỉ reload profile nếu user thực sự đã login và có token
+    // Chỉ reload profile nếu user thực sự đã login và có token
     const token = localStorage.getItem('token')
     if (isLoggedIn.value && token) {
       fetchUserProfile()
@@ -242,13 +242,13 @@ watch(
   },
 )
 
-// ✅ Lấy profile khi component mount nếu đã login
+// Lấy profile khi component mount nếu đã login
 onMounted(() => {
-  // ✅ Chỉ load profile nếu có token
+  // Chỉ load profile nếu có token
   const token = localStorage.getItem('token')
   if (isLoggedIn.value && token) {
     fetchUserProfile()
-    // ✅ Khởi tạo notification store
+    // Khởi tạo notification store
     notificationStore.initialize().then(async () => {
       // Đồng bộ badge ngay sau initialize nếu server đã ghi nhận đã đọc hết
       const countBefore = unreadCount.value
@@ -290,9 +290,9 @@ onUnmounted(() => {
   })
 })
 
-// ✅ Xử lý lỗi avatar
+// Xử lý lỗi avatar
 function handleAvatarError(event) {
-  console.log('❌ Avatar load error, showing fallback icon')
+  console.log('Avatar load error, showing fallback icon')
   event.target.style.display = 'none'
   const fallbackIcon = event.target.nextElementSibling
   if (fallbackIcon) {
@@ -300,7 +300,7 @@ function handleAvatarError(event) {
   }
 }
 
-// ✅ GO TO HISTORY
+// GO TO HISTORY
 function goToHistory() {
   if (isLoggedIn.value) {
     router.push('/history')
@@ -309,7 +309,7 @@ function goToHistory() {
   }
 }
 
-// ✅ DROPDOWN HANDLING
+// DROPDOWN HANDLING
 const handleDropdownClick = (event) => {
   event.preventDefault()
   event.stopPropagation()
@@ -334,7 +334,7 @@ const handleDropdownClick = (event) => {
   }
 }
 
-// ✅ CLOSE ALL DROPDOWNS
+// CLOSE ALL DROPDOWNS
 const closeAllDropdowns = () => {
   const dropdowns = document.querySelectorAll('.dropdown-panel')
   const dropdownItems = document.querySelectorAll('.nav-item.dropdown')
@@ -359,18 +359,18 @@ const closeAllDropdowns = () => {
     menu.classList.remove('active')
   })
 
-  // ✅ KHÔNG Ẩn notification panel khi close dropdown
+  // KHÔNG Ẩn notification panel khi close dropdown
   // Notification panel sẽ được đóng bằng nút X hoặc click outside
 }
 
-// ✅ CLICK OUTSIDE TO CLOSE
+// CLICK OUTSIDE TO CLOSE
 const handleClickOutside = (event) => {
   if (!event.target.closest('.dropdown')) {
     closeAllDropdowns()
   }
 }
 
-// ✅ USER DROPDOWN HANDLING
+// USER DROPDOWN HANDLING
 const handleUserDropdownClick = (event) => {
   event.preventDefault()
   event.stopPropagation()
@@ -391,7 +391,7 @@ const handleUserDropdownClick = (event) => {
   }
 }
 
-// ✅ HOVER DROPDOWN HANDLING
+// HOVER DROPDOWN HANDLING
 const handleDropdownHover = (event) => {
   const dropdown = event.currentTarget.closest('.dropdown')
   const panel = dropdown.querySelector('.dropdown-panel')
@@ -421,7 +421,7 @@ const handleDropdownLeave = (event) => {
   }, 150)
 }
 
-// ✅ USER DROPDOWN HOVER HANDLING
+// USER DROPDOWN HOVER HANDLING
 const handleUserDropdownHover = (event) => {
   const userMenu = event.currentTarget.closest('.user-menu')
   const userDropdown = userMenu.querySelector('.user-dropdown')
@@ -546,7 +546,7 @@ const handleUserDropdownLeave = (event) => {
           </button>
         </div>
 
-        <!-- ✅ Notification moved into profile dropdown -->
+        <!-- Notification moved into profile dropdown -->
 
         <div v-if="isLoggedIn" class="user-menu dropdown" @mouseenter="handleUserDropdownHover"
           @mouseleave="handleUserDropdownLeave">
@@ -961,7 +961,7 @@ const handleUserDropdownLeave = (event) => {
   align-items: flex-start;
 }
 
-/* ✅ USER NAME ROW TRONG NAVBAR */
+/* USER NAME ROW TRONG NAVBAR */
 .user-name-row {
   display: flex;
   align-items: center;
@@ -979,7 +979,7 @@ const handleUserDropdownLeave = (event) => {
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* ✅ NAVBAR NOTIFICATION BADGE */
+/* NAVBAR NOTIFICATION BADGE */
 .navbar-notification-badge {
   background: linear-gradient(135deg, #ff4757, #ff3742);
   color: white;
@@ -998,7 +998,7 @@ const handleUserDropdownLeave = (event) => {
   flex-shrink: 0;
 }
 
-/* ✅ DROPDOWN NOTIFICATION BADGE */
+/* DROPDOWN NOTIFICATION BADGE */
 .notification-badge {
   background: linear-gradient(135deg, #ff4757, #ff3742);
   color: white;

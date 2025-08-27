@@ -2,7 +2,9 @@
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/utils/axios'
-
+const categories = ref([])
+const categoriesLoading = ref(false)
+const categoriesError = ref('')
 const route = useRoute()
 const router = useRouter()
 const token = localStorage.getItem('token') || ''
@@ -30,7 +32,22 @@ const isUploadingImage = ref(false)
 // Modal set time
 const showSetTimeModal = ref(false)
 const globalTimeLimit = ref(30)
-
+async function fetchCategories() {
+  categoriesLoading.value = true
+  categoriesError.value = ''
+  try {
+    // Base axios `api` của bạn có prefix /api nên chỉ cần '/categories'
+    const { data } = await api.get('/categories')
+    // Đảm bảo mảng
+    categories.value = Array.isArray(data) ? data : []
+  } catch (err) {
+    categories.value = []
+    categoriesError.value = 'Không thể tải danh mục'
+    notify('Không thể tải danh mục', 'error')
+  } finally {
+    categoriesLoading.value = false
+  }
+}
 // ===== Helpers =====
 const auth = { headers: { Authorization: `Bearer ${token}` } }
 const authJson = {
@@ -71,7 +88,7 @@ const validateQuestion = (question) => {
 
   // Bỏ validate point
 
-  // ✅ THÊM VALIDATION CHO TIMELIMIT
+  // THÊM VALIDATION CHO TIMELIMIT
   if (
     question.timeLimit === undefined ||
     question.timeLimit === null ||
@@ -96,7 +113,7 @@ const validateEditQuestion = (question) => {
 
   // Bỏ validate point
 
-  // ✅ THÊM VALIDATION CHO TIMELIMIT
+  // THÊM VALIDATION CHO TIMELIMIT
   if (
     question.timeLimit === undefined ||
     question.timeLimit === null ||
@@ -112,21 +129,21 @@ const validateEditQuestion = (question) => {
 function notify(message, type = 'info') {
   console.log(`[${type.toUpperCase()}] ${message}`)
   // Sử dụng alert tạm thời, có thể thay bằng toast notification sau
-  alert(`${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'} ${message}`)
+  alert(`${type === 'success' ? 'success' : type === 'error' ? 'error' : '????'} ${message}`)
 }
 
 // ===== Privacy Functions =====
 function setQuizPrivacy(isPublic) {
-  console.log('🔍 Setting quiz privacy to:', isPublic)
-  console.log('🔍 isPublic type:', typeof isPublic)
-  
+  console.log(' Setting quiz privacy to:', isPublic)
+  console.log(' isPublic type:', typeof isPublic)
+
   // Update both refs
   quizInfo.value.isPublic = isPublic
   isPublicRef.value = isPublic
-  
-  console.log('🔍 QuizInfo after privacy change:', quizInfo.value)
-  console.log('🔍 isPublicRef value:', isPublicRef.value)
-  console.log('🔍 Quiz privacy changed to:', isPublic ? 'Public' : 'Private')
+
+  console.log(' QuizInfo after privacy change:', quizInfo.value)
+  console.log(' isPublicRef value:', isPublicRef.value)
+  console.log(' Quiz privacy changed to:', isPublic ? 'Public' : 'Private')
 }
 
 // ===== Image (FILE ONLY) =====
@@ -172,12 +189,12 @@ function clearImage() {
 async function fetchQuizInfo() {
   try {
     const { data } = await api.get(`/quiz/${quizId}`, auth)
-    console.log('🔍 Fetched quiz data:', data)
-    console.log('🔍 API response keys:', Object.keys(data))
-    console.log('🔍 API isPublic value:', data.isPublic)
-    console.log('🔍 API public value:', data.public)
-    console.log('🔍 API isPublic type:', typeof data.isPublic)
-    
+    console.log(' Fetched quiz data:', data)
+    console.log(' API response keys:', Object.keys(data))
+    console.log(' API isPublic value:', data.isPublic)
+    console.log(' API public value:', data.public)
+    console.log(' API isPublic type:', typeof data.isPublic)
+
     // Check both possible field names from API
     let publicValue = data.isPublic
     if (publicValue === undefined) {
@@ -186,25 +203,31 @@ async function fetchQuizInfo() {
     if (publicValue === undefined) {
       publicValue = true // default value
     }
-    
+
     // Ensure boolean type
     publicValue = Boolean(publicValue)
-    
-    // Update both refs
+
+    let categoryId = null
+    if (data.category && typeof data.category === 'object') {
+      categoryId = data.category.id ?? null
+    } else if (typeof data.category === 'number') {
+      categoryId = data.category
+    } else {
+      // nếu BE đang lưu name/string: không nên dùng, để null
+      categoryId = null
+    }
+
     quizInfo.value = {
       ...quizInfo.value,
       ...data,
-      isPublic: publicValue
+      isPublic: publicValue,
+      category: categoryId, // v-model sẽ là id
     }
     isPublicRef.value = publicValue
-    
-    console.log('🔍 Updated quizInfo:', quizInfo.value)
-    console.log('🔍 Final isPublic in fetchQuizInfo:', quizInfo.value.isPublic)
-    console.log('🔍 Final isPublicRef in fetchQuizInfo:', isPublicRef.value)
-    
+
     if (quizInfo.value.image) imagePreview.value = `/api/image/quiz/${quizId}`
   } catch (error) {
-    console.error('🔍 Error fetching quiz info:', error)
+    console.error(' Error fetching quiz info:', error)
     notify('Không thể tải thông tin quiz', 'error')
   }
 }
@@ -245,53 +268,40 @@ async function updateQuizInfo() {
 
   isSaving.value = true
   try {
-    // nếu chọn file mới -> upload để lấy filename lưu DB
     let imageFilename = quizInfo.value.image || null
     if (selectedImageFile.value) {
       const uploaded = await uploadImageFile()
-      if (!uploaded) return // đã notify ở trên
+      if (!uploaded) return
       imageFilename = uploaded
     }
 
     const payload = {
       ...quizInfo.value,
-      isPublic: Boolean(isPublicRef.value), // Ensure boolean type
+      isPublic: Boolean(isPublicRef.value),
       image: imageFilename,
-      category: quizInfo.value.category || null,
+      // ✨ category: gửi object { id } hoặc null
+      category: quizInfo.value.category ? { id: Number(quizInfo.value.category) } : null,
     }
-    console.log('🔍 Updating quiz with payload:', payload)
-    console.log('🔍 Payload keys:', Object.keys(payload))
-    console.log('🔍 Payload isPublic value:', payload.isPublic)
-    console.log('🔍 Payload isPublic type:', typeof payload.isPublic)
-    console.log('🔍 isPublic value:', payload.isPublic)
-    console.log('🔍 Full quizInfo before update:', quizInfo.value)
-    
-    const response = await api.put(`/quiz/${quizId}`, payload, authJson)
-    console.log('🔍 API response:', response)
 
-    // Cập nhật UI trực tiếp từ payload để đảm bảo đồng bộ ngay lập tức
+    const response = await api.put(`/quiz/${quizId}`, payload, authJson)
+
+    // Cập nhật UI
     quizInfo.value.title = payload.title
     quizInfo.value.isPublic = Boolean(payload.isPublic)
-    quizInfo.value.category = payload.category
-    
-    // Update separate ref (already set from payload, but ensure consistency)
+    quizInfo.value.category = payload.category ? payload.category.id : null
     isPublicRef.value = Boolean(payload.isPublic)
-    
-    console.log('🔍 QuizInfo updated after save (from payload):', quizInfo.value)
-    console.log('🔍 isPublic value after update:', quizInfo.value.isPublic)
-    console.log('🔍 isPublicRef value after update:', isPublicRef.value)
-    console.log('🔍 isPublic type:', typeof quizInfo.value.isPublic)
-    
-    // Force Vue reactivity update by creating new object
+
     quizInfo.value = { ...quizInfo.value }
-    
-    // Cũng cập nhật từ API response nếu có data
     if (response.data && Object.keys(response.data).length > 0) {
-      console.log('🔍 API response data:', response.data)
-      // Chỉ cập nhật các field khác, không ghi đè isPublic đã set
-      const { isPublic: responseIsPublic, ...otherFields } = response.data
-      quizInfo.value = { ...quizInfo.value, ...otherFields }
-      console.log('🔍 Final quizInfo after API merge:', quizInfo.value)
+      const { isPublic: responseIsPublic, category: responseCategory, ...otherFields } = response.data
+      // merge nhưng giữ category là id
+      let mergedCategoryId = quizInfo.value.category
+      if (responseCategory && typeof responseCategory === 'object') {
+        mergedCategoryId = responseCategory.id ?? mergedCategoryId
+      } else if (typeof responseCategory === 'number') {
+        mergedCategoryId = responseCategory
+      }
+      quizInfo.value = { ...quizInfo.value, ...otherFields, category: mergedCategoryId }
     }
 
     quizInfo.value.image = imageFilename
@@ -300,20 +310,14 @@ async function updateQuizInfo() {
 
     notify('Cập nhật thông tin quiz thành công!', 'success')
     validationErrors.value = {}
-    
-    // Force Vue to update the UI
     await nextTick()
-    console.log('🔍 After nextTick - Final quizInfo:', quizInfo.value)
-    console.log('🔍 After nextTick - isPublic:', quizInfo.value.isPublic)
-    
-    // Không cần gọi fetchQuizInfo() nữa vì đã cập nhật trực tiếp
-    // await fetchQuizInfo()
   } catch {
     notify('Cập nhật thất bại!', 'error')
   } finally {
     isSaving.value = false
   }
 }
+
 
 async function createQuestion() {
   const errors = validateQuestion(newQuestion.value)
@@ -378,7 +382,7 @@ async function updateQuestion(question) {
       id: question.id,
       content: question.content,
       // point: question.point,
-      timeLimit: question.timeLimit, // ✅ THÊM TIMELIMIT
+      timeLimit: question.timeLimit, // THÊM TIMELIMIT
 
       quiz: { id: quizId },
       image: null,
@@ -485,7 +489,7 @@ function duplicateQuestion(question) {
     content: question.content + ' (Copy)',
 
     // point: question.point,
-    timeLimit: question.timeLimit || 30, // ✅ THÊM TIMELIMIT
+    timeLimit: question.timeLimit || 30, // THÊM TIMELIMIT
     answers:
       answersMap.value[question.id]?.map((a) => ({
         content: a.content,
@@ -617,7 +621,7 @@ async function setTimeForAllQuestions() {
 
     console.log('Tất cả câu hỏi đã được cập nhật, reloading data...')
 
-    // ✅ RELOAD DATA SAU KHI CẬP NHẬT
+    // RELOAD DATA SAU KHI CẬP NHẬT
     await fetchQuestionsByQuizId()
 
     showNotification(
@@ -636,9 +640,9 @@ async function setTimeForAllQuestions() {
 
 // ===== Lifecycle & watches =====
 onMounted(async () => {
-  console.log('🔍 EditQuiz component mounted')
-  console.log('🔍 Initial quizInfo:', quizInfo.value)
-  await Promise.all([fetchQuizInfo(), fetchQuestionsByQuizId()])
+  console.log(' EditQuiz component mounted')
+  console.log(' Initial quizInfo:', quizInfo.value)
+  await Promise.all([fetchCategories(), fetchQuizInfo(), fetchQuestionsByQuizId()])
 })
 
 // Clear error khi user đang nhập câu hỏi mới
@@ -662,14 +666,14 @@ watch(
 watch(
   quizInfo,
   (newVal, oldVal) => {
-    console.log('🔍 QuizInfo changed:', newVal)
-    console.log('🔍 isPublic value in watch:', newVal.isPublic)
-    console.log('🔍 QuizInfo keys:', Object.keys(newVal))
-    
+    console.log(' QuizInfo changed:', newVal)
+    console.log(' isPublic value in watch:', newVal.isPublic)
+    console.log(' QuizInfo keys:', Object.keys(newVal))
+
     // Log thay đổi cụ thể của isPublic
     if (oldVal && newVal.isPublic !== oldVal.isPublic) {
-      console.log('🔍 isPublic changed from', oldVal.isPublic, 'to', newVal.isPublic)
-      console.log('🔍 UI should update now!')
+      console.log(' isPublic changed from', oldVal.isPublic, 'to', newVal.isPublic)
+      console.log(' UI should update now!')
     }
   },
   { deep: true }
@@ -766,15 +770,24 @@ watch(
                         <div class="form-group">
                           <label class="form-label">Danh mục</label>
                           <select class="form-control" v-model="quizInfo.category">
-                            <option value="">Chọn danh mục</option>
-                            <option value="education">Giáo dục</option>
-                            <option value="entertainment">Giải trí</option>
-                            <option value="science">Khoa học</option>
-                            <option value="history">Lịch sử</option>
-                            <option value="technology">Công nghệ</option>
+                            <option :value="null">Chọn danh mục</option>
+
+                            <!-- Loading / error state -->
+                            <option v-if="categoriesLoading" disabled>Đang tải danh mục...</option>
+                            <option v-else-if="categoriesError" disabled>{{ categoriesError }}</option>
+
+                            <!-- Danh mục thực tế -->
+                            <option v-else v-for="cat in categories" :key="cat.id" :value="cat.id">
+                              {{ cat.name }}
+                            </option>
                           </select>
+                          <small class="form-text" v-if="quizInfo.category">
+                            Đã chọn: {{
+                              (categories.find(c => c.id === Number(quizInfo.category))?.name) || '—'
+                            }}
+                          </small>
                         </div>
-                        
+
                         <!-- Hình ảnh Quiz (FILE ONLY) -->
                         <div class="form-group">
                           <label class="form-label">
@@ -802,7 +815,7 @@ watch(
                           </div>
                         </div>
                       </div>
-                      
+
                       <div class="col-md-6">
                         <div class="form-group">
                           <label class="form-label">
@@ -810,7 +823,8 @@ watch(
                             Quyền riêng tư
                           </label>
                           <div class="privacy-toggle-container">
-                            <div class="privacy-option" :class="{ active: isPublicRef === true }" @click="setQuizPrivacy(true)">
+                            <div class="privacy-option" :class="{ active: isPublicRef === true }"
+                              @click="setQuizPrivacy(true)">
                               <div class="privacy-option-inner">
                                 <div class="privacy-icon">
                                   <i class="bi bi-globe2"></i>
@@ -824,8 +838,9 @@ watch(
                                 </div>
                               </div>
                             </div>
-                            
-                            <div class="privacy-option" :class="{ active: isPublicRef === false }" @click="setQuizPrivacy(false)">
+
+                            <div class="privacy-option" :class="{ active: isPublicRef === false }"
+                              @click="setQuizPrivacy(false)">
                               <div class="privacy-option-inner">
                                 <div class="privacy-icon">
                                   <i class="bi bi-lock-fill"></i>
@@ -1181,7 +1196,7 @@ watch(
       </div>
     </div>
 
-    <!-- ✅ MODAL SET TIME CHO TẤT CẢ -->
+    <!-- MODAL SET TIME CHO TẤT CẢ -->
     <div v-if="showSetTimeModal" class="modal-overlay" @click="showSetTimeModal = false">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
@@ -1542,7 +1557,7 @@ watch(
 }
 
 /* Giảm khoảng cách giữa các form-group trong cùng một cột */
-.col-md-6 .form-group + .form-group {
+.col-md-6 .form-group+.form-group {
   margin-top: 16px;
   margin-bottom: 16px;
 }
@@ -1786,7 +1801,7 @@ watch(
   font-size: 0.8rem;
 }
 
-/* ✅ MODAL STYLES */
+/* MODAL STYLES */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -2333,9 +2348,11 @@ watch(
   0% {
     transform: scale(0);
   }
+
   50% {
     transform: scale(1.2);
   }
+
   100% {
     transform: scale(1);
   }

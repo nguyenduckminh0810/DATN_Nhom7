@@ -55,10 +55,11 @@ public class DashboardService {
 
     public DashboardDTO getDashboardStats() {
         checkAdminPermission();
-        
+
         long totalUsers = userRepo.count();
-        // ✅ Cập nhật để chỉ đếm quiz chưa bị xóa
-        long totalQuizzes = quizRepo.countByIsPublicFalseAndDeletedFalse() + quizRepo.countByIsPublicTrueAndDeletedFalse();
+        // Cập nhật để chỉ đếm quiz chưa bị xóa
+        long totalQuizzes = quizRepo.countByIsPublicFalseAndDeletedFalse()
+                + quizRepo.countByIsPublicTrueAndDeletedFalse();
         long totalAttempts = attemptRepo.count();
         long totalCategories = categoryRepo.count();
         long totalReports = reportRepo.count();
@@ -77,8 +78,8 @@ public class DashboardService {
 
     public List<QuizPendingDTO> getPendingQuizzes() {
         checkAdminPermission();
-        
-        // ✅ Cập nhật để chỉ lấy quiz chưa bị xóa
+
+        // Cập nhật để chỉ lấy quiz chưa bị xóa
         return quizRepo.findByIsPublicFalseAndDeletedFalseOrderByCreatedAtDesc().stream()
                 .map(quiz -> new QuizPendingDTO(
                         quiz.getId(),
@@ -91,7 +92,7 @@ public class DashboardService {
     // Chức năng duyệt quiz trong modal tại AdminDashboard
     public void approveQuiz(Long quizId) {
         checkAdminPermission();
-        
+
         Quiz quiz = quizRepo.findById(quizId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy quiz"));
 

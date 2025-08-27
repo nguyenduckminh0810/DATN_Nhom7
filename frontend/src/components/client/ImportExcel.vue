@@ -1,20 +1,20 @@
 <template>
   <div class="import-excel-container">
     <div class="import-header">
-      <h2>📥 Import Quiz từ Excel</h2>
+      <h2> Import Quiz từ Excel</h2>
       <p class="subtitle">Tải lên file Excel để tạo quiz nhanh chóng</p>
 
-      <!-- ✅ THÔNG BÁO TRẠNG THÁI BACKEND -->
+      <!--  THÔNG BÁO TRẠNG THÁI BACKEND -->
       <div v-if="categories.length <= 3" class="backend-status warning">
-        ⚠️ Backend có thể chưa chạy. Vui lòng khởi động backend trước!
+        Backend có thể chưa chạy. Vui lòng khởi động backend trước!
       </div>
-      <div v-else class="backend-status success">✅ Backend đã sẵn sàng</div>
+      <div v-else class="backend-status success"> Backend đã sẵn sàng</div>
     </div>
 
     <!-- Template Download -->
     <div class="template-section">
-      <h3>📋 File mẫu</h3>
-      <button @click="downloadTemplate" class="template-btn">📥 Tải file Excel mẫu</button>
+      <h3> File mẫu</h3>
+      <button @click="downloadTemplate" class="template-btn"> Tải file Excel mẫu</button>
       <div class="template-info">
         <p><strong>Cấu trúc file Excel:</strong></p>
         <ul>
@@ -23,7 +23,7 @@
           <li>Cột F: Đáp án đúng (A/B/C/D) (bắt buộc)</li>
           <li>Cột G: Thời gian (giây) - mặc định 30s; cho phép 0 (không giới hạn) hoặc 5–300s</li>
         </ul>
-        <p><strong>⚠️ Lưu ý validation:</strong></p>
+        <p><strong> Lưu ý validation:</strong></p>
         <ul>
           <li>Tất cả câu hỏi và đáp án không được để trống</li>
           <li>Đáp án đúng phải là A, B, C hoặc D</li>
@@ -35,7 +35,7 @@
 
     <!-- Import Form -->
     <div class="import-form">
-      <h3>📤 Import Quiz</h3>
+      <h3> Import Quiz</h3>
 
       <!-- Quiz Info -->
       <div class="quiz-info">
@@ -59,7 +59,7 @@
           </select>
         </div>
 
-        <!-- ✅ THÊM IMAGE UPLOAD -->
+        <!--  THÊM IMAGE UPLOAD -->
         <div class="form-group">
           <label>Ảnh chủ đề (tùy chọn)</label>
           <div class="image-upload-area">
@@ -107,13 +107,8 @@
                 <p class="file-name">{{ selectedFile.name }}</p>
                 <p class="file-size">{{ formatFileSize(selectedFile.size) }}</p>
               </div>
-              <button 
-                @click="removeFile" 
-                class="remove-file" 
-                type="button"
-                title="Xóa file Excel"
-                aria-label="Xóa file Excel"
-              >
+              <button @click="removeFile" class="remove-file" type="button" title="Xóa file Excel"
+                aria-label="Xóa file Excel">
                 <i class="bi bi-x-circle"></i>
               </button>
             </div>
@@ -138,9 +133,9 @@
       </div>
     </div>
 
-    <!-- ✅ PREVIEW SECTION -->
+    <!--  PREVIEW SECTION -->
     <div v-if="showPreview && previewData" class="preview-section">
-      <h3>📋 Bản xem trước</h3>
+      <h3> Bản xem trước</h3>
 
       <!-- Thống kê -->
       <div class="preview-stats">
@@ -154,7 +149,7 @@
         </div>
         <div v-if="selectedImage" class="stat-item">
           <span class="stat-label">Ảnh chủ đề:</span>
-          <span class="stat-value">✅ Có</span>
+          <span class="stat-value"> Có</span>
         </div>
       </div>
 
@@ -209,7 +204,7 @@
         <h4>{{ importResult.success ? 'Import thành công!' : 'Import thất bại!' }}</h4>
         <p>{{ importResult.message }}</p>
         <div v-if="importResult.success && importResult.questionsCount" class="stats">
-          <span>📊 Đã tạo {{ importResult.questionsCount }} câu hỏi</span>
+          <span> Đã tạo {{ importResult.questionsCount }} câu hỏi</span>
         </div>
       </div>
     </div>
@@ -231,18 +226,18 @@ const isDragOver = ref(false)
 const isImporting = ref(false)
 const importResult = ref(null)
 
-// ✅ THÊM STATE CHO IMAGE UPLOAD
+//  THÊM STATE CHO IMAGE UPLOAD
 const selectedImage = ref(null)
 const imagePreview = ref(null)
 
-// ✅ THÊM STATE CHO PREVIEW
+//  THÊM STATE CHO PREVIEW
 const previewData = ref(null)
 const showPreview = ref(false)
 
-// ✅ DEBUG LOG
-console.log('🔍 ImportExcel component loaded')
-console.log('📸 selectedImage:', selectedImage.value)
-console.log('🖼️ imagePreview:', imagePreview.value)
+//  DEBUG LOG
+console.log(' ImportExcel component loaded')
+console.log(' selectedImage:', selectedImage.value)
+console.log(' imagePreview:', imagePreview.value)
 
 // Computed
 const canImport = computed(() => {
@@ -254,9 +249,9 @@ const fetchCategories = async () => {
   try {
     const response = await api.get('/categories')
     categories.value = response.data
-    console.log('✅ Categories loaded:', categories.value.length)
+    console.log(' Categories loaded:', categories.value.length)
   } catch (error) {
-    console.error('❌ Lỗi tải categories (Backend chưa chạy?):', error)
+    console.error(' Lỗi tải categories (Backend chưa chạy?):', error)
     // Thêm categories mặc định để test UI
     categories.value = [
       { id: 1, name: 'Toán học' },
@@ -269,73 +264,73 @@ const fetchCategories = async () => {
 const downloadTemplate = () => {
   // Tạo file Excel template thực sự với thư viện xlsx
   const sampleData = [
-    { 
-      'Câu hỏi': 'Thủ đô của Việt Nam là gì?', 
-      'Đáp án A': 'Hà Nội', 
-      'Đáp án B': 'TP.HCM', 
-      'Đáp án C': 'Đà Nẵng', 
-      'Đáp án D': 'Huế', 
-      'Đáp án đúng': 'A', 
-      'Thời gian (giây)': 30 
+    {
+      'Câu hỏi': 'Thủ đô của Việt Nam là gì?',
+      'Đáp án A': 'Hà Nội',
+      'Đáp án B': 'TP.HCM',
+      'Đáp án C': 'Đà Nẵng',
+      'Đáp án D': 'Huế',
+      'Đáp án đúng': 'A',
+      'Thời gian (giây)': 30
     },
-    { 
-      'Câu hỏi': '1 + 1 = ?', 
-      'Đáp án A': '1', 
-      'Đáp án B': '2', 
-      'Đáp án C': '3', 
-      'Đáp án D': '4', 
-      'Đáp án đúng': 'B', 
-      'Thời gian (giây)': 20 
+    {
+      'Câu hỏi': '1 + 1 = ?',
+      'Đáp án A': '1',
+      'Đáp án B': '2',
+      'Đáp án C': '3',
+      'Đáp án D': '4',
+      'Đáp án đúng': 'B',
+      'Thời gian (giây)': 20
     },
-    { 
-      'Câu hỏi': 'Màu của lá cây thường là gì?', 
-      'Đáp án A': 'Đỏ', 
-      'Đáp án B': 'Vàng', 
-      'Đáp án C': 'Xanh', 
-      'Đáp án D': 'Trắng', 
-      'Đáp án đúng': 'C', 
-      'Thời gian (giây)': 0 
+    {
+      'Câu hỏi': 'Màu của lá cây thường là gì?',
+      'Đáp án A': 'Đỏ',
+      'Đáp án B': 'Vàng',
+      'Đáp án C': 'Xanh',
+      'Đáp án D': 'Trắng',
+      'Đáp án đúng': 'C',
+      'Thời gian (giây)': 0
     },
-    { 
-      'Câu hỏi': 'Con vật nào có 4 chân?', 
-      'Đáp án A': 'Cá', 
-      'Đáp án B': 'Chim', 
-      'Đáp án C': 'Chó', 
-      'Đáp án D': 'Rắn', 
-      'Đáp án đúng': 'C', 
-      'Thời gian (giây)': 15 
+    {
+      'Câu hỏi': 'Con vật nào có 4 chân?',
+      'Đáp án A': 'Cá',
+      'Đáp án B': 'Chim',
+      'Đáp án C': 'Chó',
+      'Đáp án D': 'Rắn',
+      'Đáp án đúng': 'C',
+      'Thời gian (giây)': 15
     },
-    { 
-      'Câu hỏi': 'Nước nào lớn nhất thế giới?', 
-      'Đáp án A': 'Trung Quốc', 
-      'Đáp án B': 'Mỹ', 
-      'Đáp án C': 'Nga', 
-      'Đáp án D': 'Canada', 
-      'Đáp án đúng': 'C', 
-      'Thời gian (giây)': 60 
+    {
+      'Câu hỏi': 'Nước nào lớn nhất thế giới?',
+      'Đáp án A': 'Trung Quốc',
+      'Đáp án B': 'Mỹ',
+      'Đáp án C': 'Nga',
+      'Đáp án D': 'Canada',
+      'Đáp án đúng': 'C',
+      'Thời gian (giây)': 60
     }
   ];
 
   try {
     // Tạo worksheet từ dữ liệu
     const worksheet = XLSX.utils.json_to_sheet(sampleData);
-    
+
     // Tạo workbook mới
     const workbook = XLSX.utils.book_new();
-    
+
     // Thêm worksheet vào workbook
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Câu hỏi');
-    
+
     // Ghi file Excel thực sự
     XLSX.writeFile(workbook, 'quiz-template.xlsx');
-    
-    console.log('✅ Excel template downloaded successfully');
+
+    console.log(' Excel template downloaded successfully');
   } catch (error) {
-    console.error('❌ Error creating Excel template:', error);
+    console.error(' Error creating Excel template:', error);
   }
 }
 
-// ✅ THÊM METHODS CHO IMAGE UPLOAD
+//  THÊM METHODS CHO IMAGE UPLOAD
 const handleImageSelect = (event) => {
   const file = event.target.files[0]
   if (file) {
@@ -353,17 +348,17 @@ const handleImageSelect = (event) => {
 
     selectedImage.value = file
     imagePreview.value = URL.createObjectURL(file)
-    console.log('✅ Image selected:', file.name)
+    console.log(' Image selected:', file.name)
   }
 }
 
 const removeImage = () => {
   selectedImage.value = null
   imagePreview.value = null
-  console.log('❌ Image removed')
+  console.log(' Image removed')
 }
 
-// ✅ THÊM METHOD TÍNH THỜI GIAN TRUNG BÌNH
+//  THÊM METHOD TÍNH THỜI GIAN TRUNG BÌNH
 const getAverageTime = () => {
   if (!previewData.value || !previewData.value.previewQuestions) {
     return 30
@@ -376,7 +371,7 @@ const getAverageTime = () => {
   return Math.round(totalTime / previewData.value.previewQuestions.length)
 }
 
-// ✅ THÊM METHODS CHO PREVIEW
+//  THÊM METHODS CHO PREVIEW
 const previewFile = async () => {
   if (!selectedFile.value) return
 
@@ -416,13 +411,13 @@ const cancelPreview = () => {
   previewData.value = null
 }
 
-// ✅ CẬP NHẬT HANDLEFILESELECT
+//  CẬP NHẬT HANDLEFILESELECT
 const handleFileSelect = (event) => {
   const file = event.target.files[0]
   if (file) {
     selectedFile.value = file
     importResult.value = null
-    previewFile() // ✅ TỰ ĐỘNG PREVIEW
+    previewFile() //  TỰ ĐỘNG PREVIEW
   }
 }
 
@@ -434,7 +429,7 @@ const handleDrop = (event) => {
   if (files.length > 0) {
     selectedFile.value = files[0]
     importResult.value = null
-    previewFile() // ✅ TỰ ĐỘNG PREVIEW
+    previewFile() //  TỰ ĐỘNG PREVIEW
   }
 }
 
@@ -444,7 +439,7 @@ const removeFile = () => {
   importResult.value = null
   showPreview.value = false
   previewData.value = null
-  console.log('✅ File removed successfully')
+  console.log(' File removed successfully')
 }
 
 const formatFileSize = (bytes) => {
@@ -455,7 +450,7 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-// ✅ CẬP NHẬT IMPORTQUIZ ĐỂ THÊM IMAGE
+//  CẬP NHẬT IMPORTQUIZ ĐỂ THÊM IMAGE
 const importQuiz = async () => {
   if (!canImport.value) return
 
@@ -470,7 +465,7 @@ const importQuiz = async () => {
     formData.append('categoryId', selectedCategory.value)
     formData.append('username', localStorage.getItem('username'))
 
-    // ✅ THÊM IMAGE VÀO FORMDATA
+    //  THÊM IMAGE VÀO FORMDATA
     if (selectedImage.value) {
       formData.append('image', selectedImage.value)
       console.log('📸 Adding image to import:', selectedImage.value.name)
@@ -633,7 +628,7 @@ onMounted(() => {
   border-color: #3498db;
 }
 
-/* ✅ THÊM CSS CHO IMAGE UPLOAD */
+/*  THÊM CSS CHO IMAGE UPLOAD */
 .image-upload-area {
   border: 2px dashed #bdc3c7;
   border-radius: 12px;
@@ -859,12 +854,12 @@ onMounted(() => {
     top: -6px;
     right: -6px;
   }
-  
+
   .file-selected {
     padding: 15px;
     min-height: 70px;
   }
-  
+
   .file-info {
     margin-left: 10px;
   }
@@ -966,7 +961,7 @@ onMounted(() => {
   }
 }
 
-/* ✅ THÊM CSS CHO PREVIEW */
+/*  THÊM CSS CHO PREVIEW */
 .preview-section {
   background: white;
   border-radius: 12px;
@@ -1002,7 +997,7 @@ onMounted(() => {
   color: #2c3e50;
 }
 
-/* ✅ THÊM CSS CHO PREVIEW IMAGE */
+/*  THÊM CSS CHO PREVIEW IMAGE */
 .preview-topic-image {
   margin-bottom: 20px;
 }
@@ -1146,7 +1141,7 @@ onMounted(() => {
   background: #5a6268;
 }
 
-/* ✅ THÊM CSS CHO THÔNG BÁO TRẠNG THÁI BACKEND */
+/*  THÊM CSS CHO THÔNG BÁO TRẠNG THÁI BACKEND */
 .backend-status {
   margin-top: 15px;
   padding: 10px 15px;

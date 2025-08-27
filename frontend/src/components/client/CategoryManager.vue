@@ -74,16 +74,9 @@
                   <span>Tên danh mục</span>
                   <span class="required">*</span>
                 </label>
-                <input
-                  type="text"
-                  id="categoryName"
-                  v-model="newCategory.name"
-                  class="form-input"
+                <input type="text" id="categoryName" v-model="newCategory.name" class="form-input"
                   :class="{ error: nameError, success: newCategory.name && !nameError }"
-                  placeholder="Nhập tên danh mục..."
-                  maxlength="50"
-                  required
-                />
+                  placeholder="Nhập tên danh mục..." maxlength="50" required />
                 <div v-if="nameError" class="error-message">{{ nameError }}</div>
                 <div class="char-count">{{ newCategory.name.length }}/50</div>
               </div>
@@ -93,15 +86,9 @@
                   <i class="bi bi-text-paragraph"></i>
                   <span>Mô tả</span>
                 </label>
-                <textarea
-                  id="categoryDesc"
-                  v-model="newCategory.description"
-                  class="form-textarea"
-                  :class="{ success: newCategory.description }"
-                  placeholder="Mô tả chi tiết về danh mục..."
-                  rows="3"
-                  maxlength="200"
-                ></textarea>
+                <textarea id="categoryDesc" v-model="newCategory.description" class="form-textarea"
+                  :class="{ success: newCategory.description }" placeholder="Mô tả chi tiết về danh mục..." rows="3"
+                  maxlength="200"></textarea>
                 <div class="char-count">{{ newCategory.description.length }}/200</div>
               </div>
             </div>
@@ -138,12 +125,7 @@
             <div class="table-controls">
               <div class="search-box">
                 <i class="bi bi-search"></i>
-                <input
-                  v-model="searchTerm"
-                  type="text"
-                  placeholder="Tìm kiếm danh mục..."
-                  class="search-input"
-                />
+                <input v-model="searchTerm" type="text" placeholder="Tìm kiếm danh mục..." class="search-input" />
               </div>
               <select v-model="sortBy" class="sort-select">
                 <option value="name">Tên A-Z</option>
@@ -175,25 +157,15 @@
             </div>
 
             <div v-else class="categories-grid">
-              <div
-                v-for="(category, index) in filteredCategories"
-                :key="category.id"
-                class="category-card"
-                :class="{ editing: editId === category.id }"
-                :style="{ 'animation-delay': `${index * 0.1}s` }"
-              >
+              <div v-for="(category, index) in filteredCategories" :key="category.id" class="category-card"
+                :class="{ editing: editId === category.id }" :style="{ 'animation-delay': `${index * 0.1}s` }">
                 <div class="card-header">
                   <div class="category-info">
                     <div v-if="editId !== category.id" class="category-name">
                       {{ category.name }}
                     </div>
-                    <input
-                      v-else
-                      v-model="editCategory.name"
-                      class="edit-input"
-                      placeholder="Tên danh mục..."
-                      maxlength="50"
-                    />
+                    <input v-else v-model="editCategory.name" class="edit-input" placeholder="Tên danh mục..."
+                      maxlength="50" />
 
                     <div class="category-meta">
                       <span class="date-badge">
@@ -204,31 +176,17 @@
                   </div>
 
                   <div v-if="isAdmin" class="card-actions">
-                    <button
-                      v-if="editId !== category.id"
-                      @click="startEdit(category)"
-                      class="btn-edit"
-                      title="Chỉnh sửa"
-                    >
+                    <button v-if="editId !== category.id" @click="startEdit(category)" class="btn-edit"
+                      title="Chỉnh sửa">
                       <i class="bi bi-pencil"></i>
                     </button>
-                    <button
-                      v-else
-                      @click="saveEdit(category.id)"
-                      class="btn-save"
-                      title="Lưu"
-                      :disabled="isSaving"
-                    >
+                    <button v-else @click="saveEdit(category.id)" class="btn-save" title="Lưu" :disabled="isSaving">
                       <i v-if="isSaving" class="bi bi-arrow-clockwise spin"></i>
                       <i v-else class="bi bi-check-lg"></i>
                     </button>
 
-                    <button
-                      v-if="editId !== category.id"
-                      @click="confirmDelete(category)"
-                      class="btn-delete"
-                      title="Xóa"
-                    >
+                    <button v-if="editId !== category.id" @click="confirmDelete(category)" class="btn-delete"
+                      title="Xóa">
                       <i class="bi bi-trash"></i>
                     </button>
                     <button v-else @click="cancelEdit" class="btn-cancel" title="Hủy">
@@ -241,14 +199,8 @@
                   <div v-if="editId !== category.id" class="category-description">
                     {{ category.description || 'Chưa có mô tả' }}
                   </div>
-                  <textarea
-                    v-else
-                    v-model="editCategory.description"
-                    class="edit-textarea"
-                    placeholder="Mô tả danh mục..."
-                    rows="2"
-                    maxlength="200"
-                  ></textarea>
+                  <textarea v-else v-model="editCategory.description" class="edit-textarea"
+                    placeholder="Mô tả danh mục..." rows="2" maxlength="200"></textarea>
                 </div>
               </div>
             </div>
@@ -343,7 +295,7 @@ const categoryToDelete = ref(null)
 
 const userStore = useUserStore()
 
-// ✅ CHECK ADMIN STATUS
+// CHECK ADMIN STATUS
 const isAdmin = computed(() => {
   // Kiểm tra từ userStore
   if (userStore.isAdmin()) {
@@ -385,7 +337,7 @@ const nameError = computed(() => {
   return ''
 })
 
-// ✅ BUTTON DISABLED STATE
+// BUTTON DISABLED STATE
 const isButtonDisabled = computed(() => {
   return isAdding.value || !!nameError.value
 })
@@ -551,7 +503,7 @@ function closeDeleteModal() {
   categoryToDelete.value = null
 }
 
-// ✅ DELETE CATEGORY WITH SOFT DELETE
+// DELETE CATEGORY WITH SOFT DELETE
 async function deleteCategory() {
   if (!categoryToDelete.value) return
 
@@ -562,10 +514,10 @@ async function deleteCategory() {
       headers: { Authorization: `Bearer ${token}` },
     })
 
-    // ✅ KIỂM TRA RESPONSE MESSAGE
+    // KIỂM TRA RESPONSE MESSAGE
     const message = response.data || 'Xóa danh mục thành công!'
 
-    // ✅ KIỂM TRA NẾU CÓ QUIZ
+    // KIỂM TRA NẾU CÓ QUIZ
     if (message.includes('Không thể xóa danh mục vì có')) {
       showToast(message, 'error')
       closeDeleteModal()
@@ -641,6 +593,7 @@ onMounted(() => {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
@@ -672,6 +625,7 @@ onMounted(() => {
 }
 
 @keyframes bounce {
+
   0%,
   20%,
   50%,
@@ -1321,7 +1275,7 @@ onMounted(() => {
   margin-bottom: 1rem;
 }
 
-/* ✅ CATEGORY INFO SECTION */
+/* CATEGORY INFO SECTION */
 .category-info {
   background: var(--bg-tertiary);
   border-radius: 12px;
@@ -1350,7 +1304,7 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-/* ✅ WARNING SECTION */
+/* WARNING SECTION */
 .warning-section {
   background: rgba(255, 193, 7, 0.1);
   border-radius: 12px;

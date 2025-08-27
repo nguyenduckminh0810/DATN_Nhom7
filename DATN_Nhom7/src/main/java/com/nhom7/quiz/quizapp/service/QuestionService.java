@@ -42,20 +42,20 @@ public class QuestionService {
         if (authentication == null) {
             throw new AccessDeniedException("Không có quyền truy cập");
         }
-        
+
         // Admin có thể quản lý tất cả
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
-        
+
         if (!isAdmin) {
             // User thường chỉ có thể quản lý question của quiz của mình
             String currentUsername = authentication.getName();
             User currentUser = userRepo.findByUsername(currentUsername).orElse(null);
-            
+
             if (currentUser == null) {
                 throw new AccessDeniedException("Không tìm thấy thông tin người dùng");
             }
-            
+
             Quiz quiz = quizRepo.findById(quizId).orElse(null);
             if (quiz == null || !quiz.getUser().getId().equals(currentUser.getId())) {
                 throw new AccessDeniedException("Bạn chỉ có thể quản lý câu hỏi của quiz của mình");
@@ -71,11 +71,11 @@ public class QuestionService {
                 Question question = questionOpt.get();
                 User user = userRepo.findByUsername(username).orElse(null);
                 return user != null && question.getQuiz() != null && question.getQuiz().getUser() != null &&
-                       user.getId().equals(question.getQuiz().getUser().getId());
+                        user.getId().equals(question.getQuiz().getUser().getId());
             }
             return false;
         } catch (Exception e) {
-            System.err.println("❌ Error checking question ownership: " + e.getMessage());
+            System.err.println("Error checking question ownership: " + e.getMessage());
             return false;
         }
     }
@@ -92,14 +92,14 @@ public class QuestionService {
 
         Question existing = optional.get();
         checkQuizOwnership(existing.getQuiz().getId());
-        
+
         System.out.println("Cập nhật question ID: " + id);
         System.out.println("TimeLimit cũ: " + existing.getTimeLimit());
         System.out.println("TimeLimit mới: " + updatedQuestion.getTimeLimit());
 
         existing.setContent(updatedQuestion.getContent());
         // Bỏ cập nhật điểm câu hỏi
-        // ✅ THÊM CẬP NHẬT TIMELIMIT
+        // THÊM CẬP NHẬT TIMELIMIT
         existing.setTimeLimit(updatedQuestion.getTimeLimit());
 
         Question saved = questionRepo.save(existing);
@@ -117,10 +117,10 @@ public class QuestionService {
         if (optional.isEmpty()) {
             return false;
         }
-        
+
         Question question = optional.get();
         checkQuizOwnership(question.getQuiz().getId());
-        
+
         questionRepo.delete(question);
         return true;
     }

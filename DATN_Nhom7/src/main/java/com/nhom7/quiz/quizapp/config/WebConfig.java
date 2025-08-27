@@ -10,10 +10,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-        // ✅ Static resource handler for file uploads
+        // Static resource handler for file uploads
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:uploads/");
-        
-        System.out.println("📁 Configured static resource handler for /uploads/**");
+
+        System.out.println("Configured static resource handler for /uploads/**");
     }
 }

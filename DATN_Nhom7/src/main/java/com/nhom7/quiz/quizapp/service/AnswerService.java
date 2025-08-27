@@ -50,25 +50,25 @@ public class AnswerService {
         if (authentication == null) {
             throw new AccessDeniedException("Không có quyền truy cập");
         }
-        
+
         // Admin có thể quản lý tất cả
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
-        
+
         if (!isAdmin) {
             // User thường chỉ có thể quản lý answer của question của mình
             String currentUsername = authentication.getName();
             User currentUser = userRepo.findByUsername(currentUsername).orElse(null);
-            
+
             if (currentUser == null) {
                 throw new AccessDeniedException("Không tìm thấy thông tin người dùng");
             }
-            
+
             Question question = questionRepo.findById(questionId).orElse(null);
             if (question == null) {
                 throw new AccessDeniedException("Không tìm thấy câu hỏi");
             }
-            
+
             Quiz quiz = question.getQuiz();
             if (quiz == null || !quiz.getUser().getId().equals(currentUser.getId())) {
                 throw new AccessDeniedException("Bạn chỉ có thể quản lý đáp án của câu hỏi của mình");
@@ -83,11 +83,11 @@ public class AnswerService {
             if (question != null && question.getQuiz() != null) {
                 User user = userRepo.findByUsername(username).orElse(null);
                 return user != null && question.getQuiz().getUser() != null &&
-                       user.getId().equals(question.getQuiz().getUser().getId());
+                        user.getId().equals(question.getQuiz().getUser().getId());
             }
             return false;
         } catch (Exception e) {
-            System.err.println("❌ Error checking answer ownership: " + e.getMessage());
+            System.err.println("Error checking answer ownership: " + e.getMessage());
             return false;
         }
     }
@@ -116,7 +116,7 @@ public class AnswerService {
 
             Answer existing = optional.get();
             checkQuestionOwnership(existing.getQuestion().getId());
-            
+
             existing.setContent(updated.getContent());
             existing.setCorrect(updated.isCorrect());
 
@@ -128,7 +128,7 @@ public class AnswerService {
 
     public void deleteByQuestionId(Long questionId) {
         checkQuestionOwnership(questionId);
-        
+
         List<Answer> answers = answerRepo.findByQuestionId(questionId);
         if (answers != null && !answers.isEmpty()) {
             answerRepo.deleteAll(answers);

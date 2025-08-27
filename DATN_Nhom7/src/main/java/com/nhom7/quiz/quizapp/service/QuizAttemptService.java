@@ -23,10 +23,10 @@ public class QuizAttemptService {
 
     @Autowired
     private QuizAttemptRepo quizAttemptRepo;
-    
+
     @Autowired
     private UserRepo userRepo;
-    
+
     @Autowired
     private QuizRepo quizRepo;
 
@@ -43,32 +43,34 @@ public class QuizAttemptService {
         Pageable pageable = PageRequest.of(page, size);
         Page<QuizAttempt> attempts;
 
-        System.out.println("🔍 QuizAttemptService.findQuizAttempts:");
-        System.out.println("  📋 Params - userId: " + userId + ", quizId: " + quizId + ", page: " + page + ", size: " + size);
+        System.out.println("QuizAttemptService.findQuizAttempts:");
+        System.out
+                .println("Params - userId: " + userId + ", quizId: " + quizId + ", page: " + page + ", size: " + size);
 
         if (userId != null && quizId != null) {
             // Lọc theo cả user và quiz
-            System.out.println("  🔍 Query: findByUserIdAndQuizId(" + userId + ", " + quizId + ")");
+            System.out.println("Query: findByUserIdAndQuizId(" + userId + ", " + quizId + ")");
             attempts = quizAttemptRepo.findByUserIdAndQuizId(userId, quizId, pageable);
         } else if (userId != null) {
             // Chỉ lọc theo user
-            System.out.println("  🔍 Query: findByUserIdOrderByAttemptedAtDesc(" + userId + ")");
+            System.out.println("Query: findByUserIdOrderByAttemptedAtDesc(" + userId + ")");
             attempts = quizAttemptRepo.findByUserIdOrderByAttemptedAtDesc(userId, pageable);
         } else if (quizId != null) {
             // Chỉ lọc theo quiz
-            System.out.println("  🔍 Query: findByQuizId(" + quizId + ")");
+            System.out.println("Query: findByQuizId(" + quizId + ")");
             attempts = quizAttemptRepo.findByQuizId(quizId, pageable);
         } else {
             // Xem tất cả (chỉ admin)
-            System.out.println("  🔍 Query: findAllOrderByAttemptedAtDesc()");
+            System.out.println("Query: findAllOrderByAttemptedAtDesc()");
             attempts = quizAttemptRepo.findAllOrderByAttemptedAtDesc(pageable);
         }
 
-        System.out.println("  📊 Raw query result: " + attempts.getTotalElements() + " total elements, " + attempts.getContent().size() + " in current page");
-        
+        System.out.println("Raw query result: " + attempts.getTotalElements() + " total elements, "
+                + attempts.getContent().size() + " in current page");
+
         Page<QuizAttemptDTO> result = attempts.map(this::convertToDTO);
-        System.out.println("  ✅ Converted to DTO: " + result.getTotalElements() + " total elements");
-        
+        System.out.println("Converted to DTO: " + result.getTotalElements() + " total elements");
+
         return result;
     }
 
@@ -76,71 +78,71 @@ public class QuizAttemptService {
      * Bắt đầu một quiz attempt mới
      */
     public Long startAttempt(Long quizId, Long userId) {
-        System.out.println("🔍 QuizAttemptService.startAttempt() - Quiz ID: " + quizId + ", User ID: " + userId);
-        
+        System.out.println("QuizAttemptService.startAttempt() - Quiz ID: " + quizId + ", User ID: " + userId);
+
         User user = userRepo.findById(userId).orElse(null);
-        System.out.println("🔍 Found user: " + (user != null ? user.getUsername() : "null"));
-        
+        System.out.println("Found user: " + (user != null ? user.getUsername() : "null"));
+
         Quiz quiz = quizRepo.findById(quizId).orElse(null);
-        System.out.println("🔍 Found quiz: " + (quiz != null ? quiz.getTitle() : "null"));
-        
+        System.out.println("Found quiz: " + (quiz != null ? quiz.getTitle() : "null"));
+
         if (user == null || quiz == null) {
-            System.err.println("❌ User or quiz not found");
+            System.err.println("User or quiz not found");
             return null;
         }
-        
+
         QuizAttempt attempt = new QuizAttempt();
         attempt.setUser(user);
         attempt.setQuiz(quiz);
         attempt.setScore(0);
         attempt.setAttemptedAt(LocalDateTime.now());
         attempt.setTimeTaken(0);
-        
+
         System.out.println("🔍 Creating attempt with data:");
         System.out.println("  - User: " + user.getUsername() + " (ID: " + user.getId() + ")");
         System.out.println("  - Quiz: " + quiz.getTitle() + " (ID: " + quiz.getId() + ")");
         System.out.println("  - Score: " + attempt.getScore());
         System.out.println("  - AttemptedAt: " + attempt.getAttemptedAt());
         System.out.println("  - TimeTaken: " + attempt.getTimeTaken());
-        
+
         QuizAttempt saved = quizAttemptRepo.save(attempt);
-        System.out.println("✅ Successfully saved attempt with ID: " + saved.getId());
+        System.out.println("Successfully saved attempt with ID: " + saved.getId());
         return saved.getId();
     }
 
     /**
      * Trả về trạng thái attempt
      */
-     public String getAttemptStatus(Long attemptId) {
-         System.out.println("🔍 QuizAttemptService.getAttemptStatus() - Attempt ID: " + attemptId);
-         
-         QuizAttempt attempt = quizAttemptRepo.findById(attemptId).orElse(null);
-         if (attempt == null) {
-             System.err.println("❌ Attempt not found");
-             return null;
-         }
-         
-         System.out.println("🔍 Found attempt:");
-         System.out.println("  - ID: " + attempt.getId());
-         System.out.println("  - Score: " + attempt.getScore());
-         System.out.println("  - AttemptedAt: " + attempt.getAttemptedAt());
-         System.out.println("  - TimeTaken: " + attempt.getTimeTaken());
-         
-         // Kiểm tra nếu attempt đã có score > 0 thì coi như đã hoàn thành
-         if (attempt.getScore() > 0) {
-             System.out.println("✅ Attempt completed (score > 0)");
-             return "COMPLETED";
-         }
-         
-         // Kiểm tra nếu attempt đã có attemptedAt thì coi như đang trong tiến trình
-         if (attempt.getAttemptedAt() != null) {
-             System.out.println("🔄 Attempt in progress (has attemptedAt)");
-             return "IN_PROGRESS";
-         }
-         
-         // Mặc định là mới tạo
-         System.out.println("🆕 Attempt newly created");
-         return "CREATED";
+    public String getAttemptStatus(Long attemptId) {
+        System.out.println("QuizAttemptService.getAttemptStatus() - Attempt ID: " + attemptId);
+
+        QuizAttempt attempt = quizAttemptRepo.findById(attemptId).orElse(null);
+        if (attempt == null) {
+            System.err.println("Attempt not found");
+            return null;
+        }
+
+        System.out.println("Found attempt:");
+        System.out.println("  - ID: " + attempt.getId());
+        System.out.println("  - Score: " + attempt.getScore());
+        System.out.println("  - AttemptedAt: " + attempt.getAttemptedAt());
+        System.out.println("  - TimeTaken: " + attempt.getTimeTaken());
+
+        // Kiểm tra nếu attempt đã có score > 0 thì coi như đã hoàn thành
+        if (attempt.getScore() > 0) {
+            System.out.println("Attempt completed (score > 0)");
+            return "COMPLETED";
+        }
+
+        // Kiểm tra nếu attempt đã có attemptedAt thì coi như đang trong tiến trình
+        if (attempt.getAttemptedAt() != null) {
+            System.out.println("Attempt in progress (has attemptedAt)");
+            return "IN_PROGRESS";
+        }
+
+        // Mặc định là mới tạo
+        System.out.println("Attempt newly created");
+        return "CREATED";
     }
 
     /**
@@ -175,46 +177,46 @@ public class QuizAttemptService {
      */
     public List<QuizAttemptSummaryDTO> getRecentAttemptsForQuiz(Long quizId) {
         try {
-            System.out.println("🔍 QuizAttemptService.getRecentAttemptsForQuiz() - Quiz ID: " + quizId);
-            
+            System.out.println("QuizAttemptService.getRecentAttemptsForQuiz() - Quiz ID: " + quizId);
+
             // Kiểm tra quizId
             if (quizId == null) {
-                System.err.println("❌ Quiz ID is null!");
+                System.err.println("Quiz ID is null!");
                 return new ArrayList<>();
             }
-            
+
             // Lấy attempts từ repository
-            System.out.println("📊 Fetching attempts from repository...");
+            System.out.println("Fetching attempts from repository...");
             List<QuizAttempt> attempts = quizAttemptRepo.findByQuizIdOrderByAttemptedAtDesc(quizId);
-            System.out.println("📊 Found " + attempts.size() + " attempts for quiz " + quizId);
-            
+            System.out.println("Found " + attempts.size() + " attempts for quiz " + quizId);
+
             if (attempts.isEmpty()) {
-                System.out.println("ℹ️ No attempts found for quiz " + quizId + ". Returning empty list.");
+                System.out.println("No attempts found for quiz " + quizId + ". Returning empty list.");
                 return new ArrayList<>();
             }
-            
+
             // Convert to DTOs
-            System.out.println("🔄 Converting attempts to DTOs...");
+            System.out.println("Converting attempts to DTOs...");
             List<QuizAttemptSummaryDTO> result = attempts.stream()
                     .limit(5) // Chỉ lấy 5 attempts gần nhất
                     .map(attempt -> {
                         try {
-                            System.out.println("🔄 Converting attempt ID: " + attempt.getId());
+                            System.out.println("Converting attempt ID: " + attempt.getId());
                             return convertToSummaryDTO(attempt);
                         } catch (Exception e) {
-                            System.err.println("❌ Error converting attempt " + attempt.getId() + ": " + e.getMessage());
+                            System.err.println("Error converting attempt " + attempt.getId() + ": " + e.getMessage());
                             e.printStackTrace();
                             return null;
                         }
                     })
                     .filter(dto -> dto != null) // Loại bỏ null DTOs
                     .collect(Collectors.toList());
-            
-            System.out.println("✅ Successfully converted " + result.size() + " DTOs");
+
+            System.out.println("Successfully converted " + result.size() + " DTOs");
             return result;
-            
+
         } catch (Exception e) {
-            System.err.println("❌ Error in getRecentAttemptsForQuiz: " + e.getMessage());
+            System.err.println("Error in getRecentAttemptsForQuiz: " + e.getMessage());
             e.printStackTrace();
             return new ArrayList<>();
         }
@@ -226,38 +228,39 @@ public class QuizAttemptService {
     private QuizAttemptSummaryDTO convertToSummaryDTO(QuizAttempt attempt) {
         try {
             System.out.println("🔄 Converting attempt ID: " + attempt.getId());
-            
+
             // Kiểm tra null safety
             if (attempt == null) {
-                System.err.println("❌ Attempt is null!");
+                System.err.println("Attempt is null!");
                 return null;
             }
-            
+
             if (attempt.getUser() == null) {
-                System.err.println("❌ User is null for attempt ID: " + attempt.getId());
+                System.err.println("User is null for attempt ID: " + attempt.getId());
                 return null;
             }
-            
+
             String displayName = attempt.getUser().getFullName();
             if (displayName == null || displayName.trim().isEmpty()) {
                 displayName = attempt.getUser().getUsername();
             }
-            
+
             if (displayName == null || displayName.trim().isEmpty()) {
                 displayName = "Unknown User";
             }
-            
-            System.out.println("✅ Converted attempt ID: " + attempt.getId() + " for user: " + displayName);
-            
+
+            System.out.println("Converted attempt ID: " + attempt.getId() + " for user: " + displayName);
+
             return new QuizAttemptSummaryDTO(
                     attempt.getId(),
                     displayName,
                     attempt.getScore(),
                     attempt.getTimeTaken(),
                     attempt.getAttemptedAt());
-                    
+
         } catch (Exception e) {
-            System.err.println("❌ Error in convertToSummaryDTO for attempt ID " + (attempt != null ? attempt.getId() : "null") + ": " + e.getMessage());
+            System.err.println("Error in convertToSummaryDTO for attempt ID "
+                    + (attempt != null ? attempt.getId() : "null") + ": " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -277,50 +280,51 @@ public class QuizAttemptService {
      */
     public String createSampleData() {
         try {
-            System.out.println("🔧 Creating sample quiz attempt data...");
-            
+            System.out.println("Creating sample quiz attempt data...");
+
             // Lấy users và quizzes có sẵn
             List<User> users = userRepo.findAll();
             List<Quiz> quizzes = quizRepo.findAll();
-            
+
             if (users.isEmpty()) {
-                return "❌ No users found in database. Cannot create sample data.";
+                return "No users found in database. Cannot create sample data.";
             }
-            
+
             if (quizzes.isEmpty()) {
-                return "❌ No quizzes found in database. Cannot create sample data.";
+                return "No quizzes found in database. Cannot create sample data.";
             }
-            
-            System.out.println("📊 Found " + users.size() + " users and " + quizzes.size() + " quizzes");
-            
+
+            System.out.println("Found " + users.size() + " users and " + quizzes.size() + " quizzes");
+
             int createdCount = 0;
-            
+
             // Tạo sample attempts cho từng user với từng quiz
             for (User user : users) {
                 for (int i = 0; i < Math.min(3, quizzes.size()); i++) { // Tối đa 3 attempts per user
                     Quiz quiz = quizzes.get(i);
-                    
+
                     QuizAttempt attempt = new QuizAttempt();
                     attempt.setUser(user);
                     attempt.setQuiz(quiz);
-                    attempt.setScore(60 + (int)(Math.random() * 40)); // Score từ 60-100
-                    attempt.setTimeTaken(120 + (int)(Math.random() * 300)); // 2-7 phút
-                    attempt.setAttemptedAt(LocalDateTime.now().minusDays((int)(Math.random() * 30))); // Trong 30 ngày qua
-                    
+                    attempt.setScore(60 + (int) (Math.random() * 40)); // Score từ 60-100
+                    attempt.setTimeTaken(120 + (int) (Math.random() * 300)); // 2-7 phút
+                    attempt.setAttemptedAt(LocalDateTime.now().minusDays((int) (Math.random() * 30))); // Trong 30 ngày
+                                                                                                       // qua
+
                     quizAttemptRepo.save(attempt);
                     createdCount++;
-                    
-                    System.out.println("✅ Created attempt: User " + user.getUsername() + 
-                                     " -> Quiz " + quiz.getTitle() + " (Score: " + attempt.getScore() + ")");
+
+                    System.out.println("Created attempt: User " + user.getUsername() +
+                            " -> Quiz " + quiz.getTitle() + " (Score: " + attempt.getScore() + ")");
                 }
             }
-            
-            return "✅ Successfully created " + createdCount + " sample quiz attempts!";
-            
+
+            return "Successfully created " + createdCount + " sample quiz attempts!";
+
         } catch (Exception e) {
-            System.err.println("❌ Error creating sample data: " + e.getMessage());
+            System.err.println("Error creating sample data: " + e.getMessage());
             e.printStackTrace();
-            return "❌ Error: " + e.getMessage();
+            return "Error: " + e.getMessage();
         }
     }
 }

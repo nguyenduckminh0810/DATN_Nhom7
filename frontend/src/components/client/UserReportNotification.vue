@@ -1,7 +1,7 @@
 <template>
   <div class="user-report-notifications">
     <div class="notifications-header">
-      <h3>📢 Thông báo Báo cáo</h3>
+      <h3> Thông báo Báo cáo</h3>
       <button @click="markAllAsRead" class="mark-all-read-btn">
         Đánh dấu tất cả đã đọc
       </button>
@@ -22,10 +22,9 @@
 
       <!-- Notifications list -->
       <div v-else class="notifications-grid">
-        <div v-for="notification in notifications" 
-             :key="notification.id" 
-             :class="['notification-card', { unread: !notification.isRead }]">
-          
+        <div v-for="notification in notifications" :key="notification.id"
+          :class="['notification-card', { unread: !notification.isRead }]">
+
           <div class="notification-header">
             <div class="notification-icon">
               {{ getNotificationIcon(notification.type) }}
@@ -35,21 +34,18 @@
               <span class="notification-time">{{ formatTime(notification.createdAt) }}</span>
             </div>
             <div class="notification-actions">
-              <button @click="markAsRead(notification.id)" 
-                      v-if="!notification.isRead"
-                      class="mark-read-btn">
+              <button @click="markAsRead(notification.id)" v-if="!notification.isRead" class="mark-read-btn">
                 ✓
               </button>
             </div>
           </div>
-          
+
           <div class="notification-content">
             <p>{{ notification.message }}</p>
           </div>
-          
+
           <div v-if="notification.actionUrl" class="notification-footer">
-            <button @click="handleNotificationClick(notification)" 
-                    class="action-btn">
+            <button @click="handleNotificationClick(notification)" class="action-btn">
               Xem chi tiết
             </button>
           </div>
@@ -88,7 +84,7 @@ export default {
     const notifications = ref([]);
     const loading = ref(false);
     const error = ref('');
-    
+
     // Toast notification state
     const showToast = ref(false);
     const toastTitle = ref('');
@@ -99,14 +95,14 @@ export default {
     const loadNotifications = async () => {
       loading.value = true;
       error.value = '';
-      
+
       try {
-        // ✅ SỬA ENDPOINT ĐÚNG
+        //  SỬA ENDPOINT ĐÚNG
         const response = await axios.get('/api/notifications');
         notifications.value = response.data;
-        console.log('✅ Loaded notifications:', notifications.value);
+        console.log(' Loaded notifications:', notifications.value);
       } catch (err) {
-        console.error('❌ Error loading notifications:', err);
+        console.error(' Error loading notifications:', err);
         error.value = 'Không thể tải thông báo';
       } finally {
         loading.value = false;
@@ -117,16 +113,16 @@ export default {
     const markAsRead = async (notificationId) => {
       try {
         await axios.put(`/api/notifications/${notificationId}/read`);
-        
+
         // Update local state
         const notification = notifications.value.find(n => n.id === notificationId);
         if (notification) {
           notification.isRead = true;
         }
-        
-        console.log('✅ Marked notification as read:', notificationId);
+
+        console.log(' Marked notification as read:', notificationId);
       } catch (err) {
-        console.error('❌ Error marking notification as read:', err);
+        console.error(' Error marking notification as read:', err);
       }
     };
 
@@ -134,13 +130,13 @@ export default {
     const markAllAsRead = async () => {
       try {
         await axios.put('/api/notifications/mark-all-read');
-        
+
         // Update local state
         notifications.value.forEach(n => n.isRead = true);
-        
-        console.log('✅ Marked all notifications as read');
+
+        console.log(' Marked all notifications as read');
       } catch (err) {
-        console.error('❌ Error marking all notifications as read:', err);
+        console.error(' Error marking all notifications as read:', err);
       }
     };
 
@@ -150,7 +146,7 @@ export default {
       if (!notification.isRead) {
         markAsRead(notification.id);
       }
-      
+
       // Navigate to action URL if available
       if (notification.actionUrl) {
         router.push(notification.actionUrl);
@@ -163,7 +159,7 @@ export default {
       toastMessage.value = notification.message;
       toastType.value = notification.type === 'REPORT_ACTION' ? 'success' : 'info';
       showToast.value = true;
-      
+
       // Auto-hide after 5 seconds
       setTimeout(() => {
         hideToast();
@@ -177,11 +173,11 @@ export default {
 
     // WebSocket notification handler
     const handleWebSocketNotification = (notification) => {
-      console.log('📨 Received WebSocket notification:', notification);
-      
+      console.log(' Received WebSocket notification:', notification);
+
       // Add to notifications list
       notifications.value.unshift(notification);
-      
+
       // Show toast notification
       showToastNotification(notification);
     };
@@ -191,8 +187,8 @@ export default {
       const icons = {
         'REPORT_ACTION': '📋',
         'QUIZ_RESULT_READY': '📊',
-        'QUIZ_APPROVED': '✅',
-        'QUIZ_REJECTED': '❌',
+        'QUIZ_APPROVED': '',
+        'QUIZ_REJECTED': '',
         'ACCOUNT_STATUS_CHANGED': '🔒'
       };
       return icons[type] || '📢';
@@ -200,8 +196,8 @@ export default {
 
     const getToastIcon = (type) => {
       const icons = {
-        'success': '✅',
-        'error': '❌',
+        'success': '',
+        'error': '',
         'warning': '⚠️',
         'info': 'ℹ️'
       };
@@ -212,7 +208,7 @@ export default {
       const date = new Date(dateString);
       const now = new Date();
       const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-      
+
       if (diffInMinutes < 1) return 'Vừa xong';
       if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
       if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} giờ trước`;
@@ -221,23 +217,23 @@ export default {
 
     onMounted(() => {
       loadNotifications();
-      
-      // ✅ CONNECT TO WEBSOCKET VỚI ERROR HANDLING
+
+      //  CONNECT TO WEBSOCKET VỚI ERROR HANDLING
       const token = localStorage.getItem('token');
       const username = localStorage.getItem('username');
-      
+
       if (token && username) {
         console.log('🔌 Connecting to WebSocket for user:', username);
         websocketService.connect(username, token)
           .then(() => {
-            console.log('✅ WebSocket connected successfully');
+            console.log(' WebSocket connected successfully');
             websocketService.onNotification(handleWebSocketNotification);
           })
           .catch((error) => {
-            console.error('❌ WebSocket connection failed:', error);
+            console.error(' WebSocket connection failed:', error);
           });
       } else {
-        console.error('❌ Missing token or username for WebSocket connection');
+        console.error(' Missing token or username for WebSocket connection');
       }
     });
 
@@ -311,7 +307,7 @@ export default {
   border-radius: 8px;
   padding: 15px;
   background: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
 
@@ -398,7 +394,9 @@ export default {
   background: #0056b3;
 }
 
-.loading-container, .error-container, .empty-state {
+.loading-container,
+.error-container,
+.empty-state {
   text-align: center;
   padding: 40px;
 }
@@ -414,8 +412,13 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -446,7 +449,7 @@ export default {
   align-items: center;
   padding: 15px 20px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   max-width: 400px;
   animation: slideInRight 0.3s ease;
@@ -517,6 +520,7 @@ export default {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;

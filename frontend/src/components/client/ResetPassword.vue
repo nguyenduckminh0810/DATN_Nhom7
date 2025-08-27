@@ -52,10 +52,30 @@ async function reset() {
 </template>
 
 <style scoped>
-.card { max-width: 420px; margin: 2rem auto; display: grid; gap: .75rem; }
-input { padding: .75rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; }
-button { padding: .75rem 1rem; border-radius: 8px; border: none; background: #667eea; color: #fff; cursor: pointer; }
-button:disabled { opacity: .6; cursor: not-allowed; }
+.card {
+  max-width: 420px;
+  margin: 2rem auto;
+  display: grid;
+  gap: .75rem;
+}
+
+input {
+  padding: .75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+button {
+  padding: .75rem 1rem;
+  border-radius: 8px;
+  border: none;
+  background: #667eea;
+  color: #fff;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
 </style>
-
-

@@ -46,7 +46,7 @@ import Leaderboard from '@/components/client/Leaderboard.vue'
 import GlobalLeaderboardPage from '@/components/client/GlobalLeaderboardPage.vue'
 
 const routes = [
-  // ✅ PUBLIC ROUTES
+  //  PUBLIC ROUTES
   {
     path: '/',
     component: ClientLayout,
@@ -100,7 +100,7 @@ const routes = [
     ],
   },
 
-  // ✅ USER ROUTES (requires authentication)
+  //  USER ROUTES (requires authentication)
   {
     path: '/',
     component: ClientLayout,
@@ -219,7 +219,7 @@ const routes = [
     ],
   },
 
-  // ✅ ADMIN ROUTES (requires admin authentication)
+  //  ADMIN ROUTES (requires admin authentication)
   {
     path: '/admin',
     component: AdminLayout,
@@ -282,7 +282,7 @@ const routes = [
     ],
   },
 
-  // ✅ CATCH-ALL ROUTE
+  //  CATCH-ALL ROUTE
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -295,7 +295,7 @@ const router = createRouter({
   routes,
 })
 
-// ✅ NAVIGATION GUARDS
+//  NAVIGATION GUARDS
 router.beforeEach((to, from, next) => {
   const ALWAYS_ALLOW = new Set(['Ban', 'Login', 'Register', 'ForgotPassword', 'ResetPassword', 'Home', 'Contact'])
 
@@ -305,46 +305,46 @@ router.beforeEach((to, from, next) => {
   const role = (user?.role || '').toUpperCase()
   const isAdmin = !!adminUser || role === 'ADMIN'
   const isBanned = localStorage.getItem('banned') === '1' || role === 'BANNED'
-  
-  console.log('🔍 Navigation Guard:', { 
-    to: to.name, 
-    from: from.name, 
-    token: !!token, 
-    adminUser: !!adminUser, 
-    userRole: role, 
-    isAdmin, 
-    isBanned 
+
+  console.log(' Navigation Guard:', {
+    to: to.name,
+    from: from.name,
+    token: !!token,
+    adminUser: !!adminUser,
+    userRole: role,
+    isAdmin,
+    isBanned
   })
 
-  // ✅ Trang Login: nếu đã đăng nhập thì đẩy ra Dashboard phù hợp
+  //  Trang Login: nếu đã đăng nhập thì đẩy ra Dashboard phù hợp
   if (to.name === 'Login') {
     if (token || adminUser) {
       if (isBanned) return next({ name: 'Ban' })
       const redirectTarget = isAdmin ? 'AdminDashboard' : 'Dashboard'
-      console.log('🔍 Login redirect:', { isAdmin, redirectTarget })
+      console.log(' Login redirect:', { isAdmin, redirectTarget })
       return next({ name: redirectTarget })
     }
     return next() // chưa login -> cho ở lại trang Login
   }
 
-  // ✅ Trang Ban: luôn cho vào
+  //  Trang Ban: luôn cho vào
   if (to.name === 'Ban') return next()
 
-  // ✅ Các trang public khác
+  //  Các trang public khác
   if (ALWAYS_ALLOW.has(to.name)) {
-    // ✅ Nếu user đã đăng nhập và đang vào Home -> redirect về Dashboard
+    //  Nếu user đã đăng nhập và đang vào Home -> redirect về Dashboard
     if (to.name === 'Home' && (token || adminUser) && !isBanned) {
       const redirectTarget = isAdmin ? 'AdminDashboard' : 'Dashboard'
-      console.log('🔍 Home redirect:', { isAdmin, redirectTarget })
+      console.log(' Home redirect:', { isAdmin, redirectTarget })
       return next({ name: redirectTarget })
     }
     return next()
   }
 
-  // 🔒 Nếu bị ban -> đẩy về /ban
+  //  Nếu bị ban -> đẩy về /ban
   if (isBanned) return next({ name: 'Ban' })
 
-  // 🔐 Phần còn lại giữ nguyên
+  //  Phần còn lại giữ nguyên
   if (!to.meta.requiresAuth) return next()
 
   if (!token && !adminUser) return next({ name: 'Login' })
@@ -356,8 +356,8 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresUser) {
     if (!token && !adminUser) return next({ name: 'Login' })
-    
-    // ✅ Admin và User đều có thể truy cập user routes
+
+    //  Admin và User đều có thể truy cập user routes
     return next()
   }
 
