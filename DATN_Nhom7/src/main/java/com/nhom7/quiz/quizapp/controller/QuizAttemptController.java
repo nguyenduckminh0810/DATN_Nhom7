@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -194,9 +195,10 @@ public class QuizAttemptController {
     }
 
     /**
-     * API lấy lịch sử làm quiz - dùng chung cho admin và user
-     * GET
-     * /api/quiz-attempts?userId={userId}&quizId={quizId}&page={page}&size={size}
+     * API lấy lịch sử làm quiz - CHỈ LẤY ĐÃ HOÀN THÀNH - dùng chung cho admin và user
+     * GET /api/quiz-attempts?userId={userId}&quizId={quizId}&page={page}&size={size}
+     * User thường chỉ xem được lịch sử đã hoàn thành của mình
+     * Admin có thể xem lịch sử đã hoàn thành của tất cả user
      */
     @GetMapping
     public ResponseEntity<Page<QuizAttemptDTO>> getQuizAttempts(
@@ -238,7 +240,7 @@ public class QuizAttemptController {
     }
 
     /**
-     * API lấy lịch sử làm quiz của user hiện tại (dành cho user thường)
+     * API lấy lịch sử làm quiz của user hiện tại (dành cho user thường) - CHỈ LẤY ĐÃ HOÀN THÀNH
      * GET /api/quiz-attempts/my-history
      */
     @GetMapping("/my-history")
@@ -252,8 +254,32 @@ public class QuizAttemptController {
         String currentUsername = authentication.getName();
         User currentUser = loginService.findByUsername(currentUsername);
 
-        // Chỉ lấy lịch sử của user hiện tại
+        // Chỉ lấy lịch sử ĐÃ HOÀN THÀNH của user hiện tại
         Page<QuizAttemptDTO> attempts = quizAttemptService.findQuizAttempts(currentUser.getId(), quizId, page, size);
+
+        return ResponseEntity.ok(attempts);
+    }
+
+    /**
+     * API admin để xem TẤT CẢ attempts (bao gồm IN_PROGRESS) - CHỈ ADMIN
+     * GET /api/quiz-attempts/admin/all
+     */
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<QuizAttemptDTO>> getAllAttemptsForAdmin(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Long quizId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        System.out.println("🔍 Admin request for ALL attempts (including IN_PROGRESS):");
+        System.out.println("  📋 Params - userId: " + userId + ", quizId: " + quizId + ", page: " + page + ", size: " + size);
+
+        // Admin có thể xem TẤT CẢ attempts (bao gồm IN_PROGRESS)
+        Page<QuizAttemptDTO> attempts = quizAttemptService.findAllQuizAttempts(userId, quizId, page, size);
+
+        System.out.println("  📊 Admin query result: " + attempts.getTotalElements() + " total attempts, "
+                + attempts.getContent().size() + " in current page");
 
         return ResponseEntity.ok(attempts);
     }

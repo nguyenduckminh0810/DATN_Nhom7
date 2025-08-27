@@ -82,4 +82,69 @@ public interface QuizAttemptRepo extends JpaRepository<QuizAttempt, Long> {
 
        // Tìm attempt theo quiz và status
        List<QuizAttempt> findByQuizIdAndStatus(Long quizId, AttemptStatus status);
+
+       // Group by hour using native SQL (SQL Server compatible)
+       @Query(value = "SELECT DATEPART(HOUR, attempted_at) AS h, COUNT(*) AS c " +
+                     "FROM quiz_attempts " +
+                     "WHERE attempted_at >= :from AND attempted_at < :to " +
+                     "GROUP BY DATEPART(HOUR, attempted_at)", nativeQuery = true)
+       List<Object[]> countAttemptsGroupedByHour(@Param("from") LocalDateTime from,
+                     @Param("to") LocalDateTime to);
+
+       // ✅ THÊM CÁC METHOD CHO RESUME QUIZ
+
+       // Tìm attempt đang IN_PROGRESS theo user và quiz
+       @Query("SELECT qa FROM QuizAttempt qa " +
+                     "WHERE qa.user.id = :userId " +
+                     "AND qa.quiz.id = :quizId " +
+                     "AND qa.status = 'IN_PROGRESS' " +
+                     "ORDER BY qa.attemptedAt DESC")
+       List<QuizAttempt> findInProgressAttemptsByUserAndQuiz(@Param("userId") Long userId,
+                     @Param("quizId") Long quizId);
+
+       // Tìm attempt đang IN_PROGRESS theo user
+       @Query("SELECT qa FROM QuizAttempt qa " +
+                     "WHERE qa.user.id = :userId " +
+                     "AND qa.status = 'IN_PROGRESS' " +
+                     "ORDER BY qa.attemptedAt DESC")
+       List<QuizAttempt> findInProgressAttemptsByUser(@Param("userId") Long userId);
+
+       // Tìm attempt theo ID và user ID (bảo mật)
+       @Query("SELECT qa FROM QuizAttempt qa " +
+                     "WHERE qa.id = :attemptId " +
+                     "AND qa.user.id = :userId")
+       Optional<QuizAttempt> findByIdAndUserId(@Param("attemptId") Long attemptId,
+                     @Param("userId") Long userId);
+
+       // Tìm attempt theo status
+       List<QuizAttempt> findByStatus(AttemptStatus status);
+
+       // Tìm attempt theo user và status
+       List<QuizAttempt> findByUserIdAndStatus(Long userId, AttemptStatus status);
+
+       // Tìm attempt theo quiz và status
+       List<QuizAttempt> findByQuizIdAndStatus(Long quizId, AttemptStatus status);
+
+       // ✅ THÊM CÁC METHOD CHO LỊCH SỬ - CHỈ LẤY ATTEMPT ĐÃ HOÀN THÀNH
+
+       // Tìm completed attempts theo user (cho lịch sử)
+       @Query("SELECT qa FROM QuizAttempt qa WHERE qa.user.id = :userId AND qa.status = 'SUBMITTED' ORDER BY qa.attemptedAt DESC")
+       Page<QuizAttempt> findCompletedByUserIdOrderByAttemptedAtDesc(@Param("userId") Long userId, Pageable pageable);
+
+       // Tìm completed attempts theo quiz (cho lịch sử)
+       @Query("SELECT qa FROM QuizAttempt qa WHERE qa.quiz.id = :quizId AND qa.status = 'SUBMITTED' ORDER BY qa.attemptedAt DESC")
+       Page<QuizAttempt> findCompletedByQuizIdOrderByAttemptedAtDesc(@Param("quizId") Long quizId, Pageable pageable);
+
+       // Tìm completed attempts theo user và quiz (cho lịch sử)
+       @Query("SELECT qa FROM QuizAttempt qa WHERE qa.user.id = :userId AND qa.quiz.id = :quizId AND qa.status = 'SUBMITTED' ORDER BY qa.attemptedAt DESC")
+       Page<QuizAttempt> findCompletedByUserIdAndQuizIdOrderByAttemptedAtDesc(@Param("userId") Long userId,
+                     @Param("quizId") Long quizId, Pageable pageable);
+
+       // Tìm tất cả completed attempts (cho admin xem lịch sử)
+       @Query("SELECT qa FROM QuizAttempt qa WHERE qa.status = 'SUBMITTED' ORDER BY qa.attemptedAt DESC")
+       Page<QuizAttempt> findAllCompletedOrderByAttemptedAtDesc(Pageable pageable);
+
+       // Tìm completed attempts theo quiz cho summary (không phân trang)
+    @Query("SELECT qa FROM QuizAttempt qa WHERE qa.quiz.id = :quizId AND qa.status = 'SUBMITTED' ORDER BY qa.attemptedAt DESC")
+    List<QuizAttempt> findCompletedByQuizIdOrderByAttemptedAtDesc(@Param("quizId") Long quizId);>>>>>>>873 b728ed07ee0a770e50c6e716d799b3ff9a317
 }
