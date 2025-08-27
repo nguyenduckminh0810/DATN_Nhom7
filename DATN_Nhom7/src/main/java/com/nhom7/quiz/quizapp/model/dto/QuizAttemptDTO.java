@@ -1,6 +1,7 @@
 package com.nhom7.quiz.quizapp.model.dto;
 
 import java.time.LocalDateTime;
+import com.nhom7.quiz.quizapp.model.AttemptStatus;
 
 public class QuizAttemptDTO {
     private Long id;
@@ -9,14 +10,21 @@ public class QuizAttemptDTO {
     private int score;
     private LocalDateTime attemptedAt;
     private int timeTaken; // thời gian làm bài (giây)
+    private AttemptStatus status; // ✅ THÊM TRẠNG THÁI
 
-    public QuizAttemptDTO(Long id, String username, String quizTitle, int score, LocalDateTime attemptedAt, int timeTaken) {
+    public QuizAttemptDTO(Long id, String username, String quizTitle, int score, LocalDateTime attemptedAt, int timeTaken, AttemptStatus status) {
         this.id = id;
         this.username = username;
         this.quizTitle = quizTitle;
         this.score = score;
         this.attemptedAt = attemptedAt;
         this.timeTaken = timeTaken;
+        this.status = status;
+    }
+    
+    // ✅ CONSTRUCTOR CŨ ĐỂ TƯƠNG THÍCH NGƯỢC
+    public QuizAttemptDTO(Long id, String username, String quizTitle, int score, LocalDateTime attemptedAt, int timeTaken) {
+        this(id, username, quizTitle, score, attemptedAt, timeTaken, AttemptStatus.SUBMITTED);
     }
 
     // Getters
@@ -67,5 +75,14 @@ public class QuizAttemptDTO {
 
     public void setTimeTaken(int timeTaken) {
         this.timeTaken = timeTaken;
+    }
+    
+    // ✅ GETTER/SETTER CHO STATUS
+    public AttemptStatus getStatus() {
+        return status;
+    }
+    
+    public void setStatus(AttemptStatus status) {
+        this.status = status;
     }
 } 
