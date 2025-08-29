@@ -1,6 +1,5 @@
 <template>
   <div class="notification-container">
-
     <Teleport to="body">
       <div v-if="showPanel">
         <div class="notif-backdrop" @click="showPanel = false"></div>
@@ -8,8 +7,8 @@
           <div class="notification-header">
             <h3>Thông báo</h3>
             <div class="notification-actions">
-              <button v-if="notificationStore.unreadCount > 0" @click.stop="markAllAsRead" class="btn-mark-all">Đánh dấu
-                tất cả đã đọc</button>
+              <!-- <button v-if="notificationStore.unreadCount > 0" @click.stop="markAllAsRead" class="btn-mark-all">Đánh dấu
+                tất cả đã đọc</button> -->
               <button @click.stop="showPanel = false" class="btn-close">×</button>
             </div>
           </div>
@@ -29,9 +28,12 @@
             </div>
 
             <div v-else>
-              <div v-for="notification in notificationStore.sortedNotifications" :key="notification.id"
+              <div
+                v-for="notification in notificationStore.sortedNotifications"
+                :key="notification.id"
                 :class="['notification-item', { unread: !notification.isRead }]"
-                @click.stop="handleNotificationClick(notification)">
+                @click.stop="handleNotificationClick(notification)"
+              >
                 <div class="notification-icon">
                   <i :class="getNotificationIcon(notification.type)"></i>
                 </div>
@@ -43,18 +45,25 @@
                 </div>
 
                 <div class="notification-actions">
-                  <button v-if="!notification.isRead" @click.stop="markAsRead(notification.id)" class="btn-mark-read"
-                    title="Đánh dấu đã đọc">
+                  <button
+                    v-if="!notification.isRead"
+                    @click.stop="markAsRead(notification.id)"
+                    class="btn-mark-read"
+                    title="Đánh dấu đã đọc"
+                  >
                     <i class="bi bi-check-lg"></i>
                   </button>
-                  <button @click.stop="deleteNotification(notification.id)" class="btn-delete" title="Xóa thông báo">
+                  <button
+                    @click.stop="deleteNotification(notification.id)"
+                    class="btn-delete"
+                    title="Xóa thông báo"
+                  >
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </Teleport>
@@ -70,169 +79,172 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue';
-import websocketService from '../services/websocketService.js';
-import { useNotificationStore } from '../stores/notification.js';
+import { ref, onMounted, onUnmounted } from 'vue'
+import websocketService from '../services/websocketService.js'
+import { useNotificationStore } from '../stores/notification.js'
 
 export default {
   name: 'NotificationComponent',
   setup() {
-    const notificationStore = useNotificationStore();
-    const showPanel = ref(false);
-    const showToast = ref(false);
-    const toastMessage = ref('');
-    const toastType = ref('info');
+    const notificationStore = useNotificationStore()
+    const showPanel = ref(false)
+    const showToast = ref(false)
+    const toastMessage = ref('')
+    const toastType = ref('info')
 
     // ✅ LOAD NOTIFICATIONS
     const loadNotifications = async () => {
-      await notificationStore.loadNotifications();
-    };
+      await notificationStore.loadNotifications()
+    }
 
     // ✅ LOAD UNREAD COUNT
     const loadUnreadCount = async () => {
-      await notificationStore.loadUnreadCount();
-    };
+      await notificationStore.loadUnreadCount()
+    }
 
     // ✅ MARK AS READ
     const markAsRead = async (notificationId) => {
-      await notificationStore.markAsRead(notificationId);
-    };
+      await notificationStore.markAsRead(notificationId)
+    }
 
     // ✅ MARK ALL AS READ
     const markAllAsRead = async () => {
-      await notificationStore.markAllAsRead();
-      showToastMessage('Đã đánh dấu tất cả thông báo đã đọc', 'success');
-    };
+      await notificationStore.markAllAsRead()
+      showToastMessage('Đã đánh dấu tất cả thông báo đã đọc', 'success')
+    }
 
     // ✅ DELETE NOTIFICATION
     const deleteNotification = async (notificationId) => {
-      await notificationStore.deleteNotification(notificationId);
-      showToastMessage('Đã xóa thông báo', 'success');
-    };
+      await notificationStore.deleteNotification(notificationId)
+      showToastMessage('Đã xóa thông báo', 'success')
+    }
 
     // ✅ HANDLE NOTIFICATION CLICK
     const handleNotificationClick = (notification) => {
       if (!notification.isRead) {
-        markAsRead(notification.id);
+        markAsRead(notification.id)
       }
 
       // ✅ NAVIGATE TO ACTION URL IF AVAILABLE
       if (notification.actionUrl) {
         // Use Vue Router to navigate
         // this.$router.push(notification.actionUrl);
-        console.log('Navigate to:', notification.actionUrl);
+        console.log('Navigate to:', notification.actionUrl)
       }
-    };
+    }
 
     // ✅ TOGGLE PANEL
     const toggleNotificationPanel = () => {
       // Đảm bảo panel luôn hiển thị sau khi dropdown đóng hẳn
       requestAnimationFrame(() => {
-        showPanel.value = !showPanel.value;
+        showPanel.value = !showPanel.value
         if (showPanel.value) {
-          loadNotifications();
+          loadNotifications()
         }
-      });
-    };
+      })
+    }
 
     // ✅ SHOW TOAST MESSAGE
     const showToastMessage = (message, type = 'info') => {
-      toastMessage.value = message;
-      toastType.value = type;
-      showToast.value = true;
+      toastMessage.value = message
+      toastType.value = type
+      showToast.value = true
 
       setTimeout(() => {
-        hideToast();
-      }, 3000);
-    };
+        hideToast()
+      }, 3000)
+    }
 
     // ✅ HIDE TOAST
     const hideToast = () => {
-      showToast.value = false;
-    };
+      showToast.value = false
+    }
 
     // ✅ GET NOTIFICATION ICON
     const getNotificationIcon = (type) => {
       const icons = {
-        'QUIZ_RESULT_READY': 'fas fa-trophy',
-        'QUIZ_APPROVED': 'fas fa-check-circle',
-        'QUIZ_REJECTED': 'fas fa-times-circle',
-        'ACCOUNT_STATUS_CHANGED': 'fas fa-user-shield',
-        'REVIEW_RECEIVED': 'fas fa-star',
-        'NEW_QUIZ_SUBMITTED': 'fas fa-plus-circle',
-        'QUIZ_COMPLETED': 'fas fa-play-circle',
-        'NEW_USER_REGISTERED': 'fas fa-user-plus',
-        'REPORT_SUBMITTED': 'fas fa-flag',
-        'SYSTEM_ACTIVITY': 'fas fa-cog'
-      };
-      return icons[type] || 'fas fa-bell';
-    };
+        QUIZ_RESULT_READY: 'fas fa-trophy',
+        QUIZ_APPROVED: 'fas fa-check-circle',
+        QUIZ_REJECTED: 'fas fa-times-circle',
+        ACCOUNT_STATUS_CHANGED: 'fas fa-user-shield',
+        REVIEW_RECEIVED: 'fas fa-star',
+        NEW_QUIZ_SUBMITTED: 'fas fa-plus-circle',
+        QUIZ_COMPLETED: 'fas fa-play-circle',
+        NEW_USER_REGISTERED: 'fas fa-user-plus',
+        REPORT_SUBMITTED: 'fas fa-flag',
+        SYSTEM_ACTIVITY: 'fas fa-cog',
+      }
+      return icons[type] || 'fas fa-bell'
+    }
 
     // ✅ GET TOAST ICON
     const getToastIcon = (type) => {
       const icons = {
-        'success': 'fas fa-check-circle',
-        'error': 'fas fa-exclamation-circle',
-        'warning': 'fas fa-exclamation-triangle',
-        'info': 'fas fa-info-circle'
-      };
-      return icons[type] || 'fas fa-info-circle';
-    };
+        success: 'fas fa-check-circle',
+        error: 'fas fa-exclamation-circle',
+        warning: 'fas fa-exclamation-triangle',
+        info: 'fas fa-info-circle',
+      }
+      return icons[type] || 'fas fa-info-circle'
+    }
 
     // ✅ FORMAT TIME
     const formatTime = (timestamp) => {
-      const date = new Date(timestamp);
-      const now = new Date();
-      const diff = now - date;
+      const date = new Date(timestamp)
+      const now = new Date()
+      const diff = now - date
 
-      const minutes = Math.floor(diff / 60000);
-      const hours = Math.floor(diff / 3600000);
-      const days = Math.floor(diff / 86400000);
+      const minutes = Math.floor(diff / 60000)
+      const hours = Math.floor(diff / 3600000)
+      const days = Math.floor(diff / 86400000)
 
-      if (minutes < 1) return 'Vừa xong';
-      if (minutes < 60) return `${minutes} phút trước`;
-      if (hours < 24) return `${hours} giờ trước`;
-      if (days < 7) return `${days} ngày trước`;
+      if (minutes < 1) return 'Vừa xong'
+      if (minutes < 60) return `${minutes} phút trước`
+      if (hours < 24) return `${hours} giờ trước`
+      if (days < 7) return `${days} ngày trước`
 
-      return date.toLocaleDateString('vi-VN');
-    };
+      return date.toLocaleDateString('vi-VN')
+    }
 
     // ✅ WEBSOCKET NOTIFICATION HANDLER
     const handleWebSocketNotification = (notification) => {
       // ✅ ADD NEW NOTIFICATION TO LIST
-      notifications.value.unshift(notification);
-      updateUnreadCount();
+      notifications.value.unshift(notification)
+      updateUnreadCount()
 
       // ✅ SHOW TOAST
-      showToastMessage(notification.message, 'info');
+      showToastMessage(notification.message, 'info')
 
       // ✅ PLAY SOUND (OPTIONAL)
       // playNotificationSound();
-    };
+    }
 
     // ✅ INITIALIZE WEBSOCKET
     const initializeWebSocket = () => {
-      const token = localStorage.getItem('token');
-      const username = localStorage.getItem('username');
+      const token = localStorage.getItem('token')
+      const username = localStorage.getItem('username')
 
       if (token && username) {
-        websocketService.connect(username, token).then(() => {
-          websocketService.onNotification(handleWebSocketNotification);
-        }).catch(error => {
-          console.error('❌ WebSocket connection failed:', error);
-        });
+        websocketService
+          .connect(username, token)
+          .then(() => {
+            websocketService.onNotification(handleWebSocketNotification)
+          })
+          .catch((error) => {
+            console.error('❌ WebSocket connection failed:', error)
+          })
       }
-    };
+    }
 
     // ✅ LIFECYCLE HOOKS
     onMounted(() => {
-      notificationStore.initialize();
-      initializeWebSocket();
-    });
+      notificationStore.initialize()
+      initializeWebSocket()
+    })
 
     onUnmounted(() => {
-      websocketService.disconnect();
-    });
+      websocketService.disconnect()
+    })
 
     return {
       notificationStore,
@@ -250,10 +262,10 @@ export default {
       hideToast,
       getNotificationIcon,
       getToastIcon,
-      formatTime
-    };
-  }
-};
+      formatTime,
+    }
+  },
+}
 </script>
 
 <style scoped>
@@ -287,7 +299,9 @@ export default {
   cursor: pointer;
   padding: 10px;
   border-radius: 50%;
-  transition: transform .2s ease, background .2s ease;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -319,7 +333,7 @@ export default {
   justify-content: center;
   font-weight: 800;
   border: 2px solid #fff;
-  box-shadow: 0 4px 12px rgba(244, 63, 94, .35);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.35);
 }
 
 .notification-panel {
@@ -365,7 +379,7 @@ export default {
   border-radius: 10px;
   font-size: 12px;
   cursor: pointer;
-  transition: .2s;
+  transition: 0.2s;
 }
 
 .btn-mark-all:hover {
@@ -384,7 +398,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: .2s;
+  transition: 0.2s;
 }
 
 .btn-close:hover {
@@ -401,7 +415,7 @@ export default {
 }
 
 .notification-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, .15);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 6px;
 }
 
@@ -418,13 +432,13 @@ export default {
   padding: 14px 16px;
   border-bottom: 1px solid var(--notif-border);
   cursor: pointer;
-  transition: background .15s ease;
+  transition: background 0.15s ease;
   position: relative;
   background: transparent;
 }
 
 .notification-item:hover {
-  background: rgba(15, 23, 42, .03);
+  background: rgba(15, 23, 42, 0.03);
 }
 
 .notification-item.unread {
@@ -450,7 +464,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(102, 126, 234, .12);
+  background: rgba(102, 126, 234, 0.12);
   border-radius: 12px;
 }
 
@@ -519,7 +533,7 @@ export default {
 .no-notifications i {
   font-size: 48px;
   margin-bottom: 16px;
-  opacity: .35;
+  opacity: 0.35;
   color: #94a3b8;
 }
 
@@ -560,7 +574,7 @@ export default {
   border-radius: 10px;
   cursor: pointer;
   font-size: 16px;
-  transition: .2s;
+  transition: 0.2s;
   width: 32px;
   height: 32px;
   display: flex;
@@ -574,7 +588,7 @@ export default {
 }
 
 .btn-mark-read:hover {
-  background: rgba(22, 163, 74, .1);
+  background: rgba(22, 163, 74, 0.1);
   color: #16a34a;
 }
 
@@ -583,7 +597,7 @@ export default {
 }
 
 .btn-delete:hover {
-  background: rgba(220, 38, 38, .1);
+  background: rgba(220, 38, 38, 0.1);
   color: #dc2626;
 }
 
@@ -593,13 +607,13 @@ export default {
   right: 20px;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, .15);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
   padding: 14px 16px;
   display: flex;
   align-items: center;
   gap: 10px;
   z-index: 10000;
-  animation: slideIn .3s ease;
+  animation: slideIn 0.3s ease;
   border: 1px solid var(--notif-border);
 }
 

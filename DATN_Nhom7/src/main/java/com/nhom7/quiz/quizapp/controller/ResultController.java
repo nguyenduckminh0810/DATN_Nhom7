@@ -53,7 +53,7 @@ public class ResultController {
 
     // Xem kết quả của user - chỉ admin hoặc user sở hữu
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or @resultService.checkUserPermission(#userId, authentication.principal)")
+    @PreAuthorize("hasRole('ADMIN') or @resultService.checkUserPermission(#userId, authentication.name)")
     public List<ResultDTO> getResultsByUserId(@PathVariable Long userId) {
         List<Result> results = resultService.getResultsByUserId(userId);
         return results.stream()

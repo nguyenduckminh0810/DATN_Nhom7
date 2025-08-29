@@ -32,6 +32,7 @@ import com.nhom7.quiz.quizapp.model.dto.QuizImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuizDetailDTO;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo;
 import com.nhom7.quiz.quizapp.repository.ImageRepo;
+import com.nhom7.quiz.quizapp.repository.QuestionRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
 import com.nhom7.quiz.quizapp.repository.ResultRepo;
 import com.nhom7.quiz.quizapp.service.userService.LoginService;
@@ -58,6 +59,9 @@ public class QuizService {
 	private QuestionService questionService;
 
 	@Autowired
+	private QuestionRepo questionRepo;
+
+	@Autowired
 	private AnswerService answerService;
 
 	@Autowired
@@ -72,9 +76,33 @@ public class QuizService {
 
 	// OWNERSHIP VALIDATION METHOD
 	public boolean isOwner(Long quizId, String username) {
-		if (quizId == null || username == null || username.isBlank())
+		System.out.println("=== DEBUG isOwner ===");
+		System.out.println("QuizId: " + quizId);
+		System.out.println("Username: " + username);
+
+		if (quizId == null || username == null || username.isBlank()) {
+			System.out.println("Null check failed - returning false");
 			return false;
-		return quizRepo.existsByIdAndUser_Username(quizId, username);
+		}
+
+		// Sử dụng method mới để kiểm tra kể cả quiz đã soft delete
+		boolean result = quizRepo.existsByIdAndUser_UsernameIncludeDeleted(quizId, username);
+		System.out.println("Database check result: " + result);
+
+		// Debug thêm: kiểm tra quiz có tồn tại không và thuộc về user nào
+		Optional<Quiz> quizOpt = quizRepo.findById(quizId);
+		if (quizOpt.isPresent()) {
+			Quiz quiz = quizOpt.get();
+			System.out.println(
+					"Quiz exists - Owner: " + (quiz.getUser() != null ? quiz.getUser().getUsername() : "NULL"));
+			System.out.println("Comparing with: " + username);
+		} else {
+			System.out.println("Quiz not found in database!");
+		}
+
+		System.out.println("=== END DEBUG isOwner ===");
+
+		return result;
 	}
 
 	// Lấy tất cả quiz
@@ -301,39 +329,17 @@ public class QuizService {
 	@Transactional
 	public boolean hardDeleteQuiz(Long id) {
 		System.out.println(" Checking if quiz exists: " + id);
-		if (quizRepo.existsById(id)) {
+
+		// Kiểm tra quiz có tồn tại không (kể cả soft deleted)
+		Optional<Quiz> quizOpt = quizRepo.findById(id);
+		if (quizOpt.isPresent()) {
+			Quiz quiz = quizOpt.get();
+			System.out.println("Quiz found - ID: " + quiz.getId() + ", Title: " + quiz.getTitle() + ", Deleted: "
+					+ quiz.isDeleted());
 			System.out.println("Quiz exists, proceeding with hard deletion");
 			try {
-				// 1. Xóa image trước
-				Image image = imageRepo.findByQuizId(id);
-				if (image != null) {
-					System.out.println("Deleting image: " + image.getUrl());
-					imageRepo.delete(image);
-				}
-
-				// 2. Xóa results trước (vì results reference đến quiz)
-				System.out.println("Deleting results for quiz: " + id);
-				resultService.deleteResultsByQuizId(id);
-
-				// 3. Lấy questions của quiz
-				List<Question> questions = questionService.getQuestionsByQuizId(id);
-				System.out.println("Found " + (questions != null ? questions.size() : 0) + " questions to delete");
-				if (questions != null && !questions.isEmpty()) {
-					// 4. Xóa answers trước (vì answers reference đến questions)
-					for (Question question : questions) {
-						System.out.println("Deleting answers for question: " + question.getId());
-						answerService.deleteByQuestionId(question.getId());
-					}
-
-					// 5. Xóa questions
-					for (Question question : questions) {
-						System.out.println("Deleting question: " + question.getId());
-						questionService.deleteQuestion(question.getId());
-					}
-				}
-
-				// 6. Cuối cùng xóa quiz
-				System.out.println("Deleting quiz: " + id);
+				// Đơn giản hóa - chỉ xóa quiz trực tiếp
+				System.out.println("Deleting quiz directly: " + id);
 				quizRepo.deleteById(id);
 				System.out.println("Quiz hard deleted successfully");
 				return true;

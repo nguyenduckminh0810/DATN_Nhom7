@@ -20,7 +20,9 @@
           <option value="ADMIN">Admin</option>
           <option value="USER">Người dùng</option>
         </select>
-        <button class="btn btn-outline" @click="fetchUsers"><i class="bi bi-arrow-clockwise"></i> Làm mới</button>
+        <button class="btn btn-outline" @click="fetchUsers">
+          <i class="bi bi-arrow-clockwise"></i> Làm mới
+        </button>
       </div>
     </div>
 
@@ -59,9 +61,17 @@
                 <td class="muted">{{ formatDate(user.createdAt) }}</td>
                 <td>
                   <div class="row-actions">
-                    <button class="chip primary" @click="editUser(user)"><i class="bi bi-pencil"></i> Sửa</button>
-                    <button class="chip danger" @click="deleteUser(user.id)"><i class="bi bi-trash"></i> Xoá</button>
-                    <button v-if="user.role !== 'BANNED'" class="chip warning" @click="banUser(user)"><i class="bi bi-ban"></i> Ban</button>
+                    <button class="chip primary" @click="editUser(user)">
+                      <i class="bi bi-pencil"></i> Sửa
+                    </button>
+                    <!-- <button class="chip danger" @click="deleteUser(user.id)"><i class="bi bi-trash"></i> Xoá</button> -->
+                    <button
+                      v-if="user.role !== 'BANNED'"
+                      class="chip warning"
+                      @click="banUser(user)"
+                    >
+                      <i class="bi bi-ban"></i> Ban
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -72,49 +82,52 @@
 
       <!-- Pagination -->
       <div v-if="totalPages > 1" class="pagination-bar">
-        <button class="pg-btn" :disabled="currentPage === 0" @click="prevPage"><i class="bi bi-chevron-left"></i></button>
+        <button class="pg-btn" :disabled="currentPage === 0" @click="prevPage">
+          <i class="bi bi-chevron-left"></i>
+        </button>
         <span>Trang {{ currentPage + 1 }} / {{ totalPages }}</span>
-        <button class="pg-btn" :disabled="currentPage >= totalPages - 1" @click="nextPage"><i class="bi bi-chevron-right"></i></button>
+        <button class="pg-btn" :disabled="currentPage >= totalPages - 1" @click="nextPage">
+          <i class="bi bi-chevron-right"></i>
+        </button>
       </div>
     </div>
   </div>
-  <div class="modal fade show" tabindex="-1" style="display: block;" v-if="showEditModal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Sửa người dùng</h5>
-        <button type="button" class="btn-close" @click="showEditModal = false"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Họ tên</label>
-          <input v-model="selectedUser.fullName" class="form-control" />
+  <div class="modal fade show" tabindex="-1" style="display: block" v-if="showEditModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Sửa người dùng</h5>
+          <button type="button" class="btn-close" @click="showEditModal = false"></button>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Email</label>
-          <input v-model="selectedUser.email" class="form-control" />
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Họ tên</label>
+            <input v-model="selectedUser.fullName" class="form-control" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input v-model="selectedUser.email" class="form-control" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input v-model="selectedUser.username" class="form-control" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Vai trò</label>
+            <select v-model="selectedUser.role" class="form-select">
+              <option value="ADMIN">Admin</option>
+              <option value="USER">Người dùng</option>
+            </select>
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Username</label>
-          <input v-model="selectedUser.username" class="form-control" />
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="showEditModal = false">Đóng</button>
+          <button class="btn btn-primary" @click="saveUser">Lưu</button>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Vai trò</label>
-          <select v-model="selectedUser.role" class="form-select">
-            <option value="ADMIN">Admin</option>
-            <option value="USER">Người dùng</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" @click="showEditModal = false">Đóng</button>
-        <button class="btn btn-primary" @click="saveUser">Lưu</button>
       </div>
     </div>
   </div>
-</div>
-<div class="modal-backdrop fade show" v-if="showEditModal"></div>
-
+  <div class="modal-backdrop fade show" v-if="showEditModal"></div>
 </template>
 
 <script setup>
@@ -177,7 +190,7 @@ const nextPage = () => {
 
 const editUser = (user) => {
   selectedUser.value = { ...user } // Tạo bản sao để tránh sửa trực tiếp trong table
-  showEditModal.value = true       // Hiển thị modal sửa
+  showEditModal.value = true // Hiển thị modal sửa
 }
 
 const saveUser = async () => {
@@ -195,7 +208,7 @@ const deleteUser = async (userId) => {
   if (confirm('Bạn có chắc chắn muốn xóa người dùng này không?')) {
     try {
       await api.delete(`/admin/users/${userId}`)
-       alert('Người dùng đã bị xóa.')
+      alert('Người dùng đã bị xóa.')
       await fetchUsers()
     } catch (err) {
       console.error('Lỗi khi xóa:', err)
@@ -217,7 +230,6 @@ const banUser = async (user) => {
   }
 }
 
-
 // Helpers
 const formatDate = (dateStr) => {
   const d = new Date(dateStr)
@@ -228,60 +240,266 @@ const roleClass = (role) => (role === 'ADMIN' ? 'admin' : role === 'USER' ? 'use
 </script>
 
 <style scoped>
-.admin-users { padding: 24px; color: var(--text-primary); }
-.page-header { display:flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.title-card { background: var(--bg-primary); border:1px solid var(--border-color); border-radius: 14px; padding: 10px 14px; box-shadow: 0 6px 18px var(--shadow-color); }
-.page-title { display:flex; align-items:center; gap:12px; }
-.icon-badge { width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:12px; }
-.icon-badge i { font-size:22px; color: var(--info-color); }
-.title-text h1 { font-size:22px; margin:0; }
-.title-text h1::after { content:''; display:block; height:3px; width:80px; margin-top:6px; border-radius:999px; background:linear-gradient(90deg,#667eea 0%, #764ba2 100%); opacity:.6; }
-.title-text p { margin:2px 0 0 0; font-size:13px; color: var(--text-secondary); }
-.title-card .icon-badge i{ filter:none; }
+.admin-users {
+  padding: 24px;
+  color: var(--text-primary);
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.title-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: 0 6px 18px var(--shadow-color);
+}
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.icon-badge {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+.icon-badge i {
+  font-size: 22px;
+  color: var(--info-color);
+}
+.title-text h1 {
+  font-size: 22px;
+  margin: 0;
+}
+.title-text h1::after {
+  content: '';
+  display: block;
+  height: 3px;
+  width: 80px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  opacity: 0.6;
+}
+.title-text p {
+  margin: 2px 0 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.title-card .icon-badge i {
+  filter: none;
+}
 
 /* Dark/Light fine-tune to ensure visible contrast like AdminDashboard */
-.admin-users.is-light .title-card { background:#ffffff; border-color: rgba(2,6,23,0.12); }
-.admin-users.is-dark .title-card { background: transparent; border-color: rgba(255,255,255,0.18); box-shadow: none; }
-.admin-users.is-dark .page-title { background: transparent; }
-.admin-users.is-light .title-text h1 { color:#0b1220; }
-.admin-users.is-dark .title-text h1 { color:#f1f5f9; }
-.admin-users.is-light .title-text h1::after { opacity:.95; background:linear-gradient(90deg,#4338ca 0%, #7c3aed 100%); }
-.admin-users.is-dark .title-text h1::after { opacity:.7; }
-.page-actions { display:flex; align-items:center; gap:10px; }
-.search-group { display:flex; align-items:center; gap:8px; background: var(--bg-primary); border:1px solid var(--border-color); padding:8px 12px; border-radius:10px; }
-.search-group input { border:0; outline:none; background:transparent; color: var(--text-primary); width: 220px; }
-.filter-select { background: var(--bg-primary); color: var(--text-primary); border:1px solid var(--border-color); border-radius:10px; padding:8px 12px; }
-.btn.btn-outline { background: var(--bg-primary); color: var(--text-primary); border:1px solid var(--border-color); border-radius:10px; padding:8px 12px; }
+.admin-users.is-light .title-card {
+  background: #ffffff;
+  border-color: rgba(2, 6, 23, 0.12);
+}
+.admin-users.is-dark .title-card {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+.admin-users.is-dark .page-title {
+  background: transparent;
+}
+.admin-users.is-light .title-text h1 {
+  color: #0b1220;
+}
+.admin-users.is-dark .title-text h1 {
+  color: #f1f5f9;
+}
+.admin-users.is-light .title-text h1::after {
+  opacity: 0.95;
+  background: linear-gradient(90deg, #4338ca 0%, #7c3aed 100%);
+}
+.admin-users.is-dark .title-text h1::after {
+  opacity: 0.7;
+}
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.search-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+.search-group input {
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  width: 220px;
+}
+.filter-select {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.btn.btn-outline {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
 
-.panel { background: var(--bg-primary); border:1px solid var(--border-color); border-radius: 16px; box-shadow: 0 8px 22px var(--shadow-color); overflow:hidden; }
-.panel-body.no-padding { padding: 0; }
-.table-wrap { width: 100%; overflow-x: auto; }
-.modern-table { width: 100%; border-collapse: collapse; }
-.modern-table thead th { text-align:left; padding: 14px 16px; background: var(--card-header-bg); color: var(--card-header-text); font-weight: 700; font-size: 13px; }
-.modern-table tbody td { padding: 12px 16px; border-top:1px solid var(--border-color); font-size: 14px; }
-.modern-table tbody tr:hover { background: rgba(102,126,234,0.06); }
-.muted { color: var(--text-muted); }
-.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
-.cell-user { display:flex; align-items:center; gap:10px; }
-.avatar-placeholder { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--border-color); color: var(--text-secondary); overflow:hidden; }
-.avatar-placeholder img { width:100%; height:100%; object-fit: cover; display:block; }
-.cell-title { font-weight: 600; }
-.cell-sub { font-size: 12px; }
-.role-pill { display:inline-flex; align-items:center; padding: 4px 10px; border-radius: 999px; font-weight:700; font-size: 12px; }
-.role-pill.admin { background: #2563eb; color: #fff; }
-.role-pill.user { background: #6b7280; color: #fff; }
-.role-pill.other { background: #e5e7eb; color: #111827; }
-.row-actions { display:flex; gap:8px; }
-.chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:10px; border:1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor:pointer; }
-.chip.primary { border-color:#93c5fd; }
-.chip.danger { border-color:#fda4af; }
-.chip.warning { border-color:#fbbf24; }
+.panel {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 8px 22px var(--shadow-color);
+  overflow: hidden;
+}
+.panel-body.no-padding {
+  padding: 0;
+}
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.modern-table thead th {
+  text-align: left;
+  padding: 14px 16px;
+  background: var(--card-header-bg);
+  color: var(--card-header-text);
+  font-weight: 700;
+  font-size: 13px;
+}
+.modern-table tbody td {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+  font-size: 14px;
+}
+.modern-table tbody tr:hover {
+  background: rgba(102, 126, 234, 0.06);
+}
+.muted {
+  color: var(--text-muted);
+}
+.mono {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+}
+.cell-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.avatar-placeholder {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  overflow: hidden;
+}
+.avatar-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cell-title {
+  font-weight: 600;
+}
+.cell-sub {
+  font-size: 12px;
+}
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+.role-pill.admin {
+  background: #2563eb;
+  color: #fff;
+}
+.role-pill.user {
+  background: #6b7280;
+  color: #fff;
+}
+.role-pill.other {
+  background: #e5e7eb;
+  color: #111827;
+}
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.chip.primary {
+  border-color: #93c5fd;
+}
+.chip.danger {
+  border-color: #fda4af;
+}
+.chip.warning {
+  border-color: #fbbf24;
+}
 
-.pagination-bar { display:flex; align-items:center; justify-content:flex-end; gap:8px; padding: 10px 12px; border-top:1px solid var(--border-color); }
-.pg-btn { border:1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); border-radius:8px; width:32px; height:28px; display:flex; align-items:center; justify-content:center; }
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border-color);
+}
+.pg-btn {
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  width: 32px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 @media (max-width: 900px) {
-  .hide-desktop { display:none; }
-  .search-group input { width: 140px; }
+  .hide-desktop {
+    display: none;
+  }
+  .search-group input {
+    width: 140px;
+  }
 }
 </style>

@@ -180,7 +180,7 @@ public class ReportController {
 
     // Lấy báo cáo của user - admin hoặc user sở hữu
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal")
+    @PreAuthorize("hasRole('ADMIN') or @reportService.isCurrentUser(#userId, authentication.name)")
     public ResponseEntity<List<ReportDTO>> getReportsByUserId(@PathVariable Long userId) {
         List<Report> reports = reportService.getReportsByUserId(userId);
         List<ReportDTO> reportDTOs = reports.stream()

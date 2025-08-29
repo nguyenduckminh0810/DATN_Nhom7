@@ -69,7 +69,12 @@
             <div class="table-controls">
               <div class="search-box">
                 <i class="bi bi-search"></i>
-                <input v-model="searchTerm" type="text" placeholder="Tìm kiếm danh mục..." class="search-input" />
+                <input
+                  v-model="searchTerm"
+                  type="text"
+                  placeholder="Tìm kiếm danh mục..."
+                  class="search-input"
+                />
               </div>
               <select v-model="sortBy" class="sort-select">
                 <option value="deletedAt">Xóa gần nhất</option>
@@ -97,8 +102,12 @@
             </div>
 
             <div v-else class="categories-grid">
-              <div v-for="(category, index) in filteredCategories" :key="category.id" class="category-card deleted"
-                :style="{ 'animation-delay': `${index * 0.1}s` }">
+              <div
+                v-for="(category, index) in filteredCategories"
+                :key="category.id"
+                class="category-card deleted"
+                :style="{ 'animation-delay': `${index * 0.1}s` }"
+              >
                 <div class="card-header">
                   <div class="category-info">
                     <div class="category-name">
@@ -113,7 +122,7 @@
                         <i class="bi bi-calendar3"></i>
                         {{ formatDate(category.deletedAt) }}
                       </span>
-                      <span class="id-badge"> ID: {{ category.id }} </span>
+
                       <span v-if="category.deletedBy" class="deleted-by-badge">
                         <i class="bi bi-person"></i>
                         {{ category.deletedBy.username }}
@@ -122,10 +131,18 @@
                   </div>
 
                   <div class="card-actions">
-                    <button @click="restoreCategory(category)" class="btn-restore" title="Khôi phục">
+                    <button
+                      @click="restoreCategory(category)"
+                      class="btn-restore"
+                      title="Khôi phục"
+                    >
                       <i class="bi bi-arrow-clockwise"></i>
                     </button>
-                    <button @click="confirmHardDelete(category)" class="btn-hard-delete" title="Xóa hoàn toàn">
+                    <button
+                      @click="confirmHardDelete(category)"
+                      class="btn-hard-delete"
+                      title="Xóa hoàn toàn"
+                    >
                       <i class="bi bi-trash3-fill"></i>
                     </button>
                   </div>
@@ -170,7 +187,6 @@
                 <i class="bi bi-calendar3"></i>
                 {{ formatDate(categoryToHardDelete?.createdAt) }}
               </span>
-              <span class="id-badge">ID: {{ categoryToHardDelete?.id }}</span>
             </div>
           </div>
 
@@ -194,7 +210,11 @@
             <i class="bi bi-x-circle"></i>
             Hủy
           </button>
-          <button @click="hardDeleteCategory" class="btn-confirm-hard-delete" :disabled="isHardDeleting">
+          <button
+            @click="hardDeleteCategory"
+            class="btn-confirm-hard-delete"
+            :disabled="isHardDeleting"
+          >
             <i v-if="isHardDeleting" class="bi bi-arrow-clockwise spin"></i>
             <i v-else class="bi bi-trash3-fill"></i>
             {{ isHardDeleting ? 'Đang xóa...' : 'Xóa hoàn toàn' }}
@@ -443,7 +463,6 @@ onMounted(() => {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);

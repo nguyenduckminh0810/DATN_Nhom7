@@ -46,8 +46,13 @@ const quizInfo = ref(null)
 
 //  HELPER: LẤY SỐ CÂU HỎI CỦA QUIZ (support nhiều field khác nhau)
 const getQuestionCount = (q) => {
-  return q?.questionCount ?? q?.totalQuestions ?? q?.numQuestions ??
-    (Array.isArray(q?.questions) ? q.questions.length : 0) ?? 0
+  return (
+    q?.questionCount ??
+    q?.totalQuestions ??
+    q?.numQuestions ??
+    (Array.isArray(q?.questions) ? q.questions.length : 0) ??
+    0
+  )
 }
 
 //điều hướng về edit quiz
@@ -134,7 +139,7 @@ async function fetchQuizzes() {
   try {
     //  SỬA: CHỈ LẤY QUIZ CỦA USER HIỆN TẠI
     const response = await api.get(`/quiz/user/${userId.value}/paginated`, {
-      params: { page: 0, size: 50 } // Lấy nhiều quiz hơn
+      params: { page: 0, size: 50 }, // Lấy nhiều quiz hơn
     })
     console.log(' Fetch quizzes response:', response.data)
     quizzes.value = response.data.quizzes || response.data
@@ -148,7 +153,7 @@ async function fetchQuizzes() {
         isPublic: quiz.isPublic,
         deleted: quiz.deleted,
         deletedAt: quiz.deletedAt,
-        questionCount: getQuestionCount(quiz)
+        questionCount: getQuestionCount(quiz),
       })
     })
   } catch (error) {
@@ -175,15 +180,11 @@ async function createQuiz() {
     }
 
     //  THỰC HIỆN POST VÀ LẤY RESPONSE
-    const response = await api.post(
-      '/quiz/create-quiz-with-image',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    )
+    const response = await api.post('/quiz/create-quiz-with-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
 
     //  LẤY quizId từ response
     const quizId = response.data.quiz?.id || response.data.id
@@ -267,7 +268,6 @@ async function deleteQuiz(quizId) {
   }
 }
 
-
 async function playQuiz(quizId) {
   try {
     const { quizAttemptService } = await import('@/services/quizAttemptService')
@@ -294,7 +294,7 @@ const downloadTemplate = () => {
       'Đáp án C': 'Đà Nẵng',
       'Đáp án D': 'Huế',
       'Đáp án đúng': 'A',
-      'Thời gian (giây)': 30
+      'Thời gian (giây)': 30,
     },
     {
       'Câu hỏi': '1 + 1 = ?',
@@ -303,7 +303,7 @@ const downloadTemplate = () => {
       'Đáp án C': '3',
       'Đáp án D': '4',
       'Đáp án đúng': 'B',
-      'Thời gian (giây)': 20
+      'Thời gian (giây)': 20,
     },
     {
       'Câu hỏi': 'Màu của lá cây thường là gì?',
@@ -312,7 +312,7 @@ const downloadTemplate = () => {
       'Đáp án C': 'Xanh',
       'Đáp án D': 'Trắng',
       'Đáp án đúng': 'C',
-      'Thời gian (giây)': 25
+      'Thời gian (giây)': 25,
     },
     {
       'Câu hỏi': 'Con vật nào có 4 chân?',
@@ -321,7 +321,7 @@ const downloadTemplate = () => {
       'Đáp án C': 'Chó',
       'Đáp án D': 'Rắn',
       'Đáp án đúng': 'C',
-      'Thời gian (giây)': 15
+      'Thời gian (giây)': 15,
     },
     {
       'Câu hỏi': 'Nước nào lớn nhất thế giới?',
@@ -330,18 +330,18 @@ const downloadTemplate = () => {
       'Đáp án C': 'Nga',
       'Đáp án D': 'Canada',
       'Đáp án đúng': 'C',
-      'Thời gian (giây)': 60
-    }
-  ];
+      'Thời gian (giây)': 60,
+    },
+  ]
 
   try {
-    const worksheet = XLSX.utils.json_to_sheet(sampleData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Câu hỏi');
-    XLSX.writeFile(workbook, 'quiz-template.xlsx');
-    console.log(' Excel template downloaded successfully');
+    const worksheet = XLSX.utils.json_to_sheet(sampleData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Câu hỏi')
+    XLSX.writeFile(workbook, 'quiz-template.xlsx')
+    console.log(' Excel template downloaded successfully')
   } catch (error) {
-    console.error(' Error creating Excel template:', error);
+    console.error(' Error creating Excel template:', error)
   }
 }
 
@@ -405,16 +405,12 @@ async function importQuiz() {
       formData.append('image', importSelectedImage.value)
     }
 
-    const response = await api.post(
-      '/quiz/import-excel-with-image',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+    const response = await api.post('/quiz/import-excel-with-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
-    )
+    })
 
     importResult.value = response.data
 
@@ -489,7 +485,7 @@ const showQuizCode = (code, quizId = null) => {
     //  LƯU QUIZ INFO ĐỂ SHARE
     quizInfo.value = {
       quizId: quizId,
-      quizCode: code
+      quizCode: code,
     }
   }
   showCodeModal.value = true
@@ -521,7 +517,7 @@ const shareCode = async () => {
       await navigator.share({
         title: 'Tham gia Quiz',
         text: shareText,
-        url: shareUrl
+        url: shareUrl,
       })
     } else {
       // Fallback: copy to clipboard
@@ -551,7 +547,6 @@ const resetForm = () => {
   <div class="quiz-crud-container">
     <!-- Animated Background Elements -->
 
-
     <div class="container py-5">
       <!-- Loading Spinner -->
       <div v-if="isLoading" class="loading-section">
@@ -575,11 +570,17 @@ const resetForm = () => {
               <div class="card-header-custom">
                 <!--  TAB NAVIGATION -->
                 <div class="tab-navigation">
-                  <button @click="activeTab = 'create'" :class="['tab-btn', { active: activeTab === 'create' }]">
+                  <button
+                    @click="activeTab = 'create'"
+                    :class="['tab-btn', { active: activeTab === 'create' }]"
+                  >
                     <i class="bi bi-plus-circle-fill"></i>
                     <span>Tạo mới</span>
                   </button>
-                  <button @click="activeTab = 'import'" :class="['tab-btn', { active: activeTab === 'import' }]">
+                  <button
+                    @click="activeTab = 'import'"
+                    :class="['tab-btn', { active: activeTab === 'import' }]"
+                  >
                     <i class="bi bi-file-earmark-excel"></i>
                     <span>Import Excel</span>
                   </button>
@@ -610,8 +611,13 @@ const resetForm = () => {
                           <label class="form-label-compact">
                             <i class="bi bi-type me-2"></i>Tên quiz
                           </label>
-                          <input type="text" v-model="title" class="form-control-compact"
-                            placeholder="Nhập tên quiz thú vị..." required />
+                          <input
+                            type="text"
+                            v-model="title"
+                            class="form-control-compact"
+                            placeholder="Nhập tên quiz thú vị..."
+                            required
+                          />
                         </div>
 
                         <!-- Category -->
@@ -619,7 +625,11 @@ const resetForm = () => {
                           <label class="form-label-compact">
                             <i class="bi bi-bookmark-fill me-2"></i>Danh mục quiz
                           </label>
-                          <select v-model="selectedCategoryId" class="form-control-compact" required>
+                          <select
+                            v-model="selectedCategoryId"
+                            class="form-control-compact"
+                            required
+                          >
                             <option value="" disabled>Chọn danh mục...</option>
                             <option v-for="cat in categories" :key="cat.id" :value="cat.id">
                               {{ cat.name }}
@@ -633,8 +643,12 @@ const resetForm = () => {
                             <i class="bi bi-text-paragraph me-2"></i>Mô tả
                             <span class="text-muted">(Tùy chọn)</span>
                           </label>
-                          <textarea v-model="description" class="form-control-compact" placeholder="Mô tả ngắn..."
-                            rows="2"></textarea>
+                          <textarea
+                            v-model="description"
+                            class="form-control-compact"
+                            placeholder="Mô tả ngắn..."
+                            rows="2"
+                          ></textarea>
                         </div>
                       </div>
 
@@ -647,13 +661,22 @@ const resetForm = () => {
                             <span class="text-muted">(Tùy chọn)</span>
                           </label>
                           <div class="image-upload-compact">
-                            <input type="file" class="d-none" ref="imageInput" @change="handleImageUpload"
-                              accept="image/*" />
+                            <input
+                              type="file"
+                              class="d-none"
+                              ref="imageInput"
+                              @change="handleImageUpload"
+                              accept="image/*"
+                            />
 
                             <div v-if="!selectedImage" class="image-placeholder-compact">
                               <i class="bi bi-image"></i>
                               <p>Chọn ảnh</p>
-                              <button type="button" @click="$refs.imageInput.click()" class="btn-select-image-compact">
+                              <button
+                                type="button"
+                                @click="$refs.imageInput.click()"
+                                class="btn-select-image-compact"
+                              >
                                 <i class="bi bi-camera"></i>
                                 Chọn
                               </button>
@@ -676,8 +699,13 @@ const resetForm = () => {
                           </label>
                           <div class="privacy-options-compact">
                             <div class="privacy-option-compact">
-                              <input class="privacy-radio-compact" type="radio" :value="true" v-model="isPublic"
-                                id="publicYesCompact" />
+                              <input
+                                class="privacy-radio-compact"
+                                type="radio"
+                                :value="true"
+                                v-model="isPublic"
+                                id="publicYesCompact"
+                              />
                               <label class="privacy-label-compact" for="publicYesCompact">
                                 <div class="privacy-icon-compact public-icon-compact">
                                   <i class="bi bi-globe2"></i>
@@ -692,8 +720,13 @@ const resetForm = () => {
                               </label>
                             </div>
                             <div class="privacy-option-compact">
-                              <input class="privacy-radio-compact" type="radio" :value="false" v-model="isPublic"
-                                id="publicNoCompact" />
+                              <input
+                                class="privacy-radio-compact"
+                                type="radio"
+                                :value="false"
+                                v-model="isPublic"
+                                id="publicNoCompact"
+                              />
                               <label class="privacy-label-compact" for="publicNoCompact">
                                 <div class="privacy-icon-compact private-icon-compact">
                                   <i class="bi bi-lock"></i>
@@ -729,7 +762,7 @@ const resetForm = () => {
                     <!-- Template Download - Compact -->
                     <div class="template-section-compact">
                       <div class="template-header-compact">
-                        <h4> File mẫu Excel</h4>
+                        <h4>File mẫu Excel</h4>
                         <button @click="downloadTemplate" class="template-btn-compact">
                           <i class="bi bi-download"></i>
                           Tải mẫu
@@ -744,7 +777,10 @@ const resetForm = () => {
                           <li><strong>B:</strong> Câu hỏi</li>
                           <li><strong>C-F:</strong> Đáp án A, B, C, D</li>
                           <li><strong>G:</strong> Đáp án đúng (A/B/C/D)</li>
-                          <li><strong>H:</strong> Thời gian (giây) - mặc định 30s, range 5-300s, 0 = không giới hạn</li>
+                          <li>
+                            <strong>H:</strong> Thời gian (giây) - mặc định 30s, range 5-300s, 0 =
+                            không giới hạn
+                          </li>
                         </ul>
                       </div>
                     </div>
@@ -759,8 +795,13 @@ const resetForm = () => {
                             <label class="form-label-compact">
                               <i class="bi bi-bookmark-fill me-2"></i>Tên Quiz
                             </label>
-                            <input v-model="importQuizTitle" type="text" class="form-control-compact"
-                              placeholder="Nhập tên quiz..." required />
+                            <input
+                              v-model="importQuizTitle"
+                              type="text"
+                              class="form-control-compact"
+                              placeholder="Nhập tên quiz..."
+                              required
+                            />
                           </div>
 
                           <!-- Category -->
@@ -768,9 +809,17 @@ const resetForm = () => {
                             <label class="form-label-compact">
                               <i class="bi bi-folder me-2"></i>Danh mục
                             </label>
-                            <select v-model="importCategoryId" class="form-control-compact" required>
+                            <select
+                              v-model="importCategoryId"
+                              class="form-control-compact"
+                              required
+                            >
                               <option value="" disabled>Chọn danh mục...</option>
-                              <option v-for="category in categories" :key="category.id" :value="category.id">
+                              <option
+                                v-for="category in categories"
+                                :key="category.id"
+                                :value="category.id"
+                              >
                                 {{ category.name }}
                               </option>
                             </select>
@@ -782,8 +831,12 @@ const resetForm = () => {
                               <i class="bi bi-text-paragraph me-2"></i>Mô tả
                               <span class="text-muted">(Tùy chọn)</span>
                             </label>
-                            <textarea v-model="importQuizDescription" class="form-control-compact"
-                              placeholder="Mô tả ngắn..." rows="2"></textarea>
+                            <textarea
+                              v-model="importQuizDescription"
+                              class="form-control-compact"
+                              placeholder="Mô tả ngắn..."
+                              rows="2"
+                            ></textarea>
                           </div>
                         </div>
 
@@ -796,27 +849,45 @@ const resetForm = () => {
                               <span class="text-muted">(Tùy chọn)</span>
                             </label>
                             <div class="image-upload-compact">
-                              <input type="file" class="d-none" ref="importImageInput" @change="handleImportImageUpload"
-                                accept="image/*" />
+                              <input
+                                type="file"
+                                class="d-none"
+                                ref="importImageInput"
+                                @change="handleImportImageUpload"
+                                accept="image/*"
+                              />
 
                               <div v-if="!importSelectedImage" class="image-placeholder-compact">
                                 <i class="bi bi-image"></i>
                                 <p>Chọn ảnh</p>
-                                <button type="button" @click="$refs.importImageInput.click()"
-                                  class="btn-select-image-compact">
+                                <button
+                                  type="button"
+                                  @click="$refs.importImageInput.click()"
+                                  class="btn-select-image-compact"
+                                >
                                   <i class="bi bi-camera"></i>
                                   Chọn
                                 </button>
                               </div>
 
                               <div v-else class="image-selected-compact">
-                                <img :src="importPreviewUrl" alt="Preview" class="image-preview-compact" />
-                                <button @click="removeImportImage" type="button" class="btn-remove-compact">
+                                <img
+                                  :src="importPreviewUrl"
+                                  alt="Preview"
+                                  class="image-preview-compact"
+                                />
+                                <button
+                                  @click="removeImportImage"
+                                  type="button"
+                                  class="btn-remove-compact"
+                                >
                                   <i class="bi bi-x"></i>
                                 </button>
                               </div>
                             </div>
-                            <small class="form-text text-muted">JPG, PNG, GIF, WebP (max 5MB)</small>
+                            <small class="form-text text-muted"
+                              >JPG, PNG, GIF, WebP (max 5MB)</small
+                            >
                           </div>
 
                           <!-- File Upload - Compact -->
@@ -824,15 +895,29 @@ const resetForm = () => {
                             <label class="form-label-compact">
                               <i class="bi bi-file-earmark-excel me-2"></i>File Excel
                             </label>
-                            <div class="file-upload-compact" :class="{ 'drag-over': isDragOver }" @drop="handleDrop"
-                              @dragover.prevent="isDragOver = true" @dragleave="isDragOver = false">
-                              <input ref="fileInput" type="file" @change="handleFileSelect" accept=".xlsx,.xls"
-                                class="d-none" />
+                            <div
+                              class="file-upload-compact"
+                              :class="{ 'drag-over': isDragOver }"
+                              @drop="handleDrop"
+                              @dragover.prevent="isDragOver = true"
+                              @dragleave="isDragOver = false"
+                            >
+                              <input
+                                ref="fileInput"
+                                type="file"
+                                @change="handleFileSelect"
+                                accept=".xlsx,.xls"
+                                class="d-none"
+                              />
 
                               <div v-if="!selectedExcelFile" class="file-placeholder-compact">
                                 <i class="bi bi-file-earmark-excel"></i>
                                 <p>Chọn file Excel</p>
-                                <button type="button" @click="$refs.fileInput.click()" class="btn-select-file-compact">
+                                <button
+                                  type="button"
+                                  @click="$refs.fileInput.click()"
+                                  class="btn-select-file-compact"
+                                >
                                   <i class="bi bi-folder2-open"></i>
                                   Chọn file
                                 </button>
@@ -848,7 +933,11 @@ const resetForm = () => {
                                     formatFileSize(selectedExcelFile.size)
                                   }}</small>
                                 </div>
-                                <button @click="removeExcelFile" type="button" class="btn-remove-compact">
+                                <button
+                                  @click="removeExcelFile"
+                                  type="button"
+                                  class="btn-remove-compact"
+                                >
                                   <i class="bi bi-x"></i>
                                 </button>
                               </div>
@@ -862,8 +951,13 @@ const resetForm = () => {
                             </label>
                             <div class="privacy-options-compact">
                               <div class="privacy-option-compact">
-                                <input class="privacy-radio-compact" type="radio" :value="true" v-model="importIsPublic"
-                                  id="importPublicYes" />
+                                <input
+                                  class="privacy-radio-compact"
+                                  type="radio"
+                                  :value="true"
+                                  v-model="importIsPublic"
+                                  id="importPublicYes"
+                                />
                                 <label class="privacy-label-compact" for="importPublicYes">
                                   <div class="privacy-icon-compact public-icon-compact">
                                     <i class="bi bi-globe2"></i>
@@ -878,8 +972,13 @@ const resetForm = () => {
                                 </label>
                               </div>
                               <div class="privacy-option-compact">
-                                <input class="privacy-radio-compact" type="radio" :value="false"
-                                  v-model="importIsPublic" id="importPublicNo" />
+                                <input
+                                  class="privacy-radio-compact"
+                                  type="radio"
+                                  :value="false"
+                                  v-model="importIsPublic"
+                                  id="importPublicNo"
+                                />
                                 <label class="privacy-label-compact" for="importPublicNo">
                                   <div class="privacy-icon-compact private-icon-compact">
                                     <i class="bi bi-lock"></i>
@@ -900,8 +999,15 @@ const resetForm = () => {
 
                       <!-- Submit Button - Compact -->
                       <div class="form-actions-compact">
-                        <button type="submit" class="btn-import-compact" :disabled="!canImport || isImporting">
-                          <div v-if="isImporting" class="spinner-border spinner-border-sm me-2"></div>
+                        <button
+                          type="submit"
+                          class="btn-import-compact"
+                          :disabled="!canImport || isImporting"
+                        >
+                          <div
+                            v-if="isImporting"
+                            class="spinner-border spinner-border-sm me-2"
+                          ></div>
                           <i class="bi bi-upload me-2"></i>
                           {{ isImporting ? 'Đang import...' : 'Import Quiz' }}
                         </button>
@@ -909,9 +1015,15 @@ const resetForm = () => {
                     </form>
 
                     <!-- Import Result - Compact -->
-                    <div v-if="importResult"
-                      :class="['import-result-compact', importResult.success ? 'success' : 'error']">
-                      <i :class="importResult.success ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i>
+                    <div
+                      v-if="importResult"
+                      :class="['import-result-compact', importResult.success ? 'success' : 'error']"
+                    >
+                      <i
+                        :class="
+                          importResult.success ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'
+                        "
+                      ></i>
                       <div>
                         <strong>{{ importResult.success ? 'Thành công!' : 'Thất bại!' }}</strong>
                         <p class="mb-0">{{ importResult.message }}</p>
@@ -925,16 +1037,22 @@ const resetForm = () => {
         </div>
 
         <!-- Enhanced Quiz List Section -->
-
       </div>
     </div>
 
     <!-- Enhanced Toast Notification -->
-    <div v-if="message" :class="['toast-notification-enhanced', messageType === 'success' ? 'success' : 'error']">
+    <div
+      v-if="message"
+      :class="['toast-notification-enhanced', messageType === 'success' ? 'success' : 'error']"
+    >
       <div class="toast-icon">
-        <i :class="messageType === 'success'
-          ? 'bi bi-check-circle-fill'
-          : 'bi bi-exclamation-triangle-fill'"></i>
+        <i
+          :class="
+            messageType === 'success'
+              ? 'bi bi-check-circle-fill'
+              : 'bi bi-exclamation-triangle-fill'
+          "
+        ></i>
       </div>
       <div class="toast-content">
         <strong class="toast-title">
@@ -955,7 +1073,7 @@ const resetForm = () => {
         <div class="success-icon">
           <i class="bi bi-check-circle-fill"></i>
         </div>
-        <h3> Quiz đã được tạo thành công!</h3>
+        <h3>Quiz đã được tạo thành công!</h3>
         <button @click="showCodeModal = false" class="modal-close">
           <i class="bi bi-x-lg"></i>
         </button>
@@ -1080,7 +1198,6 @@ const resetForm = () => {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
@@ -1220,7 +1337,8 @@ const resetForm = () => {
   animation-delay: 0.5s;
 }
 
-spinner-ring:nth-child(3) {}
+spinner-ring:nth-child(3) {
+}
 
 .spinner-ring:nth-child(3) {
   width: 60%;
@@ -1400,8 +1518,8 @@ spinner-ring:nth-child(3) {}
   border-radius: 2px;
 }
 
-.form-control-enhanced:focus+.input-border,
-.form-select-enhanced:focus+.input-border {
+.form-control-enhanced:focus + .input-border,
+.form-select-enhanced:focus + .input-border {
   width: 100%;
 }
 
@@ -1632,7 +1750,7 @@ spinner-ring:nth-child(3) {}
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
-.privacy-radio:checked+.privacy-label-enhanced {
+.privacy-radio:checked + .privacy-label-enhanced {
   border-color: #3b82f6;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
   box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
@@ -1712,7 +1830,7 @@ spinner-ring:nth-child(3) {}
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-.privacy-radio:checked+.privacy-label-enhanced .privacy-checkmark {
+.privacy-radio:checked + .privacy-label-enhanced .privacy-checkmark {
   opacity: 1;
   transform: scale(1);
 }
@@ -1730,12 +1848,12 @@ spinner-ring:nth-child(3) {}
 }
 
 /* Enhanced visual feedback */
-.privacy-radio:checked+.privacy-label-enhanced .privacy-icon {
+.privacy-radio:checked + .privacy-label-enhanced .privacy-icon {
   transform: scale(1.05);
   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
 }
 
-.privacy-radio:checked+.privacy-label-enhanced .privacy-content strong {
+.privacy-radio:checked + .privacy-label-enhanced .privacy-content strong {
   color: #3b82f6;
   text-shadow: 0 1px 2px rgba(59, 130, 246, 0.2);
 }
@@ -1760,7 +1878,7 @@ spinner-ring:nth-child(3) {}
   border-color: #3b82f6;
 }
 
-.privacy-radio:checked+.privacy-label-enhanced {
+.privacy-radio:checked + .privacy-label-enhanced {
   background: #1e40af;
   border-color: #3b82f6;
 }
@@ -1782,7 +1900,7 @@ spinner-ring:nth-child(3) {}
   color: #d1d5db !important;
 }
 
-.privacy-radio:checked+.privacy-label-enhanced .privacy-content strong {
+.privacy-radio:checked + .privacy-label-enhanced .privacy-content strong {
   color: #60a5fa !important;
 }
 
@@ -1888,7 +2006,6 @@ spinner-ring:nth-child(3) {}
 }
 
 @keyframes bounce {
-
   0%,
   80%,
   100% {
@@ -1909,7 +2026,9 @@ spinner-ring:nth-child(3) {}
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition:
+    width 0.6s,
+    height 0.6s;
 }
 
 .btn-create-quiz-enhanced:active .btn-ripple {
@@ -1990,7 +2109,12 @@ spinner-ring:nth-child(3) {}
 
 .skeleton-image {
   height: 200px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -2001,7 +2125,12 @@ spinner-ring:nth-child(3) {}
 
 .skeleton-line {
   height: 1rem;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
   border-radius: 0.5rem;
@@ -2093,7 +2222,6 @@ spinner-ring:nth-child(3) {}
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 0.3;
@@ -2936,33 +3064,91 @@ spinner-ring:nth-child(3) {}
 }
 
 .btn-import-compact {
-  background: linear-gradient(135deg, var(--danger-color) 0%, var(--danger-dark) 100%);
-  color: white;
-  border: none;
-  padding: 14px 32px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 4px 15px var(--danger-shadow);
-  min-width: 160px;
-  justify-content: center;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 50%, #a71e2a 100%) !important;
+  color: white !important;
+  border: 3px solid #c82333 !important;
+  padding: 1.25rem 3rem !important;
+  border-radius: 50px !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  cursor: pointer !important;
+  transition: all 0.4s ease !important;
+  box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  min-width: 200px !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+  z-index: 1000 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
 }
 
 .btn-import-compact:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px var(--danger-shadow);
+  transform: translateY(-3px) !important;
+  box-shadow: 0 15px 40px rgba(220, 53, 69, 0.6) !important;
+  background: linear-gradient(135deg, #c82333 0%, #a71e2a 50%, #721c24 100%) !important;
+  border-color: #a71e2a !important;
+}
+
+.btn-import-compact:active {
+  transform: translateY(-1px) !important;
 }
 
 .btn-import-compact:disabled {
-  background: var(--text-muted);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+  opacity: 0.8 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 50%, #495057 100%) !important;
+  border-color: #5a6268 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Thêm hiệu ứng ripple cho nút import compact */
+.btn-import-compact::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s,
+    height 0.6s;
+}
+
+.btn-import-compact:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Thêm hiệu ứng glow khi hover */
+.btn-import-compact::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #dc3545, #c82333, #a71e2a, #721c24);
+  border-radius: 50px;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-import-compact:hover::after {
+  opacity: 0.6;
+}
+
+/* Focus state cho accessibility */
+.btn-import-compact:focus {
+  outline: 3px solid rgba(220, 53, 69, 0.5) !important;
+  outline-offset: 2px !important;
 }
 
 /* Import Result Compact - Light Theme */
@@ -3041,6 +3227,20 @@ spinner-ring:nth-child(3) {}
   .form-actions-compact {
     margin-top: 24px;
     padding-top: 16px;
+  }
+
+  .btn-import-compact {
+    padding: 1rem 2rem !important;
+    font-size: 1rem !important;
+    min-width: 160px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-import-compact {
+    padding: 0.875rem 1.5rem !important;
+    font-size: 0.95rem !important;
+    min-width: 140px !important;
   }
 }
 

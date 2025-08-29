@@ -99,18 +99,20 @@ public class AnalyticsExportService {
     }
 
     @SuppressWarnings("unchecked")
-    private void writeSeriesSheetWithTitle(Workbook wb, Styles styles, String name, Map<String, Object> series, String valueTitle) {
+    private void writeSeriesSheetWithTitle(Workbook wb, Styles styles, String name, Map<String, Object> series,
+            String valueTitle) {
         Sheet sh = wb.createSheet(name);
         setTabColorIfXSSF(sh, IndexedColors.LIGHT_TURQUOISE.getIndex());
 
         int start = writeSheetBanner(sh, styles, name, "Nguồn: hệ thống Analytics • Đơn vị: " + valueTitle, 1);
 
         Row header = sh.createRow(start);
-        createHeaderRow(header, styles, new String[]{"Ngày", valueTitle});
+        createHeaderRow(header, styles, new String[] { "Ngày", valueTitle });
 
         List<String> labels = (List<String>) series.get("labels");
         int[] data = (int[]) series.get("data");
-        if (data == null) data = (int[]) series.get("avgScore"); // fallback cho sheet Điểm trung bình
+        if (data == null)
+            data = (int[]) series.get("avgScore"); // fallback cho sheet Điểm trung bình
         if (labels != null && data != null) {
             for (int i = 0; i < labels.size(); i++) {
                 Row r = sh.createRow(start + 1 + i);
@@ -120,7 +122,8 @@ public class AnalyticsExportService {
             }
         }
         int last = labels != null ? (start + labels.size()) : start + 1;
-        addLineChart((XSSFSheet) sh, "Xu hướng " + name, start, last, 0, new int[]{1}, new String[]{valueTitle}, 4, start, 14, start + 16);
+        addLineChart((XSSFSheet) sh, "Xu hướng " + name, start, last, 0, new int[] { 1 }, new String[] { valueTitle },
+                4, start, 14, start + 16);
         finishTable(sh, 2, start);
     }
 
@@ -131,7 +134,7 @@ public class AnalyticsExportService {
 
         int start = writeSheetBanner(sh, styles, name, "Người dùng hoạt động vs người dùng mới theo thời gian", 2);
         Row header = sh.createRow(start);
-        createHeaderRow(header, styles, new String[]{"Ngày", "Người dùng hoạt động", "Người dùng mới"});
+        createHeaderRow(header, styles, new String[] { "Ngày", "Người dùng hoạt động", "Người dùng mới" });
 
         List<String> labels = (List<String>) users.get("labels");
         int[] active = (int[]) users.get("activeUsers");
@@ -146,7 +149,8 @@ public class AnalyticsExportService {
             }
         }
         int last = labels != null ? (start + labels.size()) : start + 1;
-        addLineChart((XSSFSheet) sh, "DAU & New Users", start, last, 0, new int[]{1,2}, new String[]{"Hoạt động","Mới"}, 4, start, 14, start + 16);
+        addLineChart((XSSFSheet) sh, "DAU & New Users", start, last, 0, new int[] { 1, 2 },
+                new String[] { "Hoạt động", "Mới" }, 4, start, 14, start + 16);
         finishTable(sh, 3, start);
     }
 
@@ -157,7 +161,7 @@ public class AnalyticsExportService {
 
         int start = writeSheetBanner(sh, styles, name, "Phân bố điểm số theo bins", 1);
         Row header = sh.createRow(start);
-        createHeaderRow(header, styles, new String[]{"Khoảng điểm", "Số lượng"});
+        createHeaderRow(header, styles, new String[] { "Khoảng điểm", "Số lượng" });
 
         List<Map<String, Object>> bins = (List<Map<String, Object>>) histogram.get("bins");
         if (bins != null) {
@@ -172,7 +176,8 @@ public class AnalyticsExportService {
             }
         }
         int last = bins != null ? (start + bins.size()) : start + 1;
-        addBarChart((XSSFSheet) sh, "Phân phối điểm", start, last, 0, new int[]{1}, new String[]{"Số lượng"}, 4, start, 14, start + 16, true);
+        addBarChart((XSSFSheet) sh, "Phân phối điểm", start, last, 0, new int[] { 1 }, new String[] { "Số lượng" }, 4,
+                start, 14, start + 16, true);
         finishTable(sh, 2, start);
     }
 
@@ -182,7 +187,7 @@ public class AnalyticsExportService {
 
         int start = writeSheetBanner(sh, styles, name, "Tỷ lệ hoàn thành tổng quan", 2);
         Row header = sh.createRow(start);
-        createHeaderRow(header, styles, new String[]{"Số lượt", "Đã hoàn thành", "Tỷ lệ hoàn thành"});
+        createHeaderRow(header, styles, new String[] { "Số lượt", "Đã hoàn thành", "Tỷ lệ hoàn thành" });
 
         Row r = sh.createRow(start + 1);
         createNumberCell(r, 0, ((Number) completion.getOrDefault("attempts", 0)).longValue(), styles.intNumber);
@@ -193,10 +198,15 @@ public class AnalyticsExportService {
         long completed = ((Number) completion.getOrDefault("completed", 0)).longValue();
         long notCompleted = Math.max(0, attempts - completed);
         Row pHeader = sh.createRow(start + 3);
-        createHeaderRow(pHeader, styles, new String[]{"Trạng thái", "Số lượng"});
-        Row p1 = sh.createRow(start + 4); createTextCell(p1, 0, "Đã hoàn thành", styles.bodyText); createNumberCell(p1, 1, (int) completed, styles.intNumber);
-        Row p2 = sh.createRow(start + 5); createTextCell(p2, 0, "Chưa hoàn thành", styles.bodyText); createNumberCell(p2, 1, (int) notCompleted, styles.intNumber);
-        addPieChart((XSSFSheet) sh, "Tỷ lệ hoàn thành", new CellRangeAddress(start + 4, start + 5, 0, 0), new CellRangeAddress(start + 4, start + 5, 1, 1), 8, start, 16, start + 14);
+        createHeaderRow(pHeader, styles, new String[] { "Trạng thái", "Số lượng" });
+        Row p1 = sh.createRow(start + 4);
+        createTextCell(p1, 0, "Đã hoàn thành", styles.bodyText);
+        createNumberCell(p1, 1, (int) completed, styles.intNumber);
+        Row p2 = sh.createRow(start + 5);
+        createTextCell(p2, 0, "Chưa hoàn thành", styles.bodyText);
+        createNumberCell(p2, 1, (int) notCompleted, styles.intNumber);
+        addPieChart((XSSFSheet) sh, "Tỷ lệ hoàn thành", new CellRangeAddress(start + 4, start + 5, 0, 0),
+                new CellRangeAddress(start + 4, start + 5, 1, 1), 8, start, 16, start + 14);
         finishTable(sh, 3, start);
     }
 
@@ -207,7 +217,7 @@ public class AnalyticsExportService {
 
         int start = writeSheetBanner(sh, styles, name, "Phân bố theo danh mục (Top)", 2);
         Row header = sh.createRow(start);
-        createHeaderRow(header, styles, new String[]{"Danh mục", "Số lượt", "Tỷ lệ"});
+        createHeaderRow(header, styles, new String[] { "Danh mục", "Số lượt", "Tỷ lệ" });
 
         List<Map<String, Object>> items = (List<Map<String, Object>>) dist.get("items");
         if (items != null) {
@@ -221,7 +231,8 @@ public class AnalyticsExportService {
             }
         }
         int last = items != null ? (start + items.size()) : start + 1;
-        addBarChart((XSSFSheet) sh, "Top danh mục", start, last, 0, new int[]{1}, new String[]{"Số lượt"}, 6, start, 16, start + 18, false);
+        addBarChart((XSSFSheet) sh, "Top danh mục", start, last, 0, new int[] { 1 }, new String[] { "Số lượt" }, 6,
+                start, 16, start + 18, false);
         finishTable(sh, 3, start);
     }
 
@@ -234,7 +245,8 @@ public class AnalyticsExportService {
         Row header = sh.createRow(start);
         String[] titles = new String[25];
         titles[0] = "Day/Hour";
-        for (int h = 0; h < 24; h++) titles[h + 1] = h + "h";
+        for (int h = 0; h < 24; h++)
+            titles[h + 1] = h + "h";
         createHeaderRow(header, styles, titles);
 
         Object matrixObj = heatmap.get("matrix");
@@ -275,8 +287,7 @@ public class AnalyticsExportService {
             fmt.getColors()[1].setARGBHex("FF7DB4FF");
             fmt.getColors()[2].setARGBHex("FF2563EB");
             scf.addConditionalFormatting(
-                new CellRangeAddress[]{ new CellRangeAddress(start + 1, start + rowsWritten, 1, 24) }, rule
-            );
+                    new CellRangeAddress[] { new CellRangeAddress(start + 1, start + rowsWritten, 1, 24) }, rule);
         }
 
         finishTable(sh, 25, start);
@@ -289,7 +300,7 @@ public class AnalyticsExportService {
 
         int start = writeSheetBanner(sh, styles, name, "Top quizzes theo số lượt/hoàn thành/điểm TB", 3);
         Row header = sh.createRow(start);
-        createHeaderRow(header, styles, new String[]{"Bài Quiz", "Số lượt", "Tỷ lệ hoàn thành", "Điểm TB"});
+        createHeaderRow(header, styles, new String[] { "Bài Quiz", "Số lượt", "Tỷ lệ hoàn thành", "Điểm TB" });
 
         List<Map<String, Object>> items = (List<Map<String, Object>>) data.get("items");
         if (items != null) {
@@ -299,12 +310,14 @@ public class AnalyticsExportService {
                 createTextCell(r, 0, String.valueOf(it.get("title")), styles.bodyText);
                 createNumberCell(r, 1, ((Number) it.getOrDefault("attempts", 0)).longValue(), styles.intNumber);
                 createPercentCell(r, 2, ((Number) it.getOrDefault("completionRate", 0)).doubleValue(), styles.percent);
-                createPercentCell(r, 3, ((Number) it.getOrDefault("avgScore", 0)).doubleValue() / 100.0, styles.percent);
+                createPercentCell(r, 3, ((Number) it.getOrDefault("avgScore", 0)).doubleValue() / 100.0,
+                        styles.percent);
                 applyZebra(r, styles, i);
             }
         }
         int last = items != null ? (start + items.size()) : start + 1;
-        addBarChart((XSSFSheet) sh, "Top quizzes", start, last, 0, new int[]{1}, new String[]{"Số lượt"}, 6, start, 16, start + 18, false);
+        addBarChart((XSSFSheet) sh, "Top quizzes", start, last, 0, new int[] { 1 }, new String[] { "Số lượt" }, 6,
+                start, 16, start + 18, false);
         finishTable(sh, 4, start);
     }
 
@@ -315,7 +328,7 @@ public class AnalyticsExportService {
 
         int start = writeSheetBanner(sh, styles, name, "Top người dùng theo số lượt/điểm TB", 2);
         Row header = sh.createRow(start);
-        createHeaderRow(header, styles, new String[]{"Người dùng", "Số lượt", "Điểm TB"});
+        createHeaderRow(header, styles, new String[] { "Người dùng", "Số lượt", "Điểm TB" });
 
         List<Map<String, Object>> items = (List<Map<String, Object>>) data.get("items");
         if (items != null) {
@@ -324,64 +337,133 @@ public class AnalyticsExportService {
                 Row r = sh.createRow(start + 1 + i);
                 createTextCell(r, 0, String.valueOf(it.get("fullName")), styles.bodyText);
                 createNumberCell(r, 1, ((Number) it.getOrDefault("attempts", 0)).longValue(), styles.intNumber);
-                createPercentCell(r, 2, ((Number) it.getOrDefault("avgScore", 0)).doubleValue() / 100.0, styles.percent);
+                createPercentCell(r, 2, ((Number) it.getOrDefault("avgScore", 0)).doubleValue() / 100.0,
+                        styles.percent);
                 applyZebra(r, styles, i);
             }
         }
         int last2 = items != null ? (start + items.size()) : start + 1;
-        addBarChart((XSSFSheet) sh, "Top người dùng", start, last2, 0, new int[]{1}, new String[]{"Số lượt"}, 6, start, 16, start + 18, false);
+        addBarChart((XSSFSheet) sh, "Top người dùng", start, last2, 0, new int[] { 1 }, new String[] { "Số lượt" }, 6,
+                start, 16, start + 18, false);
         finishTable(sh, 3, start);
     }
 
     private void autosize(Sheet sh, int cols) {
-        for (int i = 0; i < cols; i++) sh.autoSizeColumn(i);
+        for (int i = 0; i < cols; i++)
+            sh.autoSizeColumn(i);
     }
 
-    // --------- Styling + helpers (đã tinh gọn & chống "style explosion") ----------
+    // --------- Styling + helpers (đã tinh gọn & chống "style explosion")
+    // ----------
 
-    // Add line chart: categories in column catCol, values in valueCols, data rows [start+1..end]
-    private void addLineChart(XSSFSheet sheet, String title, int start, int end, int catCol, int[] valueCols, String[] seriesNames,
-                              int x1, int y1, int x2, int y2) {
-        var drawing = sheet.createDrawingPatriarch();
-        var anchor = new XSSFClientAnchor(); anchor.setCol1(x1); anchor.setRow1(y1); anchor.setCol2(x2); anchor.setRow2(y2);
-        XSSFChart chart = drawing.createChart(anchor); chart.setTitleText(title); chart.setTitleOverlay(false);
-        XDDFCategoryDataSource cat = XDDFDataSourcesFactory.fromStringCellRange(sheet, new CellRangeAddress(start + 1, end, catCol, catCol));
-        XDDFChartData data = chart.createData(ChartTypes.LINE, chart.createCategoryAxis(AxisPosition.BOTTOM), chart.createValueAxis(AxisPosition.LEFT));
-        for (int i = 0; i < valueCols.length; i++) {
-            XDDFNumericalDataSource<Double> vals = XDDFDataSourcesFactory.fromNumericCellRange(sheet, new CellRangeAddress(start + 1, end, valueCols[i], valueCols[i]));
-            XDDFChartData.Series s = data.addSeries(cat, vals); s.setTitle(seriesNames[i], null);
+    // Add line chart: categories in column catCol, values in valueCols, data rows
+    // [start+1..end]
+    private void addLineChart(XSSFSheet sheet, String title, int start, int end, int catCol, int[] valueCols,
+            String[] seriesNames,
+            int x1, int y1, int x2, int y2) {
+        // Kiểm tra range hợp lệ trước khi tạo chart
+        if (end <= start + 1) {
+            System.out.println("Không đủ dữ liệu để tạo line chart: " + title);
+            return;
         }
-        chart.plot(data);
+
+        try {
+            var drawing = sheet.createDrawingPatriarch();
+            var anchor = new XSSFClientAnchor();
+            anchor.setCol1(x1);
+            anchor.setRow1(y1);
+            anchor.setCol2(x2);
+            anchor.setRow2(y2);
+            XSSFChart chart = drawing.createChart(anchor);
+            chart.setTitleText(title);
+            chart.setTitleOverlay(false);
+            XDDFCategoryDataSource cat = XDDFDataSourcesFactory.fromStringCellRange(sheet,
+                    new CellRangeAddress(start + 1, end, catCol, catCol));
+            XDDFChartData data = chart.createData(ChartTypes.LINE, chart.createCategoryAxis(AxisPosition.BOTTOM),
+                    chart.createValueAxis(AxisPosition.LEFT));
+            for (int i = 0; i < valueCols.length; i++) {
+                XDDFNumericalDataSource<Double> vals = XDDFDataSourcesFactory.fromNumericCellRange(sheet,
+                        new CellRangeAddress(start + 1, end, valueCols[i], valueCols[i]));
+                XDDFChartData.Series s = data.addSeries(cat, vals);
+                s.setTitle(seriesNames[i], null);
+            }
+            chart.plot(data);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Lỗi tạo line chart '" + title + "': " + e.getMessage());
+            System.err.println("Range: start=" + start + ", end=" + end + ", catCol=" + catCol);
+        }
     }
 
     // Add bar chart; horizontal if isHorizontal
-    private void addBarChart(XSSFSheet sheet, String title, int start, int end, int catCol, int[] valueCols, String[] seriesNames,
-                             int x1, int y1, int x2, int y2, boolean isHorizontal) {
-        var drawing = sheet.createDrawingPatriarch();
-        var anchor = new XSSFClientAnchor(); anchor.setCol1(x1); anchor.setRow1(y1); anchor.setCol2(x2); anchor.setRow2(y2);
-        XSSFChart chart = drawing.createChart(anchor); chart.setTitleText(title); chart.setTitleOverlay(false);
-        XDDFCategoryAxis catAxis = chart.createCategoryAxis(AxisPosition.BOTTOM);
-        XDDFValueAxis valAxis = chart.createValueAxis(AxisPosition.LEFT);
-        XDDFCategoryDataSource cat = XDDFDataSourcesFactory.fromStringCellRange(sheet, new CellRangeAddress(start + 1, end, catCol, catCol));
-        XDDFChartData data = chart.createData(ChartTypes.BAR, catAxis, valAxis);
-        for (int i = 0; i < valueCols.length; i++) {
-            XDDFNumericalDataSource<Double> vals = XDDFDataSourcesFactory.fromNumericCellRange(sheet, new CellRangeAddress(start + 1, end, valueCols[i], valueCols[i]));
-            XDDFChartData.Series s = data.addSeries(cat, vals); s.setTitle(seriesNames[i], null);
+    private void addBarChart(XSSFSheet sheet, String title, int start, int end, int catCol, int[] valueCols,
+            String[] seriesNames,
+            int x1, int y1, int x2, int y2, boolean isHorizontal) {
+        // Kiểm tra range hợp lệ trước khi tạo chart
+        if (end <= start + 1) {
+            System.out.println("Không đủ dữ liệu để tạo bar chart: " + title);
+            return;
         }
-        chart.plot(data);
-        XDDFBarChartData bar = (XDDFBarChartData) data; bar.setBarDirection(isHorizontal ? BarDirection.BAR : BarDirection.COL);
+
+        try {
+            var drawing = sheet.createDrawingPatriarch();
+            var anchor = new XSSFClientAnchor();
+            anchor.setCol1(x1);
+            anchor.setRow1(y1);
+            anchor.setCol2(x2);
+            anchor.setRow2(y2);
+            XSSFChart chart = drawing.createChart(anchor);
+            chart.setTitleText(title);
+            chart.setTitleOverlay(false);
+            XDDFCategoryAxis catAxis = chart.createCategoryAxis(AxisPosition.BOTTOM);
+            XDDFValueAxis valAxis = chart.createValueAxis(AxisPosition.LEFT);
+            XDDFCategoryDataSource cat = XDDFDataSourcesFactory.fromStringCellRange(sheet,
+                    new CellRangeAddress(start + 1, end, catCol, catCol));
+            XDDFChartData data = chart.createData(ChartTypes.BAR, catAxis, valAxis);
+            for (int i = 0; i < valueCols.length; i++) {
+                XDDFNumericalDataSource<Double> vals = XDDFDataSourcesFactory.fromNumericCellRange(sheet,
+                        new CellRangeAddress(start + 1, end, valueCols[i], valueCols[i]));
+                XDDFChartData.Series s = data.addSeries(cat, vals);
+                s.setTitle(seriesNames[i], null);
+            }
+            chart.plot(data);
+            XDDFBarChartData bar = (XDDFBarChartData) data;
+            bar.setBarDirection(isHorizontal ? BarDirection.BAR : BarDirection.COL);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Lỗi tạo bar chart '" + title + "': " + e.getMessage());
+            System.err.println("Range: start=" + start + ", end=" + end + ", catCol=" + catCol);
+        }
     }
 
     // Add pie chart from two ranges (labels and values)
     private void addPieChart(XSSFSheet sheet, String title, CellRangeAddress labelRange, CellRangeAddress valueRange,
-                             int x1, int y1, int x2, int y2) {
-        var drawing = sheet.createDrawingPatriarch();
-        var anchor = new XSSFClientAnchor(); anchor.setCol1(x1); anchor.setRow1(y1); anchor.setCol2(x2); anchor.setRow2(y2);
-        XSSFChart chart = drawing.createChart(anchor); chart.setTitleText(title); chart.setTitleOverlay(false);
-        XDDFChartData data = chart.createData(ChartTypes.PIE, null, null);
-        var cat = XDDFDataSourcesFactory.fromStringCellRange(sheet, labelRange);
-        var val = XDDFDataSourcesFactory.fromNumericCellRange(sheet, valueRange);
-        data.addSeries(cat, val); chart.plot(data);
+            int x1, int y1, int x2, int y2) {
+        // Kiểm tra range hợp lệ
+        if (labelRange.getFirstRow() > labelRange.getLastRow() ||
+                valueRange.getFirstRow() > valueRange.getLastRow() ||
+                labelRange.getFirstColumn() > labelRange.getLastColumn() ||
+                valueRange.getFirstColumn() > valueRange.getLastColumn()) {
+            System.out.println("Range không hợp lệ cho pie chart: " + title);
+            return;
+        }
+
+        try {
+            var drawing = sheet.createDrawingPatriarch();
+            var anchor = new XSSFClientAnchor();
+            anchor.setCol1(x1);
+            anchor.setRow1(y1);
+            anchor.setCol2(x2);
+            anchor.setRow2(y2);
+            XSSFChart chart = drawing.createChart(anchor);
+            chart.setTitleText(title);
+            chart.setTitleOverlay(false);
+            XDDFChartData data = chart.createData(ChartTypes.PIE, null, null);
+            var cat = XDDFDataSourcesFactory.fromStringCellRange(sheet, labelRange);
+            var val = XDDFDataSourcesFactory.fromNumericCellRange(sheet, valueRange);
+            data.addSeries(cat, val);
+            chart.plot(data);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Lỗi tạo pie chart '" + title + "': " + e.getMessage());
+        }
     }
 
     private static class Styles {
@@ -556,16 +638,23 @@ public class AnalyticsExportService {
     }
 
     private void applyZebra(Row r, Styles styles, int rowIndexZeroBased) {
-        if (rowIndexZeroBased % 2 != 1) return; // chỉ tô các hàng lẻ (1,3,5,...)
+        if (rowIndexZeroBased % 2 != 1)
+            return; // chỉ tô các hàng lẻ (1,3,5,...)
         for (int i = 0; i < r.getLastCellNum(); i++) {
             Cell c = r.getCell(i);
-            if (c == null) continue;
+            if (c == null)
+                continue;
             CellStyle s = c.getCellStyle();
-            if (s == styles.bodyText) c.setCellStyle(styles.bodyTextZebra);
-            else if (s == styles.intNumber) c.setCellStyle(styles.intNumberZebra);
-            else if (s == styles.intCenter) c.setCellStyle(styles.intCenterZebra);
-            else if (s == styles.percent) c.setCellStyle(styles.percentZebra);
-            else c.setCellStyle(styles.bodyTextZebra);
+            if (s == styles.bodyText)
+                c.setCellStyle(styles.bodyTextZebra);
+            else if (s == styles.intNumber)
+                c.setCellStyle(styles.intNumberZebra);
+            else if (s == styles.intCenter)
+                c.setCellStyle(styles.intCenterZebra);
+            else if (s == styles.percent)
+                c.setCellStyle(styles.percentZebra);
+            else
+                c.setCellStyle(styles.bodyTextZebra);
         }
     }
 
@@ -573,8 +662,18 @@ public class AnalyticsExportService {
         autosize(sh, cols);
         // Freeze ngay dưới header (giữ banner + header cố định)
         sh.createFreezePane(0, firstDataRowIndex + 1);
-        if (sh.getLastRowNum() >= 0) {
-            sh.setAutoFilter(new CellRangeAddress(firstDataRowIndex, sh.getLastRowNum(), 0, cols - 1));
+
+        // Chỉ tạo AutoFilter khi có dữ liệu và range hợp lệ
+        int lastRowNum = sh.getLastRowNum();
+        if (lastRowNum >= firstDataRowIndex && cols > 0) {
+            try {
+                sh.setAutoFilter(new CellRangeAddress(firstDataRowIndex, lastRowNum, 0, cols - 1));
+            } catch (IllegalArgumentException e) {
+                // Log lỗi nhưng không làm crash ứng dụng
+                System.err.println("Không thể tạo AutoFilter: " + e.getMessage());
+                System.err.println(
+                        "firstDataRowIndex: " + firstDataRowIndex + ", lastRowNum: " + lastRowNum + ", cols: " + cols);
+            }
         }
     }
 
@@ -588,8 +687,10 @@ public class AnalyticsExportService {
     }
 
     private java.awt.Color mapIndexedColor(short idx) {
-        if (idx == IndexedColors.BLUE.getIndex()) return new java.awt.Color(0, 102, 204);
-        if (idx == IndexedColors.LIGHT_TURQUOISE.getIndex()) return new java.awt.Color(176, 224, 230);
+        if (idx == IndexedColors.BLUE.getIndex())
+            return new java.awt.Color(0, 102, 204);
+        if (idx == IndexedColors.LIGHT_TURQUOISE.getIndex())
+            return new java.awt.Color(176, 224, 230);
         return new java.awt.Color(120, 144, 156); // fallback (blue gray)
     }
 
@@ -613,11 +714,12 @@ public class AnalyticsExportService {
 
         // TOC
         CreationHelper helper = wb.getCreationHelper();
-        String[] sheets = new String[]{
-            "Lượt làm","Người dùng","Điểm trung bình","Phân phối điểm","Tỷ lệ hoàn thành","Danh mục Top","Bản đồ nhiệt","Top quizzes","Top người dùng"
+        String[] sheets = new String[] {
+                "Lượt làm", "Người dùng", "Điểm trung bình", "Phân phối điểm", "Tỷ lệ hoàn thành", "Danh mục Top",
+                "Bản đồ nhiệt", "Top quizzes", "Top người dùng"
         };
         Row tocHeader = sh.createRow(start + 3);
-        createHeaderRow(tocHeader, styles, new String[]{"Mục lục", "Đi tới"});
+        createHeaderRow(tocHeader, styles, new String[] { "Mục lục", "Đi tới" });
 
         for (int i = 0; i < sheets.length; i++) {
             Row r = sh.createRow(start + 4 + i);

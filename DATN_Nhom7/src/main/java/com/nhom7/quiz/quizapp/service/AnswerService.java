@@ -134,4 +134,12 @@ public class AnswerService {
             answerRepo.deleteAll(answers);
         }
     }
+
+    // Method cho hard delete - không kiểm tra ownership
+    public void forceDeleteByQuestionId(Long questionId) {
+        List<Answer> answers = answerRepo.findByQuestionId(questionId);
+        if (answers != null && !answers.isEmpty()) {
+            answerRepo.deleteAll(answers);
+        }
+    }
 }
