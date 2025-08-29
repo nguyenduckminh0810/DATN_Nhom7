@@ -41,7 +41,7 @@ public class QuestionController {
 
     // Xem câu hỏi để chỉnh sửa - chỉ chủ sở hữu quiz
     @GetMapping("/{quizId}")
-    @PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#quizId, authentication.principal)")
+    @PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#quizId, authentication.name)")
     public ResponseEntity<List<Question>> getQuestionsByQuizId(@PathVariable Long quizId,
             Authentication authentication) {
         System.out.println("Requesting questions for quiz ID: " + quizId);
@@ -141,7 +141,7 @@ public class QuestionController {
 
     // Xóa câu hỏi - chỉ chủ sở hữu quiz hoặc admin
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#id, authentication.principal)")
+    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#id, authentication.name)")
     public ResponseEntity<?> deleteQuestion(@PathVariable Long id) {
         try {
             answerService.deleteByQuestionId(id);
@@ -155,7 +155,7 @@ public class QuestionController {
 
     // Cập nhật câu hỏi - chỉ chủ sở hữu quiz hoặc admin
     @PutMapping("/update/{questionId}")
-    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#questionId, authentication.principal)")
+    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#questionId, authentication.name)")
     public ResponseEntity<Question> updateQuestion(@PathVariable Long questionId, @RequestBody Question question) {
         Question updatedQuestion = questionService.updateQuestion(questionId, question);
         if (updatedQuestion == null) {

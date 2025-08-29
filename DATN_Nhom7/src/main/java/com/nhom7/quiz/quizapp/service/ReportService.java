@@ -69,6 +69,17 @@ public class ReportService {
         }
     }
 
+    // Method để hỗ trợ @PreAuthorize
+    public boolean isCurrentUser(Long userId, String username) {
+        try {
+            User user = userRepo.findByUsername(username).orElse(null);
+            return user != null && user.getId().equals(userId);
+        } catch (Exception e) {
+            System.err.println("Error checking user permission: " + e.getMessage());
+            return false;
+        }
+    }
+
     // Tạo báo cáo quiz mới
     public Report createQuizReport(Long userId, Long quizId, String reason) {
         // Kiểm tra user tồn tại

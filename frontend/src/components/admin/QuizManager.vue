@@ -13,18 +13,24 @@
       <div class="page-actions">
         <div class="search-group">
           <i class="bi bi-search"></i>
-          <input v-model="search" @keyup.enter="fetchQuizzes" placeholder="Tìm kiếm tiêu đề quiz..." />
+          <input
+            v-model="search"
+            @keyup.enter="fetchQuizzes"
+            placeholder="Tìm kiếm tiêu đề quiz..."
+          />
         </div>
         <select v-model="isPublic" @change="fetchQuizzes" class="filter-select">
           <option value="">Tất cả trạng thái</option>
           <option :value="true">Công khai</option>
           <option :value="false">Riêng tư</option>
         </select>
-        <select v-model="selectedTagId" @change="fetchQuizzes" class="filter-select">
+        <!-- <select v-model="selectedTagId" @change="fetchQuizzes" class="filter-select">
           <option value="">Tất cả chủ đề</option>
           <option v-for="tag in tags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
-        </select>
-        <button class="btn btn-outline" @click="fetchQuizzes"><i class="bi bi-arrow-clockwise"></i> Làm mới</button>
+        </select> -->
+        <button class="btn btn-outline" @click="fetchQuizzes">
+          <i class="bi bi-arrow-clockwise"></i> Làm mới
+        </button>
       </div>
     </div>
 
@@ -50,13 +56,19 @@
                 <td>{{ quiz.categoryName }}</td>
                 <td class="muted">{{ quiz.creatorName }}</td>
                 <td>
-                  <span class="role-pill" :class="quiz.public ? 'success' : 'secondary'">{{ quiz.public ? 'Công khai' : 'Riêng tư' }}</span>
+                  <span class="role-pill" :class="quiz.public ? 'success' : 'secondary'">{{
+                    quiz.public ? 'Công khai' : 'Riêng tư'
+                  }}</span>
                 </td>
                 <td class="muted">{{ formatDate(quiz.createdAt) }}</td>
                 <td>
                   <div class="row-actions">
-                    <button class="chip primary" @click="editQuiz(quiz)"><i class="bi bi-pencil"></i> Sửa</button>
-                    <button class="chip danger" @click="deleteQuiz(quiz.id)"><i class="bi bi-trash"></i> Xoá</button>
+                    <button class="chip primary" @click="editQuiz(quiz)">
+                      <i class="bi bi-pencil"></i> Sửa
+                    </button>
+                    <button class="chip danger" @click="deleteQuiz(quiz.id)">
+                      <i class="bi bi-trash"></i> Xoá
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -66,14 +78,18 @@
       </div>
 
       <div v-if="totalPages > 1" class="pagination-bar">
-        <button class="pg-btn" :disabled="currentPage === 0" @click="prevPage"><i class="bi bi-chevron-left"></i></button>
+        <button class="pg-btn" :disabled="currentPage === 0" @click="prevPage">
+          <i class="bi bi-chevron-left"></i>
+        </button>
         <span>Trang {{ currentPage + 1 }} / {{ totalPages }}</span>
-        <button class="pg-btn" :disabled="currentPage >= totalPages - 1" @click="nextPage"><i class="bi bi-chevron-right"></i></button>
+        <button class="pg-btn" :disabled="currentPage >= totalPages - 1" @click="nextPage">
+          <i class="bi bi-chevron-right"></i>
+        </button>
       </div>
     </div>
 
     <!-- Modal Sửa Quiz -->
-    <div class="modal fade show" tabindex="-1" style="display: block;" v-if="showEditModal">
+    <div class="modal fade show" tabindex="-1" style="display: block" v-if="showEditModal">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -95,7 +111,7 @@
             </div>
             <div class="mb-3">
               <label class="form-label">Người tạo</label>
-              <input v-model="selectedQuiz.creatorName" class="form-control" disabled/>
+              <input v-model="selectedQuiz.creatorName" class="form-control" disabled />
             </div>
             <div class="mb-3">
               <label class="form-label">Trạng thái</label>
@@ -124,39 +140,39 @@ import api from '@/utils/axios'
 const themeStore = useThemeStore()
 const { isDarkMode } = storeToRefs(themeStore)
 
-const quizzes = ref([]);
-const search = ref('');
-const isPublic = ref('');
-const currentPage = ref(0);
-const totalPages = ref(1);
-const pageSize = 10;
-const categories = ref([]);
-const selectedTagId = ref('');
-const tags = ref([]);
+const quizzes = ref([])
+const search = ref('')
+const isPublic = ref('')
+const currentPage = ref(0)
+const totalPages = ref(1)
+const pageSize = 10
+const categories = ref([])
+const selectedTagId = ref('')
+const tags = ref([])
 
-const showEditModal = ref(false);
-const selectedQuiz = ref({ id: null, title: '', categoryName: '', creatorName: "", isPublic: true });
+const showEditModal = ref(false)
+const selectedQuiz = ref({ id: null, title: '', categoryName: '', creatorName: '', isPublic: true })
 
 function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('vi-VN');
+  const date = new Date(dateString)
+  return date.toLocaleDateString('vi-VN')
 }
 
 async function fetchCategories() {
   try {
-    const response = await api.get('/admin/categories');
-    categories.value = response.data;
+    const response = await api.get('/admin/categories')
+    categories.value = response.data
   } catch (error) {
-    console.error('Lỗi khi tải thể loại:', error);
+    console.error('Lỗi khi tải thể loại:', error)
   }
 }
 
 async function fetchTags() {
   try {
-    const response = await api.get('/admin/tags');
-    tags.value = response.data;
+    const response = await api.get('/admin/tags')
+    tags.value = response.data
   } catch (error) {
-    console.error('Lỗi khi tải tag:', error);
+    console.error('Lỗi khi tải tag:', error)
   }
 }
 
@@ -168,38 +184,38 @@ async function fetchQuizzes() {
         tagId: selectedTagId.value === '' ? null : selectedTagId.value,
         isPublic: isPublic.value === '' ? null : isPublic.value,
         page: currentPage.value,
-        size: pageSize
-      }
-    });
+        size: pageSize,
+      },
+    })
 
-    quizzes.value = response.data.content;
-    totalPages.value = response.data.totalPages;
+    quizzes.value = response.data.content
+    totalPages.value = response.data.totalPages
   } catch (error) {
-    console.error('Lỗi khi tải quiz:', error);
+    console.error('Lỗi khi tải quiz:', error)
   }
 }
 
 function prevPage() {
   if (currentPage.value > 0) {
-    currentPage.value--;
-    fetchQuizzes();
+    currentPage.value--
+    fetchQuizzes()
   }
 }
 
 function nextPage() {
   if (currentPage.value < totalPages.value - 1) {
-    currentPage.value++;
-    fetchQuizzes();
+    currentPage.value++
+    fetchQuizzes()
   }
 }
 
 function goToPage(page) {
-  currentPage.value = page;
-  fetchQuizzes();
+  currentPage.value = page
+  fetchQuizzes()
 }
 
 function editQuiz(quiz) {
-  const category = categories.value.find(c => c.name === quiz.categoryName);
+  const category = categories.value.find((c) => c.name === quiz.categoryName)
 
   selectedQuiz.value = {
     id: quiz.id,
@@ -207,9 +223,9 @@ function editQuiz(quiz) {
     isPublic: quiz.public ?? quiz.isPublic,
     creatorName: quiz.creatorName,
     categoryName: quiz.categoryName,
-    categoryId: category ? category.id : null
-  };
-  showEditModal.value = true;
+    categoryId: category ? category.id : null,
+  }
+  showEditModal.value = true
 }
 
 async function saveQuiz() {
@@ -219,84 +235,259 @@ async function saveQuiz() {
       title: selectedQuiz.value.title,
       categoryName: selectedQuiz.value.categoryName,
       isPublic: selectedQuiz.value.isPublic,
-      categoryId: selectedQuiz.value.categoryId
-    });
-    alert('Cập nhật quiz thành công!');
-    showEditModal.value = false;
-    fetchQuizzes();
+      categoryId: selectedQuiz.value.categoryId,
+    })
+    alert('Cập nhật quiz thành công!')
+    showEditModal.value = false
+    fetchQuizzes()
   } catch (error) {
-    console.error('Lỗi khi lưu quiz:', error);
+    console.error('Lỗi khi lưu quiz:', error)
   }
 }
 
 async function deleteQuiz(id) {
   if (confirm('Bạn có chắc muốn xoá quiz này không?')) {
     try {
-      await api.delete(`/admin/quizzes/${id}`);
-      alert('Xoá quiz thành công!');
-      fetchQuizzes();
+      await api.delete(`/admin/quizzes/${id}`)
+      alert('Xoá quiz thành công!')
+      fetchQuizzes()
     } catch (error) {
-      console.error('Lỗi khi xoá quiz:', error);
+      console.error('Lỗi khi xoá quiz:', error)
     }
   }
 }
 
 onMounted(() => {
-  fetchQuizzes();
-  fetchCategories();
-  fetchTags();
-});
+  fetchQuizzes()
+  fetchCategories()
+  fetchTags()
+})
 </script>
 
 <style scoped>
-.admin-quizzes { padding: 24px; color: var(--text-primary); }
-.page-header { display:flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.title-card { background: var(--bg-primary); border:1px solid var(--border-color); border-radius: 14px; padding: 10px 14px; box-shadow: 0 6px 18px var(--shadow-color); }
-.page-title { display:flex; align-items:center; gap:12px; }
-.icon-badge { width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:12px; }
-.icon-badge i { font-size:22px; color: var(--info-color); }
-.title-text h1 { font-size:22px; margin:0; text-shadow: none; }
-.title-text h1::after { content:''; display:block; height:3px; width:80px; margin-top:6px; border-radius:999px; background:linear-gradient(90deg,#667eea 0%, #764ba2 100%); opacity:.6; }
-.title-text p { margin:2px 0 0 0; font-size:13px; color: var(--text-secondary); }
-.page-actions { display:flex; align-items:center; gap:10px; }
-.search-group { display:flex; align-items:center; gap:8px; background: var(--bg-primary); border:1px solid var(--border-color); padding:8px 12px; border-radius:10px; }
-.search-group input { border:0; outline:none; background:transparent; color: var(--text-primary); width: 220px; }
-.filter-select { background: var(--bg-primary); color: var(--text-primary); border:1px solid var(--border-color); border-radius:10px; padding:8px 12px; }
-.btn.btn-outline { background: var(--bg-primary); color: var(--text-primary); border:1px solid var(--border-color); border-radius:10px; padding:8px 12px; }
+.admin-quizzes {
+  padding: 24px;
+  color: var(--text-primary);
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.title-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: 0 6px 18px var(--shadow-color);
+}
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.icon-badge {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+.icon-badge i {
+  font-size: 22px;
+  color: var(--info-color);
+}
+.title-text h1 {
+  font-size: 22px;
+  margin: 0;
+  text-shadow: none;
+}
+.title-text h1::after {
+  content: '';
+  display: block;
+  height: 3px;
+  width: 80px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  opacity: 0.6;
+}
+.title-text p {
+  margin: 2px 0 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.search-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+.search-group input {
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  width: 220px;
+}
+.filter-select {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.btn.btn-outline {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
 
-.panel { background: var(--bg-primary); border:1px solid var(--border-color); border-radius: 16px; box-shadow: 0 8px 22px var(--shadow-color); overflow:hidden; }
-.panel-body.no-padding { padding: 0; }
-.table-wrap { width: 100%; overflow-x: auto; }
-.modern-table { width: 100%; border-collapse: collapse; }
-.modern-table thead th { text-align:left; padding: 14px 16px; background: var(--card-header-bg); color: var(--card-header-text); font-weight: 700; font-size: 13px; }
-.modern-table tbody td { padding: 12px 16px; border-top:1px solid var(--border-color); font-size: 14px; }
-.modern-table tbody tr:hover { background: rgba(102,126,234,0.06); }
-.muted { color: var(--text-muted); }
-.cell-title { font-weight: 600; }
-.role-pill { display:inline-flex; align-items:center; padding: 4px 10px; border-radius: 999px; font-weight:700; font-size: 12px; }
-.role-pill.success { background: #16a34a; color:#fff; }
-.role-pill.secondary { background: #6b7280; color:#fff; }
-.row-actions { display:flex; gap:8px; }
-.chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:10px; border:1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor:pointer; }
-.chip.primary { border-color:#93c5fd; }
-.chip.danger { border-color:#fda4af; }
+.panel {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 8px 22px var(--shadow-color);
+  overflow: hidden;
+}
+.panel-body.no-padding {
+  padding: 0;
+}
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.modern-table thead th {
+  text-align: left;
+  padding: 14px 16px;
+  background: var(--card-header-bg);
+  color: var(--card-header-text);
+  font-weight: 700;
+  font-size: 13px;
+}
+.modern-table tbody td {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+  font-size: 14px;
+}
+.modern-table tbody tr:hover {
+  background: rgba(102, 126, 234, 0.06);
+}
+.muted {
+  color: var(--text-muted);
+}
+.cell-title {
+  font-weight: 600;
+}
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+.role-pill.success {
+  background: #16a34a;
+  color: #fff;
+}
+.role-pill.secondary {
+  background: #6b7280;
+  color: #fff;
+}
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.chip.primary {
+  border-color: #93c5fd;
+}
+.chip.danger {
+  border-color: #fda4af;
+}
 
-.pagination-bar { display:flex; align-items:center; justify-content:flex-end; gap:8px; padding: 10px 12px; border-top:1px solid var(--border-color); }
-.pg-btn { border:1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); border-radius:8px; width:32px; height:28px; display:flex; align-items:center; justify-content:center; }
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border-color);
+}
+.pg-btn {
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  width: 32px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* Dark/Light tweaks */
-.admin-quizzes.is-light .title-card { background:#ffffff; border-color: rgba(2,6,23,0.12); }
-.admin-quizzes.is-dark .title-card { background: transparent; border-color: rgba(255,255,255,0.18); box-shadow: none; }
-.admin-quizzes.is-dark .page-title { background: transparent; }
-.admin-quizzes.is-light .title-text h1 { color:#0b1220; }
-.admin-quizzes.is-dark .title-text h1 { color:#f1f5f9; }
-.admin-quizzes.is-light .title-text h1::after { opacity:.95; background:linear-gradient(90deg,#4338ca 0%, #7c3aed 100%); }
-.admin-quizzes.is-dark .title-text h1::after { opacity:.7; }
+.admin-quizzes.is-light .title-card {
+  background: #ffffff;
+  border-color: rgba(2, 6, 23, 0.12);
+}
+.admin-quizzes.is-dark .title-card {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+.admin-quizzes.is-dark .page-title {
+  background: transparent;
+}
+.admin-quizzes.is-light .title-text h1 {
+  color: #0b1220;
+}
+.admin-quizzes.is-dark .title-text h1 {
+  color: #f1f5f9;
+}
+.admin-quizzes.is-light .title-text h1::after {
+  opacity: 0.95;
+  background: linear-gradient(90deg, #4338ca 0%, #7c3aed 100%);
+}
+.admin-quizzes.is-dark .title-text h1::after {
+  opacity: 0.7;
+}
 
 @media (max-width: 900px) {
-  .search-group input { width: 140px; }
+  .search-group input {
+    width: 140px;
+  }
 }
 
 /* Improve contrast for light mode on subtle text (creator, date) */
-.admin-quizzes.is-light .muted { color: #374151; }
+.admin-quizzes.is-light .muted {
+  color: #374151;
+}
 </style>

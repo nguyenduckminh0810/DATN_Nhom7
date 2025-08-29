@@ -14,6 +14,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -28,11 +30,11 @@ import com.nhom7.quiz.quizapp.model.Category;
 import com.nhom7.quiz.quizapp.model.Result;
 import com.nhom7.quiz.quizapp.service.QuizService;
 import com.nhom7.quiz.quizapp.service.ExcelImportService;
+import com.nhom7.quiz.quizapp.service.userService.LoginService;
 import com.nhom7.quiz.quizapp.service.ResultService;
 import com.nhom7.quiz.quizapp.model.dto.QuizImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuizDetailDTO;
 import com.nhom7.quiz.quizapp.config.JwtUtil;
-import com.nhom7.quiz.quizapp.service.userService.LoginService;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -180,7 +182,7 @@ public class QuizController {
 	}
 
 	@PutMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
+	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.name)")
 	public ResponseEntity<Quiz> updateQuiz(@PathVariable Long id, @RequestBody Quiz quiz) {
 		System.out.println("[QuizController] updateQuiz called for ID: " + id);
 		System.out.println("[QuizController] Request body quiz isPublic: " + quiz.isPublic());
@@ -204,7 +206,7 @@ public class QuizController {
 	}
 
 	@DeleteMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
+	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.name)")
 	public ResponseEntity<Map<String, Object>> deleteQuiz(@PathVariable Long id, HttpServletRequest request) {
 		try {
 			boolean deleted = quizService.deleteQuiz(id);
@@ -227,14 +229,110 @@ public class QuizController {
 		}
 	}
 
-	// THÊM CÁC ENDPOINT MỚI CHO SOFT DELETE
-	@DeleteMapping("/{id}/hard")
-	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
-	public ResponseEntity<Map<String, Object>> hardDeleteQuiz(@PathVariable Long id, HttpServletRequest request) {
+	// DEBUG ENDPOINT - XÓA SAU KHI TEST XONG
+	@GetMapping("/debug/my-quizzes")
+	public ResponseEntity<List<Map<String, Object>>> debugMyQuizzes() {
+		List<Map<String, Object>> result = new ArrayList<>();
+
+		try {
+			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			if (auth != null) {
+				String username = auth.getName();
+				User user = loginService.findByUsername(username);
+				if (user != null) {
+					List<Quiz> allQuizzes = quizService.getAllQuiz();
+					for (Quiz quiz : allQuizzes) {
+						if (quiz.getUser() != null && quiz.getUser().getId().equals(user.getId())) {
+							Map<String, Object> quizInfo = new HashMap<>();
+							quizInfo.put("id", quiz.getId());
+							quizInfo.put("title", quiz.getTitle());
+							quizInfo.put("deleted", quiz.isDeleted());
+							quizInfo.put("owner", quiz.getUser().getUsername());
+							result.add(quizInfo);
+						}
+					}
+				}
+			}
+			return ResponseEntity.ok(result);
+		} catch (Exception e) {
+			return ResponseEntity.status(500).body(new ArrayList<>());
+		}
+	}
+
+	@GetMapping("/debug/{id}")
+	public ResponseEntity<Map<String, Object>> debugQuiz(@PathVariable Long id) {
 		Map<String, Object> response = new HashMap<>();
 
 		try {
-			System.out.println("Attempting to hard delete quiz ID: " + id);
+			Optional<Quiz> quizOpt = quizService.getQuizById(id);
+			if (quizOpt.isPresent()) {
+				Quiz quiz = quizOpt.get();
+				response.put("found", true);
+				response.put("id", quiz.getId());
+				response.put("title", quiz.getTitle());
+				response.put("deleted", quiz.isDeleted());
+				response.put("owner", quiz.getUser() != null ? quiz.getUser().getUsername() : "NULL");
+				response.put("ownerId", quiz.getUser() != null ? quiz.getUser().getId() : "NULL");
+			} else {
+				response.put("found", false);
+			}
+
+			// Kiểm tra authentication
+			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			if (auth != null) {
+				response.put("currentUser", auth.getName());
+				response.put("authorities", auth.getAuthorities().toString());
+			}
+
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			response.put("error", e.getMessage());
+			return ResponseEntity.status(500).body(response);
+		}
+	}
+
+	// THÊM CÁC ENDPOINT MỚI CHO SOFT DELETE
+	@DeleteMapping("/{id}/hard")
+	public ResponseEntity<Map<String, Object>> hardDeleteQuiz(@PathVariable Long id, HttpServletRequest request) {
+		Map<String, Object> response = new HashMap<>();
+
+		System.out.println("=== HARD DELETE DEBUG START ===");
+		System.out.println("Attempting to hard delete quiz ID: " + id);
+
+		// Kiểm tra authentication ngay đầu
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth == null) {
+			System.out.println("No authentication found!");
+			response.put("success", false);
+			response.put("message", "Không có thông tin xác thực");
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+		}
+
+		try {
+			System.out.println("Authentication name: " + auth.getName());
+			System.out.println("Authentication authorities: " + auth.getAuthorities());
+			System.out.println("Authentication principal: " + auth.getPrincipal());
+
+			// Check if user is admin
+			boolean isAdmin = auth.getAuthorities().stream()
+					.anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+			System.out.println("Is Admin: " + isAdmin);
+
+			// Check if user owns the quiz
+			System.out.println("About to call isOwner with ID: " + id + " and username: " + auth.getName());
+			boolean isOwner = quizService.isOwner(id, auth.getName());
+			System.out.println("Is Owner: " + isOwner);
+
+			// If not admin and not owner, deny access
+			if (!isAdmin && !isOwner) {
+				System.out.println("Access denied - not admin and not owner");
+				response.put("success", false);
+				response.put("message", "Bạn không có quyền xóa quiz này");
+				return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+			}
+
+			System.out.println("Authorization passed, proceeding with deletion...");
+
 			boolean deleteResult = quizService.hardDeleteQuiz(id);
 			System.out.println("Hard delete result: " + deleteResult);
 
@@ -258,7 +356,7 @@ public class QuizController {
 	}
 
 	@PostMapping("/{id}/restore")
-	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
+	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.name)")
 	public ResponseEntity<Map<String, Object>> restoreQuiz(@PathVariable Long id, HttpServletRequest request) {
 		Map<String, Object> response = new HashMap<>();
 

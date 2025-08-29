@@ -1,20 +1,20 @@
 <template>
   <div class="import-excel-container">
     <div class="import-header">
-      <h2> Import Quiz từ Excel</h2>
+      <h2>Import Quiz từ Excel</h2>
       <p class="subtitle">Tải lên file Excel để tạo quiz nhanh chóng</p>
 
       <!--  THÔNG BÁO TRẠNG THÁI BACKEND -->
       <div v-if="categories.length <= 3" class="backend-status warning">
         Backend có thể chưa chạy. Vui lòng khởi động backend trước!
       </div>
-      <div v-else class="backend-status success"> Backend đã sẵn sàng</div>
+      <div v-else class="backend-status success">Backend đã sẵn sàng</div>
     </div>
 
     <!-- Template Download -->
     <div class="template-section">
-      <h3> File mẫu</h3>
-      <button @click="downloadTemplate" class="template-btn"> Tải file Excel mẫu</button>
+      <h3>File mẫu</h3>
+      <button @click="downloadTemplate" class="template-btn">Tải file Excel mẫu</button>
       <div class="template-info">
         <p><strong>Cấu trúc file Excel:</strong></p>
         <ul>
@@ -27,7 +27,9 @@
         <ul>
           <li>Tất cả câu hỏi và đáp án không được để trống</li>
           <li>Đáp án đúng phải là A, B, C hoặc D</li>
-          <li>Thời gian: 0 (không giới hạn) hoặc 5–300 giây; cho phép 0 (không giới hạn) hoặc 5–300s</li>
+          <li>
+            Thời gian: 0 (không giới hạn) hoặc 5–300 giây; cho phép 0 (không giới hạn) hoặc 5–300s
+          </li>
           <li>File phải có ít nhất 1 câu hỏi</li>
         </ul>
       </div>
@@ -35,7 +37,7 @@
 
     <!-- Import Form -->
     <div class="import-form">
-      <h3> Import Quiz</h3>
+      <h3>Import Quiz</h3>
 
       <!-- Quiz Info -->
       <div class="quiz-info">
@@ -46,7 +48,11 @@
 
         <div class="form-group">
           <label>Mô tả</label>
-          <textarea v-model="quizDescription" placeholder="Mô tả ngắn về quiz..." rows="3"></textarea>
+          <textarea
+            v-model="quizDescription"
+            placeholder="Mô tả ngắn về quiz..."
+            rows="3"
+          ></textarea>
         </div>
 
         <div class="form-group">
@@ -81,7 +87,13 @@
             </div>
 
             <!-- Hidden file input -->
-            <input ref="imageInput" type="file" @change="handleImageSelect" accept="image/*" style="display: none" />
+            <input
+              ref="imageInput"
+              type="file"
+              @change="handleImageSelect"
+              accept="image/*"
+              style="display: none"
+            />
           </div>
           <small class="image-help">Hỗ trợ: JPG, PNG, GIF, WebP. Tối đa 5MB</small>
         </div>
@@ -89,8 +101,13 @@
 
       <!-- File Upload -->
       <div class="file-upload">
-        <div class="upload-area" :class="{ 'drag-over': isDragOver }" @drop="handleDrop"
-          @dragover.prevent="isDragOver = true" @dragleave="isDragOver = false">
+        <div
+          class="upload-area"
+          :class="{ 'drag-over': isDragOver }"
+          @drop="handleDrop"
+          @dragover.prevent="isDragOver = true"
+          @dragleave="isDragOver = false"
+        >
           <div v-if="!selectedFile" class="upload-placeholder">
             <i class="bi bi-cloud-upload"></i>
             <p>Kéo thả file Excel vào đây</p>
@@ -107,35 +124,48 @@
                 <p class="file-name">{{ selectedFile.name }}</p>
                 <p class="file-size">{{ formatFileSize(selectedFile.size) }}</p>
               </div>
-              <button @click="removeFile" class="remove-file" type="button" title="Xóa file Excel"
-                aria-label="Xóa file Excel">
+              <button
+                @click="removeFile"
+                class="remove-file"
+                type="button"
+                title="Xóa file Excel"
+                aria-label="Xóa file Excel"
+              >
                 <i class="bi bi-x-circle"></i>
               </button>
             </div>
           </div>
         </div>
 
-        <input ref="fileInput" type="file" @change="handleFileSelect" accept=".xlsx,.xls" style="display: none" />
+        <input
+          ref="fileInput"
+          type="file"
+          @change="handleFileSelect"
+          accept=".xlsx,.xls"
+          style="display: none"
+        />
       </div>
 
       <!-- Import Button -->
       <div class="import-actions">
         <button @click="importQuiz" :disabled="!canImport || isImporting" class="import-btn">
-          <span v-if="isImporting">
-            <i class="bi bi-arrow-repeat spin"></i>
-            Đang import...
-          </span>
-          <span v-else>
-            <i class="bi bi-upload"></i>
-            Import Quiz
-          </span>
+          <div class="btn-content">
+            <span v-if="isImporting" class="btn-spinner">
+              <i class="bi bi-arrow-repeat spin"></i>
+              Đang import...
+            </span>
+            <span v-else class="btn-normal">
+              <i class="bi bi-upload"></i>
+              Import Quiz
+            </span>
+          </div>
         </button>
       </div>
     </div>
 
     <!--  PREVIEW SECTION -->
     <div v-if="showPreview && previewData" class="preview-section">
-      <h3> Bản xem trước</h3>
+      <h3>Bản xem trước</h3>
 
       <!-- Thống kê -->
       <div class="preview-stats">
@@ -162,18 +192,25 @@
       <!-- Preview câu hỏi -->
       <div class="preview-questions">
         <h4>3 câu hỏi đầu tiên:</h4>
-        <div v-for="(question, index) in previewData.previewQuestions" :key="index" class="question-preview">
+        <div
+          v-for="(question, index) in previewData.previewQuestions"
+          :key="index"
+          class="question-preview"
+        >
           <div class="question-header">
             <span class="question-number">Câu {{ index + 1 }}:</span>
             <span class="question-time">
               <i class="bi bi-clock"></i>
-              {{ question.timeLimit === 0 ? '∞' : ((question.timeLimit ?? 30) + 's') }}
+              {{ question.timeLimit === 0 ? '∞' : (question.timeLimit ?? 30) + 's' }}
             </span>
           </div>
           <p class="question-content">{{ question.content }}</p>
           <div class="answers-preview">
-            <div v-for="(answer, ansIndex) in question.answers" :key="ansIndex"
-              :class="['answer-item', answer.correct ? 'correct' : '']">
+            <div
+              v-for="(answer, ansIndex) in question.answers"
+              :key="ansIndex"
+              :class="['answer-item', answer.correct ? 'correct' : '']"
+            >
               <span class="answer-label">{{ String.fromCharCode(65 + ansIndex) }}:</span>
               <span class="answer-content">{{ answer.content }}</span>
               <span v-if="answer.correct" class="correct-mark">✓</span>
@@ -196,7 +233,11 @@
     </div>
 
     <!-- Progress & Results -->
-    <div v-if="importResult" class="import-result" :class="importResult.success ? 'success' : 'error'">
+    <div
+      v-if="importResult"
+      class="import-result"
+      :class="importResult.success ? 'success' : 'error'"
+    >
       <div class="result-icon">
         <i :class="importResult.success ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i>
       </div>
@@ -271,7 +312,7 @@ const downloadTemplate = () => {
       'Đáp án C': 'Đà Nẵng',
       'Đáp án D': 'Huế',
       'Đáp án đúng': 'A',
-      'Thời gian (giây)': 30
+      'Thời gian (giây)': 30,
     },
     {
       'Câu hỏi': '1 + 1 = ?',
@@ -280,7 +321,7 @@ const downloadTemplate = () => {
       'Đáp án C': '3',
       'Đáp án D': '4',
       'Đáp án đúng': 'B',
-      'Thời gian (giây)': 20
+      'Thời gian (giây)': 20,
     },
     {
       'Câu hỏi': 'Màu của lá cây thường là gì?',
@@ -289,7 +330,7 @@ const downloadTemplate = () => {
       'Đáp án C': 'Xanh',
       'Đáp án D': 'Trắng',
       'Đáp án đúng': 'C',
-      'Thời gian (giây)': 0
+      'Thời gian (giây)': 0,
     },
     {
       'Câu hỏi': 'Con vật nào có 4 chân?',
@@ -298,7 +339,7 @@ const downloadTemplate = () => {
       'Đáp án C': 'Chó',
       'Đáp án D': 'Rắn',
       'Đáp án đúng': 'C',
-      'Thời gian (giây)': 15
+      'Thời gian (giây)': 15,
     },
     {
       'Câu hỏi': 'Nước nào lớn nhất thế giới?',
@@ -307,26 +348,26 @@ const downloadTemplate = () => {
       'Đáp án C': 'Nga',
       'Đáp án D': 'Canada',
       'Đáp án đúng': 'C',
-      'Thời gian (giây)': 60
-    }
-  ];
+      'Thời gian (giây)': 60,
+    },
+  ]
 
   try {
     // Tạo worksheet từ dữ liệu
-    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const worksheet = XLSX.utils.json_to_sheet(sampleData)
 
     // Tạo workbook mới
-    const workbook = XLSX.utils.book_new();
+    const workbook = XLSX.utils.book_new()
 
     // Thêm worksheet vào workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Câu hỏi');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Câu hỏi')
 
     // Ghi file Excel thực sự
-    XLSX.writeFile(workbook, 'quiz-template.xlsx');
+    XLSX.writeFile(workbook, 'quiz-template.xlsx')
 
-    console.log(' Excel template downloaded successfully');
+    console.log(' Excel template downloaded successfully')
   } catch (error) {
-    console.error(' Error creating Excel template:', error);
+    console.error(' Error creating Excel template:', error)
   }
 }
 
@@ -843,8 +884,6 @@ onMounted(() => {
   transform: scale(1.1);
 }
 
-
-
 /* Đảm bảo nút xóa hiển thị đúng trên mobile */
 @media (max-width: 768px) {
   .remove-file {
@@ -870,33 +909,121 @@ onMounted(() => {
 }
 
 .import-btn {
-  background: #27ae60;
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 50%, #a71e2a 100%) !important;
+  color: white !important;
+  border: 3px solid #c82333 !important;
+  padding: 1.25rem 3rem !important;
+  border-radius: 50px !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.4s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
+  box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  min-width: 200px !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+  z-index: 1000 !important;
 }
 
 .import-btn:hover:not(:disabled) {
-  background: #229954;
-  transform: translateY(-2px);
+  transform: translateY(-3px) !important;
+  box-shadow: 0 15px 40px rgba(220, 53, 69, 0.6) !important;
+  background: linear-gradient(135deg, #c82333 0%, #a71e2a 50%, #721c24 100%) !important;
+  border-color: #a71e2a !important;
+}
+
+.import-btn:active {
+  transform: translateY(-1px) !important;
 }
 
 .import-btn:disabled {
-  background: #bdc3c7;
-  cursor: not-allowed;
-  transform: none;
+  opacity: 0.8 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 50%, #495057 100%) !important;
+  border-color: #5a6268 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Thêm outline cho accessibility */
+.import-btn:focus {
+  outline: 3px solid rgba(220, 53, 69, 0.5);
+  outline-offset: 2px;
+}
+
+/* Đảm bảo button luôn visible và không bị override */
+.import-btn {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* CSS cho button content */
+.btn-content {
+  position: relative;
+  z-index: 2;
+}
+
+.btn-normal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.btn-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 }
 
 .import-btn .spin {
   animation: spin 1s linear infinite;
+}
+
+/* Thêm hiệu ứng ripple cho nút import */
+.import-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s,
+    height 0.6s;
+}
+
+.import-btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Thêm hiệu ứng glow khi hover */
+.import-btn::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #dc3545, #c82333, #a71e2a, #721c24);
+  border-radius: 50px;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.import-btn:hover::after {
+  opacity: 0.6;
 }
 
 @keyframes spin {
@@ -1161,5 +1288,26 @@ onMounted(() => {
   background-color: #d4edda;
   color: #155724;
   border: 1px solid #c3e6cb;
+}
+
+/* Responsive design cho nút import */
+@media (max-width: 768px) {
+  .import-btn {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    min-width: 160px;
+  }
+
+  .import-actions {
+    margin-top: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .import-btn {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+    min-width: 140px;
+  }
 }
 </style>

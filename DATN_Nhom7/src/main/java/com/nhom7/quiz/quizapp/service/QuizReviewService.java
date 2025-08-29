@@ -34,16 +34,19 @@ public class QuizReviewService {
         if (authentication == null) {
             throw new AccessDeniedException("Không có quyền truy cập");
         }
-        
+
         // Admin có thể quản lý tất cả
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
-        
+
         if (!isAdmin) {
             // User thường chỉ có thể quản lý review của mình
             String currentUsername = authentication.getName();
             User currentUser = userRepo.findByUsername(currentUsername).orElse(null);
-            if (currentUser == null || !currentUser.getId().equals(userId)) {
+            if (currentUser == null) {
+                throw new AccessDeniedException("Không tìm thấy thông tin người dùng");
+            }
+            if (!currentUser.getId().equals(userId)) {
                 throw new AccessDeniedException("Bạn chỉ có thể quản lý đánh giá của mình");
             }
         }
@@ -51,7 +54,7 @@ public class QuizReviewService {
 
     public QuizReview submitReview(Long quizId, Long userId, int rating, String reviewText) {
         checkUserPermission(userId);
-        
+
         User user = userRepo.findById(userId).orElseThrow();
         Quiz quiz = quizRepo.findById(quizId).orElseThrow();
 

@@ -40,46 +40,6 @@ public class adminservice {
                 }
         }
 
-        // Lấy danh sách tất cả quiz (kể cả riêng tư), lọc theo tags, có phân trang
-        public Page<QuizDTO> searchAndFilterQuizzes(String keyword, Long tagId, int page, int size) {
-                checkAdminPermission();
-
-                Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-
-                Page<Quiz> quizzes = quizRepo.findAll(pageable);
-
-                String keywordLower = keyword != null ? keyword.toLowerCase() : "";
-
-                List<QuizDTO> filtered = quizzes.getContent().stream()
-                                .filter(quiz -> {
-                                        // --- Điều kiện tìm kiếm ---
-                                        boolean matchTitle = quiz.getTitle() != null
-                                                        && quiz.getTitle().toLowerCase().contains(keywordLower);
-
-                                        boolean matchCategory = quiz.getCategory() != null &&
-                                                        quiz.getCategory().getName().toLowerCase()
-                                                                        .contains(keywordLower);
-
-                                        boolean matchTagName = quiz.getQuizTags().stream()
-                                                        .anyMatch(qt -> qt.getTag().getName().toLowerCase()
-                                                                        .contains(keywordLower));
-
-                                        boolean keywordMatch = keyword == null || keyword.isBlank() || matchTitle
-                                                        || matchCategory
-                                                        || matchTagName;
-
-                                        // --- Điều kiện lọc tagId ---
-                                        boolean tagMatch = tagId == null || quiz.getQuizTags().stream()
-                                                        .anyMatch(qt -> qt.getTag().getId().equals(tagId));
-
-                                        return keywordMatch && tagMatch;
-                                })
-                                .map(this::convertToDTO)
-                                .toList();
-
-                return new PageImpl<>(filtered, pageable, quizzes.getTotalElements());
-        }
-
         // Lấy danh sách tất cả quiz attempts (lịch sử làm quiz) cho admin
         public Page<ResultDTO> getAllQuizAttempts(int page, int size, Long userId, Long quizId) {
                 checkAdminPermission();

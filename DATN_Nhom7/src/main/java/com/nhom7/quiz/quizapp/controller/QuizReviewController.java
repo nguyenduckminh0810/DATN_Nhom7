@@ -3,6 +3,7 @@ package com.nhom7.quiz.quizapp.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/quizzes")
 public class QuizReviewController {
-    @Autowired
+        @Autowired
     private QuizReviewService reviewService;
 
     // Lấy danh sách đánh giá - ai cũng có thể xem
