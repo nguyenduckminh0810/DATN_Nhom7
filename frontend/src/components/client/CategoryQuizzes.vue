@@ -45,7 +45,7 @@ async function fetchPublicQuizzes(page = 0) {
             params: { page, size: pageSize },
         })
 
-        // 👉 Map đúng theo response bạn gửi (quizzes, currentPage, totalPages, totalItems)
+        // Map đúng theo response bạn gửi (quizzes, currentPage, totalPages, totalItems)
         const list = Array.isArray(res.data.quizzes) ? res.data.quizzes : []
 
         const transformed = list.map(q => ({
@@ -71,7 +71,7 @@ async function fetchPublicQuizzes(page = 0) {
         currentPage.value = pageIdx
         totalPages.value = total
     } catch (err) {
-        console.error('❌ Error fetching public quizzes:', err)
+        console.error('Error fetching public quizzes:', err)
         error.value = err?.response?.data?.message || 'Không thể tải quiz công khai.'
     } finally {
         isLoading.value = false
@@ -81,7 +81,7 @@ async function fetchPublicQuizzes(page = 0) {
 
 const fetchPublicQuizzesDebounced = debounce(fetchPublicQuizzes, 300)
 
-// ✅ THÊM METHOD ĐỂ REFRESH DANH SÁCH
+// THÊM METHOD ĐỂ REFRESH DANH SÁCH
 const refreshPublicQuizzes = () => {
     quizCache.clear() // Xóa cache
     fetchPublicQuizzes(currentPage.value) // Tải lại data
@@ -90,7 +90,7 @@ const refreshPublicQuizzes = () => {
 onMounted(() => {
     fetchPublicQuizzes()
 
-    // ✅ THÊM EVENT LISTENER ĐỂ LẮNG NGHE KHI CÓ QUIZ BỊ XÓA
+    // THÊM EVENT LISTENER ĐỂ LẮNG NGHE KHI CÓ QUIZ BỊ XÓA
     window.addEventListener('quizDeleted', refreshPublicQuizzes)
 })
 
@@ -103,7 +103,7 @@ function goToPage(page) {
 async function playQuiz(quizId) {
     const userId = localStorage.getItem('userId')
     if (!userId) {
-        console.error('❌ Missing userId - user not logged in')
+        console.error('Missing userId - user not logged in')
         // Có thể chuyển hướng đến trang login
     }
     console.log('🎮 Playing quiz:', quizId, 'for user:', userId)
@@ -153,11 +153,11 @@ const showDetailModal = ref(false)
 const selectedQuizId = ref(null)
 
 const openDetailModal = (quizId) => {
-    console.log('🔍 Opening detail modal for quiz ID:', quizId)
+    console.log(' Opening detail modal for quiz ID:', quizId)
     selectedQuizId.value = quizId
     showDetailModal.value = true
     console.log(
-        '✅ Modal state - showDetailModal:',
+        'Modal state - showDetailModal:',
         showDetailModal.value,
         'selectedQuizId:',
         selectedQuizId.value,
@@ -353,6 +353,7 @@ watch(() => route.params.id, (val) => {
     min-height: 100vh;
     background: var(--app-background);
 }
+
 /* Skeleton Loading */
 .quiz-skeleton-grid {
     display: grid;

@@ -23,7 +23,7 @@ public class PublicQuizAttemptController {
      */
     @GetMapping("/test")
     public ResponseEntity<String> testPublicEndpoint() {
-        System.out.println("✅ Test public endpoint accessed successfully!");
+        System.out.println("Test public endpoint accessed successfully!");
         return ResponseEntity.ok("Public endpoint works!");
     }
 
@@ -33,19 +33,19 @@ public class PublicQuizAttemptController {
      */
     @GetMapping("/recent/{quizId}")
     public ResponseEntity<List<QuizAttemptSummaryDTO>> getPublicRecentAttempts(@PathVariable Long quizId) {
-        System.out.println("🔍 Requesting PUBLIC recent attempts for quiz ID: " + quizId);
+        System.out.println("Requesting PUBLIC recent attempts for quiz ID: " + quizId);
         try {
-            // ✅ VALIDATE QUIZ ID
+            // VALIDATE QUIZ ID
             if (quizId == null || quizId <= 0) {
-                System.err.println("❌ Invalid quiz ID: " + quizId);
+                System.err.println("Invalid quiz ID: " + quizId);
                 return ResponseEntity.badRequest().build();
             }
 
             List<QuizAttemptSummaryDTO> recentAttempts = quizAttemptService.getRecentAttemptsForQuiz(quizId);
-            System.out.println("✅ Found " + recentAttempts.size() + " recent attempts for quiz " + quizId);
+            System.out.println("Found " + recentAttempts.size() + " recent attempts for quiz " + quizId);
             return ResponseEntity.ok(recentAttempts);
         } catch (Exception e) {
-            System.err.println("❌ Error getting recent attempts for quiz " + quizId + ": " + e.getMessage());
+            System.err.println("Error getting recent attempts for quiz " + quizId + ": " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

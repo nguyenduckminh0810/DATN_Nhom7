@@ -3,6 +3,7 @@ package com.nhom7.quiz.quizapp.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,25 +22,25 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/quizzes")
 public class QuizReviewController {
-    @Autowired
+        @Autowired
     private QuizReviewService reviewService;
 
     // Lấy danh sách đánh giá - ai cũng có thể xem
     @GetMapping("/{quizId}/reviews")
     public ResponseEntity<?> getReviewsForQuiz(@PathVariable Long quizId) {
         try {
-            System.out.println("📋 Getting reviews for quiz ID: " + quizId);
+            System.out.println("Getting reviews for quiz ID: " + quizId);
             List<QuizReview> reviews = reviewService.getReviewsForQuiz(quizId);
-            
-            // ✅ CONVERT TO DTO ĐỂ TRÁNH LAZY LOADING ISSUES
+
+            // CONVERT TO DTO ĐỂ TRÁNH LAZY LOADING ISSUES
             List<ReviewDTO> reviewDTOs = reviews.stream()
                     .map(ReviewDTO::new)
                     .collect(Collectors.toList());
-            
-            System.out.println("✅ Found " + reviewDTOs.size() + " reviews, converted to DTOs");
+
+            System.out.println("Found " + reviewDTOs.size() + " reviews, converted to DTOs");
             return ResponseEntity.ok(reviewDTOs);
         } catch (Exception e) {
-            System.err.println("❌ Error getting reviews for quiz " + quizId + ": " + e.getMessage());
+            System.err.println("Error getting reviews for quiz " + quizId + ": " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(new ArrayList<ReviewDTO>());
         }

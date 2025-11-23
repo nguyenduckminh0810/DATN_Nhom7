@@ -39,15 +39,20 @@ const importSelectedImage = ref(null)
 const importPreviewUrl = ref(null)
 const importIsPublic = ref(true)
 
-// ✅ THÊM STATE CHO QUIZ CODE
+//  THÊM STATE CHO QUIZ CODE
 const showCodeModal = ref(false)
 const quizCode = ref('')
 const quizInfo = ref(null)
 
-// ✅ HELPER: LẤY SỐ CÂU HỎI CỦA QUIZ (support nhiều field khác nhau)
+//  HELPER: LẤY SỐ CÂU HỎI CỦA QUIZ (support nhiều field khác nhau)
 const getQuestionCount = (q) => {
-  return q?.questionCount ?? q?.totalQuestions ?? q?.numQuestions ??
-    (Array.isArray(q?.questions) ? q.questions.length : 0) ?? 0
+  return (
+    q?.questionCount ??
+    q?.totalQuestions ??
+    q?.numQuestions ??
+    (Array.isArray(q?.questions) ? q.questions.length : 0) ??
+    0
+  )
 }
 
 //điều hướng về edit quiz
@@ -85,6 +90,28 @@ onMounted(async () => {
   isLoading.value = true
   try {
     userId.value = await getUserId()
+
+    //  ĐẢM BẢO USERNAME ĐƯỢC KHỞI TẠO ĐÚNG CÁCH
+    if (!username.value) {
+      const savedUsername = localStorage.getItem('username')
+      if (savedUsername) {
+        username.value = savedUsername
+      } else {
+        // Thử lấy từ user object
+        try {
+          const userStr = localStorage.getItem('user')
+          if (userStr) {
+            const user = JSON.parse(userStr)
+            if (user.username) {
+              username.value = user.username
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing user object:', e)
+        }
+      }
+    }
+
     await Promise.all([fetchCategories(), fetchQuizzes()])
   } finally {
     isLoading.value = false
@@ -110,23 +137,23 @@ async function fetchCategories() {
 // Fetch quizzes
 async function fetchQuizzes() {
   try {
-    // ✅ SỬA: CHỈ LẤY QUIZ CỦA USER HIỆN TẠI
+    //  SỬA: CHỈ LẤY QUIZ CỦA USER HIỆN TẠI
     const response = await api.get(`/quiz/user/${userId.value}/paginated`, {
-      params: { page: 0, size: 50 } // Lấy nhiều quiz hơn
+      params: { page: 0, size: 50 }, // Lấy nhiều quiz hơn
     })
-    console.log('🔍 Fetch quizzes response:', response.data)
+    console.log(' Fetch quizzes response:', response.data)
     quizzes.value = response.data.quizzes || response.data
-    console.log('✅ Quizzes loaded:', quizzes.value.length)
+    console.log(' Quizzes loaded:', quizzes.value.length)
 
-    // ✅ DEBUG: Kiểm tra từng quiz
+    //  DEBUG: Kiểm tra từng quiz
     quizzes.value.forEach((quiz, index) => {
-      console.log(`📝 Quiz ${index + 1}:`, {
+      console.log(` Quiz ${index + 1}:`, {
         id: quiz.id,
         title: quiz.title,
         isPublic: quiz.isPublic,
         deleted: quiz.deleted,
         deletedAt: quiz.deletedAt,
-        questionCount: getQuestionCount(quiz)
+        questionCount: getQuestionCount(quiz),
       })
     })
   } catch (error) {
@@ -152,25 +179,21 @@ async function createQuiz() {
       formData.append('image', selectedImage.value)
     }
 
-    // ✅ THỰC HIỆN POST VÀ LẤY RESPONSE
-    const response = await api.post(
-      '/quiz/create-quiz-with-image',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    )
+    //  THỰC HIỆN POST VÀ LẤY RESPONSE
+    const response = await api.post('/quiz/create-quiz-with-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
 
-    // ✅ LẤY quizId từ response
+    //  LẤY quizId từ response
     const quizId = response.data.quiz?.id || response.data.id
     const quizCode = response.data.quiz?.quizCode || response.data.quizCode
 
     message.value = 'Tạo quiz thành công!'
     messageType.value = 'success'
 
-    // ✅ HIỂN THỊ QUIZ CODE VÀ LƯU QUIZ INFO
+    //  HIỂN THỊ QUIZ CODE VÀ LƯU QUIZ INFO
     if (quizCode) {
       showQuizCode(quizCode, quizId)
     }
@@ -193,7 +216,7 @@ function editQuiz(quizId) {
   const quiz = quizzes.value.find((q) => q.id === quizId)
   if (!quiz) return
 
-  // ✅ Nhắc nếu chưa có question (nhưng vẫn cho vào trang Sửa)
+  //  Nhắc nếu chưa có question (nhưng vẫn cho vào trang Sửa)
   if (getQuestionCount(quiz) === 0) {
     message.value = 'Quiz này chưa có question — hãy thêm question sau khi vào trang Sửa.'
     messageType.value = 'error'
@@ -245,7 +268,6 @@ async function deleteQuiz(quizId) {
   }
 }
 
-
 async function playQuiz(quizId) {
   try {
     const { quizAttemptService } = await import('@/services/quizAttemptService')
@@ -256,12 +278,12 @@ async function playQuiz(quizId) {
   }
 }
 
-// ✅ COMPUTED CHO IMPORT EXCEL
+//  COMPUTED CHO IMPORT EXCEL
 const canImport = computed(() => {
   return importQuizTitle.value.trim() && importCategoryId.value && selectedExcelFile.value
 })
 
-// ✅ METHODS CHO IMPORT EXCEL
+//  METHODS CHO IMPORT EXCEL
 const downloadTemplate = () => {
   // Tạo file Excel template thực sự với thư viện xlsx
   const sampleData = [
@@ -272,7 +294,7 @@ const downloadTemplate = () => {
       'Đáp án C': 'Đà Nẵng',
       'Đáp án D': 'Huế',
       'Đáp án đúng': 'A',
-      'Thời gian (giây)': 30
+      'Thời gian (giây)': 30,
     },
     {
       'Câu hỏi': '1 + 1 = ?',
@@ -281,7 +303,7 @@ const downloadTemplate = () => {
       'Đáp án C': '3',
       'Đáp án D': '4',
       'Đáp án đúng': 'B',
-      'Thời gian (giây)': 20
+      'Thời gian (giây)': 20,
     },
     {
       'Câu hỏi': 'Màu của lá cây thường là gì?',
@@ -290,7 +312,7 @@ const downloadTemplate = () => {
       'Đáp án C': 'Xanh',
       'Đáp án D': 'Trắng',
       'Đáp án đúng': 'C',
-      'Thời gian (giây)': 25
+      'Thời gian (giây)': 25,
     },
     {
       'Câu hỏi': 'Con vật nào có 4 chân?',
@@ -299,7 +321,7 @@ const downloadTemplate = () => {
       'Đáp án C': 'Chó',
       'Đáp án D': 'Rắn',
       'Đáp án đúng': 'C',
-      'Thời gian (giây)': 15
+      'Thời gian (giây)': 15,
     },
     {
       'Câu hỏi': 'Nước nào lớn nhất thế giới?',
@@ -308,18 +330,18 @@ const downloadTemplate = () => {
       'Đáp án C': 'Nga',
       'Đáp án D': 'Canada',
       'Đáp án đúng': 'C',
-      'Thời gian (giây)': 60
-    }
-  ];
+      'Thời gian (giây)': 60,
+    },
+  ]
 
   try {
-    const worksheet = XLSX.utils.json_to_sheet(sampleData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Câu hỏi');
-    XLSX.writeFile(workbook, 'quiz-template.xlsx');
-    console.log('✅ Excel template downloaded successfully');
+    const worksheet = XLSX.utils.json_to_sheet(sampleData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Câu hỏi')
+    XLSX.writeFile(workbook, 'quiz-template.xlsx')
+    console.log(' Excel template downloaded successfully')
   } catch (error) {
-    console.error('❌ Error creating Excel template:', error);
+    console.error(' Error creating Excel template:', error)
   }
 }
 
@@ -355,8 +377,16 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-const importQuiz = async () => {
-  if (!canImport.value) return
+async function importQuiz() {
+  if (!selectedExcelFile.value || !importQuizTitle.value.trim() || !importCategoryId.value) {
+    alert('Vui lòng điền đầy đủ thông tin và chọn file Excel!')
+    return
+  }
+
+  if (!username.value) {
+    alert('Không thể xác định người dùng. Vui lòng đăng nhập lại!')
+    return
+  }
 
   isImporting.value = true
   importResult.value = null
@@ -370,22 +400,17 @@ const importQuiz = async () => {
     formData.append('username', username.value)
     formData.append('isPublic', importIsPublic.value)
 
-    // ✅ THÊM IMAGE VÀO FORMDATA
+    //  THÊM IMAGE VÀO FORMDATA
     if (importSelectedImage.value) {
       formData.append('image', importSelectedImage.value)
-      console.log('📸 Adding image to import:', importSelectedImage.value.name)
     }
 
-    const response = await api.post(
-      '/quiz/import-excel-with-image',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+    const response = await api.post('/quiz/import-excel-with-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
-    )
+    })
 
     importResult.value = response.data
 
@@ -393,7 +418,7 @@ const importQuiz = async () => {
       message.value = 'Import quiz thành công!'
       messageType.value = 'success'
 
-      // ✅ HIỂN THỊ QUIZ CODE CHO IMPORT
+      //  HIỂN THỊ QUIZ CODE CHO IMPORT
       if (response.data.quiz?.quizCode) {
         showQuizCode(response.data.quiz.quizCode, response.data.quiz.id)
       } else if (response.data.quizCode && response.data.id) {
@@ -445,7 +470,6 @@ function handleImportImageUpload(event) {
 
     importSelectedImage.value = file
     importPreviewUrl.value = URL.createObjectURL(file)
-    console.log('✅ Import image selected:', file.name)
   }
 }
 
@@ -454,20 +478,20 @@ function removeImportImage() {
   importPreviewUrl.value = null
 }
 
-// ✅ HIỂN THỊ QUIZ CODE
+//  HIỂN THỊ QUIZ CODE
 const showQuizCode = (code, quizId = null) => {
   quizCode.value = code
   if (quizId) {
-    // ✅ LƯU QUIZ INFO ĐỂ SHARE
+    //  LƯU QUIZ INFO ĐỂ SHARE
     quizInfo.value = {
       quizId: quizId,
-      quizCode: code
+      quizCode: code,
     }
   }
   showCodeModal.value = true
 }
 
-// ✅ COPY CODE
+//  COPY CODE
 const copyQuizCode = async () => {
   try {
     await navigator.clipboard.writeText(quizCode.value)
@@ -480,10 +504,10 @@ const copyQuizCode = async () => {
   }
 }
 
-// ✅ SHARE CODE
+//  SHARE CODE
 const shareCode = async () => {
   try {
-    // ✅ TẠO LINK TRỰC TIẾP ĐẾN QUIZ PLAY PAGE
+    //  TẠO LINK TRỰC TIẾP ĐẾN QUIZ PLAY PAGE
     const userId = localStorage.getItem('userId') || '1'
     const quizId = quizInfo.value?.quizId
     const shareUrl = `${window.location.origin}/quiz/${quizId}/${userId}/play`
@@ -493,7 +517,7 @@ const shareCode = async () => {
       await navigator.share({
         title: 'Tham gia Quiz',
         text: shareText,
-        url: shareUrl
+        url: shareUrl,
       })
     } else {
       // Fallback: copy to clipboard
@@ -508,7 +532,7 @@ const shareCode = async () => {
   }
 }
 
-// ✅ RESET FORM
+//  RESET FORM
 const resetForm = () => {
   title.value = ''
   description.value = ''
@@ -522,47 +546,6 @@ const resetForm = () => {
 <template>
   <div class="quiz-crud-container">
     <!-- Animated Background Elements -->
-    <div class="background-decorations">
-      <div class="floating-orb orb-1"></div>
-      <div class="floating-orb orb-2"></div>
-      <div class="floating-orb orb-3"></div>
-      <div class="floating-orb orb-4"></div>
-    </div>
-
-    <!-- Enhanced Hero Section -->
-    <div class="hero-section">
-      <div class="container">
-        <div class="row justify-content-center">
-          <div class="col-lg-8 text-center">
-            <div class="hero-content">
-              <div class="hero-icon">
-                <i class="bi bi-puzzle"></i>
-              </div>
-              <h1 class="hero-title">Quản lý Quiz của bạn</h1>
-              <p class="hero-subtitle">
-                Tạo, chỉnh sửa và quản lý bộ sưu tập quiz một cách dễ dàng với giao diện hiện đại
-              </p>
-              <div class="hero-stats">
-                <div class="stat-item">
-                  <span class="stat-number">{{ quizzes.length }}</span>
-                  <span class="stat-label">Quiz</span>
-                </div>
-                <div class="stat-divider"></div>
-                <div class="stat-item">
-                  <span class="stat-number">{{ categories.length }}</span>
-                  <span class="stat-label">Danh mục</span>
-                </div>
-                <div class="stat-divider"></div>
-                <div class="stat-item">
-                  <span class="stat-number">∞</span>
-                  <span class="stat-label">Khả năng</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div class="container py-5">
       <!-- Loading Spinner -->
@@ -585,19 +568,25 @@ const resetForm = () => {
             <div class="create-quiz-card">
               <div class="card-glow"></div>
               <div class="card-header-custom">
-                <!-- ✅ TAB NAVIGATION -->
+                <!--  TAB NAVIGATION -->
                 <div class="tab-navigation">
-                  <button @click="activeTab = 'create'" :class="['tab-btn', { active: activeTab === 'create' }]">
+                  <button
+                    @click="activeTab = 'create'"
+                    :class="['tab-btn', { active: activeTab === 'create' }]"
+                  >
                     <i class="bi bi-plus-circle-fill"></i>
                     <span>Tạo mới</span>
                   </button>
-                  <button @click="activeTab = 'import'" :class="['tab-btn', { active: activeTab === 'import' }]">
+                  <button
+                    @click="activeTab = 'import'"
+                    :class="['tab-btn', { active: activeTab === 'import' }]"
+                  >
                     <i class="bi bi-file-earmark-excel"></i>
                     <span>Import Excel</span>
                   </button>
                 </div>
 
-                <!-- ✅ TAB CONTENT HEADER -->
+                <!--  TAB CONTENT HEADER -->
                 <div class="tab-content-header">
                   <div v-if="activeTab === 'create'" class="header-info">
                     <h3 class="header-title">Tạo Quiz Mới</h3>
@@ -611,7 +600,7 @@ const resetForm = () => {
               </div>
 
               <div class="card-body-custom">
-                <!-- ✅ TAB 1: TẠO MỚI -->
+                <!--  TAB 1: TẠO MỚI -->
                 <div v-if="activeTab === 'create'" class="tab-content-panel">
                   <form @submit.prevent="createQuiz" class="import-form-compact">
                     <div class="row g-3">
@@ -622,8 +611,13 @@ const resetForm = () => {
                           <label class="form-label-compact">
                             <i class="bi bi-type me-2"></i>Tên quiz
                           </label>
-                          <input type="text" v-model="title" class="form-control-compact"
-                            placeholder="Nhập tên quiz thú vị..." required />
+                          <input
+                            type="text"
+                            v-model="title"
+                            class="form-control-compact"
+                            placeholder="Nhập tên quiz thú vị..."
+                            required
+                          />
                         </div>
 
                         <!-- Category -->
@@ -631,7 +625,11 @@ const resetForm = () => {
                           <label class="form-label-compact">
                             <i class="bi bi-bookmark-fill me-2"></i>Danh mục quiz
                           </label>
-                          <select v-model="selectedCategoryId" class="form-control-compact" required>
+                          <select
+                            v-model="selectedCategoryId"
+                            class="form-control-compact"
+                            required
+                          >
                             <option value="" disabled>Chọn danh mục...</option>
                             <option v-for="cat in categories" :key="cat.id" :value="cat.id">
                               {{ cat.name }}
@@ -645,8 +643,12 @@ const resetForm = () => {
                             <i class="bi bi-text-paragraph me-2"></i>Mô tả
                             <span class="text-muted">(Tùy chọn)</span>
                           </label>
-                          <textarea v-model="description" class="form-control-compact" placeholder="Mô tả ngắn..."
-                            rows="2"></textarea>
+                          <textarea
+                            v-model="description"
+                            class="form-control-compact"
+                            placeholder="Mô tả ngắn..."
+                            rows="2"
+                          ></textarea>
                         </div>
                       </div>
 
@@ -659,13 +661,22 @@ const resetForm = () => {
                             <span class="text-muted">(Tùy chọn)</span>
                           </label>
                           <div class="image-upload-compact">
-                            <input type="file" class="d-none" ref="imageInput" @change="handleImageUpload"
-                              accept="image/*" />
+                            <input
+                              type="file"
+                              class="d-none"
+                              ref="imageInput"
+                              @change="handleImageUpload"
+                              accept="image/*"
+                            />
 
                             <div v-if="!selectedImage" class="image-placeholder-compact">
                               <i class="bi bi-image"></i>
                               <p>Chọn ảnh</p>
-                              <button type="button" @click="$refs.imageInput.click()" class="btn-select-image-compact">
+                              <button
+                                type="button"
+                                @click="$refs.imageInput.click()"
+                                class="btn-select-image-compact"
+                              >
                                 <i class="bi bi-camera"></i>
                                 Chọn
                               </button>
@@ -688,8 +699,13 @@ const resetForm = () => {
                           </label>
                           <div class="privacy-options-compact">
                             <div class="privacy-option-compact">
-                              <input class="privacy-radio-compact" type="radio" :value="true" v-model="isPublic"
-                                id="publicYesCompact" />
+                              <input
+                                class="privacy-radio-compact"
+                                type="radio"
+                                :value="true"
+                                v-model="isPublic"
+                                id="publicYesCompact"
+                              />
                               <label class="privacy-label-compact" for="publicYesCompact">
                                 <div class="privacy-icon-compact public-icon-compact">
                                   <i class="bi bi-globe2"></i>
@@ -704,8 +720,13 @@ const resetForm = () => {
                               </label>
                             </div>
                             <div class="privacy-option-compact">
-                              <input class="privacy-radio-compact" type="radio" :value="false" v-model="isPublic"
-                                id="publicNoCompact" />
+                              <input
+                                class="privacy-radio-compact"
+                                type="radio"
+                                :value="false"
+                                v-model="isPublic"
+                                id="publicNoCompact"
+                              />
                               <label class="privacy-label-compact" for="publicNoCompact">
                                 <div class="privacy-icon-compact private-icon-compact">
                                   <i class="bi bi-lock"></i>
@@ -724,9 +745,9 @@ const resetForm = () => {
                       </div>
                     </div>
 
-                    <!-- Submit Button - Compact -->
+                    <!-- Submit Button - Enhanced -->
                     <div class="form-actions-compact">
-                      <button type="submit" class="btn-import-compact" :disabled="isCreating">
+                      <button type="submit" class="btn-create-quiz-enhanced" :disabled="isCreating">
                         <div v-if="isCreating" class="spinner-border spinner-border-sm me-2"></div>
                         <i class="bi bi-magic me-2"></i>
                         {{ isCreating ? 'Đang tạo...' : 'Tạo Quiz Ngay' }}
@@ -735,13 +756,13 @@ const resetForm = () => {
                   </form>
                 </div>
 
-                <!-- ✅ TAB 2: IMPORT EXCEL -->
+                <!--  TAB 2: IMPORT EXCEL -->
                 <div v-if="activeTab === 'import'" class="tab-content-panel">
                   <div class="import-excel-section">
                     <!-- Template Download - Compact -->
                     <div class="template-section-compact">
                       <div class="template-header-compact">
-                        <h4>📋 File mẫu Excel</h4>
+                        <h4>File mẫu Excel</h4>
                         <button @click="downloadTemplate" class="template-btn-compact">
                           <i class="bi bi-download"></i>
                           Tải mẫu
@@ -750,13 +771,16 @@ const resetForm = () => {
 
                       <!-- Template Info -->
                       <div class="template-info-compact">
-                        <p><strong>📊 Cấu trúc file Excel:</strong></p>
+                        <p><strong> Cấu trúc file Excel:</strong></p>
                         <ul>
                           <li><strong>A:</strong> STT (1, 2, 3...)</li>
                           <li><strong>B:</strong> Câu hỏi</li>
                           <li><strong>C-F:</strong> Đáp án A, B, C, D</li>
                           <li><strong>G:</strong> Đáp án đúng (A/B/C/D)</li>
-                          <li><strong>H:</strong> Thời gian (giây) - mặc định 30s, range 5-300s, 0 = không giới hạn</li>
+                          <li>
+                            <strong>H:</strong> Thời gian (giây) - mặc định 30s, range 5-300s, 0 =
+                            không giới hạn
+                          </li>
                         </ul>
                       </div>
                     </div>
@@ -771,8 +795,13 @@ const resetForm = () => {
                             <label class="form-label-compact">
                               <i class="bi bi-bookmark-fill me-2"></i>Tên Quiz
                             </label>
-                            <input v-model="importQuizTitle" type="text" class="form-control-compact"
-                              placeholder="Nhập tên quiz..." required />
+                            <input
+                              v-model="importQuizTitle"
+                              type="text"
+                              class="form-control-compact"
+                              placeholder="Nhập tên quiz..."
+                              required
+                            />
                           </div>
 
                           <!-- Category -->
@@ -780,9 +809,17 @@ const resetForm = () => {
                             <label class="form-label-compact">
                               <i class="bi bi-folder me-2"></i>Danh mục
                             </label>
-                            <select v-model="importCategoryId" class="form-control-compact" required>
+                            <select
+                              v-model="importCategoryId"
+                              class="form-control-compact"
+                              required
+                            >
                               <option value="" disabled>Chọn danh mục...</option>
-                              <option v-for="category in categories" :key="category.id" :value="category.id">
+                              <option
+                                v-for="category in categories"
+                                :key="category.id"
+                                :value="category.id"
+                              >
                                 {{ category.name }}
                               </option>
                             </select>
@@ -794,8 +831,12 @@ const resetForm = () => {
                               <i class="bi bi-text-paragraph me-2"></i>Mô tả
                               <span class="text-muted">(Tùy chọn)</span>
                             </label>
-                            <textarea v-model="importQuizDescription" class="form-control-compact"
-                              placeholder="Mô tả ngắn..." rows="2"></textarea>
+                            <textarea
+                              v-model="importQuizDescription"
+                              class="form-control-compact"
+                              placeholder="Mô tả ngắn..."
+                              rows="2"
+                            ></textarea>
                           </div>
                         </div>
 
@@ -808,27 +849,45 @@ const resetForm = () => {
                               <span class="text-muted">(Tùy chọn)</span>
                             </label>
                             <div class="image-upload-compact">
-                              <input type="file" class="d-none" ref="importImageInput" @change="handleImportImageUpload"
-                                accept="image/*" />
+                              <input
+                                type="file"
+                                class="d-none"
+                                ref="importImageInput"
+                                @change="handleImportImageUpload"
+                                accept="image/*"
+                              />
 
                               <div v-if="!importSelectedImage" class="image-placeholder-compact">
                                 <i class="bi bi-image"></i>
                                 <p>Chọn ảnh</p>
-                                <button type="button" @click="$refs.importImageInput.click()"
-                                  class="btn-select-image-compact">
+                                <button
+                                  type="button"
+                                  @click="$refs.importImageInput.click()"
+                                  class="btn-select-image-compact"
+                                >
                                   <i class="bi bi-camera"></i>
                                   Chọn
                                 </button>
                               </div>
 
                               <div v-else class="image-selected-compact">
-                                <img :src="importPreviewUrl" alt="Preview" class="image-preview-compact" />
-                                <button @click="removeImportImage" type="button" class="btn-remove-compact">
+                                <img
+                                  :src="importPreviewUrl"
+                                  alt="Preview"
+                                  class="image-preview-compact"
+                                />
+                                <button
+                                  @click="removeImportImage"
+                                  type="button"
+                                  class="btn-remove-compact"
+                                >
                                   <i class="bi bi-x"></i>
                                 </button>
                               </div>
                             </div>
-                            <small class="form-text text-muted">JPG, PNG, GIF, WebP (max 5MB)</small>
+                            <small class="form-text text-muted"
+                              >JPG, PNG, GIF, WebP (max 5MB)</small
+                            >
                           </div>
 
                           <!-- File Upload - Compact -->
@@ -836,15 +895,29 @@ const resetForm = () => {
                             <label class="form-label-compact">
                               <i class="bi bi-file-earmark-excel me-2"></i>File Excel
                             </label>
-                            <div class="file-upload-compact" :class="{ 'drag-over': isDragOver }" @drop="handleDrop"
-                              @dragover.prevent="isDragOver = true" @dragleave="isDragOver = false">
-                              <input ref="fileInput" type="file" @change="handleFileSelect" accept=".xlsx,.xls"
-                                class="d-none" />
+                            <div
+                              class="file-upload-compact"
+                              :class="{ 'drag-over': isDragOver }"
+                              @drop="handleDrop"
+                              @dragover.prevent="isDragOver = true"
+                              @dragleave="isDragOver = false"
+                            >
+                              <input
+                                ref="fileInput"
+                                type="file"
+                                @change="handleFileSelect"
+                                accept=".xlsx,.xls"
+                                class="d-none"
+                              />
 
                               <div v-if="!selectedExcelFile" class="file-placeholder-compact">
                                 <i class="bi bi-file-earmark-excel"></i>
                                 <p>Chọn file Excel</p>
-                                <button type="button" @click="$refs.fileInput.click()" class="btn-select-file-compact">
+                                <button
+                                  type="button"
+                                  @click="$refs.fileInput.click()"
+                                  class="btn-select-file-compact"
+                                >
                                   <i class="bi bi-folder2-open"></i>
                                   Chọn file
                                 </button>
@@ -855,12 +928,16 @@ const resetForm = () => {
                                 <div class="file-info-compact">
                                   <span class="file-name-compact">{{
                                     selectedExcelFile.name
-                                    }}</span>
+                                  }}</span>
                                   <small class="file-size-compact">{{
                                     formatFileSize(selectedExcelFile.size)
-                                    }}</small>
+                                  }}</small>
                                 </div>
-                                <button @click="removeExcelFile" type="button" class="btn-remove-compact">
+                                <button
+                                  @click="removeExcelFile"
+                                  type="button"
+                                  class="btn-remove-compact"
+                                >
                                   <i class="bi bi-x"></i>
                                 </button>
                               </div>
@@ -874,8 +951,13 @@ const resetForm = () => {
                             </label>
                             <div class="privacy-options-compact">
                               <div class="privacy-option-compact">
-                                <input class="privacy-radio-compact" type="radio" :value="true" v-model="importIsPublic"
-                                  id="importPublicYes" />
+                                <input
+                                  class="privacy-radio-compact"
+                                  type="radio"
+                                  :value="true"
+                                  v-model="importIsPublic"
+                                  id="importPublicYes"
+                                />
                                 <label class="privacy-label-compact" for="importPublicYes">
                                   <div class="privacy-icon-compact public-icon-compact">
                                     <i class="bi bi-globe2"></i>
@@ -890,8 +972,13 @@ const resetForm = () => {
                                 </label>
                               </div>
                               <div class="privacy-option-compact">
-                                <input class="privacy-radio-compact" type="radio" :value="false"
-                                  v-model="importIsPublic" id="importPublicNo" />
+                                <input
+                                  class="privacy-radio-compact"
+                                  type="radio"
+                                  :value="false"
+                                  v-model="importIsPublic"
+                                  id="importPublicNo"
+                                />
                                 <label class="privacy-label-compact" for="importPublicNo">
                                   <div class="privacy-icon-compact private-icon-compact">
                                     <i class="bi bi-lock"></i>
@@ -912,8 +999,15 @@ const resetForm = () => {
 
                       <!-- Submit Button - Compact -->
                       <div class="form-actions-compact">
-                        <button type="submit" class="btn-import-compact" :disabled="!canImport || isImporting">
-                          <div v-if="isImporting" class="spinner-border spinner-border-sm me-2"></div>
+                        <button
+                          type="submit"
+                          class="btn-import-compact"
+                          :disabled="!canImport || isImporting"
+                        >
+                          <div
+                            v-if="isImporting"
+                            class="spinner-border spinner-border-sm me-2"
+                          ></div>
                           <i class="bi bi-upload me-2"></i>
                           {{ isImporting ? 'Đang import...' : 'Import Quiz' }}
                         </button>
@@ -921,9 +1015,15 @@ const resetForm = () => {
                     </form>
 
                     <!-- Import Result - Compact -->
-                    <div v-if="importResult"
-                      :class="['import-result-compact', importResult.success ? 'success' : 'error']">
-                      <i :class="importResult.success ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i>
+                    <div
+                      v-if="importResult"
+                      :class="['import-result-compact', importResult.success ? 'success' : 'error']"
+                    >
+                      <i
+                        :class="
+                          importResult.success ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'
+                        "
+                      ></i>
                       <div>
                         <strong>{{ importResult.success ? 'Thành công!' : 'Thất bại!' }}</strong>
                         <p class="mb-0">{{ importResult.message }}</p>
@@ -937,108 +1037,22 @@ const resetForm = () => {
         </div>
 
         <!-- Enhanced Quiz List Section -->
-        <div class="row justify-content-center">
-          <div class="col-xl-12">
-            <div class="quiz-list-section">
-              <div class="section-header">
-                <div class="section-icon">
-                  <i class="bi bi-collection"></i>
-                </div>
-                <h3 class="section-title">
-                  Quiz của bạn
-                  <span class="quiz-count-enhanced">{{ quizzes.length }}</span>
-                </h3>
-                <p class="section-subtitle">Quản lý và chỉnh sửa các quiz đã tạo</p>
-              </div>
-
-              <!-- Loading Quiz List -->
-              <div v-if="loadingQuizzes" class="loading-quiz-section">
-                <div class="quiz-skeleton" v-for="n in 6" :key="n">
-                  <div class="skeleton-image"></div>
-                  <div class="skeleton-content">
-                    <div class="skeleton-line large"></div>
-                    <div class="skeleton-line medium"></div>
-                    <div class="skeleton-line small"></div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Enhanced Empty State -->
-              <div v-else-if="quizzes.length === 0" class="empty-state-enhanced">
-                <div class="empty-icon">
-                  <i class="bi bi-inbox"></i>
-                </div>
-                <h4 class="empty-title">Chưa có quiz nào</h4>
-                <p class="empty-text">Hãy tạo quiz đầu tiên để bắt đầu hành trình của bạn!</p>
-                <div class="empty-decoration">
-                  <div class="decoration-dot dot-1"></div>
-                  <div class="decoration-dot dot-2"></div>
-                  <div class="decoration-dot dot-3"></div>
-                </div>
-              </div>
-
-              <!-- Enhanced Quiz Grid -->
-              <div v-else class="quiz-grid-enhanced">
-                <div v-for="quiz in quizzes" :key="quiz.id" class="quiz-card-enhanced">
-                  <div class="card-inner">
-                    <div class="quiz-image-container-enhanced">
-                      <img :src="getQuizImageUrl(quiz.id)" alt="Quiz Image" class="quiz-image-enhanced"
-                        loading="lazy" />
-                      <div class="image-overlay"></div>
-                      <div class="quiz-status-enhanced">
-                        <span :class="['status-badge-enhanced', quiz.public ? 'public' : 'private']">
-                          <i :class="quiz.public ? 'bi bi-globe2' : 'bi bi-lock'"></i>
-                          {{ quiz.public ? 'Công khai' : 'Riêng tư' }}
-                        </span>
-
-                        <!-- 🔔 Badge cảnh báo nếu chưa có question -->
-                        <span v-if="getQuestionCount(quiz) === 0" class="status-badge-empty">
-                          <i class="bi bi-exclamation-triangle"></i> Chưa có question
-                        </span>
-                      </div>
-                    </div>
-
-                    <div class="quiz-content-enhanced">
-                      <h5 class="quiz-title-enhanced">{{ quiz.title }}</h5>
-                      <p class="quiz-category-enhanced" v-if="quiz.category">
-                        <i class="bi bi-tag-fill me-1"></i>
-                        {{ quiz.category.name }}
-                      </p>
-
-                      <div class="quiz-actions-enhanced">
-                        <button class="action-btn-enhanced play-btn-enhanced" @click="playQuiz(quiz.id)"
-                          :disabled="getQuestionCount(quiz) === 0"
-                          :title="getQuestionCount(quiz) === 0 ? 'Quiz chưa có question' : 'Chơi quiz'">
-                          <i class="bi bi-play-fill"></i>
-                          <span>Chơi</span>
-                        </button>
-                        <button class="action-btn-enhanced edit-btn-enhanced" @click="editQuiz(quiz.id)"
-                          title="Chỉnh sửa">
-                          <i class="bi bi-pencil-square"></i>
-                          <span>Sửa</span>
-                        </button>
-                        <button class="action-btn-enhanced delete-btn-enhanced" @click="deleteQuiz(quiz.id)"
-                          title="Xóa quiz">
-                          <i class="bi bi-trash3"></i>
-                          <span>Xóa</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
     <!-- Enhanced Toast Notification -->
-    <div v-if="message" :class="['toast-notification-enhanced', messageType === 'success' ? 'success' : 'error']">
+    <div
+      v-if="message"
+      :class="['toast-notification-enhanced', messageType === 'success' ? 'success' : 'error']"
+    >
       <div class="toast-icon">
-        <i :class="messageType === 'success'
-          ? 'bi bi-check-circle-fill'
-          : 'bi bi-exclamation-triangle-fill'"></i>
+        <i
+          :class="
+            messageType === 'success'
+              ? 'bi bi-check-circle-fill'
+              : 'bi bi-exclamation-triangle-fill'
+          "
+        ></i>
       </div>
       <div class="toast-content">
         <strong class="toast-title">
@@ -1052,14 +1066,14 @@ const resetForm = () => {
     </div>
   </div>
 
-  <!-- ✅ QUIZ CODE MODAL -->
+  <!--  QUIZ CODE MODAL -->
   <div v-if="showCodeModal" class="modal-overlay" @click="showCodeModal = false">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <div class="success-icon">
           <i class="bi bi-check-circle-fill"></i>
         </div>
-        <h3>🎉 Quiz đã được tạo thành công!</h3>
+        <h3>Quiz đã được tạo thành công!</h3>
         <button @click="showCodeModal = false" class="modal-close">
           <i class="bi bi-x-lg"></i>
         </button>
@@ -1083,7 +1097,7 @@ const resetForm = () => {
               </div>
             </div>
 
-            <!-- ✅ QR CODE CHO LOCALHOST -->
+            <!--  QR CODE CHO LOCALHOST -->
             <div class="qr-section">
               <h5>QR Code để tham gia</h5>
               <div class="qr-container">
@@ -1184,7 +1198,6 @@ const resetForm = () => {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
@@ -1324,7 +1337,8 @@ const resetForm = () => {
   animation-delay: 0.5s;
 }
 
-spinner-ring:nth-child(3) {}
+spinner-ring:nth-child(3) {
+}
 
 .spinner-ring:nth-child(3) {
   width: 60%;
@@ -1358,11 +1372,11 @@ spinner-ring:nth-child(3) {}
 
 /* === ENHANCED CREATE QUIZ CARD === */
 .create-quiz-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   backdrop-filter: blur(30px);
   border-radius: 30px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 30px 80px var(--shadow-color);
+  border: 2px solid var(--border-color);
   overflow: hidden;
   position: relative;
   z-index: 1;
@@ -1371,7 +1385,7 @@ spinner-ring:nth-child(3) {}
 
 .create-quiz-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 40px 100px var(--shadow-color);
 }
 
 .card-glow {
@@ -1392,73 +1406,68 @@ spinner-ring:nth-child(3) {}
 }
 
 .card-header-custom {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5f27cd 100%);
-  color: white;
+  background: var(--card-header-bg);
+  color: var(--card-header-text);
   padding: 3rem 2rem;
   text-align: center;
   position: relative;
   overflow: hidden;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.card-header-custom::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
-}
+/* Removed pseudo-element background since header is now white */
 
 .header-icon {
   width: 80px;
   height: 80px;
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
 }
 
 .header-icon i {
   font-size: 2rem;
-  color: white;
+  color: #ffffff;
 }
 
 .header-title {
   font-size: 2.2rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  color: var(--text-primary);
 }
 
 .header-subtitle {
-  opacity: 0.9;
+  opacity: 1;
   font-size: 1.1rem;
   margin: 0;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .card-body-custom {
   padding: 3rem;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border-color);
 }
 
 /* === ENHANCED FORM ELEMENTS === */
 .form-label-custom {
   font-weight: 700;
-  color: #1a202c;
+  color: var(--text-primary);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
   font-size: 1.1rem;
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
 }
 
 .label-optional {
   font-size: 0.85rem;
-  color: #4a5568;
+  color: var(--text-secondary);
   font-weight: 500;
   margin-left: auto;
 }
@@ -1469,21 +1478,21 @@ spinner-ring:nth-child(3) {}
 
 .form-control-enhanced,
 .form-select-enhanced {
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--input-border);
   border-radius: 15px;
   padding: 1rem 1.25rem;
   font-size: 1.1rem;
   transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--input-bg);
   backdrop-filter: blur(10px);
   width: 100%;
-  color: #1a202c;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
 .form-control-enhanced::placeholder,
 .form-select-enhanced::placeholder {
-  color: #718096;
+  color: var(--text-muted);
   font-weight: 400;
 }
 
@@ -1492,9 +1501,9 @@ spinner-ring:nth-child(3) {}
   border-color: #00d4ff;
   box-shadow: 0 0 0 0.3rem rgba(0, 212, 255, 0.2);
   outline: none;
-  background: white;
+  background: var(--input-bg);
   transform: translateY(-2px);
-  color: #1a202c;
+  color: var(--text-primary);
 }
 
 .input-border {
@@ -1509,8 +1518,8 @@ spinner-ring:nth-child(3) {}
   border-radius: 2px;
 }
 
-.form-control-enhanced:focus+.input-border,
-.form-select-enhanced:focus+.input-border {
+.form-control-enhanced:focus + .input-border,
+.form-select-enhanced:focus + .input-border {
   width: 100%;
 }
 
@@ -1655,6 +1664,41 @@ spinner-ring:nth-child(3) {}
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
+  margin: 2rem 0;
+  padding: 0 1rem;
+}
+
+/* Ensure proper spacing and alignment */
+.privacy-options-enhanced .privacy-option-enhanced {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Force layout improvements */
+.privacy-options-enhanced {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 1.5rem !important;
+  margin: 2rem 0 !important;
+  padding: 0 1rem !important;
+}
+
+.privacy-label-enhanced {
+  display: flex !important;
+  align-items: center !important;
+  padding: 1.75rem !important;
+  border: 2px solid #374151 !important;
+  border-radius: 16px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  background: #1f2937 !important;
+  backdrop-filter: blur(10px) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  min-height: 120px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .privacy-option-enhanced {
@@ -1669,15 +1713,19 @@ spinner-ring:nth-child(3) {}
 .privacy-label-enhanced {
   display: flex;
   align-items: center;
-  padding: 1.5rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 20px;
+  padding: 1.75rem;
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
+  min-height: 120px;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .privacy-label-enhanced::before {
@@ -1687,7 +1735,7 @@ spinner-ring:nth-child(3) {}
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-bg), transparent);
   transition: left 0.5s ease;
 }
 
@@ -1696,61 +1744,78 @@ spinner-ring:nth-child(3) {}
 }
 
 .privacy-label-enhanced:hover {
-  border-color: #00d4ff;
-  background: rgba(0, 212, 255, 0.05);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.03));
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
-.privacy-radio:checked+.privacy-label-enhanced {
-  border-color: #00d4ff;
-  background: rgba(0, 212, 255, 0.1);
-  box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+.privacy-radio:checked + .privacy-label-enhanced {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+  transform: translateY(-2px);
 }
 
 .privacy-icon {
-  width: 50px;
-  height: 50px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 1rem;
+  margin-right: 1.25rem;
   flex-shrink: 0;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  position: relative;
+  z-index: 2;
 }
 
 .public-icon {
-  background: linear-gradient(45deg, #48bb78, #38a169);
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
+  border: 2px solid rgba(16, 185, 129, 0.3);
 }
 
 .private-icon {
-  background: linear-gradient(45deg, #a0aec0, #718096);
+  background: linear-gradient(135deg, #6b7280, #4b5563);
   color: white;
+  border: 2px solid rgba(107, 114, 128, 0.3);
 }
 
 .privacy-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding-right: 1rem;
 }
 
 .privacy-content strong {
   display: block;
-  color: #1a202c;
-  margin-bottom: 0.25rem;
-  font-size: 1.1rem;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
   font-weight: 700;
+  line-height: 1.3;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .privacy-content small {
-  color: #4a5568;
+  color: #e5e7eb;
   font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  opacity: 0.9;
 }
 
 .privacy-checkmark {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #00d4ff;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   display: flex;
   align-items: center;
@@ -1758,34 +1823,115 @@ spinner-ring:nth-child(3) {}
   opacity: 0;
   transform: scale(0);
   transition: all 0.3s ease;
+  margin-left: auto;
+  font-size: 1rem;
+  font-weight: bold;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-.privacy-radio:checked+.privacy-label-enhanced .privacy-checkmark {
+.privacy-radio:checked + .privacy-label-enhanced .privacy-checkmark {
   opacity: 1;
   transform: scale(1);
 }
 
+/* Focus states for accessibility */
+.privacy-label-enhanced:focus-within {
+  outline: 2px solid #3b82f6;
+  outline-offset: 3px;
+  border-color: #3b82f6;
+}
+
+/* Smooth transitions for all interactive elements */
+.privacy-label-enhanced * {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced visual feedback */
+.privacy-radio:checked + .privacy-label-enhanced .privacy-icon {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+}
+
+.privacy-radio:checked + .privacy-label-enhanced .privacy-content strong {
+  color: #3b82f6;
+  text-shadow: 0 1px 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Additional hover effects */
+.privacy-label-enhanced:hover .privacy-icon {
+  transform: scale(1.02);
+}
+
+.privacy-label-enhanced:hover .privacy-content strong {
+  color: #60a5fa;
+}
+
+/* Dark mode specific improvements */
+.privacy-label-enhanced {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+.privacy-label-enhanced:hover {
+  background: #374151;
+  border-color: #3b82f6;
+}
+
+.privacy-radio:checked + .privacy-label-enhanced {
+  background: #1e40af;
+  border-color: #3b82f6;
+}
+
+.privacy-content strong {
+  color: #f9fafb;
+}
+
+.privacy-content small {
+  color: #d1d5db;
+}
+
+/* Ensure proper contrast in all states */
+.privacy-label-enhanced .privacy-content strong {
+  color: #f9fafb !important;
+}
+
+.privacy-label-enhanced .privacy-content small {
+  color: #d1d5db !important;
+}
+
+.privacy-radio:checked + .privacy-label-enhanced .privacy-content strong {
+  color: #60a5fa !important;
+}
+
 /* === ENHANCED SUBMIT BUTTON === */
 .btn-create-quiz-enhanced {
-  background: linear-gradient(135deg, #00d4ff 0%, #5f27cd 50%, #764ba2 100%);
-  color: white;
-  border: none;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 50%, #a71e2a 100%) !important;
+  color: white !important;
+  border: 3px solid #c82333 !important;
   padding: 1.25rem 3rem;
   border-radius: 50px;
   font-weight: 700;
   font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.4s ease;
-  box-shadow: 0 15px 40px rgba(95, 39, 205, 0.4);
+  box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4) !important;
   position: relative;
   overflow: hidden;
   min-width: 200px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+  z-index: 1000 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
 }
 
 .btn-create-quiz-enhanced:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 20px 60px rgba(95, 39, 205, 0.6);
-  background: linear-gradient(135deg, #00d4ff 0%, #5f27cd 30%, #764ba2 100%);
+  transform: translateY(-3px) !important;
+  box-shadow: 0 15px 40px rgba(220, 53, 69, 0.6) !important;
+  background: linear-gradient(135deg, #c82333 0%, #a71e2a 50%, #721c24 100%) !important;
+  border-color: #a71e2a !important;
 }
 
 .btn-create-quiz-enhanced:active {
@@ -1793,8 +1939,30 @@ spinner-ring:nth-child(3) {}
 }
 
 .btn-create-quiz-enhanced:disabled {
-  opacity: 0.8;
-  cursor: not-allowed;
+  opacity: 0.8 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 50%, #495057 100%) !important;
+  border-color: #5a6268 !important;
+}
+
+/* Đảm bảo button luôn visible và không bị override */
+.btn-create-quiz-enhanced {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Thêm outline cho accessibility */
+.btn-create-quiz-enhanced:focus {
+  outline: 3px solid rgba(220, 53, 69, 0.5) !important;
+  outline-offset: 2px !important;
+}
+
+/* Đảm bảo button container có spacing phù hợp */
+.form-actions-compact {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .btn-content {
@@ -1838,7 +2006,6 @@ spinner-ring:nth-child(3) {}
 }
 
 @keyframes bounce {
-
   0%,
   80%,
   100% {
@@ -1859,7 +2026,9 @@ spinner-ring:nth-child(3) {}
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition:
+    width 0.6s,
+    height 0.6s;
 }
 
 .btn-create-quiz-enhanced:active .btn-ripple {
@@ -1940,7 +2109,12 @@ spinner-ring:nth-child(3) {}
 
 .skeleton-image {
   height: 200px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -1951,7 +2125,12 @@ spinner-ring:nth-child(3) {}
 
 .skeleton-line {
   height: 1rem;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
   border-radius: 0.5rem;
@@ -2043,7 +2222,6 @@ spinner-ring:nth-child(3) {}
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 0.3;
@@ -2066,19 +2244,19 @@ spinner-ring:nth-child(3) {}
 
 /* === ENHANCED QUIZ CARD === */
 .quiz-card-enhanced {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   backdrop-filter: blur(30px);
   border-radius: 25px;
   overflow: hidden;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 15px 50px var(--shadow-color);
   transition: all 0.4s ease;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--border-color);
   position: relative;
 }
 
 .quiz-card-enhanced:hover {
   transform: translateY(-10px) scale(1.02);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 30px 80px var(--shadow-color);
   border-color: rgba(0, 212, 255, 0.5);
 }
 
@@ -2135,7 +2313,7 @@ spinner-ring:nth-child(3) {}
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 20px var(--shadow-color);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -2179,7 +2357,7 @@ spinner-ring:nth-child(3) {}
 
 .quiz-title-enhanced {
   margin-bottom: 1rem;
-  color: #1a202c;
+  color: var(--text-primary);
   font-weight: 800;
   font-size: 1.3rem;
   line-height: 1.4;
@@ -2190,7 +2368,7 @@ spinner-ring:nth-child(3) {}
 }
 
 .quiz-category-enhanced {
-  color: #4a5568;
+  color: var(--text-secondary);
   font-size: 0.95rem;
   margin-bottom: 1.5rem;
   font-weight: 600;
@@ -2469,6 +2647,32 @@ spinner-ring:nth-child(3) {}
     padding: 1rem 2rem;
     font-size: 1rem;
   }
+
+  .privacy-options-enhanced {
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .privacy-label-enhanced {
+    padding: 1.25rem;
+    min-height: 100px;
+  }
+
+  .privacy-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
+    margin-right: 1rem;
+  }
+
+  .privacy-content strong {
+    font-size: 1.1rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .privacy-content small {
+    font-size: 0.9rem;
+  }
 }
 
 /* === ACCESSIBILITY === */
@@ -2480,12 +2684,13 @@ spinner-ring:nth-child(3) {}
   }
 }
 
-/* ✅ TAB SYSTEM STYLES */
+/*  TAB SYSTEM STYLES */
 .tab-navigation {
   display: flex;
   gap: 0;
   margin-bottom: 20px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--navbar-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 4px;
   backdrop-filter: blur(10px);
@@ -2498,24 +2703,25 @@ spinner-ring:nth-child(3) {}
   justify-content: center;
   gap: 8px;
   padding: 12px 20px;
-  background: transparent;
-  border: none;
+  background: var(--navbar-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
-  font-weight: 500;
+  color: var(--text-primary);
+  font-weight: 600;
   transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .tab-btn:hover {
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
 }
 
 .tab-btn.active {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  color: #ffffff;
+  border-color: var(--border-color);
 }
 
 .tab-btn i {
@@ -2535,18 +2741,18 @@ spinner-ring:nth-child(3) {}
   animation: fadeInUp 0.5s ease;
 }
 
-/* ✅ IMPORT EXCEL STYLES */
+/*  IMPORT EXCEL STYLES */
 .import-excel-section {
   max-width: 100%;
 }
 
 .template-section-compact {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 2px dashed #28a745;
+  background: var(--bg-secondary);
+  border: 2px dashed var(--success-color);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 .template-header-compact {
@@ -2557,7 +2763,7 @@ spinner-ring:nth-child(3) {}
 
 .template-header-compact h4 {
   margin: 0;
-  color: #2c3e50;
+  color: var(--text-primary);
   font-size: 18px;
   font-weight: 600;
 }
@@ -2586,14 +2792,14 @@ spinner-ring:nth-child(3) {}
 .template-info-compact {
   margin-top: 16px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--card-bg);
   border-radius: 8px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--border-color);
 }
 
 .template-info-compact p {
   margin: 0 0 12px 0;
-  color: #495057;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
@@ -2605,7 +2811,7 @@ spinner-ring:nth-child(3) {}
 
 .template-info-compact li {
   margin-bottom: 6px;
-  color: #6c757d;
+  color: var(--text-secondary);
   font-size: 13px;
   position: relative;
 }
@@ -2620,11 +2826,11 @@ spinner-ring:nth-child(3) {}
 
 .import-form-compact {
   margin-top: 24px;
-  background: white;
+  background: var(--card-bg);
   padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e9ecef;
+  box-shadow: 0 4px 20px var(--shadow-color);
+  border: 1px solid var(--border-color);
 }
 
 .form-group-compact {
@@ -2635,22 +2841,22 @@ spinner-ring:nth-child(3) {}
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: #495057;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
 .form-label-compact i {
-  color: #6c757d;
+  color: var(--text-secondary);
   margin-right: 6px;
 }
 
 .form-control-compact {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--input-border);
   border-radius: 8px;
-  background: #ffffff;
-  color: #495057;
+  background: var(--input-bg);
+  color: var(--text-primary);
   font-size: 14px;
   transition: all 0.3s ease;
   font-family: inherit;
@@ -2658,51 +2864,51 @@ spinner-ring:nth-child(3) {}
 
 .form-control-compact:focus {
   outline: none;
-  border-color: #007bff;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  border-color: var(--primary-color);
+  background: var(--input-bg);
+  box-shadow: 0 0 0 3px var(--primary-shadow);
 }
 
 .form-control-compact::placeholder {
-  color: #adb5bd;
+  color: var(--text-muted);
 }
 
 /* Image Upload Compact - Light Theme */
 .image-upload-compact {
-  border: 2px dashed #dee2e6;
+  border: 2px dashed var(--border-color);
   border-radius: 8px;
   padding: 20px;
   text-align: center;
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .image-upload-compact:hover {
-  border-color: #007bff;
-  background: #e3f2fd;
+  border-color: var(--primary-color);
+  background: var(--primary-bg);
 }
 
 .image-placeholder-compact {
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .image-placeholder-compact i {
   font-size: 32px;
   margin-bottom: 12px;
   display: block;
-  color: #adb5bd;
+  color: var(--text-muted);
 }
 
 .image-placeholder-compact p {
   margin: 12px 0;
   font-size: 14px;
-  color: #6c757d;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .btn-select-image-compact {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -2714,12 +2920,12 @@ spinner-ring:nth-child(3) {}
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+  box-shadow: 0 2px 8px var(--primary-shadow);
 }
 
 .btn-select-image-compact:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 4px 15px var(--primary-shadow);
 }
 
 .image-selected-compact {
@@ -2738,8 +2944,8 @@ spinner-ring:nth-child(3) {}
 
 .btn-remove-compact {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: 8px;
+  right: 8px;
   background: #dc3545;
   color: white;
   border: none;
@@ -2760,25 +2966,25 @@ spinner-ring:nth-child(3) {}
   transform: scale(1.1);
 }
 
-/* File Upload Compact - Light Theme */
+/* File Upload Compact - Theme Aware */
 .file-upload-compact {
-  border: 2px dashed #dee2e6;
+  border: 2px dashed var(--border-color);
   border-radius: 8px;
   padding: 20px;
   text-align: center;
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .file-upload-compact:hover,
 .file-upload-compact.drag-over {
-  border-color: #28a745;
-  background: #d4edda;
+  border-color: var(--success-color);
+  background: var(--success-bg);
 }
 
 .file-placeholder-compact {
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .file-placeholder-compact i {
@@ -2791,7 +2997,7 @@ spinner-ring:nth-child(3) {}
 .file-placeholder-compact p {
   margin: 12px 0;
   font-size: 14px;
-  color: #6c757d;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -2820,10 +3026,10 @@ spinner-ring:nth-child(3) {}
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #d4edda;
+  background: var(--success-bg);
   padding: 12px 16px;
   border-radius: 8px;
-  border: 1px solid #c3e6cb;
+  border: 1px solid var(--success-border);
 }
 
 .file-selected-compact i {
@@ -2840,13 +3046,13 @@ spinner-ring:nth-child(3) {}
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #155724;
+  color: var(--success-text);
   margin-bottom: 2px;
 }
 
 .file-size-compact {
   font-size: 12px;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 /* Form Actions Compact - Light Theme */
@@ -2854,37 +3060,95 @@ spinner-ring:nth-child(3) {}
   margin-top: 32px;
   text-align: center;
   padding-top: 24px;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--border-color);
 }
 
 .btn-import-compact {
-  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-  color: white;
-  border: none;
-  padding: 14px 32px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.2);
-  min-width: 160px;
-  justify-content: center;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 50%, #a71e2a 100%) !important;
+  color: white !important;
+  border: 3px solid #c82333 !important;
+  padding: 1.25rem 3rem !important;
+  border-radius: 50px !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  cursor: pointer !important;
+  transition: all 0.4s ease !important;
+  box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  min-width: 200px !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+  z-index: 1000 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
 }
 
 .btn-import-compact:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+  transform: translateY(-3px) !important;
+  box-shadow: 0 15px 40px rgba(220, 53, 69, 0.6) !important;
+  background: linear-gradient(135deg, #c82333 0%, #a71e2a 50%, #721c24 100%) !important;
+  border-color: #a71e2a !important;
+}
+
+.btn-import-compact:active {
+  transform: translateY(-1px) !important;
 }
 
 .btn-import-compact:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+  opacity: 0.8 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 50%, #495057 100%) !important;
+  border-color: #5a6268 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Thêm hiệu ứng ripple cho nút import compact */
+.btn-import-compact::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s,
+    height 0.6s;
+}
+
+.btn-import-compact:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Thêm hiệu ứng glow khi hover */
+.btn-import-compact::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #dc3545, #c82333, #a71e2a, #721c24);
+  border-radius: 50px;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-import-compact:hover::after {
+  opacity: 0.6;
+}
+
+/* Focus state cho accessibility */
+.btn-import-compact:focus {
+  outline: 3px solid rgba(220, 53, 69, 0.5) !important;
+  outline-offset: 2px !important;
 }
 
 /* Import Result Compact - Light Theme */
@@ -2900,17 +3164,17 @@ spinner-ring:nth-child(3) {}
 }
 
 .import-result-compact.success {
-  background: #d4edda;
-  border-left-color: #28a745;
-  border: 1px solid #c3e6cb;
-  color: #155724;
+  background: var(--success-bg);
+  border-left-color: var(--success-color);
+  border: 1px solid var(--success-border);
+  color: var(--success-text);
 }
 
 .import-result-compact.error {
-  background: #f8d7da;
-  border-left-color: #dc3545;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
+  background: var(--danger-bg);
+  border-left-color: var(--danger-color);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-text);
 }
 
 .import-result-compact i {
@@ -2919,11 +3183,11 @@ spinner-ring:nth-child(3) {}
 }
 
 .import-result-compact.success i {
-  color: #28a745;
+  color: var(--success-color);
 }
 
 .import-result-compact.error i {
-  color: #dc3545;
+  color: var(--danger-color);
 }
 
 .import-result-compact strong {
@@ -2935,12 +3199,12 @@ spinner-ring:nth-child(3) {}
 /* Small text styling */
 .form-text {
   font-size: 12px;
-  color: #6c757d;
+  color: var(--text-secondary);
   margin-top: 6px;
 }
 
 .text-muted {
-  color: #6c757d !important;
+  color: var(--text-secondary) !important;
   font-weight: 400;
 }
 
@@ -2964,6 +3228,20 @@ spinner-ring:nth-child(3) {}
     margin-top: 24px;
     padding-top: 16px;
   }
+
+  .btn-import-compact {
+    padding: 1rem 2rem !important;
+    font-size: 1rem !important;
+    min-width: 160px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-import-compact {
+    padding: 0.875rem 1.5rem !important;
+    font-size: 0.95rem !important;
+    min-width: 140px !important;
+  }
 }
 
 /* === QUIZ CODE MODAL === */
@@ -2981,9 +3259,9 @@ spinner-ring:nth-child(3) {}
 }
 
 .modal-content {
-  background: white;
+  background: var(--card-bg);
   border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 40px var(--shadow-color);
   max-width: 500px;
   width: 90%;
   max-height: 90vh;
@@ -3217,5 +3495,55 @@ spinner-ring:nth-child(3) {}
 .qr-placeholder small {
   color: #6c757d;
   font-size: 0.8rem;
+}
+
+/* Giữ layout hiện tại của khối file */
+.file-selected-compact {
+  position: relative;
+  /* tạo context cho nút bên trong */
+}
+
+/* Ghi đè riêng cho nút remove trong khối file đã chọn */
+.file-selected-compact .btn-remove-compact {
+  position: static;
+  /* bỏ absolute */
+  margin-left: auto;
+  /* đẩy nút sang phải trong flex row */
+  width: 28px;
+  height: 28px;
+}
+
+.file-selected-compact {
+  position: relative;
+}
+
+.file-selected-compact .btn-remove-compact {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+}
+
+.file-selected-compact {
+  position: relative;
+}
+
+.file-selected-compact .btn-remove-compact {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
+  /* kéo ra ngoài góc một nửa kích thước */
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  padding: 0;
+  display: flex;
+  /* căn giữa icon */
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  /* tránh lệch do line-height */
+  font-size: 14px;
+  /* kích thước icon */
 }
 </style>

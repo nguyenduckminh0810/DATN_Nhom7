@@ -14,6 +14,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -28,11 +30,11 @@ import com.nhom7.quiz.quizapp.model.Category;
 import com.nhom7.quiz.quizapp.model.Result;
 import com.nhom7.quiz.quizapp.service.QuizService;
 import com.nhom7.quiz.quizapp.service.ExcelImportService;
+import com.nhom7.quiz.quizapp.service.userService.LoginService;
 import com.nhom7.quiz.quizapp.service.ResultService;
 import com.nhom7.quiz.quizapp.model.dto.QuizImportDto;
 import com.nhom7.quiz.quizapp.model.dto.QuizDetailDTO;
 import com.nhom7.quiz.quizapp.config.JwtUtil;
-import com.nhom7.quiz.quizapp.service.userService.LoginService;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -82,36 +84,36 @@ public class QuizController {
 			HttpServletRequest request) {
 
 		try {
-			// ✅ DEBUG: In ra thông tin nhận được
-			System.out.println("📝 Received - Title: " + title);
-			System.out.println("📝 Received - Description: " + description);
-			System.out.println("📝 Received - IsPublic: " + isPublic);
-			System.out.println("📝 Received - CategoryId: " + categoryId);
-			System.out.println("📝 Received - UserId: " + userId);
+			// DEBUG: In ra thông tin nhận được
+			System.out.println("Received - Title: " + title);
+			System.out.println("Received - Description: " + description);
+			System.out.println("Received - IsPublic: " + isPublic);
+			System.out.println("Received - CategoryId: " + categoryId);
+			System.out.println("Received - UserId: " + userId);
 
-			// ✅ TẠO QUIZ OBJECT TỪ PARAMETERS
+			// TẠO QUIZ OBJECT TỪ PARAMETERS
 			Quiz quiz = new Quiz();
 			quiz.setTitle(title);
 			quiz.setPublic(isPublic);
 
-			// ✅ TÌM CATEGORY
+			// TÌM CATEGORY
 			Category category = categoryRepo.findById(categoryId).orElse(null);
 			if (category == null) {
 				return new ResponseEntity<>("Category not found", HttpStatus.BAD_REQUEST);
 			}
 			quiz.setCategory(category);
 
-			// ✅ TÌM USER
+			// TÌM USER
 			User user = loginService.findById(userId);
 			if (user == null) {
 				return new ResponseEntity<>("User not found", HttpStatus.BAD_REQUEST);
 			}
 			quiz.setUser(user);
 
-			// ✅ TẠO QUIZ
+			// TẠO QUIZ
 			Quiz savedQuiz = quizService.createQuiz(quiz);
 
-			// ✅ UPLOAD IMAGE NẾU CÓ
+			// UPLOAD IMAGE NẾU CÓ
 			if (imageFile != null && !imageFile.isEmpty()) {
 				try {
 					quizService.uploadImageForQuiz(savedQuiz, imageFile);
@@ -122,7 +124,7 @@ public class QuizController {
 				}
 			}
 
-			// ✅ TRẢ VỀ RESPONSE VỚI QUIZ CODE
+			// TRẢ VỀ RESPONSE VỚI QUIZ CODE
 			Map<String, Object> response = new HashMap<>();
 			response.put("success", true);
 			response.put("message", "Tạo quiz thành công!");
@@ -162,33 +164,49 @@ public class QuizController {
 
 	@GetMapping("/detail/{id}")
 	public ResponseEntity<QuizDetailDTO> getQuizDetail(@PathVariable Long id) {
-		System.out.println("🔍 Requesting quiz detail for ID: " + id);
+		System.out.println("Requesting quiz detail for ID: " + id);
 		try {
 			Optional<QuizDetailDTO> detail = quizService.getQuizDetail(id);
 			if (detail.isPresent()) {
-				System.out.println("✅ Quiz detail found: " + detail.get().getTitle());
+				System.out.println("Quiz detail found: " + detail.get().getTitle());
 				return ResponseEntity.ok().body(detail.get());
 			} else {
-				System.out.println("❌ Quiz not found for ID: " + id);
+				System.out.println("Quiz not found for ID: " + id);
 				return ResponseEntity.notFound().build();
 			}
 		} catch (Exception e) {
-			System.err.println("❌ Error getting quiz detail: " + e.getMessage());
+			System.err.println("Error getting quiz detail: " + e.getMessage());
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
 
 	@PutMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
+	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.name)")
 	public ResponseEntity<Quiz> updateQuiz(@PathVariable Long id, @RequestBody Quiz quiz) {
-		return quizService.updateQuiz(id, quiz)
-				.map(updatedQuiz -> ResponseEntity.ok().body(updatedQuiz))
-				.orElse(ResponseEntity.notFound().build());
+		System.out.println("[QuizController] updateQuiz called for ID: " + id);
+		System.out.println("[QuizController] Request body quiz isPublic: " + quiz.isPublic());
+
+		try {
+			Optional<Quiz> result = quizService.updateQuiz(id, quiz);
+			if (result.isPresent()) {
+				Quiz updatedQuiz = result.get();
+				System.out.println(
+						"[QuizController] Quiz updated successfully - Final isPublic: " + updatedQuiz.isPublic());
+				return ResponseEntity.ok().body(updatedQuiz);
+			} else {
+				System.out.println("[QuizController] Quiz not found for ID: " + id);
+				return ResponseEntity.notFound().build();
+			}
+		} catch (Exception e) {
+			System.err.println("[QuizController] Error updating quiz: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
 	}
 
 	@DeleteMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
+	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.name)")
 	public ResponseEntity<Map<String, Object>> deleteQuiz(@PathVariable Long id, HttpServletRequest request) {
 		try {
 			boolean deleted = quizService.deleteQuiz(id);
@@ -211,30 +229,126 @@ public class QuizController {
 		}
 	}
 
-	// ✅ THÊM CÁC ENDPOINT MỚI CHO SOFT DELETE
-	@DeleteMapping("/{id}/hard")
-	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
-	public ResponseEntity<Map<String, Object>> hardDeleteQuiz(@PathVariable Long id, HttpServletRequest request) {
+	// DEBUG ENDPOINT - XÓA SAU KHI TEST XONG
+	@GetMapping("/debug/my-quizzes")
+	public ResponseEntity<List<Map<String, Object>>> debugMyQuizzes() {
+		List<Map<String, Object>> result = new ArrayList<>();
+
+		try {
+			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			if (auth != null) {
+				String username = auth.getName();
+				User user = loginService.findByUsername(username);
+				if (user != null) {
+					List<Quiz> allQuizzes = quizService.getAllQuiz();
+					for (Quiz quiz : allQuizzes) {
+						if (quiz.getUser() != null && quiz.getUser().getId().equals(user.getId())) {
+							Map<String, Object> quizInfo = new HashMap<>();
+							quizInfo.put("id", quiz.getId());
+							quizInfo.put("title", quiz.getTitle());
+							quizInfo.put("deleted", quiz.isDeleted());
+							quizInfo.put("owner", quiz.getUser().getUsername());
+							result.add(quizInfo);
+						}
+					}
+				}
+			}
+			return ResponseEntity.ok(result);
+		} catch (Exception e) {
+			return ResponseEntity.status(500).body(new ArrayList<>());
+		}
+	}
+
+	@GetMapping("/debug/{id}")
+	public ResponseEntity<Map<String, Object>> debugQuiz(@PathVariable Long id) {
 		Map<String, Object> response = new HashMap<>();
 
 		try {
-			System.out.println("🗑️ Attempting to hard delete quiz ID: " + id);
+			Optional<Quiz> quizOpt = quizService.getQuizById(id);
+			if (quizOpt.isPresent()) {
+				Quiz quiz = quizOpt.get();
+				response.put("found", true);
+				response.put("id", quiz.getId());
+				response.put("title", quiz.getTitle());
+				response.put("deleted", quiz.isDeleted());
+				response.put("owner", quiz.getUser() != null ? quiz.getUser().getUsername() : "NULL");
+				response.put("ownerId", quiz.getUser() != null ? quiz.getUser().getId() : "NULL");
+			} else {
+				response.put("found", false);
+			}
+
+			// Kiểm tra authentication
+			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			if (auth != null) {
+				response.put("currentUser", auth.getName());
+				response.put("authorities", auth.getAuthorities().toString());
+			}
+
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			response.put("error", e.getMessage());
+			return ResponseEntity.status(500).body(response);
+		}
+	}
+
+	// THÊM CÁC ENDPOINT MỚI CHO SOFT DELETE
+	@DeleteMapping("/{id}/hard")
+	public ResponseEntity<Map<String, Object>> hardDeleteQuiz(@PathVariable Long id, HttpServletRequest request) {
+		Map<String, Object> response = new HashMap<>();
+
+		System.out.println("=== HARD DELETE DEBUG START ===");
+		System.out.println("Attempting to hard delete quiz ID: " + id);
+
+		// Kiểm tra authentication ngay đầu
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth == null) {
+			System.out.println("No authentication found!");
+			response.put("success", false);
+			response.put("message", "Không có thông tin xác thực");
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+		}
+
+		try {
+			System.out.println("Authentication name: " + auth.getName());
+			System.out.println("Authentication authorities: " + auth.getAuthorities());
+			System.out.println("Authentication principal: " + auth.getPrincipal());
+
+			// Check if user is admin
+			boolean isAdmin = auth.getAuthorities().stream()
+					.anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+			System.out.println("Is Admin: " + isAdmin);
+
+			// Check if user owns the quiz
+			System.out.println("About to call isOwner with ID: " + id + " and username: " + auth.getName());
+			boolean isOwner = quizService.isOwner(id, auth.getName());
+			System.out.println("Is Owner: " + isOwner);
+
+			// If not admin and not owner, deny access
+			if (!isAdmin && !isOwner) {
+				System.out.println("Access denied - not admin and not owner");
+				response.put("success", false);
+				response.put("message", "Bạn không có quyền xóa quiz này");
+				return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+			}
+
+			System.out.println("Authorization passed, proceeding with deletion...");
+
 			boolean deleteResult = quizService.hardDeleteQuiz(id);
-			System.out.println("🗑️ Hard delete result: " + deleteResult);
+			System.out.println("Hard delete result: " + deleteResult);
 
 			if (deleteResult) {
 				response.put("success", true);
 				response.put("message", "Quiz đã được xóa hoàn toàn");
-				System.out.println("✅ Quiz hard deleted successfully");
+				System.out.println("Quiz hard deleted successfully");
 				return ResponseEntity.ok(response);
 			} else {
 				response.put("success", false);
 				response.put("message", "Quiz không tồn tại");
-				System.out.println("❌ Quiz not found");
+				System.out.println("Quiz not found");
 				return ResponseEntity.notFound().build();
 			}
 		} catch (Exception e) {
-			System.err.println("❌ Error hard deleting quiz: " + e.getMessage());
+			System.err.println("Error hard deleting quiz: " + e.getMessage());
 			response.put("success", false);
 			response.put("message", "Lỗi khi xóa quiz: " + e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
@@ -242,28 +356,28 @@ public class QuizController {
 	}
 
 	@PostMapping("/{id}/restore")
-	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.principal)")
+	@PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#id, authentication.name)")
 	public ResponseEntity<Map<String, Object>> restoreQuiz(@PathVariable Long id, HttpServletRequest request) {
 		Map<String, Object> response = new HashMap<>();
 
 		try {
-			System.out.println("🔄 Attempting to restore quiz ID: " + id);
+			System.out.println("Attempting to restore quiz ID: " + id);
 			boolean restoreResult = quizService.restoreQuiz(id);
-			System.out.println("🔄 Restore result: " + restoreResult);
+			System.out.println("Restore result: " + restoreResult);
 
 			if (restoreResult) {
 				response.put("success", true);
 				response.put("message", "Quiz đã được khôi phục thành công");
-				System.out.println("✅ Quiz restored successfully");
+				System.out.println("Quiz restored successfully");
 				return ResponseEntity.ok(response);
 			} else {
 				response.put("success", false);
 				response.put("message", "Quiz không tồn tại");
-				System.out.println("❌ Quiz not found");
+				System.out.println("Quiz not found");
 				return ResponseEntity.notFound().build();
 			}
 		} catch (Exception e) {
-			System.err.println("❌ Error restoring quiz: " + e.getMessage());
+			System.err.println("Error restoring quiz: " + e.getMessage());
 			response.put("success", false);
 			response.put("message", "Lỗi khi khôi phục quiz: " + e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
@@ -277,10 +391,10 @@ public class QuizController {
 			@RequestParam(defaultValue = "6") int size) {
 
 		Page<Quiz> quizPage = quizService.getDeletedQuizzesByUserPaginated(userId, page, size);
-        List<Quiz> quizzes = quizPage.getContent();
+		List<Quiz> quizzes = quizPage.getContent();
 
 		Map<String, Object> response = new HashMap<>();
-        response.put("quizzes", quizzes);
+		response.put("quizzes", quizzes);
 		response.put("currentPage", quizPage.getNumber());
 		response.put("totalPages", quizPage.getTotalPages());
 		response.put("totalItems", quizPage.getTotalElements());
@@ -298,10 +412,10 @@ public class QuizController {
 		Page<Quiz> quizPage = quizService.getQuizzesByUserPaginated(userId, page, size);
 		List<Quiz> quizzes = quizPage.getContent();
 
-		// ✅ DEBUG: Kiểm tra trạng thái isPublic của quiz
-		System.out.println("🔍 Debug: Checking quiz public status for user " + userId);
+		// DEBUG: Kiểm tra trạng thái isPublic của quiz
+		System.out.println("Debug: Checking quiz public status for user " + userId);
 		for (Quiz quiz : quizzes) {
-			System.out.println("📝 Quiz ID: " + quiz.getId() +
+			System.out.println("Quiz ID: " + quiz.getId() +
 					", Title: " + quiz.getTitle() +
 					", IsPublic: " + quiz.isPublic() +
 					", Deleted: " + quiz.isDeleted() +
@@ -325,10 +439,10 @@ public class QuizController {
 
 		Page<Quiz> quizPage = quizService.getPublicQuizzes(Boolean.TRUE, page, size);
 
-		// ✅ DEBUG: Kiểm tra public quiz
-		System.out.println("🌍 Debug: Checking public quizzes");
+		// DEBUG: Kiểm tra public quiz
+		System.out.println("Debug: Checking public quizzes");
 		for (Quiz quiz : quizPage.getContent()) {
-			System.out.println("📝 Public Quiz ID: " + quiz.getId() +
+			System.out.println("Public Quiz ID: " + quiz.getId() +
 					", Title: " + quiz.getTitle() +
 					", IsPublic: " + quiz.isPublic() +
 					", Deleted: " + quiz.isDeleted() +
@@ -338,7 +452,7 @@ public class QuizController {
 		return quizPage;
 	}
 
-	// ✅ THÊM ENDPOINT PREVIEW
+	// THÊM ENDPOINT PREVIEW
 	@PostMapping(value = "/preview-excel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Map<String, Object>> previewExcelFile(
 			@RequestParam("file") MultipartFile file,
@@ -379,7 +493,7 @@ public class QuizController {
 				var question = quizData.getQuestions().get(i);
 				Map<String, Object> questionPreview = new HashMap<>();
 				questionPreview.put("content", question.getContent());
-                // Bỏ gửi điểm câu hỏi
+				// Bỏ gửi điểm câu hỏi
 				questionPreview.put("timeLimit", question.getTimeLimit());
 				questionPreview.put("answers", question.getAnswers());
 				previewQuestions.add(questionPreview);
@@ -442,7 +556,7 @@ public class QuizController {
 		}
 	}
 
-	// ✅ THÊM ENDPOINT MỚI CHO IMPORT VỚI IMAGE
+	// THÊM ENDPOINT MỚI CHO IMPORT VỚI IMAGE
 	@PostMapping(value = "/import-excel-with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Map<String, Object>> importQuizWithImage(
 			@RequestParam("file") MultipartFile excelFile,
@@ -450,7 +564,7 @@ public class QuizController {
 			@RequestParam("description") String description,
 			@RequestParam("categoryId") Long categoryId,
 			@RequestParam("username") String username,
-			@RequestParam("isPublic") boolean isPublic, // ✅ THÊM ISPUBLIC PARAMETER
+			@RequestParam("isPublic") boolean isPublic, // THÊM ISPUBLIC PARAMETER
 			@RequestParam(value = "image", required = false) MultipartFile imageFile) {
 
 		Map<String, Object> response = new HashMap<>();
@@ -531,18 +645,18 @@ public class QuizController {
 		return ResponseEntity.ok(response);
 	}
 
-	// ✅ THÊM ENDPOINT JOIN QUIZ BẰNG CODE
+	// THÊM ENDPOINT JOIN QUIZ BẰNG CODE
 	@GetMapping("/join/{code}")
 	public ResponseEntity<Map<String, Object>> joinQuizByCode(@PathVariable String code) {
 		Map<String, Object> response = new HashMap<>();
 
 		try {
-			System.out.println("🎯 Join quiz request with code: " + code);
+			System.out.println("Join quiz request with code: " + code);
 
 			Optional<Quiz> quizOpt = quizService.findByQuizCode(code);
 
 			if (quizOpt.isEmpty()) {
-				System.out.println("❌ Quiz not found for code: " + code);
+				System.out.println("Quiz not found for code: " + code);
 				response.put("success", false);
 				response.put("message", "Không tìm thấy quiz với mã code này");
 				return ResponseEntity.notFound().build();
@@ -551,15 +665,15 @@ public class QuizController {
 			Quiz quiz = quizOpt.get();
 
 			if (quiz.isDeleted() != null && quiz.isDeleted()) {
-				System.out.println("❌ Quiz is deleted: " + quiz.getId());
+				System.out.println("Quiz is deleted: " + quiz.getId());
 				response.put("success", false);
 				response.put("message", "Quiz này đã bị xóa");
 				return ResponseEntity.badRequest().body(response);
 			}
 
-			System.out.println("✅ Quiz found: " + quiz.getTitle());
+			System.out.println("Quiz found: " + quiz.getTitle());
 
-			// ✅ TRẢ VỀ THÔNG TIN QUIZ ĐỂ PREVIEW
+			// TRẢ VỀ THÔNG TIN QUIZ ĐỂ PREVIEW
 			Map<String, Object> quizInfo = new HashMap<>();
 			quizInfo.put("quizId", quiz.getId());
 			quizInfo.put("title", quiz.getTitle());
@@ -584,14 +698,14 @@ public class QuizController {
 			return ResponseEntity.ok(response);
 
 		} catch (Exception e) {
-			System.err.println("❌ Error joining quiz: " + e.getMessage());
+			System.err.println("Error joining quiz: " + e.getMessage());
 			response.put("success", false);
 			response.put("message", "Lỗi khi tham gia quiz: " + e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
 
-	// ✅ THÊM ENDPOINT LẤY QUIZ CODE
+	// THÊM ENDPOINT LẤY QUIZ CODE
 	@GetMapping("/{id}/code")
 	public ResponseEntity<Map<String, Object>> getQuizCode(@PathVariable Long id) {
 		Map<String, Object> response = new HashMap<>();
@@ -630,7 +744,7 @@ public class QuizController {
 			return ResponseEntity.ok(response);
 
 		} catch (Exception e) {
-			System.err.println("❌ Error getting quiz code: " + e.getMessage());
+			System.err.println("Error getting quiz code: " + e.getMessage());
 			e.printStackTrace();
 			response.put("success", false);
 			response.put("message", "Lỗi khi lấy mã code: " + e.getMessage());
@@ -663,13 +777,13 @@ public class QuizController {
 			return ResponseEntity.ok(response);
 
 		} catch (Exception e) {
-			System.err.println("❌ Error debugging user quizzes: " + e.getMessage());
+			System.err.println("Error debugging user quizzes: " + e.getMessage());
 			response.put("error", e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
 
-	// ✅ THÊM ENDPOINT LẤY QUIZ PUBLIC THEO CATEGORY
+	// THÊM ENDPOINT LẤY QUIZ PUBLIC THEO CATEGORY
 	@GetMapping("/public/category/{categoryId}")
 	public ResponseEntity<Map<String, Object>> getPublicQuizzesByCategory(
 			@PathVariable Long categoryId,
@@ -679,28 +793,28 @@ public class QuizController {
 		Map<String, Object> response = new HashMap<>();
 
 		try {
-			System.out.println("🔍 Requesting public quizzes for category ID: " + categoryId);
+			System.out.println("Requesting public quizzes for category ID: " + categoryId);
 
 			// Kiểm tra category có tồn tại không
 			Optional<Category> categoryOpt = categoryRepo.findById(categoryId);
 			if (categoryOpt.isEmpty()) {
-				System.out.println("❌ Category not found for ID: " + categoryId);
+				System.out.println("Category not found for ID: " + categoryId);
 				response.put("success", false);
 				response.put("message", "Không tìm thấy danh mục này");
 				return ResponseEntity.notFound().build();
 			}
 
 			Category category = categoryOpt.get();
-			System.out.println("✅ Category found: " + category.getName());
+			System.out.println("Category found: " + category.getName());
 
 			// Lấy quiz public theo category
 			Page<Quiz> quizPage = quizService.getPublicQuizzesByCategory(categoryId, page, size);
 			List<Quiz> quizzes = quizPage.getContent();
 
-			// ✅ DEBUG: Kiểm tra quiz public theo category
-			System.out.println("🌍 Debug: Checking public quizzes for category " + category.getName());
+			// DEBUG: Kiểm tra quiz public theo category
+			System.out.println("Debug: Checking public quizzes for category " + category.getName());
 			for (Quiz quiz : quizzes) {
-				System.out.println("📝 Public Quiz ID: " + quiz.getId() +
+				System.out.println("Public Quiz ID: " + quiz.getId() +
 						", Title: " + quiz.getTitle() +
 						", IsPublic: " + quiz.isPublic() +
 						", Category: " + (quiz.getCategory() != null ? quiz.getCategory().getName() : "NULL") +
@@ -722,7 +836,7 @@ public class QuizController {
 			return ResponseEntity.ok(response);
 
 		} catch (Exception e) {
-			System.err.println("❌ Error getting public quizzes by category: " + e.getMessage());
+			System.err.println("Error getting public quizzes by category: " + e.getMessage());
 			e.printStackTrace();
 			response.put("success", false);
 			response.put("message", "Lỗi khi lấy danh sách quiz: " + e.getMessage());
@@ -732,11 +846,11 @@ public class QuizController {
 
 	@GetMapping("/public/stats/{id}")
 	public ResponseEntity<Map<String, Object>> getPublicQuizStats(@PathVariable Long id) {
-		System.out.println("🔍 Requesting public quiz stats for ID: " + id);
+		System.out.println("Requesting public quiz stats for ID: " + id);
 		try {
 			Optional<Quiz> quizOpt = quizService.getQuizById(id);
 			if (quizOpt.isEmpty()) {
-				System.out.println("❌ Quiz not found for ID: " + id);
+				System.out.println("Quiz not found for ID: " + id);
 				return ResponseEntity.notFound().build();
 			}
 
@@ -744,7 +858,7 @@ public class QuizController {
 
 			// Chỉ trả về thống kê cho quiz công khai
 			if (!quiz.isPublic()) {
-				System.out.println("❌ Quiz is private, cannot show stats");
+				System.out.println("Quiz is private, cannot show stats");
 				return ResponseEntity.status(HttpStatus.FORBIDDEN)
 						.body(Map.of("error", "Quiz này là riêng tư"));
 			}
@@ -752,8 +866,8 @@ public class QuizController {
 			// Lấy thống kê cơ bản
 			Map<String, Object> stats = new HashMap<>();
 			stats.put("totalQuestions", quiz.getQuestions().size());
-            // Bỏ thống kê tổng điểm câu hỏi
-            stats.put("totalPoints", 0);
+			// Bỏ thống kê tổng điểm câu hỏi
+			stats.put("totalPoints", 0);
 			stats.put("totalTime", quiz.getQuestions().stream()
 					.mapToInt(q -> q.getTimeLimit()).sum());
 
@@ -798,11 +912,11 @@ public class QuizController {
 				stats.put("averageTime", 0);
 			}
 
-			System.out.println("✅ Public quiz stats: " + stats);
+			System.out.println("Public quiz stats: " + stats);
 			return ResponseEntity.ok(stats);
 
 		} catch (Exception e) {
-			System.err.println("❌ Error getting public quiz stats: " + e.getMessage());
+			System.err.println("Error getting public quiz stats: " + e.getMessage());
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}

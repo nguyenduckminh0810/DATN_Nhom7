@@ -28,14 +28,14 @@ export const useNotificationStore = defineStore('notification', () => {
     try {
       isLoading.value = true
       error.value = null
-      
+
       // ✅ CLEAR CACHE TRƯỚC KHI LOAD
       notifications.value = []
       unreadCount.value = 0
-      
+
       const userStore = useUserStore()
       const response = await api.get('/notifications')
-      notifications.value = response.data
+      notifications.value = (response.data || []).map(normalize)
       // Admin: chỉ giữ thông báo quan trọng (tạm thời filter phía client)
       if (userStore.isAdmin && userStore.isAdmin()) {
         const importantTypes = new Set([
@@ -58,7 +58,7 @@ export const useNotificationStore = defineStore('notification', () => {
       if (unreadCount.value === 0 && notifications.value.some(n => n && n.isRead === false)) {
         notifications.value = notifications.value.map(n => ({ ...n, isRead: true }))
       }
-      
+
       console.log('✅ Notifications loaded:', notifications.value.length)
     } catch (err) {
       error.value = err.message
@@ -72,7 +72,7 @@ export const useNotificationStore = defineStore('notification', () => {
     try {
       // ✅ CLEAR CACHE TRƯỚC KHI LOAD
       unreadCount.value = 0
-      
+
       const response = await api.get('/notifications/unread/count')
       unreadCount.value = response.data.count
       console.log('✅ Unread count loaded:', unreadCount.value)
@@ -80,10 +80,14 @@ export const useNotificationStore = defineStore('notification', () => {
       console.error('❌ Error loading unread count:', err)
     }
   }
-
   const updateUnreadCount = () => {
-    unreadCount.value = notifications.value.filter(n => !n.isRead).length
+    unreadCount.value = notifications.value.filter(n => !(n?.isRead ?? n?.read ?? false)).length
   }
+  const normalize = (n) => ({
+    ...n,
+    isRead: n?.isRead ?? n?.read ?? false
+  })
+
 
   const markAsRead = async (notificationId) => {
     try {
@@ -141,11 +145,11 @@ export const useNotificationStore = defineStore('notification', () => {
     unreadCount,
     isLoading,
     error,
-    
+
     // Computed
     hasUnreadNotifications,
     sortedNotifications,
-    
+
     // Actions
     loadNotifications,
     loadUnreadCount,

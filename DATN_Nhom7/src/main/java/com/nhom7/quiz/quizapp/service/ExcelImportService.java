@@ -22,7 +22,7 @@ public class ExcelImportService {
         // No-op: mở quyền import public cho mọi người dùng đã đăng nhập
     }
 
-    // ✅ THÊM METHOD PREVIEW
+    // THÊM METHOD PREVIEW
     public QuizImportDto previewExcelFile(MultipartFile file, String title, String description, Long categoryId)
             throws IOException {
         checkAdminPermission();
@@ -32,13 +32,13 @@ public class ExcelImportService {
     public QuizImportDto parseExcelFile(MultipartFile file, String title, String description, Long categoryId)
             throws IOException {
         checkAdminPermission();
-        
+
         List<QuestionImportDto> questions = new ArrayList<>();
 
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
 
-            // ✅ VALIDATE FILE KHÔNG RỖNG
+            // VALIDATE FILE KHÔNG RỖNG
             if (sheet.getLastRowNum() < 1) {
                 throw new IllegalArgumentException("File Excel không có dữ liệu. Vui lòng thêm ít nhất 1 câu hỏi.");
             }
@@ -60,21 +60,23 @@ public class ExcelImportService {
                 }
             }
 
-            // ✅ VALIDATE CÓ ÍT NHẤT 1 CÂU HỎI
+            // VALIDATE CÓ ÍT NHẤT 1 CÂU HỎI
             if (questions.isEmpty()) {
-                throw new IllegalArgumentException("Không tìm thấy câu hỏi hợp lệ nào trong file Excel. Vui lòng kiểm tra lại dữ liệu.");
+                throw new IllegalArgumentException(
+                        "Không tìm thấy câu hỏi hợp lệ nào trong file Excel. Vui lòng kiểm tra lại dữ liệu.");
             }
         } catch (IOException e) {
             throw new IOException("Không thể đọc file Excel. Vui lòng kiểm tra định dạng file.");
         }
 
-        // ✅ KHÔNG ĐỌC ẢNH TỪ EXCEL NỮA - SẼ UPLOAD TRỰC TIẾP TỪ CLIENT
+        // KHÔNG ĐỌC ẢNH TỪ EXCEL NỮA - SẼ UPLOAD TRỰC TIẾP TỪ CLIENT
         return new QuizImportDto(title, description, categoryId, null, questions);
     }
 
     private QuestionImportDto parseQuestionFromRow(Row row) {
         try {
-            // ✅ CẤU TRÚC EXCEL: Câu hỏi | Đáp án A | Đáp án B | Đáp án C | Đáp án D | Đáp án đúng | Thời gian
+            // CẤU TRÚC EXCEL: Câu hỏi | Đáp án A | Đáp án B | Đáp án C | Đáp án D | Đáp án
+            // đúng | Thời gian
             String questionContent = getCellStringValue(row.getCell(0)); // Câu hỏi
             if (questionContent == null || questionContent.trim().isEmpty()) {
                 return null;
@@ -86,7 +88,7 @@ public class ExcelImportService {
             String answerD = getCellStringValue(row.getCell(4)); // Đáp án D
             String correctAnswer = getCellStringValue(row.getCell(5)); // Đáp án đúng
 
-            // ✅ VALIDATE ĐÁP ÁN
+            // VALIDATE ĐÁP ÁN
             if (answerA == null || answerA.trim().isEmpty()) {
                 throw new IllegalArgumentException("Đáp án A không được để trống ở dòng " + (row.getRowNum() + 1));
             }
@@ -104,23 +106,26 @@ public class ExcelImportService {
             if (correctAnswer == null || correctAnswer.trim().isEmpty()) {
                 throw new IllegalArgumentException("Đáp án đúng không được để trống ở dòng " + (row.getRowNum() + 1));
             }
-            if (!correctAnswer.equalsIgnoreCase("A") && !correctAnswer.equalsIgnoreCase("B") && 
-                !correctAnswer.equalsIgnoreCase("C") && !correctAnswer.equalsIgnoreCase("D")) {
-                throw new IllegalArgumentException("Đáp án đúng phải là A, B, C hoặc D ở dòng " + (row.getRowNum() + 1));
+            if (!correctAnswer.equalsIgnoreCase("A") && !correctAnswer.equalsIgnoreCase("B") &&
+                    !correctAnswer.equalsIgnoreCase("C") && !correctAnswer.equalsIgnoreCase("D")) {
+                throw new IllegalArgumentException(
+                        "Đáp án đúng phải là A, B, C hoặc D ở dòng " + (row.getRowNum() + 1));
             }
 
-            // ✅ VALIDATE THỜI GIAN
+            // VALIDATE THỜI GIAN
             int timeLimit = 30; // Mặc định 30 giây
             Cell timeCell = row.getCell(6);
             if (timeCell != null && timeCell.getCellType() == CellType.NUMERIC) {
                 timeLimit = (int) timeCell.getNumericCellValue();
-                
+
                 // Kiểm tra range thời gian: 0 (không giới hạn) hoặc 5-300 giây
                 if (timeLimit != 0 && timeLimit < 5) {
-                    throw new IllegalArgumentException("Thời gian phải từ 5 giây trở lên ở dòng " + (row.getRowNum() + 1) + " (hiện tại: " + timeLimit + "s)");
+                    throw new IllegalArgumentException("Thời gian phải từ 5 giây trở lên ở dòng "
+                            + (row.getRowNum() + 1) + " (hiện tại: " + timeLimit + "s)");
                 }
                 if (timeLimit > 300) {
-                    throw new IllegalArgumentException("Thời gian phải từ 300 giây trở xuống ở dòng " + (row.getRowNum() + 1) + " (hiện tại: " + timeLimit + "s)");
+                    throw new IllegalArgumentException("Thời gian phải từ 300 giây trở xuống ở dòng "
+                            + (row.getRowNum() + 1) + " (hiện tại: " + timeLimit + "s)");
                 }
             }
 
@@ -131,7 +136,7 @@ public class ExcelImportService {
                     new AnswerImportDto(answerC, "C".equalsIgnoreCase(correctAnswer)),
                     new AnswerImportDto(answerD, "D".equalsIgnoreCase(correctAnswer)));
 
-            return new QuestionImportDto(questionContent, 1, timeLimit, answers); // ✅ SỬ DỤNG TIMELIMIT
+            return new QuestionImportDto(questionContent, 1, timeLimit, answers); // SỬ DỤNG TIMELIMIT
 
         } catch (Exception e) {
             System.err.println("Lỗi parse row " + row.getRowNum() + ": " + e.getMessage());
@@ -157,7 +162,7 @@ public class ExcelImportService {
 
     public void validateQuizData(QuizImportDto quizData) throws IllegalArgumentException {
         checkAdminPermission();
-        
+
         if (quizData.getTitle() == null || quizData.getTitle().trim().isEmpty()) {
             throw new IllegalArgumentException("Tên quiz không được để trống");
         }
@@ -177,11 +182,12 @@ public class ExcelImportService {
                 throw new IllegalArgumentException("Câu hỏi " + (i + 1) + " phải có đúng 4 đáp án");
             }
 
-            // ✅ VALIDATE ĐÁP ÁN KHÔNG RỖNG
+            // VALIDATE ĐÁP ÁN KHÔNG RỖNG
             for (int j = 0; j < question.getAnswers().size(); j++) {
                 AnswerImportDto answer = question.getAnswers().get(j);
                 if (answer.getContent() == null || answer.getContent().trim().isEmpty()) {
-                    throw new IllegalArgumentException("Đáp án " + (char)('A' + j) + " của câu hỏi " + (i + 1) + " không được để trống");
+                    throw new IllegalArgumentException(
+                            "Đáp án " + (char) ('A' + j) + " của câu hỏi " + (i + 1) + " không được để trống");
                 }
             }
 
@@ -190,12 +196,14 @@ public class ExcelImportService {
                 throw new IllegalArgumentException("Câu hỏi " + (i + 1) + " phải có ít nhất 1 đáp án đúng");
             }
 
-            // ✅ VALIDATE THỜI GIAN
+            // VALIDATE THỜI GIAN
             if (question.getTimeLimit() != 0 && question.getTimeLimit() < 5) {
-                throw new IllegalArgumentException("Thời gian của câu hỏi " + (i + 1) + " phải từ 5 giây trở lên (hiện tại: " + question.getTimeLimit() + "s)");
+                throw new IllegalArgumentException("Thời gian của câu hỏi " + (i + 1)
+                        + " phải từ 5 giây trở lên (hiện tại: " + question.getTimeLimit() + "s)");
             }
             if (question.getTimeLimit() > 300) {
-                throw new IllegalArgumentException("Thời gian của câu hỏi " + (i + 1) + " phải từ 300 giây trở xuống (hiện tại: " + question.getTimeLimit() + "s)");
+                throw new IllegalArgumentException("Thời gian của câu hỏi " + (i + 1)
+                        + " phải từ 300 giây trở xuống (hiện tại: " + question.getTimeLimit() + "s)");
             }
         }
     }

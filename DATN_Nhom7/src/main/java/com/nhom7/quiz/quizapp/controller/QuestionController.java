@@ -41,15 +41,15 @@ public class QuestionController {
 
     // Xem câu hỏi để chỉnh sửa - chỉ chủ sở hữu quiz
     @GetMapping("/{quizId}")
-    @PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#quizId, authentication.principal)")
+    @PreAuthorize("hasRole('ADMIN') or @quizService.isOwner(#quizId, authentication.name)")
     public ResponseEntity<List<Question>> getQuestionsByQuizId(@PathVariable Long quizId,
             Authentication authentication) {
-        System.out.println("🔍 Requesting questions for quiz ID: " + quizId);
+        System.out.println("Requesting questions for quiz ID: " + quizId);
 
         try {
             // Kiểm tra xem người dùng có quyền xem câu hỏi không
             if (authentication == null || authentication.getName() == null) {
-                System.out.println("❌ Không có thông tin authentication");
+                System.out.println("Không có thông tin authentication");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
 
@@ -57,58 +57,58 @@ public class QuestionController {
             User currentUser = loginService.findByUsername(username);
 
             if (currentUser == null) {
-                System.out.println("❌ Không tìm thấy user: " + username);
+                System.out.println("Không tìm thấy user: " + username);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
 
             // Lấy thông tin quiz
             Quiz quiz = quizService.getQuizById(quizId).orElse(null);
             if (quiz == null) {
-                System.out.println("❌ Không tìm thấy quiz ID: " + quizId);
+                System.out.println("Không tìm thấy quiz ID: " + quizId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
 
             // Kiểm tra xem người dùng có phải là người tạo quiz không
-            System.out.println("🔍 Checking quiz creator:");
-            System.out.println("  - Current user ID: " + currentUser.getId() + " (type: "
+            System.out.println("Checking quiz creator:");
+            System.out.println("  Current user ID: " + currentUser.getId() + " (type: "
                     + currentUser.getId().getClass().getSimpleName() + ")");
-            System.out.println("  - Current username: " + currentUser.getUsername());
-            System.out.println("  - Quiz creator ID: " + quiz.getUser().getId() + " (type: "
+            System.out.println("  Current username: " + currentUser.getUsername());
+            System.out.println("  Quiz creator ID: " + quiz.getUser().getId() + " (type: "
                     + quiz.getUser().getId().getClass().getSimpleName() + ")");
-            System.out.println("  - Quiz creator name: " + quiz.getUser().getUsername());
-            System.out.println("  - Quiz ID: " + quizId);
+            System.out.println("  Quiz creator name: " + quiz.getUser().getUsername());
+            System.out.println("  Quiz ID: " + quizId);
 
             boolean isQuizCreator = quiz.getUser().getId().equals(currentUser.getId());
-            System.out.println("  - Is creator: " + isQuizCreator);
-            System.out.println("  - IDs equal: " + quiz.getUser().getId().equals(currentUser.getId()));
-            System.out.println("  - IDs == comparison: " + (quiz.getUser().getId() == currentUser.getId()));
+            System.out.println("  Is creator: " + isQuizCreator);
+            System.out.println("  IDs equal: " + quiz.getUser().getId().equals(currentUser.getId()));
+            System.out.println("  IDs == comparison: " + (quiz.getUser().getId() == currentUser.getId()));
 
             if (!isQuizCreator) {
-                System.out.println("❌ User " + username + " không phải là người tạo quiz " + quizId);
+                System.out.println("User " + username + " không phải là người tạo quiz " + quizId);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
             }
 
             List<Question> questions = questionService.getQuestionsByQuizId(quizId);
             if (questions.isEmpty()) {
-                System.out.println("❌ Không tìm thấy questions cho quiz ID: " + quizId);
+                System.out.println("Không tìm thấy questions cho quiz ID: " + quizId);
                 return ResponseEntity.ok(questions);
             }
-            System.out.println("✅ Tìm thấy " + questions.size() + " questions cho quiz ID: " + quizId);
+            System.out.println("Tìm thấy " + questions.size() + " questions cho quiz ID: " + quizId);
 
-            // ✅ DEBUG: In ra timeLimit của từng question
+            // DEBUG: In ra timeLimit của từng question
             for (Question q : questions) {
                 System.out.println("Question ID: " + q.getId() + ", TimeLimit: " + q.getTimeLimit());
             }
 
             return ResponseEntity.ok(questions);
         } catch (Exception e) {
-            System.err.println("❌ Lỗi khi lấy questions cho quiz ID " + quizId + ": " + e.getMessage());
+            System.err.println("Lỗi khi lấy questions cho quiz ID " + quizId + ": " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // ✅ ENDPOINT MỚI CHO VIỆC CHƠI QUIZ - CHO PHÉP TẤT CẢ NGƯỜI DÙNG TRUY CẬP
+    // ENDPOINT MỚI CHO VIỆC CHƠI QUIZ - CHO PHÉP TẤT CẢ NGƯỜI DÙNG TRUY CẬP
     @GetMapping("/play/{quizId}")
     public ResponseEntity<List<Question>> getQuestionsForPlay(@PathVariable Long quizId) {
         System.out.println("🎮 Requesting questions for playing quiz ID: " + quizId);
@@ -117,20 +117,20 @@ public class QuestionController {
             // Lấy thông tin quiz
             Quiz quiz = quizService.getQuizById(quizId).orElse(null);
             if (quiz == null) {
-                System.out.println("❌ Không tìm thấy quiz ID: " + quizId);
+                System.out.println("Không tìm thấy quiz ID: " + quizId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
 
             List<Question> questions = questionService.getQuestionsByQuizId(quizId);
             if (questions.isEmpty()) {
-                System.out.println("❌ Không tìm thấy questions cho quiz ID: " + quizId);
+                System.out.println("Không tìm thấy questions cho quiz ID: " + quizId);
                 return ResponseEntity.ok(questions);
             }
-            System.out.println("✅ Tìm thấy " + questions.size() + " questions cho quiz ID: " + quizId);
+            System.out.println("Tìm thấy " + questions.size() + " questions cho quiz ID: " + quizId);
 
             return ResponseEntity.ok(questions);
         } catch (Exception e) {
-            System.err.println("❌ Lỗi khi lấy questions cho quiz ID " + quizId + ": " + e.getMessage());
+            System.err.println("Lỗi khi lấy questions cho quiz ID " + quizId + ": " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -141,7 +141,7 @@ public class QuestionController {
 
     // Xóa câu hỏi - chỉ chủ sở hữu quiz hoặc admin
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#id, authentication.principal)")
+    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#id, authentication.name)")
     public ResponseEntity<?> deleteQuestion(@PathVariable Long id) {
         try {
             answerService.deleteByQuestionId(id);
@@ -155,7 +155,7 @@ public class QuestionController {
 
     // Cập nhật câu hỏi - chỉ chủ sở hữu quiz hoặc admin
     @PutMapping("/update/{questionId}")
-    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#questionId, authentication.principal)")
+    @PreAuthorize("hasRole('ADMIN') or @questionService.isOwner(#questionId, authentication.name)")
     public ResponseEntity<Question> updateQuestion(@PathVariable Long questionId, @RequestBody Question question) {
         Question updatedQuestion = questionService.updateQuestion(questionId, question);
         if (updatedQuestion == null) {

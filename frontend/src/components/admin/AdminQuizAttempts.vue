@@ -23,11 +23,11 @@ import QuizHistoryTable from '@/components/QuizHistoryTable.vue'
   margin-bottom: 30px;
 }
 .page-header h1 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 10px;
 }
 .page-header p {
-  color: #666;
+  color: var(--text-secondary);
   margin: 0;
 }
 </style> 

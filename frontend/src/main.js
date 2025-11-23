@@ -1,3 +1,6 @@
+// ✅ IMPORT POLYFILLS TRƯỚC TIÊN
+import './utils/polyfills'
+
 import './assets/main.css'
 import './assets/vietnamese-fonts.css'
 
@@ -22,6 +25,11 @@ app.use(router)
 // Initialize theme store
 const themeStore = useThemeStore()
 themeStore.initTheme()
+
+// ✅ RESET THEME VỀ LIGHT MODE MẶC ĐỊNH (nếu chưa có preference)
+if (localStorage.getItem('app-dark-mode') === null) {
+  themeStore.setTheme(false) // Force light mode
+}
 
 // ✅ SETUP AXIOS INTERCEPTOR ĐỂ TỰ ĐỘNG THÊM JWT TOKEN
 axios.interceptors.request.use(

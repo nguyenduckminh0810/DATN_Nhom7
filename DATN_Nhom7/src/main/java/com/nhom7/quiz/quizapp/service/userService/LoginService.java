@@ -98,6 +98,17 @@ public class LoginService {
         return userRepo.findById(id).orElse(null);
     }
 
+    // Method để hỗ trợ @PreAuthorize
+    public boolean isCurrentUser(Long userId, String username) {
+        try {
+            User user = userRepo.findByUsername(username).orElse(null);
+            return user != null && user.getId().equals(userId);
+        } catch (Exception e) {
+            System.err.println("Error checking user permission: " + e.getMessage());
+            return false;
+        }
+    }
+
     public boolean verifyCurrentPassword(String username, String rawCurrentPassword) {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));

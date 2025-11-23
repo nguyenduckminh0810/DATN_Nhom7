@@ -103,11 +103,9 @@ public class UserController {
 
 		return switch (result.status()) {
 			case SUCCESS -> {
-				// ✅ LẤY THÔNG TIN USER ĐẦY ĐỦ TỪ DATABASE
+				// LẤY THÔNG TIN USER ĐẦY ĐỦ TỪ DATABASE
 				User fullUser = result.user();
-				String token = jwtUtil.generateToken(fullUser.getUsername(), fullUser.getRole()); // ✅ THÊM ROLE VÀO
-																									// TOKEN
-
+				String token = jwtUtil.generateToken(fullUser.getUsername(), fullUser.getRole()); // THÊM ROLE VÀO TOKEN
 				Map<String, Object> response = new java.util.HashMap<>();
 				response.put("status", "SUCCESS");
 				response.put("token", token);
@@ -301,7 +299,7 @@ public class UserController {
 
 	// Cập nhật thông tin người dùng
 	@PutMapping("/user/{id}")
-	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal")
+	@PreAuthorize("hasRole('ADMIN') or @loginService.isCurrentUser(#id, authentication.name)")
 	public ResponseEntity<?> updateUserProfile(
 			@PathVariable Long id,
 			@RequestParam("fullName") String fullName,
@@ -358,7 +356,7 @@ public class UserController {
 
 	// Đổi mật khẩu
 	@PutMapping("/user/{id}/change-password")
-	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal")
+	@PreAuthorize("hasRole('ADMIN') or @loginService.isCurrentUser(#id, authentication.name)")
 	public ResponseEntity<?> changePassword(
 			@PathVariable Long id,
 			@RequestBody Map<String, String> passwordMap) {
@@ -385,7 +383,7 @@ public class UserController {
 
 	// Xóa tài khoản
 	@DeleteMapping("/user/{id}")
-	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal")
+	@PreAuthorize("hasRole('ADMIN') or @loginService.isCurrentUser(#id, authentication.name)")
 	public ResponseEntity<?> deleteUser(@PathVariable Long id) {
 		Optional<User> userOpt = userRepo.findById(id);
 		if (userOpt.isEmpty()) {
@@ -396,7 +394,7 @@ public class UserController {
 		return ResponseEntity.ok("Tài khoản đã được xoá.");
 	}
 
-	// ✅ ENDPOINT TEST ĐỂ KIỂM TRA DATABASE
+	// ENDPOINT TEST ĐỂ KIỂM TRA DATABASE
 	@GetMapping("/test/users")
 	public ResponseEntity<?> testUsers() {
 		try {

@@ -75,7 +75,7 @@
                   <span class="required">*</span>
                 </label>
                 <input type="text" id="categoryName" v-model="newCategory.name" class="form-input"
-                  :class="{ 'error': nameError, 'success': newCategory.name && !nameError }"
+                  :class="{ error: nameError, success: newCategory.name && !nameError }"
                   placeholder="Nhập tên danh mục..." maxlength="50" required />
                 <div v-if="nameError" class="error-message">{{ nameError }}</div>
                 <div class="char-count">{{ newCategory.name.length }}/50</div>
@@ -87,7 +87,7 @@
                   <span>Mô tả</span>
                 </label>
                 <textarea id="categoryDesc" v-model="newCategory.description" class="form-textarea"
-                  :class="{ 'success': newCategory.description }" placeholder="Mô tả chi tiết về danh mục..." rows="3"
+                  :class="{ success: newCategory.description }" placeholder="Mô tả chi tiết về danh mục..." rows="3"
                   maxlength="200"></textarea>
                 <div class="char-count">{{ newCategory.description.length }}/200</div>
               </div>
@@ -98,11 +98,7 @@
                 <i class="bi bi-x-circle"></i>
                 Xóa form
               </button>
-              <button 
-                type="submit" 
-                class="btn-primary" 
-                :disabled="isButtonDisabled"
-              >
+              <button type="submit" class="btn-primary" :disabled="isButtonDisabled">
                 <div v-if="isAdding" class="loading-spinner">
                   <i class="bi bi-arrow-clockwise spin"></i>
                 </div>
@@ -162,7 +158,7 @@
 
             <div v-else class="categories-grid">
               <div v-for="(category, index) in filteredCategories" :key="category.id" class="category-card"
-                :class="{ 'editing': editId === category.id }" :style="{ 'animation-delay': `${index * 0.1}s` }">
+                :class="{ editing: editId === category.id }" :style="{ 'animation-delay': `${index * 0.1}s` }">
                 <div class="card-header">
                   <div class="category-info">
                     <div v-if="editId !== category.id" class="category-name">
@@ -175,9 +171,6 @@
                       <span class="date-badge">
                         <i class="bi bi-calendar3"></i>
                         {{ formatDate(category.createdAt) }}
-                      </span>
-                      <span class="id-badge">
-                        ID: {{ category.id }}
                       </span>
                     </div>
                   </div>
@@ -229,16 +222,17 @@
         <div class="modal-body">
           <div class="category-info">
             <h4>{{ categoryToDelete?.name }}</h4>
-            <p class="category-description">{{ categoryToDelete?.description || 'Không có mô tả' }}</p>
+            <p class="category-description">
+              {{ categoryToDelete?.description || 'Không có mô tả' }}
+            </p>
             <div class="category-meta">
               <span class="date-badge">
                 <i class="bi bi-calendar3"></i>
                 {{ formatDate(categoryToDelete?.createdAt) }}
               </span>
-              <span class="id-badge">ID: {{ categoryToDelete?.id }}</span>
             </div>
           </div>
-          
+
           <div class="warning-section">
             <div class="warning-icon">
               <i class="bi bi-info-circle"></i>
@@ -301,13 +295,13 @@ const categoryToDelete = ref(null)
 
 const userStore = useUserStore()
 
-// ✅ CHECK ADMIN STATUS
+// CHECK ADMIN STATUS
 const isAdmin = computed(() => {
   // Kiểm tra từ userStore
   if (userStore.isAdmin()) {
     return true
   }
-  
+
   // Kiểm tra trực tiếp từ localStorage
   const userInfo = localStorage.getItem('user')
   if (userInfo) {
@@ -316,7 +310,7 @@ const isAdmin = computed(() => {
       return true
     }
   }
-  
+
   return false
 })
 
@@ -324,7 +318,7 @@ const toast = ref({
   show: false,
   type: 'success',
   message: '',
-  icon: ''
+  icon: '',
 })
 
 // Validation
@@ -335,13 +329,15 @@ const nameError = computed(() => {
   if (newCategory.value.name.length < 2) {
     return 'Tên danh mục phải có ít nhất 2 ký tự'
   }
-  if (categories.value.some(cat => cat.name.toLowerCase() === newCategory.value.name.toLowerCase())) {
+  if (
+    categories.value.some((cat) => cat.name.toLowerCase() === newCategory.value.name.toLowerCase())
+  ) {
     return 'Tên danh mục đã tồn tại'
   }
   return ''
 })
 
-// ✅ BUTTON DISABLED STATE
+// BUTTON DISABLED STATE
 const isButtonDisabled = computed(() => {
   return isAdding.value || !!nameError.value
 })
@@ -352,9 +348,10 @@ const filteredCategories = computed(() => {
 
   // Search filter
   if (searchTerm.value) {
-    filtered = filtered.filter(cat =>
-      cat.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      cat.description?.toLowerCase().includes(searchTerm.value.toLowerCase())
+    filtered = filtered.filter(
+      (cat) =>
+        cat.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+        cat.description?.toLowerCase().includes(searchTerm.value.toLowerCase()),
     )
   }
 
@@ -380,7 +377,7 @@ const filteredCategories = computed(() => {
 const recentCategories = computed(() => {
   const oneWeekAgo = new Date()
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-  return categories.value.filter(cat => new Date(cat.createdAt) > oneWeekAgo).length
+  return categories.value.filter((cat) => new Date(cat.createdAt) > oneWeekAgo).length
 })
 
 const mostPopularCategory = computed(() => {
@@ -395,7 +392,7 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('vi-VN', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 
@@ -403,14 +400,14 @@ function showToast(message, type = 'success') {
   const icons = {
     success: 'bi bi-check-circle-fill',
     error: 'bi bi-exclamation-circle-fill',
-    info: 'bi bi-info-circle-fill'
+    info: 'bi bi-info-circle-fill',
   }
 
   toast.value = {
     show: true,
     type,
     message,
-    icon: icons[type]
+    icon: icons[type],
   }
 
   setTimeout(() => {
@@ -444,7 +441,7 @@ async function addCategory() {
   try {
     const token = localStorage.getItem('token')
     await api.post('/categories', newCategory.value, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
 
     clearForm()
@@ -466,7 +463,7 @@ function startEdit(category) {
   editId.value = category.id
   editCategory.value = {
     name: category.name,
-    description: category.description || ''
+    description: category.description || '',
   }
 }
 
@@ -482,7 +479,7 @@ async function saveEdit(id) {
   try {
     const token = localStorage.getItem('token')
     await api.put(`/categories/${id}`, editCategory.value, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
 
     cancelEdit()
@@ -506,7 +503,7 @@ function closeDeleteModal() {
   categoryToDelete.value = null
 }
 
-// ✅ DELETE CATEGORY WITH SOFT DELETE
+// DELETE CATEGORY WITH SOFT DELETE
 async function deleteCategory() {
   if (!categoryToDelete.value) return
 
@@ -514,13 +511,13 @@ async function deleteCategory() {
   try {
     const token = localStorage.getItem('token')
     const response = await api.delete(`/categories/${categoryToDelete.value.id}`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
 
-    // ✅ KIỂM TRA RESPONSE MESSAGE
+    // KIỂM TRA RESPONSE MESSAGE
     const message = response.data || 'Xóa danh mục thành công!'
-    
-    // ✅ KIỂM TRA NẾU CÓ QUIZ
+
+    // KIỂM TRA NẾU CÓ QUIZ
     if (message.includes('Không thể xóa danh mục vì có')) {
       showToast(message, 'error')
       closeDeleteModal()
@@ -547,7 +544,7 @@ onMounted(() => {
 <style scoped>
 .category-manager-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-background);
   position: relative;
   overflow-x: hidden;
   padding: 2rem 1rem;
@@ -676,15 +673,15 @@ onMounted(() => {
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-primary);
   backdrop-filter: blur(20px);
   border-radius: 20px;
   padding: 2rem;
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px var(--shadow-color);
+  border: 1px solid var(--border-color);
   transition: all 0.3s ease;
 }
 
@@ -719,13 +716,13 @@ onMounted(() => {
 .stat-value {
   font-size: 2.5rem;
   font-weight: 800;
-  color: #333;
+  color: var(--text-primary);
   line-height: 1;
 }
 
 .stat-label {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -743,12 +740,12 @@ onMounted(() => {
 }
 
 .form-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-primary);
   backdrop-filter: blur(20px);
   border-radius: 20px;
   padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px var(--shadow-color);
+  border: 1px solid var(--border-color);
 }
 
 .form-header {
@@ -759,7 +756,7 @@ onMounted(() => {
 .form-title {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
@@ -768,7 +765,7 @@ onMounted(() => {
 }
 
 .form-subtitle {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 1rem;
 }
 
@@ -793,32 +790,40 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
 }
 
 .required {
-  color: #ff4757;
+  color: var(--danger-color);
 }
 
 .form-input,
 .form-textarea {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
   transition: all 0.3s ease;
-  background: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  caret-color: var(--text-primary);
   resize: vertical;
 }
 
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--info-color);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.8;
 }
 
 .form-input.error,
@@ -844,7 +849,7 @@ onMounted(() => {
   bottom: -1.5rem;
   right: 0;
   font-size: 0.75rem;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .form-actions {
@@ -883,9 +888,9 @@ onMounted(() => {
 }
 
 .btn-secondary {
-  background: #f8f9fa;
-  color: #666;
-  border: 2px solid #e0e0e0;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 2px solid var(--border-color);
 }
 
 .btn-secondary:hover {
@@ -900,17 +905,17 @@ onMounted(() => {
 }
 
 .table-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-primary);
   backdrop-filter: blur(20px);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px var(--shadow-color);
+  border: 1px solid var(--border-color);
 }
 
 .table-header {
   padding: 2rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -921,7 +926,7 @@ onMounted(() => {
 .header-content h2 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
@@ -929,7 +934,7 @@ onMounted(() => {
 }
 
 .table-subtitle {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -950,38 +955,46 @@ onMounted(() => {
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .search-input {
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 3rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
   transition: all 0.3s ease;
+  color: var(--text-primary);
+  background: var(--bg-primary);
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--info-color);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .sort-select {
   padding: 0.75rem 1rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
-  background: white;
+  background: var(--bg-primary);
   cursor: pointer;
   transition: all 0.3s ease;
+  color: var(--text-primary);
 }
 
 .sort-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--info-color);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.sort-select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .btn-trash {
@@ -1019,23 +1032,23 @@ onMounted(() => {
 
 .loading-state .loading-spinner {
   font-size: 2rem;
-  color: #667eea;
+  color: var(--info-color);
   margin-bottom: 1rem;
 }
 
 .empty-state .empty-icon {
   font-size: 4rem;
-  color: #ccc;
+  color: var(--text-muted);
   margin-bottom: 1rem;
 }
 
 .empty-state h3 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .empty-state p {
-  color: #666;
+  color: var(--text-secondary);
 }
 
 /* Categories Grid */
@@ -1046,11 +1059,11 @@ onMounted(() => {
 }
 
 .category-card {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 15px;
   padding: 1.5rem;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-  border: 1px solid #f0f0f0;
+  box-shadow: 0 5px 15px var(--shadow-color);
+  border: 1px solid var(--border-color);
   transition: all 0.3s ease;
   opacity: 0;
   transform: translateY(20px);
@@ -1066,7 +1079,7 @@ onMounted(() => {
 
 .category-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 15px 30px var(--shadow-color);
 }
 
 .category-card.editing {
@@ -1084,7 +1097,7 @@ onMounted(() => {
 .category-name {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
@@ -1096,8 +1109,8 @@ onMounted(() => {
 
 .date-badge,
 .id-badge {
-  background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
+  background: var(--card-header-bg);
+  color: var(--info-color);
   padding: 0.25rem 0.5rem;
   border-radius: 8px;
   font-size: 0.75rem;
@@ -1169,7 +1182,7 @@ onMounted(() => {
 }
 
 .category-description {
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.5;
   font-size: 0.9rem;
 }
@@ -1178,11 +1191,11 @@ onMounted(() => {
 .edit-textarea {
   width: 100%;
   padding: 0.5rem;
-  border: 2px solid #667eea;
+  border: 2px solid var(--info-color);
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
-  background: rgba(102, 126, 234, 0.05);
+  background: var(--bg-secondary);
 }
 
 .edit-textarea {
@@ -1262,24 +1275,24 @@ onMounted(() => {
   margin-bottom: 1rem;
 }
 
-/* ✅ CATEGORY INFO SECTION */
+/* CATEGORY INFO SECTION */
 .category-info {
-  background: #f8f9fa;
+  background: var(--bg-tertiary);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--info-color);
 }
 
 .category-info h4 {
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.3rem;
   font-weight: 700;
   margin: 0 0 0.5rem 0;
 }
 
 .category-description {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.95rem;
   margin-bottom: 1rem;
   line-height: 1.5;
@@ -1291,12 +1304,12 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-/* ✅ WARNING SECTION */
+/* WARNING SECTION */
 .warning-section {
   background: rgba(255, 193, 7, 0.1);
   border-radius: 12px;
   padding: 1.5rem;
-  border-left: 4px solid #ffc107;
+  border-left: 4px solid var(--warning-color);
 }
 
 .warning-section .warning-icon {

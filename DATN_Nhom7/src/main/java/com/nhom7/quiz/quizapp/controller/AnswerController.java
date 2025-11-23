@@ -30,7 +30,7 @@ public class AnswerController {
 
     // Cập nhật đáp án - chỉ chủ sở hữu question hoặc admin
     @PutMapping("/update")
-    @PreAuthorize("hasRole('ADMIN') or @answerService.isOwner(#answers[0].question.id, authentication.principal)")
+    @PreAuthorize("hasRole('ADMIN') or @answerService.isOwner(#answers[0].question.id, authentication.name)")
     public ResponseEntity<?> updateAnswers(@RequestBody List<Answer> answers) {
         List<Answer> updated = answerService.updateAnswers(answers);
         return ResponseEntity.ok(updated);
@@ -38,7 +38,7 @@ public class AnswerController {
 
     // Tạo nhiều đáp án - chỉ chủ sở hữu question hoặc admin
     @PostMapping("/create-multiple")
-    @PreAuthorize("hasRole('ADMIN') or @answerService.isOwner(#answers[0].question.id, authentication.principal)")
+    @PreAuthorize("hasRole('ADMIN') or @answerService.isOwner(#answers[0].question.id, authentication.name)")
     public ResponseEntity<?> createMultipleAnswers(@RequestBody List<Answer> answers) {
         List<Answer> saved = answerService.createMultipleAnswers(answers);
         return ResponseEntity.ok(saved);

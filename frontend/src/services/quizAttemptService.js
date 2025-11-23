@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'
+import api from '@/utils/axios'
 
 const API_BASE_URL = 'http://localhost:8080/api'
 
@@ -8,7 +9,7 @@ export const quizAttemptService = {
   async getQuizAttempts(params = {}) {
     const userStore = useUserStore()
     const token = userStore.token
-    
+
     const config = {
       headers: {
         'Authorization': `Bearer ${token}`
@@ -20,7 +21,7 @@ export const quizAttemptService = {
         ...(params.quizId && { quizId: params.quizId })
       }
     }
-    
+
     try {
       const response = await axios.get(`${API_BASE_URL}/quiz-attempts`, config)
       return response.data
@@ -36,7 +37,7 @@ export const quizAttemptService = {
   async getMyQuizHistory(params = {}) {
     const userStore = useUserStore()
     const token = userStore.token
-    
+
     const config = {
       headers: {
         'Authorization': `Bearer ${token}`
@@ -47,7 +48,7 @@ export const quizAttemptService = {
         ...(params.quizId && { quizId: params.quizId })
       }
     }
-    
+
     try {
       const response = await axios.get(`${API_BASE_URL}/quiz-attempts/my-history`, config)
       return response.data
@@ -86,7 +87,7 @@ export const quizAttemptService = {
   async submitAttempt(attemptId, answers, timeTaken) {
     const userStore = useUserStore()
     const token = userStore.token
-    const response = await axios.post(`${API_BASE_URL}/quiz-attempts/${attemptId}/submit`, { answers, timeTaken }, {
+    const response = await api.post(`/quiz-attempts/${attemptId}/submit`, { answers, timeTaken }, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     return response.data

@@ -24,7 +24,7 @@ public class LeaderboardController {
     @Autowired
     private LeaderboardService leaderboardService;
 
-    // ✅ MAIN ENDPOINT - Xử lý request chính từ frontend
+    // MAIN ENDPOINT - Xử lý request chính từ frontend
     @GetMapping("")
     public ResponseEntity<List<LeaderboardEntry>> getLeaderboard(
             @RequestParam(defaultValue = "global") String type,
@@ -44,13 +44,13 @@ public class LeaderboardController {
 
             return ResponseEntity.ok(leaderboard);
         } catch (Exception e) {
-            System.err.println("❌ Error in getLeaderboard: " + e.getMessage());
+            System.err.println("Error in getLeaderboard: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(List.of()); // Trả về list rỗng thay vì lỗi
         }
     }
 
-    // 🔍 TEST ENDPOINT - Để debug
+    // TEST ENDPOINT - Để debug
     @GetMapping("/test")
     public ResponseEntity<Map<String, Object>> testEndpoint() {
         return ResponseEntity.ok(Map.of(
@@ -60,7 +60,7 @@ public class LeaderboardController {
                 "endpoint", "/api/leaderboard/test"));
     }
 
-    // 🔍 TEST ENDPOINT - Kiểm tra kết nối database
+    // TEST ENDPOINT - Kiểm tra kết nối database
     @GetMapping("/test-db")
     public ResponseEntity<Map<String, Object>> testDatabaseConnection() {
         try {
@@ -81,7 +81,7 @@ public class LeaderboardController {
         }
     }
 
-    // 🔍 TEST ENDPOINT 2 - Test global
+    // TEST ENDPOINT 2 - Test global
     @GetMapping("/test-global")
     public ResponseEntity<Map<String, Object>> testGlobalEndpoint() {
         try {
@@ -99,7 +99,7 @@ public class LeaderboardController {
         }
     }
 
-    // 🔍 TEST ENDPOINT 3 - Dữ liệu mẫu
+    // TEST ENDPOINT 3 - Dữ liệu mẫu
     @GetMapping("/test-sample")
     public ResponseEntity<Map<String, Object>> testSampleData() {
         List<LeaderboardEntry> sampleData = List.of(
@@ -117,7 +117,7 @@ public class LeaderboardController {
                 "status", "SUCCESS"));
     }
 
-    // 🔍 TEST ENDPOINT 4 - Test quiz leaderboard
+    // TEST ENDPOINT 4 - Test quiz leaderboard
     @GetMapping("/test-quiz/{quizId}")
     public ResponseEntity<Map<String, Object>> testQuizLeaderboard(@PathVariable Long quizId) {
         try {
@@ -137,7 +137,7 @@ public class LeaderboardController {
         }
     }
 
-    // ✅ USER ENDPOINTS - Xếp hạng công khai cho user
+    // USER ENDPOINTS - Xếp hạng công khai cho user
     @GetMapping("/quiz/{quizId}")
     public ResponseEntity<Map<String, Object>> getQuizLeaderboard(
             @PathVariable Long quizId,
@@ -145,12 +145,13 @@ public class LeaderboardController {
             @RequestParam(defaultValue = "10") int size) {
 
         try {
-            System.out.println("🔍 Getting quiz leaderboard for quizId: " + quizId + ", page: " + page + ", size: " + size);
-            
+            System.out
+                    .println("Getting quiz leaderboard for quizId: " + quizId + ", page: " + page + ", size: " + size);
+
             // Sử dụng Pageable để phân trang
-            org.springframework.data.domain.Page<LeaderboardEntry> leaderboardPage = 
-                leaderboardService.getQuizLeaderboardPaginated(quizId, page, size);
-            
+            org.springframework.data.domain.Page<LeaderboardEntry> leaderboardPage = leaderboardService
+                    .getQuizLeaderboardPaginated(quizId, page, size);
+
             Map<String, Object> response = new HashMap<>();
             response.put("content", leaderboardPage.getContent());
             response.put("totalElements", leaderboardPage.getTotalElements());
@@ -159,28 +160,27 @@ public class LeaderboardController {
             response.put("size", leaderboardPage.getSize());
             response.put("first", leaderboardPage.isFirst());
             response.put("last", leaderboardPage.isLast());
-            
-            System.out.println("✅ Returning paginated leaderboard: " + leaderboardPage.getContent().size() + 
-                             " entries, total: " + leaderboardPage.getTotalElements() + 
-                             ", pages: " + leaderboardPage.getTotalPages());
-            
+
+            System.out.println("Returning paginated leaderboard: " + leaderboardPage.getContent().size() +
+                    " entries, total: " + leaderboardPage.getTotalElements() +
+                    ", pages: " + leaderboardPage.getTotalPages());
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            System.err.println("❌ Error in getQuizLeaderboard: " + e.getMessage());
+            System.err.println("Error in getQuizLeaderboard: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(Map.of(
-                "content", List.of(),
-                "totalElements", 0L,
-                "totalPages", 0,
-                "currentPage", page,
-                "size", size,
-                "first", true,
-                "last", true
-            ));
+                    "content", List.of(),
+                    "totalElements", 0L,
+                    "totalPages", 0,
+                    "currentPage", page,
+                    "size", size,
+                    "first", true,
+                    "last", true));
         }
     }
 
-    // ✅ USER ENDPOINTS - Xếp hạng tổng điểm cho user
+    // USER ENDPOINTS - Xếp hạng tổng điểm cho user
     @GetMapping("/global")
     public ResponseEntity<List<LeaderboardEntry>> getGlobalLeaderboard(
             @RequestParam(defaultValue = "weekly") String period,
@@ -191,13 +191,13 @@ public class LeaderboardController {
             List<LeaderboardEntry> leaderboard = leaderboardService.getGlobalLeaderboard(period, limit, offset);
             return ResponseEntity.ok(leaderboard);
         } catch (Exception e) {
-            System.err.println("❌ Error in getGlobalLeaderboard: " + e.getMessage());
+            System.err.println("Error in getGlobalLeaderboard: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(List.of()); // Trả về list rỗng thay vì lỗi
         }
     }
 
-    // ✅ USER ENDPOINTS - Xếp hạng theo lớp cho user
+    // USER ENDPOINTS - Xếp hạng theo lớp cho user
     @GetMapping("/class/{className}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<List<LeaderboardEntry>> getClassLeaderboard(
@@ -208,7 +208,7 @@ public class LeaderboardController {
         return ResponseEntity.ok(leaderboard);
     }
 
-    // ✅ USER ENDPOINTS - Tìm vị trí của user
+    // USER ENDPOINTS - Tìm vị trí của user
     @GetMapping("/user/{userId}/rank")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Integer> getUserRank(
@@ -219,7 +219,7 @@ public class LeaderboardController {
         return ResponseEntity.ok(rank);
     }
 
-    // ✅ USER ENDPOINTS - Thông tin leaderboard cho user cụ thể
+    // USER ENDPOINTS - Thông tin leaderboard cho user cụ thể
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<List<LeaderboardEntry>> getUserLeaderboardInfo(
@@ -240,7 +240,7 @@ public class LeaderboardController {
         }
     }
 
-    // 🔐 ADMIN-ONLY ENDPOINTS - Thống kê chi tiết cho admin
+    // ADMIN-ONLY ENDPOINTS - Thống kê chi tiết cho admin
     @GetMapping("/admin/statistics")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getLeaderboardStatistics(
@@ -254,7 +254,7 @@ public class LeaderboardController {
                 "topPerformers", leaderboardService.getTopPerformers(period)));
     }
 
-    // 🔐 ADMIN-ONLY ENDPOINTS - Export leaderboard data
+    // ADMIN-ONLY ENDPOINTS - Export leaderboard data
     @GetMapping("/admin/export")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> exportLeaderboardData(
@@ -265,7 +265,7 @@ public class LeaderboardController {
         return ResponseEntity.ok("Export functionality coming soon");
     }
 
-    // 🔐 ADMIN-ONLY ENDPOINTS - Quản lý leaderboard settings
+    // ADMIN-ONLY ENDPOINTS - Quản lý leaderboard settings
     @GetMapping("/admin/settings")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getLeaderboardSettings() {

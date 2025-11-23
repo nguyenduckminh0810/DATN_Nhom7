@@ -19,6 +19,13 @@ export const adminService = {
     })
     return response.data
   },
+
+  async getAttemptsTodayByHour(tz) {
+    const response = await api.get('/admin/stats/attempts-today', {
+      params: { tz }
+    })
+    return response.data
+  },
 }
 
 export default adminService

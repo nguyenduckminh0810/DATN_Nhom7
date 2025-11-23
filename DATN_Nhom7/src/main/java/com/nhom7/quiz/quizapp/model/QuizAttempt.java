@@ -4,11 +4,14 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -33,7 +36,14 @@ public class QuizAttempt {
 	private LocalDateTime attemptedAt = LocalDateTime.now();
 
 	@Column(name = "time_taken", nullable = false)
-	private int timeTaken; // đơn vị giây
+	private int timeTaken;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false)
+	private AttemptStatus status = AttemptStatus.IN_PROGRESS;
+
+	@OneToOne(mappedBy = "attempt", cascade = jakarta.persistence.CascadeType.ALL, fetch = jakarta.persistence.FetchType.LAZY)
+	private QuizAttemptProgress progress;
 
 	public Long getId() {
 		return this.id;
@@ -83,6 +93,24 @@ public class QuizAttempt {
 		this.attemptedAt = attemptedAt;
 	}
 
+	// ✅ GETTERS VÀ SETTERS CHO STATUS
+	public AttemptStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(AttemptStatus status) {
+		this.status = status;
+	}
+
+	// ✅ GETTERS VÀ SETTERS CHO PROGRESS
+	public QuizAttemptProgress getProgress() {
+		return progress;
+	}
+
+	public void setProgress(QuizAttemptProgress progress) {
+		this.progress = progress;
+	}
+
 	public QuizAttempt(Long id, User user, Quiz quiz, int score, LocalDateTime attemptedAt, int timeTaken) {
 		super();
 		this.id = id;
@@ -91,9 +119,43 @@ public class QuizAttempt {
 		this.score = score;
 		this.attemptedAt = attemptedAt;
 		this.timeTaken = timeTaken;
+		this.status = AttemptStatus.IN_PROGRESS;
 	}
 
 	public QuizAttempt() {
 		super();
+		this.status = AttemptStatus.IN_PROGRESS;
+	}
+
+	// ✅ HELPER METHODS
+	public boolean isInProgress() {
+		return AttemptStatus.IN_PROGRESS.equals(this.status);
+	}
+
+	public boolean isSubmitted() {
+		return AttemptStatus.SUBMITTED.equals(this.status);
+	}
+
+	public boolean isCompleted() {
+		return AttemptStatus.COMPLETED.equals(this.status);
+	}
+
+	public boolean isAbandoned() {
+		return AttemptStatus.ABANDONED.equals(this.status);
+	}
+
+	public void markAsSubmitted() {
+		this.status = AttemptStatus.SUBMITTED;
+	}
+
+	public void markAsCompleted() {
+		this.status = AttemptStatus.COMPLETED;
+	}
+
+	public void markAsAbandoned() {
+		this.status = AttemptStatus.ABANDONED;
+		if (this.progress != null) {
+			this.progress.markAsInactive();
+		}
 	}
 }

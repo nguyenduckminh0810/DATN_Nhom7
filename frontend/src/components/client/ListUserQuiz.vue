@@ -23,14 +23,14 @@ const filterCategory = ref('all')
 const hoveredQuiz = ref(null)
 const toast = ref({ show: false, message: '', type: 'info' })
 
-// ✅ THÊM STATE CHO QUIZ CODE MODAL
+//  THÊM STATE CHO QUIZ CODE MODAL
 const showCodeModal = ref(false)
 const quizCode = ref('')
 const quizTitle = ref('')
 
-// ✅ LƯU QUIZ INFO ĐỂ SHARE
+//  LƯU QUIZ INFO ĐỂ SHARE
 const quizInfo = ref(null)
-// ✅ METHOD XEM QUIZ CODE
+//  METHOD XEM QUIZ CODE
 const viewQuizCode = async (quizId) => {
   try {
     const response = await api.get(`/quiz/${quizId}/code`)
@@ -38,7 +38,7 @@ const viewQuizCode = async (quizId) => {
     if (response.data.success) {
       quizCode.value = response.data.quizCode
       quizTitle.value = response.data.quizTitle
-      // ✅ LƯU QUIZ INFO ĐỂ SHARE
+      //  LƯU QUIZ INFO ĐỂ SHARE
       quizInfo.value = {
         quizId: quizId,
         quizCode: response.data.quizCode,
@@ -49,12 +49,12 @@ const viewQuizCode = async (quizId) => {
       showToast(response.data.message || 'Lỗi khi lấy mã code', 'error')
     }
   } catch (error) {
-    console.error('❌ Error getting quiz code:', error)
+    console.error('Error getting quiz code:', error)
     showToast('Lỗi khi lấy mã code', 'error')
   }
 }
 
-// ✅ COPY CODE
+//  COPY CODE
 const copyQuizCode = async () => {
   try {
     await navigator.clipboard.writeText(quizCode.value)
@@ -65,10 +65,10 @@ const copyQuizCode = async () => {
   }
 }
 
-// ✅ SHARE CODE
+//  SHARE CODE
 const shareCode = async () => {
   try {
-    // ✅ TẠO LINK TRỰC TIẾP ĐẾN QUIZ PLAY PAGE
+    //  TẠO LINK TRỰC TIẾP ĐẾN QUIZ PLAY PAGE
     const userId = localStorage.getItem('userId') || '1'
     const quizId = quizInfo.value?.quizId
     const shareUrl = `${window.location.origin}/quiz/${quizId}/${userId}/play`
@@ -107,7 +107,7 @@ const fetchQuizzes = async (page = 0) => {
   // Kiểm tra token trước khi gọi API
   const token = localStorage.getItem('token')
   if (!token) {
-    console.error('❌ No token found - redirecting to login')
+    console.error(' No token found - redirecting to login')
     router.push('/login')
     return
   }
@@ -139,14 +139,14 @@ const fetchQuizzes = async (page = 0) => {
     applyFilters()
   } catch (err) {
     if (err.response?.status === 403) {
-      console.error('❌ 403 Forbidden - Token may be invalid or expired')
+      console.error(' 403 Forbidden - Token may be invalid or expired')
       // Xóa token và chuyển hướng về login
       localStorage.removeItem('token')
       localStorage.removeItem('userId')
       router.push('/login')
     } else {
       error.value = 'Không thể tải quiz.'
-      console.error('❌ Error fetching quizzes:', err)
+      console.error(' Error fetching quizzes:', err)
     }
   } finally {
     isLoading.value = false
@@ -189,11 +189,11 @@ const showDetailModal = ref(false)
 const selectedQuizId = ref(null)
 
 const openDetailModal = (quizId) => {
-  console.log('🔍 Opening detail modal for quiz ID:', quizId)
+  console.log(' Opening detail modal for quiz ID:', quizId)
   selectedQuizId.value = quizId
   showDetailModal.value = true
   console.log(
-    '✅ Modal state - showDetailModal:',
+    ' Modal state - showDetailModal:',
     showDetailModal.value,
     'selectedQuizId:',
     selectedQuizId.value,
@@ -206,7 +206,7 @@ const closeDetailModal = () => {
 }
 const editQuiz = (quizId) => router.push(`/quiz-crud/edit/${userId.value}/${quizId}`)
 
-// ✅ THÊM METHOD XÓA QUIZ (SOFT DELETE)
+//  THÊM METHOD XÓA QUIZ (SOFT DELETE)
 const deleteQuiz = async (quizId) => {
   if (!confirm('Bạn có chắc chắn muốn xóa quiz này? Hành động này không thể hoàn tác.')) {
     return
@@ -220,12 +220,12 @@ const deleteQuiz = async (quizId) => {
       // Hiển thị thông báo thành công
       showToast(response.data.message || 'Quiz đã được xóa thành công!', 'success')
 
-      console.log('✅ Quiz deleted successfully, refreshing list...')
+      console.log(' Quiz deleted successfully, refreshing list...')
       // Refresh danh sách quiz
       await fetchQuizzes(currentPage.value)
-      console.log('✅ Quiz list refreshed')
+      console.log(' Quiz list refreshed')
 
-      // ✅ THÔNG BÁO CHO CÁC COMPONENT KHÁC BIẾT QUIZ ĐÃ BỊ XÓA
+      //  THÔNG BÁO CHO CÁC COMPONENT KHÁC BIẾT QUIZ ĐÃ BỊ XÓA
       window.dispatchEvent(
         new CustomEvent('quizDeleted', {
           detail: { quizId: quizId },
@@ -253,7 +253,7 @@ const deleteQuiz = async (quizId) => {
   }
 }
 
-// ✅ THÊM METHOD HIỂN THỊ TOAST
+//  THÊM METHOD HIỂN THỊ TOAST
 const showToast = (message, type = 'info') => {
   toast.value = { show: true, type, message }
   setTimeout(() => {
@@ -263,7 +263,7 @@ const showToast = (message, type = 'info') => {
 
 const formatDate = (str) => (str ? new Date(str).toLocaleDateString('vi-VN') : '')
 
-// ✅ THÊM METHODS XỬ LÝ LỖI ẢNH
+//  THÊM METHODS XỬ LÝ LỖI ẢNH
 const handleImageError = (event) => {
   // Thay thế bằng ảnh mặc định khi lỗi
   event.target.src = '/img/hero-img.png'
@@ -281,7 +281,7 @@ onMounted(async () => {
   // Kiểm tra token trước khi load data
   const token = localStorage.getItem('token')
   if (!token) {
-    console.error('❌ No token found - redirecting to login')
+    console.error(' No token found - redirecting to login')
     router.push('/login')
     return
   }
@@ -465,7 +465,7 @@ onMounted(async () => {
     <QuizDetailModal :show-modal="showDetailModal" :quiz-id="selectedQuizId" @close="closeDetailModal" />
   </div>
 
-  <!-- ✅ QUIZ CODE MODAL -->
+  <!--  QUIZ CODE MODAL -->
   <div v-if="showCodeModal" class="modal-overlay" @click="showCodeModal = false">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
@@ -798,7 +798,7 @@ onMounted(async () => {
 }
 
 .quiz-description {
-  color: rgba(255, 255, 255, 0.9);
+  color: #e0e0e0;
   font-size: 0.95rem;
   line-height: 1.5;
   margin-bottom: 20px;
@@ -806,7 +806,7 @@ onMounted(async () => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .quiz-meta {
@@ -819,10 +819,10 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.9);
+  color: #f0f0f0;
   font-size: 0.9rem;
   font-weight: 600;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .author-info i {
@@ -832,18 +832,22 @@ onMounted(async () => {
 }
 
 .quiz-status {
-  background: rgba(255, 107, 157, 0.3);
+  background: rgba(255, 107, 157, 0.2);
   backdrop-filter: blur(10px);
   padding: 4px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 107, 157, 0.5);
+  border: 1px solid rgba(255, 107, 157, 0.4);
 }
 
 .status-text {
   color: #ff6b9d;
   font-size: 0.8rem;
-  font-weight: 600;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 107, 157, 0.15);
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 107, 157, 0.3);
 }
 
 .quiz-extra {
@@ -857,21 +861,25 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.18);
-  color: #1a202c;
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
   font-size: 0.92rem;
   font-weight: 600;
   border-radius: 12px;
   padding: 4px 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .badge.play-count i {
-  color: #00b8d4;
+  color: #00d4ff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .badge.created-at i {
   color: #ff6b9d;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .card-overlay {
@@ -980,7 +988,7 @@ onMounted(async () => {
   border-color: white;
 }
 
-/* ✅ RESPONSIVE CHO MOBILE */
+/*  RESPONSIVE CHO MOBILE */
 @media (max-width: 768px) {
   .overlay-content {
     gap: 8px;
@@ -1330,5 +1338,100 @@ onMounted(async () => {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+/*  EMPTY STATE STYLES - TĂNG ĐỘ TƯƠNG PHẢN CHO DARK MODE */
+.empty-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 40px 20px;
+}
+
+.empty-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  padding: 50px 40px;
+  text-align: center;
+  max-width: 500px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: #00d4ff;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.empty-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 15px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.empty-message {
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  margin-bottom: 30px;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+/*  TĂNG ĐỘ TƯƠNG PHẢN CHO NÚT CREATE */
+.empty-card .create-btn {
+  background: linear-gradient(45deg, #00d4ff, #00b8d4);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  padding: 18px 36px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.empty-card .create-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(0, 212, 255, 0.6);
+  background: linear-gradient(45deg, #00b8d4, #0288d1);
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.empty-card .create-btn:active {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+}
+
+/*  RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+  .empty-card {
+    padding: 40px 30px;
+    margin: 0 20px;
+  }
+
+  .empty-title {
+    font-size: 1.5rem;
+  }
+
+  .empty-message {
+    font-size: 1rem;
+  }
+
+  .empty-card .create-btn {
+    padding: 16px 32px;
+    font-size: 1.1rem;
+  }
 }
 </style>

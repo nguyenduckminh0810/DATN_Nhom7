@@ -31,9 +31,10 @@ public interface ResultRepo extends JpaRepository<Result, Long> {
     @Query("SELECT r FROM Result r WHERE r.quiz.id = :quizId ORDER BY r.score DESC, r.completedAt ASC")
     List<Result> findTopByQuizIdOrderByScoreDescTimeTakenAsc(@Param("quizId") Long quizId, Pageable pageable);
 
-    // ✅ Method mới cho pagination thực sự
+    // Method mới cho pagination thực sự
     @Query("SELECT r FROM Result r WHERE r.quiz.id = :quizId ORDER BY r.score DESC, r.completedAt ASC")
-    org.springframework.data.domain.Page<Result> findByQuizIdOrderByScoreDescTimeTakenAsc(@Param("quizId") Long quizId, Pageable pageable);
+    org.springframework.data.domain.Page<Result> findByQuizIdOrderByScoreDescTimeTakenAsc(@Param("quizId") Long quizId,
+            Pageable pageable);
 
     @Query("SELECT r FROM Result r WHERE r.completedAt >= :startDate ORDER BY r.score DESC")
     List<Result> findTopByPeriodOrderByTotalScoreDesc(@Param("startDate") LocalDateTime startDate, Pageable pageable);

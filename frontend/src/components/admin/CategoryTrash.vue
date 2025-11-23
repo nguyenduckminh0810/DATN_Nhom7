@@ -69,7 +69,12 @@
             <div class="table-controls">
               <div class="search-box">
                 <i class="bi bi-search"></i>
-                <input v-model="searchTerm" type="text" placeholder="Tìm kiếm danh mục..." class="search-input" />
+                <input
+                  v-model="searchTerm"
+                  type="text"
+                  placeholder="Tìm kiếm danh mục..."
+                  class="search-input"
+                />
               </div>
               <select v-model="sortBy" class="sort-select">
                 <option value="deletedAt">Xóa gần nhất</option>
@@ -97,8 +102,12 @@
             </div>
 
             <div v-else class="categories-grid">
-              <div v-for="(category, index) in filteredCategories" :key="category.id" class="category-card deleted"
-                :style="{ 'animation-delay': `${index * 0.1}s` }">
+              <div
+                v-for="(category, index) in filteredCategories"
+                :key="category.id"
+                class="category-card deleted"
+                :style="{ 'animation-delay': `${index * 0.1}s` }"
+              >
                 <div class="card-header">
                   <div class="category-info">
                     <div class="category-name">
@@ -113,9 +122,7 @@
                         <i class="bi bi-calendar3"></i>
                         {{ formatDate(category.deletedAt) }}
                       </span>
-                      <span class="id-badge">
-                        ID: {{ category.id }}
-                      </span>
+
                       <span v-if="category.deletedBy" class="deleted-by-badge">
                         <i class="bi bi-person"></i>
                         {{ category.deletedBy.username }}
@@ -124,10 +131,18 @@
                   </div>
 
                   <div class="card-actions">
-                    <button @click="restoreCategory(category)" class="btn-restore" title="Khôi phục">
+                    <button
+                      @click="restoreCategory(category)"
+                      class="btn-restore"
+                      title="Khôi phục"
+                    >
                       <i class="bi bi-arrow-clockwise"></i>
                     </button>
-                    <button @click="confirmHardDelete(category)" class="btn-hard-delete" title="Xóa hoàn toàn">
+                    <button
+                      @click="confirmHardDelete(category)"
+                      class="btn-hard-delete"
+                      title="Xóa hoàn toàn"
+                    >
                       <i class="bi bi-trash3-fill"></i>
                     </button>
                   </div>
@@ -164,16 +179,17 @@
         <div class="modal-body">
           <div class="category-info">
             <h4>{{ categoryToHardDelete?.name }}</h4>
-            <p class="category-description">{{ categoryToHardDelete?.description || 'Không có mô tả' }}</p>
+            <p class="category-description">
+              {{ categoryToHardDelete?.description || 'Không có mô tả' }}
+            </p>
             <div class="category-meta">
               <span class="date-badge">
                 <i class="bi bi-calendar3"></i>
                 {{ formatDate(categoryToHardDelete?.createdAt) }}
               </span>
-              <span class="id-badge">ID: {{ categoryToHardDelete?.id }}</span>
             </div>
           </div>
-          
+
           <div class="warning-section danger">
             <div class="warning-icon">
               <i class="bi bi-exclamation-triangle-fill"></i>
@@ -194,7 +210,11 @@
             <i class="bi bi-x-circle"></i>
             Hủy
           </button>
-          <button @click="hardDeleteCategory" class="btn-confirm-hard-delete" :disabled="isHardDeleting">
+          <button
+            @click="hardDeleteCategory"
+            class="btn-confirm-hard-delete"
+            :disabled="isHardDeleting"
+          >
             <i v-if="isHardDeleting" class="bi bi-arrow-clockwise spin"></i>
             <i v-else class="bi bi-trash3-fill"></i>
             {{ isHardDeleting ? 'Đang xóa...' : 'Xóa hoàn toàn' }}
@@ -234,7 +254,7 @@ const toast = ref({
   show: false,
   type: 'success',
   message: '',
-  icon: ''
+  icon: '',
 })
 
 // Computed properties
@@ -243,9 +263,10 @@ const filteredCategories = computed(() => {
 
   // Search filter
   if (searchTerm.value) {
-    filtered = filtered.filter(cat =>
-      cat.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      cat.description?.toLowerCase().includes(searchTerm.value.toLowerCase())
+    filtered = filtered.filter(
+      (cat) =>
+        cat.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+        cat.description?.toLowerCase().includes(searchTerm.value.toLowerCase()),
     )
   }
 
@@ -271,7 +292,7 @@ const filteredCategories = computed(() => {
 const recentDeletions = computed(() => {
   const oneWeekAgo = new Date()
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-  return deletedCategories.value.filter(cat => new Date(cat.deletedAt) > oneWeekAgo).length
+  return deletedCategories.value.filter((cat) => new Date(cat.deletedAt) > oneWeekAgo).length
 })
 
 // Methods
@@ -279,7 +300,7 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('vi-VN', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 
@@ -289,7 +310,7 @@ function formatDateTime(dateStr) {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 
@@ -297,14 +318,14 @@ function showToast(message, type = 'success') {
   const icons = {
     success: 'bi bi-check-circle-fill',
     error: 'bi bi-exclamation-circle-fill',
-    info: 'bi bi-info-circle-fill'
+    info: 'bi bi-info-circle-fill',
   }
 
   toast.value = {
     show: true,
     type,
     message,
-    icon: icons[type]
+    icon: icons[type],
   }
 
   setTimeout(() => {
@@ -333,9 +354,13 @@ async function restoreCategory(category) {
   isRestoring.value = true
   try {
     const token = localStorage.getItem('token')
-    await api.put(`/admin/categories/${category.id}/restore`, {}, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    await api.put(
+      `/admin/categories/${category.id}/restore`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    )
 
     showToast('Khôi phục danh mục thành công!')
     await fetchDeletedCategories()
@@ -365,11 +390,11 @@ async function hardDeleteCategory() {
   try {
     const token = localStorage.getItem('token')
     const response = await api.delete(`/admin/categories/${categoryToHardDelete.value.id}/hard`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
 
     const message = response.data || 'Xóa hoàn toàn danh mục thành công!'
-    
+
     if (message.includes('Không thể xóa hoàn toàn danh mục vì có')) {
       showToast(message, 'error')
       closeHardDeleteModal()
@@ -438,9 +463,11 @@ onMounted(() => {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
+
   50% {
     transform: translateY(-20px) rotate(180deg);
   }
@@ -448,7 +475,7 @@ onMounted(() => {
 
 /* Hero Section */
 .hero-section {
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(238, 90, 36, 0.1));
+  background: var(--card-header-bg);
   padding: 3rem 0;
   text-align: center;
   margin-bottom: 2rem;
@@ -462,20 +489,20 @@ onMounted(() => {
 
 .hero-icon {
   font-size: 4rem;
-  color: #ff4757;
+  color: var(--danger-color);
   margin-bottom: 1rem;
 }
 
 .hero-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 1rem;
 }
 
 .hero-subtitle {
   font-size: 1.1rem;
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
@@ -494,12 +521,12 @@ onMounted(() => {
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-primary);
   backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px var(--shadow-color);
+  border: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -512,15 +539,15 @@ onMounted(() => {
 }
 
 .stat-card.danger {
-  border-left: 4px solid #ff4757;
+  border-left: 4px solid var(--danger-color);
 }
 
 .stat-card.warning {
-  border-left: 4px solid #ffa502;
+  border-left: 4px solid var(--warning-color);
 }
 
 .stat-card.info {
-  border-left: 4px solid #3742fa;
+  border-left: 4px solid var(--info-color);
 }
 
 .stat-icon {
@@ -535,15 +562,15 @@ onMounted(() => {
 }
 
 .stat-card.danger .stat-icon {
-  background: linear-gradient(135deg, #ff4757, #ff6b9d);
+  background: linear-gradient(135deg, var(--danger-color), #ff6b9d);
 }
 
 .stat-card.warning .stat-icon {
-  background: linear-gradient(135deg, #ffa502, #ffb142);
+  background: linear-gradient(135deg, var(--warning-color), #ffb142);
 }
 
 .stat-card.info .stat-icon {
-  background: linear-gradient(135deg, #3742fa, #5352ed);
+  background: linear-gradient(135deg, var(--info-color), #5352ed);
 }
 
 .stat-content {
@@ -553,12 +580,12 @@ onMounted(() => {
 .stat-value {
   font-size: 2rem;
   font-weight: 700;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .stat-label {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -574,20 +601,25 @@ onMounted(() => {
 .table-section {
   position: relative;
   z-index: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
 }
 
 .table-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   backdrop-filter: blur(20px);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px var(--shadow-color);
+  border: 1px solid var(--border-color);
 }
 
 .table-header {
   padding: 2rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -598,7 +630,7 @@ onMounted(() => {
 .header-content h2 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
@@ -606,7 +638,7 @@ onMounted(() => {
 }
 
 .table-subtitle {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -633,10 +665,12 @@ onMounted(() => {
 .search-input {
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 0.95rem;
   transition: all 0.3s ease;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .search-input:focus {
@@ -647,28 +681,36 @@ onMounted(() => {
 
 .sort-select {
   padding: 0.75rem 1rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 0.95rem;
-  background: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .sort-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--info-color);
+}
+
+.sort-select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 /* Table Container */
 .table-container {
   padding: 2rem;
+  background: var(--bg-primary);
 }
 
 .loading-state,
 .empty-state {
   text-align: center;
   padding: 3rem 2rem;
+  background: var(--bg-primary);
 }
 
 .loading-spinner {
@@ -682,23 +724,28 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-icon {
   font-size: 4rem;
-  color: #ccc;
+  color: var(--text-muted);
   margin-bottom: 1rem;
 }
 
 .empty-state h3 {
-  color: #666;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .empty-state p {
-  color: #999;
+  color: var(--text-secondary);
 }
 
 /* Categories Grid */
@@ -726,8 +773,8 @@ onMounted(() => {
 }
 
 .category-card.deleted {
-  border-left: 4px solid #ff4757;
-  background: linear-gradient(135deg, rgba(255, 71, 87, 0.05), rgba(255, 255, 255, 0.95));
+  border-left: 4px solid var(--danger-color);
+  background: var(--bg-primary);
 }
 
 @keyframes slideIn {
@@ -751,7 +798,7 @@ onMounted(() => {
 .category-name {
   font-size: 1.2rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
@@ -779,8 +826,8 @@ onMounted(() => {
 .date-badge,
 .id-badge,
 .deleted-by-badge {
-  background: #f8f9fa;
-  color: #666;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.8rem;
@@ -791,7 +838,7 @@ onMounted(() => {
 
 .deleted-by-badge {
   background: rgba(255, 71, 87, 0.1);
-  color: #ff4757;
+  color: var(--danger-color);
 }
 
 .card-actions {
@@ -834,23 +881,23 @@ onMounted(() => {
 }
 
 .card-body {
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-color);
   padding-top: 1rem;
 }
 
 .category-description {
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.5;
   margin-bottom: 1rem;
 }
 
 .deletion-info {
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-color);
   padding-top: 0.75rem;
 }
 
 .deletion-time {
-  color: #999;
+  color: var(--text-muted);
   font-size: 0.8rem;
   display: flex;
   align-items: center;
@@ -873,17 +920,17 @@ onMounted(() => {
 }
 
 .delete-modal {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 16px;
   padding: 2rem;
   max-width: 600px;
   width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px var(--shadow-color);
   animation: modalSlideIn 0.3s ease;
 }
 
 .delete-modal.hard-delete {
-  border-left: 4px solid #ff4757;
+  border-left: 4px solid var(--danger-color);
 }
 
 @keyframes modalSlideIn {
@@ -891,6 +938,7 @@ onMounted(() => {
     opacity: 0;
     transform: translateY(-50px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -908,7 +956,7 @@ onMounted(() => {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff4757, #ff6b9d);
+  background: linear-gradient(135deg, var(--danger-color), #ff6b9d);
   color: white;
   display: flex;
   align-items: center;
@@ -919,7 +967,7 @@ onMounted(() => {
 .modal-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #333;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -929,11 +977,11 @@ onMounted(() => {
 
 /* Category Info Section */
 .category-info {
-  background: #f8f9fa;
+  background: var(--bg-tertiary);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--info-color);
 }
 
 .category-info h4 {
@@ -1056,10 +1104,10 @@ onMounted(() => {
   position: fixed;
   top: 2rem;
   right: 2rem;
-  background: white;
+  background: var(--bg-primary);
   border-radius: 12px;
   padding: 1rem 1.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 30px var(--shadow-color);
   z-index: 1001;
   display: flex;
   align-items: center;
@@ -1073,11 +1121,11 @@ onMounted(() => {
 }
 
 .toast.error {
-  border-left: 4px solid #ff4757;
+  border-left: 4px solid var(--danger-color);
 }
 
 .toast.info {
-  border-left: 4px solid #3742fa;
+  border-left: 4px solid var(--info-color);
 }
 
 .toast-content {
@@ -1129,6 +1177,7 @@ onMounted(() => {
     opacity: 0;
     transform: translateX(100%);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -1140,22 +1189,22 @@ onMounted(() => {
   .hero-title {
     font-size: 2rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .table-header {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .categories-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-actions {
     flex-direction: column;
   }
 }
-</style> 
+</style>

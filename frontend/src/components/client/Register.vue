@@ -133,14 +133,8 @@ const clearAvatar = () => {
               <i class="fas fa-user"></i>
               Tên đăng nhập
             </label>
-            <input
-              type="text"
-              v-model="username"
-              required
-              maxlength="50"
-              class="form-input"
-              placeholder="Nhập tên đăng nhập"
-            />
+            <input type="text" v-model="username" required maxlength="50" class="form-input"
+              placeholder="Nhập tên đăng nhập" />
           </div>
 
           <!-- Email -->
@@ -149,14 +143,8 @@ const clearAvatar = () => {
               <i class="fas fa-envelope"></i>
               Email
             </label>
-            <input
-              type="email"
-              v-model="email"
-              required
-              maxlength="100"
-              class="form-input"
-              placeholder="your@email.com"
-            />
+            <input type="email" v-model="email" required maxlength="100" class="form-input"
+              placeholder="your@email.com" />
           </div>
 
           <!-- Password -->
@@ -167,15 +155,8 @@ const clearAvatar = () => {
               <span class="password-hint">(8-50 ký tự)</span>
             </label>
             <div class="password-wrapper">
-              <input
-                :type="showPassword ? 'text' : 'password'"
-                v-model="password"
-                required
-                minlength="8"
-                maxlength="50"
-                class="form-input password-input"
-                placeholder="Tối thiểu 8 ký tự"
-              />
+              <input :type="showPassword ? 'text' : 'password'" v-model="password" required minlength="8" maxlength="50"
+                class="form-input password-input" placeholder="Tối thiểu 8 ký tự" />
               <button type="button" @click="showPassword = !showPassword" class="password-toggle">
                 <div class="eye-icon" :class="{ 'eye-hidden': showPassword }"></div>
               </button>
@@ -183,13 +164,10 @@ const clearAvatar = () => {
 
             <div v-if="password" class="password-strength">
               <div class="strength-bar">
-                <div
-                  class="strength-fill"
-                  :style="{
-                    width: passwordStrength * 20 + '%',
-                    backgroundColor: getStrengthColor(passwordStrength),
-                  }"
-                ></div>
+                <div class="strength-fill" :style="{
+                  width: passwordStrength * 20 + '%',
+                  backgroundColor: getStrengthColor(passwordStrength),
+                }"></div>
               </div>
               <span class="strength-text" :style="{ color: getStrengthColor(passwordStrength) }">
                 {{ getStrengthText(passwordStrength) }}
@@ -227,30 +205,17 @@ const clearAvatar = () => {
               Nhập lại mật khẩu
             </label>
             <div class="password-wrapper">
-              <input
-                :type="showConfirmPassword ? 'text' : 'password'"
-                v-model="confirmPassword"
-                required
-                maxlength="50"
-                class="form-input password-input"
-                :class="{
+              <input :type="showConfirmPassword ? 'text' : 'password'" v-model="confirmPassword" required maxlength="50"
+                class="form-input password-input" :class="{
                   'match-success': passwordMatch === true,
                   'match-error': passwordMatch === false,
-                }"
-                placeholder="Nhập lại mật khẩu"
-              />
-              <button
-                type="button"
-                @click="showConfirmPassword = !showConfirmPassword"
-                class="password-toggle"
-              >
+                }" placeholder="Nhập lại mật khẩu" />
+              <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="password-toggle">
                 <div class="eye-icon" :class="{ 'eye-hidden': showConfirmPassword }"></div>
               </button>
             </div>
             <div v-if="confirmPassword" class="password-match">
-              <i
-                :class="passwordMatch ? 'fas fa-check text-success' : 'fas fa-times text-danger'"
-              ></i>
+              <i :class="passwordMatch ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
               <span :class="passwordMatch ? 'text-success' : 'text-danger'">
                 {{ passwordMatch ? 'Mật khẩu khớp' : 'Mật khẩu không khớp' }}
               </span>
@@ -263,47 +228,9 @@ const clearAvatar = () => {
               <i class="fas fa-id-card"></i>
               Họ và tên
             </label>
-            <input
-              type="text"
-              v-model="fullName"
-              maxlength="100"
-              class="form-input"
-              placeholder="Nhập họ và tên"
-            />
+            <input type="text" v-model="fullName" maxlength="100" class="form-input" placeholder="Nhập họ và tên" />
           </div>
 
-          <!-- Avatar Upload (file only) -->
-          <div class="form-group">
-            <label class="form-label">
-              <i class="fas fa-image"></i>
-              Ảnh đại diện
-            </label>
-
-            <div class="avatar-upload-section">
-              <div class="upload-buttons">
-                <label for="avatarFile" class="upload-btn">
-                  <i class="fas fa-upload"></i>
-                  Tải ảnh lên
-                </label>
-                <input
-                  type="file"
-                  id="avatarFile"
-                  accept="image/*"
-                  @change="handleAvatarFile"
-                  style="display: none"
-                />
-              </div>
-
-              <!-- Preview -->
-              <div v-if="avatarPreview" class="avatar-preview-section">
-                <div class="avatar-preview-container">
-                  <img :src="avatarPreview" alt="Avatar Preview" class="avatar-preview-img" />
-                  <button type="button" @click="clearAvatar" class="avatar-remove-btn">✖</button>
-                </div>
-                <p class="avatar-preview-text">Xem trước ảnh đại diện</p>
-              </div>
-            </div>
-          </div>
 
           <!-- Bio -->
           <div class="form-group">
@@ -311,22 +238,13 @@ const clearAvatar = () => {
               <i class="fas fa-pen"></i>
               Giới thiệu bản thân
             </label>
-            <textarea
-              v-model="bio"
-              rows="3"
-              maxlength="500"
-              class="form-textarea"
-              placeholder="Viết vài dòng về bản thân... (tối đa 500 ký tự)"
-            ></textarea>
+            <textarea v-model="bio" rows="3" maxlength="500" class="form-textarea"
+              placeholder="Viết vài dòng về bản thân... (tối đa 500 ký tự)"></textarea>
             <div class="char-count">{{ bio?.length || 0 }}/500 ký tự</div>
           </div>
 
           <!-- Submit -->
-          <button
-            type="submit"
-            class="register-btn"
-            :disabled="isLoading || !passwordMatch || passwordStrength < 2"
-          >
+          <button type="submit" class="register-btn" :disabled="isLoading || !passwordMatch || passwordStrength < 2">
             <div v-if="isLoading" class="btn-loading">
               <div class="spinner"></div>
               <span>Đang tạo tài khoản...</span>
@@ -884,6 +802,7 @@ const clearAvatar = () => {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     transform: scale(1);
@@ -905,6 +824,7 @@ const clearAvatar = () => {
 }
 
 @keyframes successPulse {
+
   0%,
   100% {
     transform: scale(1);
@@ -918,6 +838,7 @@ const clearAvatar = () => {
 }
 
 @keyframes blink {
+
   0%,
   50% {
     opacity: 1;
@@ -1301,6 +1222,7 @@ const clearAvatar = () => {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -1311,6 +1233,7 @@ const clearAvatar = () => {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1318,11 +1241,13 @@ const clearAvatar = () => {
 }
 
 @keyframes successPulse {
+
   0%,
   100% {
     transform: scale(1);
     box-shadow: 0 15px 35px rgba(46, 213, 115, 0.4);
   }
+
   50% {
     transform: scale(1.1);
     box-shadow: 0 20px 45px rgba(46, 213, 115, 0.6);
@@ -1330,10 +1255,12 @@ const clearAvatar = () => {
 }
 
 @keyframes blink {
+
   0%,
   50% {
     opacity: 1;
   }
+
   51%,
   100% {
     opacity: 0.3;

@@ -1,6 +1,7 @@
 package com.nhom7.quiz.quizapp.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -25,17 +26,17 @@ public class Quiz {
 	private Category category;
 
 	@Column(name = "is_public")
+	@JsonProperty("isPublic")
 	private boolean isPublic;
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt = LocalDateTime.now();
 
-	// ✅ THÊM FIELD IMAGE
 	private String image;
 
-	// ✅ THÊM FIELDS CHO SOFT DELETE
+	// THÊM FIELDS CHO SOFT DELETE
 	@Column(name = "deleted")
-	private Boolean deleted = false; // ✅ SỬA: Thay đổi từ boolean sang Boolean
+	private Boolean deleted = false;
 
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
@@ -44,14 +45,12 @@ public class Quiz {
 	@JoinColumn(name = "deleted_by")
 	private User deletedBy;
 
-	// ✅ THÊM FIELDS CHO QUIZ CODE
 	@Column(name = "quiz_code", unique = true)
 	private String quizCode;
 
 	@Column(name = "code_created_at")
 	private LocalDateTime codeCreatedAt;
 
-	// ✅ Trường tạm để trả về số lượt chơi (không lưu DB)
 	@Transient
 	private Long playCount;
 
@@ -59,7 +58,6 @@ public class Quiz {
 	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private Set<QuizTag> quizTags;
 
-	// ✅ THÊM RELATIONSHIP VỚI QUESTIONS
 	@JsonIgnore
 	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private Set<Question> questions = new HashSet<>();
@@ -120,6 +118,7 @@ public class Quiz {
 		this.category = category;
 	}
 
+	@JsonProperty("isPublic")
 	public boolean isPublic() {
 		return isPublic;
 	}
@@ -144,7 +143,6 @@ public class Quiz {
 		this.quizTags = quizTags;
 	}
 
-	// ✅ GETTER/SETTER CHO IMAGE
 	public String getImage() {
 		return image;
 	}
@@ -153,7 +151,6 @@ public class Quiz {
 		this.image = image;
 	}
 
-	// ✅ GETTER/SETTER CHO QUESTIONS
 	public Set<Question> getQuestions() {
 		return questions;
 	}
@@ -162,7 +159,6 @@ public class Quiz {
 		this.questions = questions;
 	}
 
-	// ✅ GETTER/SETTER CHO SOFT DELETE FIELDS
 	public Boolean isDeleted() {
 		return deleted;
 	}
@@ -187,7 +183,6 @@ public class Quiz {
 		this.deletedBy = deletedBy;
 	}
 
-	// ✅ THÊM GETTER/SETTER CHO QUIZ CODE
 	public String getQuizCode() {
 		return quizCode;
 	}

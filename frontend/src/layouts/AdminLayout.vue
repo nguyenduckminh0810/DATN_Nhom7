@@ -2,7 +2,7 @@
   <div v-if="isAuthorized" class="admin-layout">
     <!-- Header -->
     <HeaderAdmin />
-    
+
     <!-- Main Content -->
     <main class="main-content">
       <router-view />
@@ -11,32 +11,31 @@
     <!-- Footer -->
     <FooterAdmin />
   </div>
-  
+
   <!-- Unauthorized Access -->
   <div v-else class="unauthorized-container">
     <div class="unauthorized-content">
       <div class="unauthorized-icon">
         <i class="bi bi-shield-exclamation"></i>
       </div>
-      
+
       <h1 class="unauthorized-title">Truy cập bị từ chối</h1>
-      
+
       <p class="unauthorized-message">
-        Bạn không có quyền truy cập vào Admin Panel. 
-        Chỉ Admin mới có thể truy cập tính năng này.
+        Bạn không có quyền truy cập vào Admin Panel. Chỉ Admin mới có thể truy cập tính năng này.
       </p>
-      
+
       <div class="unauthorized-actions">
         <button @click="goBack" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left"></i>
           Quay lại
         </button>
-        
+
         <button @click="goHome" class="btn btn-primary">
           <i class="bi bi-house"></i>
           Về trang chủ
         </button>
-        
+
         <button @click="goLogin" class="btn btn-success">
           <i class="bi bi-box-arrow-in-right"></i>
           Đăng nhập Admin
@@ -55,42 +54,71 @@ import HeaderAdmin from '@/components/admin/HeaderAdmin.vue'
 const router = useRouter()
 const adminUser = ref(null)
 
-// ✅ CHECK AUTHORIZATION
+//  CHECK AUTHORIZATION
 const isAuthorized = computed(() => {
-  return adminUser.value !== null
+  //  Kiểm tra nhiều nguồn để đảm bảo chính xác
+  const token = localStorage.getItem('token')
+  const adminUserStr = localStorage.getItem('admin_user')
+  const userInfo = localStorage.getItem('user')
+
+  let isAdmin = false
+
+  if (adminUserStr) {
+    isAdmin = true
+  } else if (userInfo) {
+    try {
+      const userData = JSON.parse(userInfo)
+      isAdmin = userData.role === 'admin' || userData.role === 'ADMIN'
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }
+
+  const authorized = token && isAdmin
+  return authorized
 })
 
-// ✅ LOAD ADMIN USER
+//  LOAD ADMIN USER
 const loadAdminUser = () => {
   try {
-    // ✅ Kiểm tra token trước
+    //  Kiểm tra token trước
     const token = localStorage.getItem('token')
     if (!token) {
-      console.log('❌ No token found, clearing admin user')
       adminUser.value = null
       return
     }
-    
+
     // Kiểm tra admin_user trước (cho admin login)
     const adminUserStr = localStorage.getItem('admin_user')
     if (adminUserStr) {
       adminUser.value = JSON.parse(adminUserStr)
-      console.log('✅ Admin user loaded from admin_user:', adminUser.value)
       return
     }
-    
+
     // Kiểm tra user role từ user data (cho user login với role admin)
     const userInfo = localStorage.getItem('user')
     if (userInfo) {
       const userData = JSON.parse(userInfo)
       if (userData.role === 'admin' || userData.role === 'ADMIN') {
         adminUser.value = userData
-        console.log('✅ Admin user loaded from user data:', adminUser.value)
         return
       }
     }
-    
-    console.log('❌ No admin user found')
+
+    //  Kiểm tra thêm từ localStorage trực tiếp
+    const directUserInfo = localStorage.getItem('user')
+    if (directUserInfo) {
+      try {
+        const directUserData = JSON.parse(directUserInfo)
+        if (directUserData.role === 'admin' || directUserData.role === 'ADMIN') {
+          adminUser.value = directUserData
+          return
+        }
+      } catch (e) {
+        // Ignore parsing errors
+      }
+    }
+
     adminUser.value = null
   } catch (error) {
     console.error('Error loading admin user:', error)
@@ -98,7 +126,7 @@ const loadAdminUser = () => {
   }
 }
 
-// ✅ NAVIGATION FUNCTIONS
+//  NAVIGATION FUNCTIONS
 const goBack = () => {
   router.go(-1)
 }
@@ -111,19 +139,19 @@ const goLogin = () => {
   router.push('/login')
 }
 
-// ✅ MOUNTED
+//  MOUNTED
 onMounted(() => {
   loadAdminUser()
-  
+
   // Watch for changes in localStorage
   window.addEventListener('storage', (e) => {
     if (e.key === 'admin_user' || e.key === 'user' || e.key === 'token') {
-      // ✅ Chỉ reload nếu có token
+      //  Chỉ reload nếu có token
       const token = localStorage.getItem('token')
       if (token) {
         loadAdminUser()
       } else {
-        // ✅ Nếu không có token, clear admin user
+        //  Nếu không có token, clear admin user
         adminUser.value = null
       }
     }
@@ -142,7 +170,7 @@ onMounted(() => {
 .main-content {
   flex: 1;
   padding: 0;
-  margin-top: 0;
+  padding-top: 90px;
 }
 
 /* Unauthorized Access Styles */
@@ -239,19 +267,19 @@ onMounted(() => {
   .unauthorized-content {
     padding: 2rem;
   }
-  
+
   .unauthorized-title {
     font-size: 1.5rem;
   }
-  
+
   .unauthorized-message {
     font-size: 1rem;
   }
-  
+
   .unauthorized-actions {
     flex-direction: column;
   }
-  
+
   .btn {
     width: 100%;
     justify-content: center;

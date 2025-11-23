@@ -8,13 +8,13 @@ export const useThemeStore = defineStore('theme', () => {
   // Actions
   const toggleTheme = () => {
     isDarkMode.value = !isDarkMode.value
-    localStorage.setItem('app-dark-mode', isDarkMode.value)
+    localStorage.setItem('app-dark-mode', JSON.stringify(isDarkMode.value))
     applyTheme()
   }
 
   const setTheme = (dark) => {
-    isDarkMode.value = dark
-    localStorage.setItem('app-dark-mode', isDarkMode.value)
+    isDarkMode.value = !!dark
+    localStorage.setItem('app-dark-mode', JSON.stringify(isDarkMode.value))
     applyTheme()
   }
 
@@ -22,11 +22,10 @@ export const useThemeStore = defineStore('theme', () => {
     // Check localStorage first
     const savedTheme = localStorage.getItem('app-dark-mode')
     if (savedTheme !== null) {
-      isDarkMode.value = JSON.parse(savedTheme)
+      try { isDarkMode.value = JSON.parse(savedTheme) } catch { isDarkMode.value = savedTheme === 'true' }
     } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      isDarkMode.value = prefersDark
+      // ✅ MẶC ĐỊNH LÀ LIGHT MODE
+      isDarkMode.value = false
     }
     applyTheme()
   }
@@ -40,17 +39,19 @@ export const useThemeStore = defineStore('theme', () => {
       root.classList.remove('dark-theme')
       root.setAttribute('data-theme', 'light')
     }
+    // Fire a custom event so components can react immediately when needed
+    window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark: isDarkMode.value } }))
   }
 
-  // Watch for system theme changes
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-  mediaQuery.addEventListener('change', (e) => {
-    // Only auto-switch if user hasn't manually set a preference
-    if (localStorage.getItem('app-dark-mode') === null) {
-      isDarkMode.value = e.matches
-      applyTheme()
-    }
-  })
+  // Watch for system theme changes (disabled - default to light mode)
+  // const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  // mediaQuery.addEventListener('change', (e) => {
+  //   // Only auto-switch if user hasn't manually set a preference
+  //   if (localStorage.getItem('app-dark-mode') === null) {
+  //     isDarkMode.value = e.matches
+  //     applyTheme()
+  //   }
+  // })
 
   return {
     isDarkMode,

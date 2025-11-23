@@ -42,12 +42,12 @@ onMounted(() => {
 }
 
 .page-header h1 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 10px;
 }
 
 .page-header p {
-  color: #666;
+  color: var(--text-secondary);
   margin: 0;
 }
 </style> 

@@ -61,7 +61,7 @@
           :key="p.userId"
           :class="['podium', { 'podium--center': idx === 1 }]"
         >
-          <div class="podium__rank">{{ idx === 1 ? 1 : idx === 0 ? 2 : 3 }}</div>
+          <div class="podium__rank">{{ podiumRank(idx) }}</div>
           <img
             class="podium__avatar"
             :src="p.avatarUrl || '/img/default-avatar.png'"
@@ -144,7 +144,8 @@ const loading = ref(false)
 const loadingMore = ref(false)
 const error = ref(null)
 const leaderboardData = ref([])
-const selectedPeriod = ref('all')
+// Đồng bộ với backend: 'weekly' | 'monthly' | 'all-time'
+const selectedPeriod = ref('all-time')
 const offset = ref(0)
 const total = ref(null)
 
@@ -154,7 +155,7 @@ const currentUserId = computed(() => userStore.getUserId())
 const periods = [
   { value: 'weekly', label: 'Tuần này' },
   { value: 'monthly', label: 'Tháng này' },
-  { value: 'all', label: 'Tất cả thời gian' },
+  { value: 'all-time', label: 'Tất cả thời gian' },
 ]
 
 const podiumCount = 3
@@ -163,6 +164,12 @@ const podiumThree = computed(() => {
   const p = podiumFiltered.value
   return p.length >= 3 ? [p[1], p[0], p[2]] : p
 })
+// Khi < 3 người, hiển thị số thứ hạng 1..n; khi >=3 người dùng thứ tự 2-1-3
+function podiumRank(idx) {
+  const len = podiumFiltered.value.length
+  if (len >= 3) return idx === 1 ? 1 : idx === 0 ? 2 : 3
+  return idx + 1
+}
 const rest = computed(() => leaderboardData.value.slice(podiumCount))
 
 const currentViewRange = computed(() => {
@@ -257,13 +264,14 @@ onMounted(async () => {
 <style scoped>
 /* ===== Tokens ===== */
 :root {
-  --bg: #0b0f19; /* sẽ bị override bởi theme của site nếu có */
-  --card: #ffffff;
-  --text: #0f172a;
-  --muted: #6b7280;
-  --success: #16a34a;
-  --accent1: #4f46e5;
-  --accent2: #7c3aed;
+  /* Sử dụng global CSS variables để đồng bộ với /history */
+  --bg: var(--app-background);
+  --card: var(--card-bg);
+  --text: var(--text-primary);
+  --muted: var(--text-secondary);
+  --success: var(--success-color);
+  --accent1: var(--primary-color);
+  --accent2: var(--primary-dark);
 
   --gold1: #ffe98a;
   --gold2: #f59e0b;
@@ -277,9 +285,9 @@ onMounted(async () => {
 
 /* ===== Container: đẩy hẳn xuống dưới navbar, bỏ phần trắng thừa ===== */
 .lb {
-  max-width: 1100px;
-  margin: 20px auto;
-  margin-top: calc(var(--nav-h) + 20px);
+  max-width: 1200px; /* khớp với container ngoài để thẳng hàng */
+  margin: 20px auto 0;
+  padding: 0 16px; /* canh lề với header */
   background: transparent;
 }
 
@@ -290,11 +298,12 @@ onMounted(async () => {
   align-items: center;
   gap: 16px;
   padding: 18px 22px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  margin-bottom: 16px; /* tạo khoảng cách dưới header */
+  background: var(--card-header-bg);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   backdrop-filter: blur(12px);
-  color: #fff;
+  color: var(--card-header-text);
 }
 .lb__title {
   display: flex;
@@ -311,22 +320,26 @@ onMounted(async () => {
 .lb__period {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* giữ các đầu mục trên 1 hàng */
+  overflow-x: auto; /* nếu hẹp thì cho cuộn ngang */
+  white-space: nowrap;
 }
 .pill {
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 999px;
   font-weight: 600;
   font-size: 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   backdrop-filter: blur(4px);
   transition: all 0.2s ease;
+  flex: 0 0 auto; /* không co lại để xuống dòng */
 }
 .pill:hover {
-  background: rgba(124, 58, 237, 0.28);
-  border-color: rgba(124, 58, 237, 0.55);
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
 }
 .pill.is-active {
   background: linear-gradient(135deg, var(--accent1), var(--accent2));
@@ -339,11 +352,11 @@ onMounted(async () => {
 .lb__state,
 .lb__empty {
   padding: 32px 22px;
-  margin: 0 18px;
+  margin: 0;
   text-align: center;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   backdrop-filter: blur(10px);
 }
@@ -358,17 +371,17 @@ onMounted(async () => {
   align-items: center;
   gap: 16px;
   padding: 12px 18px;
-  margin: 0 18px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  margin: 12px 0 16px; /* khoảng cách trên và dưới cho dễ nhìn */
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 14px;
   backdrop-filter: blur(10px);
 }
 .stats-text {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-secondary);
 }
 .my-rank {
-  color: #ffe082;
+  color: var(--warning-color);
   font-weight: 600;
 }
 
@@ -381,12 +394,12 @@ onMounted(async () => {
   grid-template-columns: 1fr 1.2fr 1fr;
   gap: 20px;
   padding: 20px 22px;
-  margin: 0 18px 20px 18px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin: 0 0 18px 0; /* tách podium với list */
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   backdrop-filter: blur(12px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px var(--shadow-color);
 }
 .podium {
   position: relative;
@@ -395,15 +408,15 @@ onMounted(async () => {
   gap: 10px;
   padding: 18px 16px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
   backdrop-filter: blur(12px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 28px var(--shadow-color);
   transition: all 0.3s ease;
 }
 .podium:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 16px 32px var(--shadow-color);
 }
 .podium--center {
   transform: translateY(-16px) scale(1.08);
@@ -512,11 +525,11 @@ onMounted(async () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--text);
+  color: var(--text-primary) !important;
   font-size: 1.05rem;
 }
 .podium__score {
-  color: var(--muted);
+  color: var(--text-secondary) !important;
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -526,7 +539,10 @@ onMounted(async () => {
   list-style: none;
   margin: 0;
   padding: 0;
-  margin-top: 20px;
+  margin-top: 8px;
+}
+.lb__list-container {
+  padding: 0;
 }
 .rowitem {
   display: grid;
@@ -534,21 +550,21 @@ onMounted(async () => {
   align-items: center;
   gap: 16px;
   padding: 16px 20px;
-  margin-bottom: 12px;
+  margin-bottom: 14px; /* khoảng cách đều và thoáng hơn một chút */
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
   backdrop-filter: blur(12px);
   transition:
     background 0.2s ease,
     transform 0.15s ease,
     box-shadow 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px var(--shadow-color);
 }
 .rowitem:hover {
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--bg-secondary);
   transform: translateX(2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 20px var(--shadow-color);
 }
 .rowitem__rank {
   width: 38px;
@@ -556,27 +572,27 @@ onMounted(async () => {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #e5e7eb, #9ca3af);
-  color: #1f2937;
+  background: linear-gradient(135deg, var(--bg-secondary), var(--border-color));
+  color: var(--text-primary) !important;
   font-weight: 800;
   font-size: 0.9rem;
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--border-color);
+  box-shadow: 0 4px 8px var(--shadow-color);
 }
 .rowitem__avatar {
   width: 52px;
   height: 52px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--border-color);
+  box-shadow: 0 2px 8px var(--shadow-color);
 }
 .rowitem__main {
   min-width: 0;
 }
 .rowitem__name {
   font-weight: 700;
-  color: var(--text);
+  color: var(--text-primary) !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -589,18 +605,18 @@ onMounted(async () => {
 .score__val {
   font-weight: 900;
   font-size: 1.08rem;
-  color: var(--success);
+  color: var(--success-color) !important;
 }
 .score__label {
   display: block;
   font-size: 0.74rem;
-  color: var(--muted);
+  color: var(--text-secondary) !important;
   letter-spacing: 0.4px;
   margin-top: 3px;
 }
 .time {
   font-size: 0.76rem;
-  color: var(--muted);
+  color: var(--text-secondary) !important;
   margin-top: 4px;
 }
 
@@ -630,19 +646,110 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   padding: 16px 20px;
-  margin: 18px 18px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  margin: 18px 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 14px;
   backdrop-filter: blur(12px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--shadow-color);
 }
 .lb__end {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary) !important;
   font-size: 0.92rem;
+}
+
+/* Đảm bảo text luôn có contrast tốt ở dark mode */
+.lb__title span {
+  color: var(--text-primary) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.lb__title i {
+  color: var(--warning-color) !important;
+}
+
+/* Đảm bảo text-muted có contrast tốt */
+.text-muted {
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Đảm bảo lb__end text có contrast tốt */
+.lb__end .text-muted {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.lb__end i {
+  color: var(--primary-color) !important;
+}
+
+/* Đảm bảo tất cả text trong component đều có contrast tốt */
+.lb * {
+  color-scheme: light dark;
+}
+
+/* Đảm bảo các text khác có contrast tốt */
+.lb__stats .stats-text {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.lb__stats .my-rank {
+  color: var(--warning-color) !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Đảm bảo button text có contrast tốt */
+.btn {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+.btn-outline-primary {
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+/* Đảm bảo các phần text khác có contrast tốt */
+.lb__state,
+.lb__empty {
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+}
+
+.lb__state.error {
+  color: var(--danger-color) !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Đảm bảo jump to rank button có contrast tốt */
+.jump-to-rank {
+  background: var(--primary-color) !important;
+  color: white !important;
+  border-color: var(--primary-color) !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.jump-to-rank:hover {
+  background: var(--primary-dark) !important;
+  border-color: var(--primary-dark) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px var(--shadow-color) !important;
 }
 
 /* ===== Responsive ===== */
@@ -652,11 +759,12 @@ onMounted(async () => {
     margin-top: calc(var(--nav-h) + 12px);
   }
   .lb__header {
-    flex-direction: column;
-    text-align: center;
+    /* vẫn giữ 1 hàng trên mobile, phần period sẽ cuộn ngang nếu tràn */
+    flex-wrap: nowrap;
+    gap: 12px;
   }
   .lb__period {
-    justify-content: center;
+    justify-content: flex-end;
   }
   .lb__stats {
     flex-direction: column;

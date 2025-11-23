@@ -12,21 +12,21 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // ✅ CẤU HÌNH MESSAGE BROKER
+        // CẤU HÌNH MESSAGE BROKER
         config.enableSimpleBroker("/topic", "/queue");
-        
-        // ✅ PREFIX CHO CLIENT GỬI MESSAGE
+
+        // PREFIX CHO CLIENT GỬI MESSAGE
         config.setApplicationDestinationPrefixes("/app");
-        
-        // ✅ PREFIX CHO USER-SPECIFIC MESSAGES
+
+        // PREFIX CHO USER-SPECIFIC MESSAGES
         config.setUserDestinationPrefix("/user");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // ✅ REGISTER WEBSOCKET ENDPOINT
+        // REGISTER WEBSOCKET ENDPOINT
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*") // ✅ CHO PHÉP CORS
-                .withSockJS(); // ✅ FALLBACK CHO BROWSER KHÔNG HỖ TRỢ WEBSOCKET
+                .setAllowedOriginPatterns("*") // CHO PHÉP CORS
+                .withSockJS(); // FALLBACK CHO BROWSER KHÔNG HỖ TRỢ WEBSOCKET
     }
-} 
+}

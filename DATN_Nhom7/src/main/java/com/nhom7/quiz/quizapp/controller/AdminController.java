@@ -6,11 +6,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-// ✅ Removed unused Bean import
+
 import org.springframework.data.domain.Page;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-// ✅ Removed unused BCryptPasswordEncoder import
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,6 +26,7 @@ import com.nhom7.quiz.quizapp.model.dto.QuizDTO;
 import com.nhom7.quiz.quizapp.model.dto.TagDTO;
 import com.nhom7.quiz.quizapp.model.dto.UserDTO;
 import com.nhom7.quiz.quizapp.model.dto.ResultDTO;
+import com.nhom7.quiz.quizapp.model.dto.AttemptsByHourDTO;
 import com.nhom7.quiz.quizapp.repository.CategoryRepo;
 import com.nhom7.quiz.quizapp.repository.QuizRepo;
 import com.nhom7.quiz.quizapp.repository.TagRepo;
@@ -42,10 +44,11 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 @RestController
 @RequestMapping("/api/admin")
-// ✅ REMOVED class-level PreAuthorize - will add method-level where needed
+
 public class AdminController {
         @Autowired
         private CategoryRepo categoryRepo;
@@ -58,7 +61,7 @@ public class AdminController {
         @Autowired
         private NotificationService notificationService;
 
-        // ✅ ADMIN LOGIN - PUBLIC (không cần PreAuthorize)
+        // ADMIN LOGIN - PUBLIC (không cần PreAuthorize)
         @PostMapping("/login")
         public ResponseEntity<?> adminLogin(@RequestBody LoginRequest loginRequest) {
                 // Phương thức để xác thực người dùng
@@ -66,7 +69,6 @@ public class AdminController {
                                 loginRequest.getPassword());
                 return switch (result.status()) {
                         case SUCCESS -> {
-                                // ✅ Generate JWT token for admin
                                 String token = jwtUtil.generateToken(result.user().getUsername(),
                                                 result.user().getRole());
                                 yield ResponseEntity.ok(Map.of(
@@ -96,7 +98,10 @@ public class AdminController {
         @Autowired
         private adminservice adminService;
 
-        // ✅ ADMIN ONLY - Lấy danh sách người dùng
+        @Autowired
+        private com.nhom7.quiz.quizapp.service.AdminService.DashboardService dashboardService;
+
+        // ADMIN ONLY - Lấy danh sách người dùng
         @GetMapping("/all-users")
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<Page<UserDTO>> getAllUsers(
@@ -109,15 +114,31 @@ public class AdminController {
                 return ResponseEntity.ok(adminService.getAllUsers(page, size, search, role));
         }
 
-        // ✅ ADMIN ONLY - Cập nhật user
+        // ADMIN ONLY - Cập nhật user
         @PutMapping("/users/{id}")
         @PreAuthorize("hasRole('ADMIN')")
-        public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDTO dto) {
+        public ResponseEntity<?> updateUser(@PathVariable Long id,
+                        @RequestBody UserDTO dto,
+                        Authentication authentication) {
+                String currentUsername = authentication.getName();
+                User currentUser = userRepo.findByUsername(currentUsername)
+                                .orElseThrow(() -> new UsernameNotFoundException("Not found"));
+
+                // Chặn tự ĐỔI ROLE của chính mình
+                if (currentUser.getId().equals(id)
+                                && dto.getRole() != null
+                                && !dto.getRole().equalsIgnoreCase(currentUser.getRole())) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                        .body(Map.of("status", "FORBIDDEN", "message",
+                                                        "Bạn không thể đổi vai trò của chính mình"));
+                }
+
+                // Không đặt check “tự xoá” ở đây (để ở DELETE)
                 UserDTO updated = adminService.updateUser(id, dto);
                 return ResponseEntity.ok(updated);
         }
 
-        // ✅ ADMIN ONLY - Thêm user
+        // ADMIN ONLY - Thêm user
         @Autowired
         private PasswordEncoder passwordEncoder;
 
@@ -135,7 +156,7 @@ public class AdminController {
                 return ResponseEntity.ok(saved);
         }
 
-        // ✅ ADMIN ONLY - Xoá user
+        // ADMIN ONLY - Xoá user
         @DeleteMapping("/users/{id}")
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<?> deleteUser(@PathVariable Long id) {
@@ -149,31 +170,48 @@ public class AdminController {
 
         @PutMapping("/users/{id}/ban")
         @PreAuthorize("hasRole('ADMIN')")
-        public ResponseEntity<?> banUser(@PathVariable Long id) {
+        public ResponseEntity<?> banUser(@PathVariable Long id, Authentication authentication) {
                 User user = userRepo.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+                String currentUsername = authentication.getName();
+                User currentUser = userRepo.findByUsername(currentUsername)
+                                .orElseThrow(() -> new UsernameNotFoundException("Not found"));
 
+                if (currentUser.getId().equals(id)) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                        .body(Map.of("status", "FORBIDDEN", "message",
+                                                        "Bạn không thể tự ban tài khoản của mình"));
+                }
                 user.setBanned(true);
                 user.setRole("BANNED");
                 userRepo.save(user);
 
-                // ✅ GỬI NOTIFICATION CHO USER
+                // GỬI NOTIFICATION CHO USER
                 try {
                         notificationService.sendAccountStatusNotification(user.getId(), true);
-                        System.out.println("✅ Sent ban notification to user: " + user.getUsername());
+                        System.out.println("Sent ban notification to user: " + user.getUsername());
                 } catch (Exception e) {
-                        System.err.println("❌ Error sending ban notification: " + e.getMessage());
+                        System.err.println("Error sending ban notification: " + e.getMessage());
                 }
 
                 return ResponseEntity.ok("Người dùng đã bị ban.");
         }
 
-        // ✅ ADMIN ONLY - Test ban user
+        // ADMIN ONLY - Test ban user
         @PostMapping("/test-ban/{id}")
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<String> testBan(@PathVariable Long id) {
                 adminService.checkAndBanUser(id);
                 return ResponseEntity.ok("Đã kiểm tra và xử lý ban nếu đủ report");
+        }
+
+        // Attempts today by hour for dashboard chart
+        @GetMapping("/stats/attempts-today")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<AttemptsByHourDTO> getAttemptsTodayByHour(
+                        @RequestParam(required = false, name = "tz") String timezone) {
+                AttemptsByHourDTO dto = dashboardService.getAttemptsTodayByHour(timezone);
+                return ResponseEntity.ok(dto);
         }
 
         // Lấy danh sách quiz
@@ -304,7 +342,7 @@ public class AdminController {
         @Autowired
         private CategoryService categoryService;
 
-        // ✅ SOFT DELETE CATEGORY
+        // Xoá mềm danh mục
         @DeleteMapping("/categories/{id}")
         public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
                 try {
@@ -316,7 +354,7 @@ public class AdminController {
                 }
         }
 
-        // ✅ HARD DELETE CATEGORY
+        // Xoá hoàn toàn danh mục(cứng)
         @DeleteMapping("/categories/{id}/hard")
         public ResponseEntity<?> hardDeleteCategory(@PathVariable Long id) {
                 try {
@@ -328,7 +366,7 @@ public class AdminController {
                 }
         }
 
-        // ✅ RESTORE CATEGORY
+        // RESTORE CATEGORY
         @PutMapping("/categories/{id}/restore")
         public ResponseEntity<?> restoreCategory(@PathVariable Long id) {
                 try {
@@ -340,7 +378,7 @@ public class AdminController {
                 }
         }
 
-        // ✅ GET DELETED CATEGORIES
+        // GET DELETED CATEGORIES
         @GetMapping("/categories/deleted")
         public ResponseEntity<?> getDeletedCategories() {
                 try {
@@ -363,6 +401,93 @@ public class AdminController {
                                 .map(tag -> new TagDTO(tag.getId(), tag.getName(), tag.getDescription()))
                                 .toList();
                 return ResponseEntity.ok(tagDTOs);
+        }
+
+        @Autowired
+        private com.nhom7.quiz.quizapp.service.AdminService.AnalyticsService analyticsService;
+        @Autowired
+        private com.nhom7.quiz.quizapp.service.AdminService.AnalyticsExportService analyticsExportService;
+
+        @GetMapping("/analytics/stats/attempts-series")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getAttemptsSeries(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(required = false) String tz) {
+                return ResponseEntity.ok(analyticsService.attemptsSeries(from, to, tz));
+        }
+
+        @GetMapping("/analytics/stats/users-series")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getUsersSeries(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(required = false) String tz) {
+                return ResponseEntity.ok(analyticsService.usersSeries(from, to, tz));
+        }
+
+        @GetMapping("/analytics/stats/quality-series")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getQualitySeries(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(required = false) String tz) {
+                return ResponseEntity.ok(analyticsService.qualitySeries(from, to, tz));
+        }
+
+        @GetMapping("/analytics/stats/score-histogram")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getScoreHistogram(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(defaultValue = "20") int bins) {
+                return ResponseEntity.ok(analyticsService.scoreHistogram(from, to, bins));
+        }
+
+        @GetMapping("/analytics/stats/completion")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getCompletion(@RequestParam String from, @RequestParam String to) {
+                return ResponseEntity.ok(analyticsService.completion(from, to));
+        }
+
+        @GetMapping("/analytics/stats/category-distribution")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getCategoryDistribution(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(defaultValue = "10") int limit) {
+                return ResponseEntity.ok(analyticsService.categoryDistribution(from, to, limit));
+        }
+
+        @GetMapping("/analytics/stats/heatmap")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getHeatmap(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(required = false) String tz) {
+                return ResponseEntity.ok(analyticsService.heatmap(from, to, tz));
+        }
+
+        @GetMapping("/analytics/top-quizzes")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getTopQuizzes(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(defaultValue = "10") int limit) {
+                return ResponseEntity.ok(analyticsService.topQuizzes(from, to, limit));
+        }
+
+        @GetMapping("/analytics/top-performers")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> getTopPerformers(@RequestParam String from, @RequestParam String to,
+                        @RequestParam(defaultValue = "10") int limit,
+                        @RequestParam(defaultValue = "5") int minAttempts) {
+                return ResponseEntity.ok(analyticsService.topPerformers(from, to, limit, minAttempts));
+        }
+
+        // Export Excel tổng hợp analytics
+        @GetMapping("/analytics/export/xlsx")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<byte[]> exportAnalyticsXlsx(
+                        @RequestParam String from,
+                        @RequestParam String to,
+                        @RequestParam(required = false) String tz,
+                        @RequestParam(defaultValue = "20") int bins,
+                        @RequestParam(defaultValue = "10") int topLimit,
+                        @RequestParam(defaultValue = "5") int minAttempts) {
+                byte[] bytes = analyticsExportService.exportAnalyticsXlsx(from, to, tz, bins, topLimit, minAttempts);
+                return ResponseEntity.ok()
+                                .header("Content-Disposition",
+                                                "attachment; filename=analytics-" + from + "_" + to + ".xlsx")
+                                .header("Content-Type",
+                                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                                .body(bytes);
         }
 
 }

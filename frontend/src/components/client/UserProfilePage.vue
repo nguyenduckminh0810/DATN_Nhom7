@@ -237,7 +237,7 @@ export default {
     onMounted(async () => {
       await fetchUserProfile();
 
-      // ⚠️ ép gán userId vào route để QuizHistory.vue đọc được
+      //  ép gán userId vào route để QuizHistory.vue đọc được
       if (!route.params.userId && user.value.id) {
         route.params.userId = user.value.id; // ép để QuizHistory dùng được
       }

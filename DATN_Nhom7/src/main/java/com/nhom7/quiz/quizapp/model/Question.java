@@ -37,7 +37,7 @@ public class Question {
 	private int point = 1;
 
 	@Column(name = "time_limit", nullable = false, columnDefinition = "INT DEFAULT 30")
-	private int timeLimit = 30; // ✅ THÊM FIELD THỜI GIAN (MẶC ĐỊNH 30 GIÂY)
+	private int timeLimit = 30;
 
 	public Long getId() {
 		return id;
